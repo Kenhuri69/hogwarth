@@ -2315,6 +2315,134 @@ const MONSTERS = [
     ]
   },
 
+  // ════════════════════════════════════════════
+  // BOUCLE — Gardiens des Chambres des Fondateurs (ét. 17+)
+  // Phase 3, Lot 1 (données). Un gardien epic par Fondateur/Maison, thématisé
+  // par élément. Apparaissent en Boucle (minFloor 17 → post-victoire). Le
+  // placement en chambre + l'art dédié arrivent aux Lots 2-3. Cf.
+  // floor-ambiance.js FOUNDER_CHAMBERS + docs/histoire/11 §11.9.2.
+  // ════════════════════════════════════════════
+  {
+    id:       "gardien_lion",
+    epic:     true,
+    name:     "Gardien de la Chambre du Lion",
+    icon:     "🦁",
+    category: "être magique",
+    loreFamily: "F5",
+    desc:     "Une armure de braise se dresse devant la Chambre du Lion",
+    lore:     "Façonné par la volonté de Godric pour tenir la porte quand plus personne ne le pourrait, ce gardien de flammes ne recule jamais — c'est tout ce qu'il sait faire.",
+    habitat:  "Cœur runique des Ruines Anciennes, au seuil de la Chambre du Lion",
+    anecdote: "On dit que ses brasiers se rallument seuls à l'approche d'un Gryffondor — non pour l'arrêter, mais pour le saluer.",
+    danger:   10,
+    minFloor: 17, maxFloor: null, weight: 2,
+    hp: 95, atk: 24, def: 11, mag: 12, agi: 9, lck: 12,
+    scale: 0.35,
+    abilities: [
+      { name: "Charge Ardente",  icon: "🔥", desc: "Une ruée enflammée",            effect: "damage", power: 16, chance: 0.40 },
+      { name: "Brasier Vivace",  icon: "♨️", desc: "Embrase la cible",               effect: "status", statusId: "burn", power: 0, chance: 0.30, turns: 3 },
+      { name: "Tenir la Porte",  icon: "🛡️", desc: "Se renforce et tient bon",       effect: "heal",   power: 18, chance: 0.20 }
+    ],
+    ai: "aggressive",
+    resist: ["feu", "disarm"],
+    weak:   ["glace"],
+    xp: 190, gold: { min: 70, max: 110 },
+    drops:  [
+      { itemId: "page_grimoire", chance: 0.12 },
+      { itemId: "potion_l",      chance: 0.15 },
+      { itemId: "sword_gryff",   chance: 0.05 }
+    ]
+  },
+  {
+    id:       "gardien_serpent",
+    epic:     true,
+    name:     "Gardien de la Chambre du Serpent",
+    icon:     "🐍",
+    category: "être magique",
+    loreFamily: "F5",
+    desc:     "Une ombre lovée garde la Chambre du Serpent",
+    lore:     "Salazar scella sa part la plus laide dans ce gardien : la ruse qui frappe d'abord et s'explique ensuite. Il ne mord que ceux qui n'auraient pas dû entrer.",
+    habitat:  "Cœur runique des Ruines Anciennes, au seuil de la Chambre du Serpent",
+    anecdote: "Devant un Serpentard, ses serrures cèdent d'elles-mêmes. Devant les autres, le venin parle le premier.",
+    danger:   10,
+    minFloor: 17, maxFloor: null, weight: 2,
+    hp: 85, atk: 16, def: 8, mag: 22, agi: 11, lck: 14,
+    scale: 0.34,
+    abilities: [
+      { name: "Venin des Cachots", icon: "🐍", desc: "Inocule un poison tenace",     effect: "status", statusId: "poison", power: 0, chance: 0.35, turns: 3 },
+      { name: "Morsure Drainante", icon: "🩸", desc: "Aspire la vie et s'en nourrit", effect: "drain",  power: 14, chance: 0.30 },
+      { name: "Sifflement Sapant", icon: "💢", desc: "Affaiblit la défense",          effect: "weaken", power: 6,  chance: 0.25 }
+    ],
+    ai: "cautious",
+    resist: ["ténèbres", "disarm"],
+    weak:   ["lumière"],
+    xp: 190, gold: { min: 70, max: 110 },
+    drops:  [
+      { itemId: "page_grimoire",     chance: 0.12 },
+      { itemId: "potion_l",          chance: 0.15 },
+      { itemId: "locket_slytherin",  chance: 0.05 }
+    ]
+  },
+  {
+    id:       "gardien_aigle",
+    epic:     true,
+    name:     "Gardien de la Chambre de l'Aigle",
+    icon:     "🦅",
+    category: "être magique",
+    loreFamily: "F5",
+    desc:     "Une sentinelle de runes vives veille sur la Chambre de l'Aigle",
+    lore:     "Rowena ne laissa pas un mur, mais une question : qui comprend, passe. Ce gardien foudroie ceux qui veulent forcer ce qu'ils n'ont pas su lire.",
+    habitat:  "Cœur runique des Ruines Anciennes, au seuil de la Chambre de l'Aigle",
+    anecdote: "Sous le regard d'un Serdaigle, ses glyphes se traduisent seuls. Pour les autres, ils crépitent.",
+    danger:   10,
+    minFloor: 17, maxFloor: null, weight: 2,
+    hp: 80, atk: 15, def: 7, mag: 23, agi: 14, lck: 12,
+    scale: 0.34,
+    abilities: [
+      { name: "Trait Fulgurant", icon: "⚡", desc: "Décharge de foudre canalisée",   effect: "damage", power: 18, chance: 0.45 },
+      { name: "Glyphe Sidérant", icon: "💫", desc: "Une rune qui étourdit",           effect: "status", statusId: "stun", power: 0, chance: 0.25, turns: 1 },
+      { name: "Effacement",      icon: "🪄", desc: "Dissipe un bienfait de la cible",  effect: "dispel", power: 0,  chance: 0.25 }
+    ],
+    ai: "cautious",
+    resist: ["foudre", "disarm"],
+    weak:   ["physique"],
+    xp: 190, gold: { min: 70, max: 110 },
+    drops:  [
+      { itemId: "page_grimoire",      chance: 0.12 },
+      { itemId: "potion_l",           chance: 0.15 },
+      { itemId: "diademe_serdaigle",  chance: 0.05 }
+    ]
+  },
+  {
+    id:       "gardien_blaireau",
+    epic:     true,
+    name:     "Gardien de la Chambre du Blaireau",
+    icon:     "🦡",
+    category: "être magique",
+    loreFamily: "F5",
+    desc:     "Un colosse patient barre la Chambre du Blaireau",
+    lore:     "Helga ne creusa pas une forteresse mais un abri ; son gardien encaisse pour que d'autres tiennent. Il ne tombe qu'après s'être assuré que tu ne tomberais pas.",
+    habitat:  "Cœur runique des Ruines Anciennes, au seuil de la Chambre du Blaireau",
+    anecdote: "Devant un Poufsouffle, il ouvre une alcôve tiède. Devant les autres, il devient un mur qu'on n'use pas.",
+    danger:   10,
+    minFloor: 17, maxFloor: null, weight: 2,
+    hp: 120, atk: 18, def: 14, mag: 10, agi: 7, lck: 10,
+    scale: 0.32,
+    abilities: [
+      { name: "Coup d'Enclume",    icon: "🔨", desc: "Une frappe qui broie",          effect: "damage", power: 15, chance: 0.40 },
+      { name: "Souffle du Refuge", icon: "🌿", desc: "Se soigne en tenant la garde",  effect: "heal",   power: 22, chance: 0.30 },
+      { name: "Étreinte Lourde",   icon: "💢", desc: "Brise la défense adverse",       effect: "weaken", power: 7,  chance: 0.25 }
+    ],
+    ai: "cautious",
+    resist: ["physique", "glace"],
+    weak:   ["feu"],
+    xp: 190, gold: { min: 70, max: 110 },
+    drops:  [
+      { itemId: "page_grimoire",     chance: 0.12 },
+      { itemId: "potion_l",          chance: 0.15 },
+      { itemId: "coupe_poufsouffle", chance: 0.05 }
+    ]
+  },
+
 ];
 
 // ════════════════════════════════════════════

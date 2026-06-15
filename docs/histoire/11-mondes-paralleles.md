@@ -506,6 +506,13 @@ s'assombrir.
 - 💡 **Sens narratif** : un Ténébreux n'est pas un nouvel ennemi — c'est
   **l'ombre projetée par les Ruines**, le **mythe du héros retourné** contre lui
   ([09 §9.10](09-bestiaire-et-lore.md)).
+- 🔧 **Gardiens des Chambres des Fondateurs** (Phase 3, **Lot 1/3 livré**) : 4
+  boss-gardiens epic (`gardien_lion`/`gardien_serpent`/`gardien_aigle`/
+  `gardien_blaireau`, `monsters.js`), un par Fondateur/Maison, thématisés par
+  élément (feu/ténèbres/foudre/physique) ; `minFloor:17` → jouables en Boucle ;
+  drop signature = la **légende de Maison** correspondante. Reste à faire : le
+  **placement en chambre** lié à l'illumination §10.5 (Lot 2) et l'**art dédié**
+  (Lot 3). Voir `floor-ambiance.js` `FOUNDER_CHAMBERS`.
 - ✅ **Bark one-shot « déjà tué »** (Phase 3) : face à un boss epic revenu en
   variante Ténébreuse (`variant === 'darkness'`), le héros actif lance une
   réplique dédiée *« Tu m'as déjà tué une fois… »* — événement `darkBoss` des
