@@ -152,4 +152,4 @@ sombre et plus profond.
 | 01–14 Histoire | 🟩 chapitres rédigés (référence) — **réconciliation doc↔code en cours** (Roadmap Phase 1) |
 | 13 Histoire (Équilibre) | 🟩 proposition de référence — à valider |
 | 14 Histoire (Fins & post-game) | 🟩 socle **livré** dans le code — contenu de variantes restant à écrire |
-| Gameplay (G1–G9) | 🟧 ébauche — à mettre à niveau (systèmes récents non couverts) |
+| Gameplay (G1–G9) | 🟩 à jour — couvrent les systèmes récents (Forge, Biblio, Potions, Portus, PvP, Événements d'étage, Codex, Mondes Parallèles) ; relecture design en continu |

@@ -1,6 +1,11 @@
 # G6 — Sorts
 
-**Statut :** 🟧 ébauche
+**Statut :** 🟩 à jour — couvre les systèmes récents (relecture design en continu)
+
+> 📊 **Statut réel (code)** : ✅ catalogue, éléments, 3 vecteurs d'apprentissage,
+> AoE/utilitaires, Portus, upgrade Bibliothèque — modules : `js/data.js` (`SPELLS`),
+> `js/battle-spells.js`, `js/inventory-spells.js`, `js/teleport.js`, `js/library.js`.
+> Référence technique : [`CLAUDE.md`](../../CLAUDE.md).
 
 > Objectif du chapitre : décrire le **catalogue complet des sorts** du jeu,
 > leur fonctionnement mécanique (formules de dégâts, de soin, d'AoE, de

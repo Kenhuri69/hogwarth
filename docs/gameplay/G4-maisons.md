@@ -1,6 +1,11 @@
 # G4 — Maisons (mécanique)
 
-**Statut :** 🟧 ébauche
+**Statut :** 🟩 à jour — couvre les systèmes récents (relecture design en continu)
+
+> 📊 **Statut réel (code)** : ✅ points, 18 paliers + Apothéose/★ N, sets, passifs
+> endgame, don d'or — modules : `js/state.js` (`HOUSE_BONUSES`), `js/main.js`
+> (`checkHouseLevelUp`), `js/house-donation.js`.
+> Référence technique : [`CLAUDE.md`](../../CLAUDE.md).
 
 > Objectif du chapitre : documenter le **système de prestige de Maison** — son
 > économie de points, ses 18 paliers nommés (Apprenti → Virtuose → Légende →

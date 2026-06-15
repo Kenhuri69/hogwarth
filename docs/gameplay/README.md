@@ -1,6 +1,6 @@
 # Gameplay — documentation de support
 
-**Statut :** 🟧 9 chapitres en ébauche — relecture/validation à faire
+**Statut :** 🟩 9 chapitres à jour — couvrent les systèmes récents (relecture design en continu)
 
 > Ce dossier documente les **systèmes de jeu** en appui du récit. Il est
 > volontairement secondaire par rapport à `docs/histoire/` (priorité au
@@ -13,16 +13,19 @@
 ## Chapitres
 | # | Chapitre | Objet | Statut |
 |---|----------|-------|--------|
-| G1 | [Boucle de jeu](G1-boucle-de-jeu.md) | Explorer → combattre → s'équiper → descendre ; rythme. | 🟧 ébauche |
-| G2 | [Combat](G2-combat.md) | Tour par tour, actions, statuts, éléments (résist/faiblesse), capacités ennemies. | 🟧 ébauche |
-| G3 | [Progression](G3-progression.md) | Niveaux, stats primaires/secondaires, stats dérivées (crit, esquive, Fortune, Célérité). | 🟧 ébauche |
-| G4 | [Maisons (mécanique)](G4-maisons.md) | Points, paliers, bonus, sets, passifs endgame, don à la Maison. | 🟧 ébauche |
-| G5 | [Équipement & objets](G5-equipement-objets.md) | 11 slots, raretés, sorts d'équipement, potions & craft. | 🟧 ébauche |
-| G6 | [Sorts](G6-sorts.md) | Catalogue, éléments, 3 vecteurs d'apprentissage, sorts AoE & utilitaires. | 🟧 ébauche |
-| G7 | [Donjon](G7-donjon.md) | Génération, cellules spéciales, évènements d'étage, thèmes. | 🟧 ébauche |
-| G8 | [Difficulté & scaling](G8-difficulte-scaling.md) | 4 difficultés, scaling par étage, taille des groupes, anti-farm. | 🟧 ébauche |
-| G9 | [Méta](G9-meta.md) | Ironman + Hall of Fame ; Mondes Parallèles (système). | 🟧 ébauche |
+| G1 | [Boucle de jeu](G1-boucle-de-jeu.md) | Explorer → combattre → s'équiper → descendre ; rythme. | 🟩 à jour |
+| G2 | [Combat](G2-combat.md) | Tour par tour, actions, statuts, éléments (résist/faiblesse), capacités ennemies. | 🟩 à jour |
+| G3 | [Progression](G3-progression.md) | Niveaux, stats primaires/secondaires, stats dérivées (crit, esquive, Fortune, Célérité). | 🟩 à jour |
+| G4 | [Maisons (mécanique)](G4-maisons.md) | Points, paliers, bonus, sets, passifs endgame, don à la Maison. | 🟩 à jour |
+| G5 | [Équipement & objets](G5-equipement-objets.md) | 11 slots, raretés, sorts d'équipement, potions & craft, Forge/Biblio. | 🟩 à jour |
+| G6 | [Sorts](G6-sorts.md) | Catalogue, éléments, 3 vecteurs d'apprentissage, sorts AoE & utilitaires, Portus. | 🟩 à jour |
+| G7 | [Donjon](G7-donjon.md) | Génération, cellules spéciales, évènements d'étage, thèmes, Boucle. | 🟩 à jour |
+| G8 | [Difficulté & scaling](G8-difficulte-scaling.md) | 4 difficultés, scaling par étage, taille des groupes, anti-farm, NG+. | 🟩 à jour |
+| G9 | [Méta](G9-meta.md) | Ironman + Hall of Fame ; Mondes Parallèles, Atelier du Voyageur. | 🟩 à jour |
 
-> ❓ À détailler : chapitres en ébauche issus d'une 1ʳᵉ passe (valeurs
-> sourcées du code). Relecture design + validation des `> ❓ À détailler`
-> restants à faire. Le narratif (`docs/histoire/`) reste prioritaire.
+> ℹ️ Les 9 chapitres **couvrent les systèmes récents** (Forge, Bibliothèque,
+> Concoction de potions, Téléportation Portus, PvP, Événements d'étage, Codex,
+> Mondes Parallèles / Atelier du Voyageur) — valeurs sourcées du code. Chaque
+> chapitre porte un bandeau « 📊 Statut réel (code) » avec ses modules `js/`.
+> Quelques `> ❓ À détailler / 💡 pistes` design restent ouverts par chapitre ;
+> le narratif (`docs/histoire/`) reste prioritaire.

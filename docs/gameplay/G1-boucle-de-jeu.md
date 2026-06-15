@@ -1,6 +1,10 @@
 # G1 — Boucle de jeu
 
-**Statut :** 🟧 ébauche
+**Statut :** 🟩 à jour — couvre les systèmes récents (relecture design en continu)
+
+> 📊 **Statut réel (code)** : ✅ boucle macro implémentée (explore → combat →
+> équipe → descend) — modules : `js/movement.js`, `js/battle.js`, `js/dungeon.js`,
+> `js/shop.js`. Référence technique : [`CLAUDE.md`](../../CLAUDE.md).
 
 > Objectif du chapitre : décrire la **boucle macro** du jeu — de l'exploration
 > du donjon en vue pseudo-3D à la descente vers l'étage suivant — et le rythme

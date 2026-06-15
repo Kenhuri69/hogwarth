@@ -1,6 +1,11 @@
 # G9 — Méta
 
-**Statut :** 🟧 ébauche
+**Statut :** 🟩 à jour — couvre les systèmes récents (relecture design en continu)
+
+> 📊 **Statut réel (code)** : ✅ Ironman + Hall of Fame, Mondes Parallèles
+> (Cheminette/visites/Verrous), Atelier du Voyageur, profil NG+ — modules :
+> `js/ironman.js`, `js/hall-of-fame.js`, `js/multiplayer*.js`, `js/visit-*.js`,
+> `js/atelier-voyageur.js`, `js/profile.js`. Référence technique : [`CLAUDE.md`](../../CLAUDE.md).
 
 > Objectif du chapitre : décrire les couches qui dépassent une partie
 > individuelle — le mode Ironman (permadeath + score), le Hall of Fame
