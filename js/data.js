@@ -727,7 +727,7 @@ const ITEMS = [
   { id:"flacon_deflagration", name:"Flacon de Déflagration", icon:"💥", desc:"Lancé : 16 dégâts de feu sur tout le groupe ennemi", type:"consumable", effect:"throw", aoe:true, element:"feu", power:16, price:90, rarity:"rare" },
   { id:"flacon_brume_toxique", name:"Flacon de Brume Toxique", icon:"☠️", desc:"Lancé : 6 dégâts + poison (4/tour, 4 t) sur tout le groupe ennemi", type:"consumable", effect:"throw", aoe:true, power:6, statusId:"poison", statusPower:4, statusTurns:4, price:95, rarity:"rare" },
   { id:"cape_invis",   name:"Cape d'Invisibilité",   icon:"🌫️", desc:"AGI+5 LCK+5 · Esquive +5%", type:"acc",   slot:"cloak", family:"cloak_invis",  rarity:"epic",     bonusAgi:5, bonusLck:5, bonusDodgeChance:5, power:5, price:550 },
-  { id:"chapeau_pointu",name:"Chapeau de Serdaigle", icon:"🎓", desc:"MAG+3 INT+3",            type:"armor", slot:"head",  family:"hat_serd",     rarity:"rare",     bonusDef:2, bonusMag:3, power:3, price:200 },
+  { id:"chapeau_pointu",name:"Chapeau de Serdaigle", icon:"🎓", desc:"MAG+3 INT+3",            type:"armor", slot:"head",  family:"hat_serd",     rarity:"rare",     bonusDef:2, bonusMag:3, power:3, price:300 },
   // Easter egg « Salle sur Demande » — objet unique offert à la 1ʳᵉ Salle de
   // la partie. Clin d'œil au Diadème caché, bonus modeste non-méta, non vendable.
   { id:"tiare_poussiereuse",name:"Tiare poussiéreuse", icon:"👑", desc:"MAG+2 LCK+1 · trouvée dans la Salle sur Demande", type:"armor", slot:"head", family:"tiara_dusty", rarity:"rare", bonusMag:2, bonusLck:1, power:2, price:0, tint:"#caa84c" },
@@ -746,7 +746,7 @@ const ITEMS = [
   { id:"anneau_runique",   name:"Anneau Runique",        icon:"💍", desc:"MAG+2 LCK+2 · Crit +3%", type:"acc",   slot:"ring",  family:"ring_runed",    rarity:"rare",   bonusMag:2, bonusLck:2, bonusCritChance:3, power:2, price:260, tint:"#a060d0" },
   { id:"ceinture_alchimiste",name:"Ceinture d'Alchimiste",icon:"➿", desc:"DEF+1 LCK+3 · Crit +2%", type:"acc",   slot:"belt",  family:"belt_alch",     rarity:"rare",   bonusDef:1, bonusLck:3, bonusCritChance:2, power:1, price:230 },
   // Tier rare/épique étage 7+
-  { id:"bottes_dragon",    name:"Bottes en Peau de Dragon",icon:"🥾",desc:"DEF+3 AGI+2 · Esquive +3%", type:"acc",   slot:"feet",  family:"boots_dragon",  rarity:"rare",   bonusDef:3, bonusAgi:2, bonusDodgeChance:3, power:3, price:340 },
+  { id:"bottes_dragon",    name:"Bottes en Peau de Dragon",icon:"🥾",desc:"DEF+3 AGI+2 · Esquive +3%", type:"acc",   slot:"feet",  family:"boots_dragon",  rarity:"rare",   bonusDef:3, bonusAgi:2, bonusDodgeChance:3, power:3, price:600 },
   // ── Équipement à compromis (trade-off : un bonus fort, un malus) ──
   { id:"lame_sanguinaire", name:"Lame Sanguinaire",       icon:"🗡️", desc:"ATK+7 mais DEF−2 — frappe sans retenue",        type:"wand",  slot:"wand",  rarity:"rare",   power:7, bonusAtk:7,  bonusDef:-2,                        price:300 },
   { id:"armure_lourde",    name:"Armure de Plates",       icon:"🛡️", desc:"DEF+6 mais AGI−3 — lourde et protectrice",      type:"armor", slot:"body",  rarity:"rare",   power:6, bonusDef:6,  bonusAgi:-3,                        price:320 },
