@@ -192,7 +192,7 @@ visible) ; les 4 signatures sont jouables de bout en bout.
 | Tâche | Priorité | Chapitres / systèmes | Complexité | Dépendances |
 |-------|----------|----------------------|------------|-------------|
 | **Boss-gardiens des Chambres des Fondateurs** (ét. 17-20) + illumination selon `chosenHouse` | 🟠 Moyenne | 10, 11, `monsters.js`, `dungeon.js` | Élevée | Phase 2 |
-| **Variantes Ténébreuses** (barks one-shot « Tu m'as déjà tué une fois ») | 🟡 Basse | 09, 11, `hero-barks.js`, `monsters.js` | Moyenne | — |
+| ~~**Variantes Ténébreuses** (barks one-shot « Tu m'as déjà tué une fois »)~~ ✅ **Fait (2026-06-15)** : événement `darkBoss` (16 héros, `hero-barks.js`) déclenché à la place de `bossAppear` quand le boss epic est en `variant === 'darkness'` (`battle.js`), one-shot/session. Testé `units.js` §1bis. Doc 11 §11.9.2 marquée ✅. | 🟡 Basse | 09, 11, `hero-barks.js`, `monsters.js` | Moyenne | — |
 | **Héritage / NG+ cosmétique opt-in** (profil hors-partie, zéro stat) | 🟡 Basse | 14, nouveau `js/profile.js` | Moyenne | Phase 2 |
 | **Suites de signature en Boucle** (écho déchiré par Maison) | 🟡 Basse | 08, 11 | Moyenne | Signatures (P2) |
 | **Décisions `❓` endgame** : « ce qui dort » personnifié ? barks Ténébreux ? biais génération par Maison (V2) ? | 🟡 Basse | 09, 10, 11 | Variable | Arbitrage user |

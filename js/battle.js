@@ -638,7 +638,14 @@ function startBattle(baseEnemyData, opts) {
   // héros actif (vivant) prend la parole. Cf. js/hero-barks.js.
   if (enemyGroup[0] && enemyGroup[0].epic && typeof heroBark === 'function') {
     const speaker = party.slice(0, partySize).find(c => c.hp > 0);
-    if (speaker && speaker.heroKey) heroBark(speaker.heroKey, 'bossAppear', { once: 'boss:' + enemyGroup[0].id });
+    if (speaker && speaker.heroKey) {
+      // Boss revenu en variante Ténébreuse (Boucle, post-victoire) → bark
+      // one-shot dédié « Tu m'as déjà tué une fois » ; sinon apparition standard.
+      const lead = enemyGroup[0];
+      const isDarkBoss = lead.variant === 'darkness';
+      heroBark(speaker.heroKey, isDarkBoss ? 'darkBoss' : 'bossAppear',
+               { once: (isDarkBoss ? 'darkboss:' : 'boss:') + lead.id });
+    }
   }
   // Beat scénarisé (L8, 05 §5.4.2) — première rencontre d'un Mangemort :
   // Drago, s'il est présent, le reconnaît. One-shot par partie, défensif.
