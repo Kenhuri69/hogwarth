@@ -538,6 +538,10 @@ function _applyState(gs) {
   if (typeof _ensureFinalBossPresent === 'function') {
     _ensureFinalBossPresent(currentFloor);
   }
+  // Boss-gardiens des Chambres des Fondateurs (Phase 3, Lot 2) — étage 17 Boucle.
+  if (typeof _ensureChamberGuardiansPresent === 'function') {
+    _ensureChamberGuardiansPresent(currentFloor);
+  }
 
   recalculateStats();
   if (!('pendingHouseRewards' in gs)) _migrateHouseRewards();

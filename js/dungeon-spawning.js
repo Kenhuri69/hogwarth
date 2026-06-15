@@ -243,6 +243,71 @@ function _ensureFinalBossPresent(floor) {
   return 1;
 }
 
+// Boss-gardiens des Chambres des Fondateurs (Phase 3, Lot 2). À l'étage du
+// Cœur runique (17, = CHAMBER_FLOOR de floor-ambiance.js) en Boucle, place les
+// gardiens des TROIS Chambres des Maisons AUTRES que celle du héros — fidèle à
+// la règle d'illumination (§10.5) : la Chambre de la Maison du héros l'accueille
+// (pas de combat), les trois autres restent hostiles et gardées. Modèle :
+// `_ensureFinalBossPresent`. Idempotente : no-op hors étage 17, hors victoire,
+// sans `chosenHouse`, ou si un gardien donné est déjà présent. Retourne le
+// nombre de gardiens placés. Cf. docs/histoire/11 §11.9.2.
+const HOUSE_CHAMBER_GUARDIAN = {
+  Gryffondor:  'gardien_lion',
+  Serpentard:  'gardien_serpent',
+  Serdaigle:   'gardien_aigle',
+  Poufsouffle: 'gardien_blaireau',
+};
+function _ensureChamberGuardiansPresent(floor) {
+  if (floor !== 17) return 0;
+  if (typeof victoryAchieved === 'undefined' || !victoryAchieved) return 0;
+  if (typeof chosenHouse === 'undefined' || !chosenHouse) return 0;
+  if (typeof dungeon === 'undefined' || typeof enemyMap === 'undefined') return 0;
+  if (typeof MONSTERS === 'undefined' || typeof scaleMonster !== 'function') return 0;
+
+  // Gardiens à garantir : les 3 Maisons ≠ chosenHouse.
+  const wanted = [];
+  for (const house of Object.keys(HOUSE_CHAMBER_GUARDIAN)) {
+    if (house === chosenHouse) continue;
+    wanted.push(HOUSE_CHAMBER_GUARDIAN[house]);
+  }
+
+  // Ids déjà présents sur l'étage (idempotence).
+  const present = new Set();
+  for (let y = 0; y < enemyMap.length; y++) {
+    for (let x = 0; x < enemyMap[y].length; x++) {
+      if (enemyMap[y][x] && enemyMap[y][x].id) present.add(enemyMap[y][x].id);
+    }
+  }
+
+  // Cases FLOOR libres (hors joueur), mélangées.
+  const free = [];
+  for (let y = 0; y < dungeon.length; y++) {
+    for (let x = 0; x < dungeon[y].length; x++) {
+      if (dungeon[y][x] !== CELL.FLOOR) continue;
+      if (enemyMap[y][x]) continue;
+      if (typeof playerX === 'number' && x === playerX && y === playerY) continue;
+      free.push({ x, y });
+    }
+  }
+  for (let i = free.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [free[i], free[j]] = [free[j], free[i]];
+  }
+
+  let placed = 0;
+  for (const id of wanted) {
+    if (present.has(id)) continue;
+    if (!free.length) break;
+    const guardian = MONSTERS.find(m => m.id === id);
+    if (!guardian) continue;
+    const cell = free.pop();
+    enemyMap[cell.y][cell.x] = scaleMonster(guardian, floor);
+    present.add(id);
+    placed++;
+  }
+  return placed;
+}
+
 // Repère les PNJ qui devraient être placés à l'étage courant (selon
 // `getNpcsForFloor`) mais absents de `npcPlacements`. Les place sur
 // une cellule FLOOR libre. Permet aux saves antérieures à un ajout
