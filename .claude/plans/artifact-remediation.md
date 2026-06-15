@@ -283,7 +283,7 @@ non créée sans demande (§6).
 ## Suivi (à cocher à l'implémentation)
 
 - [x] Lot A — rename `codex_rowena_eclat` + assertion unicité ids + cache-bump ✅ 2026-06-14
-- [ ] Lot F — formule §1.6 corrigée
+- [x] Lot F — formule §1.6 corrigée (actMult' 1,2/2,0/4,0/6,0 × rarityPremium' 1,0/1,1/1,25/1,4 + renvoi étude §2.1) ✅ 2026-06-15 — markdown pur, pas de cache-bump/smoke
 - [ ] Lot C — `voix_rowena_relique` +MAG+2
 - [ ] Lot B — Premium Gryffondor rebasé (+ sim)
 - [ ] Lot D — `chapeau_pointu`/`bottes_dragon`(/`amulette`) repricés
