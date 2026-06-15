@@ -190,12 +190,14 @@ multiplicateur runtime dans `recalculateStats` (surgical, testable).
 Formule de référence (documentaire, pour arbitrer les prix) :
 
 ```
-prix ≈ powerBudget(stats) × rarityMult × actMult
-rarityMult : common 1.0 · uncommon 1.3 · rare 1.8 · epic 3.0 · legendary 5.0
-actMult    : Acte I (ét.1-3) 1.0 · Acte II (4-6) 1.4 · Acte III (7-10) 2.6 · Boucle (11+) 4.0
+prix ≈ powerBudget(stats) × actMult' × rarityPremium'
+actMult'       : Acte I (ét.1-3) 1.2 · Acte II (4-6) 2.0 · Acte III (7-10) 4.0 · Boucle (11+) 6.0
+rarityPremium' : common 1.0 · uncommon 1.1 · rare 1.25 · epic 1.4 · legendary (non vendable)
 powerBudget : ~Σ(points de stat × poids) — 1 pt primaire ≈ 35 G base, 1 pt secondaire ≈ 20 G,
               1 % crit ≈ 12 G, 1 regen ≈ 40 G, grantsSpell ≈ +150 G
 ```
+
+> ⚠️ **Formule corrigée** : cf. [`docs/artifact-balance-study.md §2.1`](../../docs/artifact-balance-study.md) — la formule littérale d'origine (`× rarityMult × actMult`) **double-comptait la rareté epic** (le saut de prix par acte intégrait déjà une prime de rareté). La version ci-dessus replie l'essentiel de la progression sur `actMult'` et ne garde qu'une **prime de rareté douce** (`rarityPremium'`).
 
 | Rareté | Couleur bordure | Plage de prix (achat) | Politique |
 |--------|-----------------|------------------------|-----------|
