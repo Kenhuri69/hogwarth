@@ -1727,6 +1727,35 @@ function loadModule(relPath, exportNames, globals = {}) {
 })();
 
 // ============================================================
+// 18. monsters.js — Gardiens des Chambres des Fondateurs (Phase 3, Lot 1)
+//    4 boss-gardiens epic (un par Maison), thématisés par élément, ét. 17+,
+//    drop signature = légende de la Maison. Brute Gryff/Pouf, caster Slyth/Serd.
+// ============================================================
+(function testFounderChamberGuardians() {
+  const { MONSTERS } = loadModule('js/monsters.js', ['MONSTERS']);
+  const { isBruteMonster } = loadModule(
+    'js/dungeon-scaling.js', ['isBruteMonster'], { victoryAchieved: true });
+
+  const G = {
+    gardien_lion:     { resist: 'feu',      weak: 'glace',    legend: 'sword_gryff',       brute: true  },
+    gardien_serpent:  { resist: 'ténèbres', weak: 'lumière',  legend: 'locket_slytherin',  brute: false },
+    gardien_aigle:    { resist: 'foudre',   weak: 'physique', legend: 'diademe_serdaigle', brute: false },
+    gardien_blaireau: { resist: 'physique', weak: 'feu',      legend: 'coupe_poufsouffle', brute: true  },
+  };
+  for (const id of Object.keys(G)) {
+    const m = MONSTERS.find(x => x.id === id);
+    const exp = G[id];
+    check(`${id}: entrée présente`, !!m);
+    check(`${id}: epic + minFloor 17`, !!m && m.epic === true && m.minFloor === 17);
+    check(`${id}: résiste ${exp.resist}, faible ${exp.weak}`,
+      !!m && m.resist.includes(exp.resist) && m.weak.includes(exp.weak));
+    check(`${id}: drop légende ${exp.legend}`,
+      !!m && Array.isArray(m.drops) && m.drops.some(d => d.itemId === exp.legend));
+    check(`${id}: profil ${exp.brute ? 'brute' : 'caster'}`, !!m && isBruteMonster(m) === exp.brute);
+  }
+})();
+
+// ============================================================
 // Rapport
 // ============================================================
 if (failures.length) {
