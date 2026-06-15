@@ -851,7 +851,7 @@ const ITEMS = [
   // cérémonielle par le Chef de Maison à la Quête Signature (HOUSE_PREMIUM).
   // tags : premium, premiumOf (base), houseAffinity, premiumFx (clé FX/son).
   // Gryffondor — Orbe Runique doré (base orbe_runique epic ×1.35).
-  { id:"orbe_runique_premium_gryff", name:"Orbe Runique de Godric", icon:"🔮", desc:"MAG+4 · +14 % dégâts de tous les éléments — Premium Gryffondor", type:"acc", slot:"trinket", formType:"orbe", rarity:"epic", bonusMag:4, bonusElemDmg:{ tous:0.14 }, power:4, price:0, premium:true, premiumOf:"orbe_runique", houseAffinity:"Gryffondor", premiumFx:"gryff", tint:"#d3a625", rarityScales:true, basePrice:9000 },
+  { id:"orbe_runique_premium_gryff", name:"Orbe Runique de Godric", icon:"🔮", desc:"MAG+6 LCK+3 · +20 % dégâts de tous les éléments · Crit +5 % — Premium Gryffondor", type:"acc", slot:"trinket", formType:"orbe", rarity:"epic", bonusMag:6, bonusLck:3, bonusElemDmg:{ tous:0.20 }, bonusCritChance:5, power:6, price:0, premium:true, premiumOf:"orbe_runique", houseAffinity:"Gryffondor", premiumFx:"gryff", tint:"#d3a625", rarityScales:true, basePrice:9000 },
   // Serpentard — Masque Rituel émeraude (base masque_rituel epic ×1.35).
   { id:"masque_rituel_premium_slyth", name:"Masque Rituel de Salazar", icon:"🎭", desc:"MAG+11 · Crit de sort +11 % mais PV max −5 — Premium Serpentard", type:"acc", slot:"head", formType:"masque", rarity:"epic", bonusMag:11, bonusSpellCritChance:11, bonusHpMax:-5, power:11, price:0, premium:true, premiumOf:"masque_rituel", houseAffinity:"Serpentard", premiumFx:"slyth", tint:"#1a472a", rarityScales:true, basePrice:9000 },
   // Serdaigle — Bâton Ancestral bleu éthéré (base baton_ancestral epic ×1.35).

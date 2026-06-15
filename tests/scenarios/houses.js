@@ -547,14 +547,17 @@ async function scenarioPremiumReward() {
       out.tags[house] = !!(it && it.premium === true && base && it.houseAffinity === house);
       if (!it || !base) { out.precooked[house] = false; continue; }
       let ok = true;
+      // Une Premium est AU MOINS le précuit standard (`base × premiumStat`), jamais
+      // moins ; elle peut être rehaussée à la main au-dessus (Lot B / B1 : Premium
+      // Gryffondor, base orbe_runique intacte) → comparaison `>=`, pas `===`.
       for (const f of ['bonusMag','bonusDef','bonusAtk','bonusSpellCritChance','regenHp','regenSp']) {
-        if (typeof base[f] === 'number' && base[f] > 0) ok = ok && (it[f] === premiumStat(base[f], base.rarity));
+        if (typeof base[f] === 'number' && base[f] > 0) ok = ok && (it[f] >= premiumStat(base[f], base.rarity));
       }
       // valeurs fractionnaires
       if (typeof base.bonusSpellCritDamage === 'number')
-        ok = ok && (it.bonusSpellCritDamage === premiumStat(base.bonusSpellCritDamage, base.rarity, { fractional: true }));
+        ok = ok && (it.bonusSpellCritDamage >= premiumStat(base.bonusSpellCritDamage, base.rarity, { fractional: true }));
       if (base.bonusElemDmg && typeof base.bonusElemDmg.tous === 'number')
-        ok = ok && (it.bonusElemDmg.tous === premiumStat(base.bonusElemDmg.tous, base.rarity, { fractional: true }));
+        ok = ok && (it.bonusElemDmg.tous >= premiumStat(base.bonusElemDmg.tous, base.rarity, { fractional: true }));
       // malus (≤0) jamais aggravé
       if (typeof base.bonusHpMax === 'number' && base.bonusHpMax < 0)
         ok = ok && (it.bonusHpMax === base.bonusHpMax);
