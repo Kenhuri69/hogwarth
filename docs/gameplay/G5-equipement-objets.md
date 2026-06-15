@@ -1,6 +1,11 @@
 # G5 — Équipement & objets
 
-**Statut :** 🟧 ébauche
+**Statut :** 🟩 à jour — couvre les systèmes récents (relecture design en continu)
+
+> 📊 **Statut réel (code)** : ✅ 11 slots, raretés, sorts d'équipement, concoction
+> de potions, Forge/Bibliothèque — modules : `js/inventory-core.js`, `js/inventory.js`,
+> `js/item-icons.js`, `js/potions.js`, `js/data.js` (`ITEMS`), `js/forge.js`, `js/library.js`.
+> Référence technique : [`CLAUDE.md`](../../CLAUDE.md).
 
 > Objectif du chapitre : décrire le **système d'équipement complet** —
 > les 11 slots, le flux d'équipement, les effets passifs, les raretés,

@@ -1,6 +1,11 @@
 # G2 — Combat
 
-**Statut :** 🟧 ébauche
+**Statut :** 🟩 à jour — couvre les systèmes récents (relecture design en continu)
+
+> 📊 **Statut réel (code)** : ✅ combat tour par tour, statuts, éléments, crit
+> double canal, Garde/Célérité — modules : `js/battle.js`, `js/battle-spells.js`,
+> `js/battle-ui.js`, `js/battle-rewards.js`, `js/battle-death.js`.
+> Référence technique : [`CLAUDE.md`](../../CLAUDE.md).
 
 > Objectif du chapitre : décrire le **cœur tactique** du jeu — le combat au
 > tour par tour, ses cinq actions, le système de statuts, les éléments

@@ -1,6 +1,11 @@
 # G8 — Difficulté & scaling
 
-**Statut :** 🟧 ébauche
+**Statut :** 🟩 à jour — couvre les systèmes récents (relecture design en continu)
+
+> 📊 **Statut réel (code)** : ✅ 4 difficultés, scaling par étage, taille des groupes,
+> anti-farm (plafonds), NG+ — modules : `js/dungeon-scaling.js`, `js/data.js`
+> (`DIFFICULTY_SETTINGS`), `js/battle.js` (`rollGroupSize`), `tools/sim-difficulty.js`.
+> Référence technique : [`CLAUDE.md`](../../CLAUDE.md).
 
 > Objectif du chapitre : décrire comment le jeu adapte sa résistance au joueur
 > — via le réglage de difficulté initial, le scaling des ennemis par étage, la

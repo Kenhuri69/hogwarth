@@ -1,6 +1,11 @@
 # G3 — Progression
 
-**Statut :** 🟧 ébauche
+**Statut :** 🟩 à jour — couvre les systèmes récents (relecture design en continu)
+
+> 📊 **Statut réel (code)** : ✅ niveaux, rework stats D1-D5 (Fortune/Célérité),
+> NG+ — modules : `js/inventory-core.js` (`recalculateStats`), `js/battle-rewards.js`
+> (`checkLevelUp`), `js/data.js` (constantes), `js/profile.js` (NG+).
+> Référence technique : [`CLAUDE.md`](../../CLAUDE.md).
 
 > Objectif du chapitre : décrire le système de montée en puissance du groupe —
 > niveaux, stats primaires et secondaires, rework D1–D5 (conversions inter-stats),

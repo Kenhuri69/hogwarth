@@ -137,9 +137,12 @@ livrés, câblés dans `index.html` et versionnés `?v=N`** :
 
 ### Côté gameplay (`docs/gameplay/`)
 
-- ⚠️ Les **9 chapitres G1-G9 sont en `🟧 ébauche`** et, comme les docs histoire,
-  **ne couvrent pas** les systèmes récents (Forge, Bibliothèque, Potions,
-  Téléportation, PvP live, Événements d'étage, Codex). → À mettre à niveau.
+- ✅ **Résolu (2026-06-14)** : les **9 chapitres G1-G9** sont à jour (`🟩`) et
+  **couvrent** les systèmes récents (Forge, Bibliothèque, Potions,
+  Téléportation, PvP, Événements d'étage, Codex, Mondes Parallèles / Atelier) —
+  audit : sections dédiées + valeurs sourcées du code. Chaque chapitre porte un
+  bandeau « 📊 Statut réel (code) » + modules `js/`. Quelques `❓` design ouverts
+  par chapitre (relecture en continu).
 
 ### Ce qui n'est **pas** manquant (contrairement à ce que les docs laissent croire)
 
@@ -201,7 +204,7 @@ ressentie** (Chambres, échos, variantes) au-delà du seul ★ N.
 
 | Tâche | Priorité | Chapitres / systèmes | Complexité | Dépendances |
 |-------|----------|----------------------|------------|-------------|
-| **Mettre à niveau `docs/gameplay/` G1-G9** (systèmes récents) | 🟠 Moyenne | G1-G9 | Faible | Phase 1 |
+| ~~**Mettre à niveau `docs/gameplay/` G1-G9** (systèmes récents)~~ ✅ **Fait (2026-06-14)** : audit → les 9 chapitres couvraient déjà les systèmes récents (sections dédiées, valeurs sourcées du code) ; passe de cohérence = bandeau « 📊 Statut réel (code) » + modules par chapitre, statut 🟧→🟩, READMEs alignés. | 🟠 Moyenne | G1-G9 | Faible | Phase 1 |
 | **Pass d'assets de fin** (illustrations victoire, SFX, fonds parchemin Codex par acte) | 🟠 Moyenne | 12, 14, `cinematics.js`, pipelines `tools/` | Moyenne | P2/P3 |
 | **Pass d'équilibrage de release** (`tools/sim-difficulty.js`, `check_difficulty.js` en CI) | 🟠 Moyenne | 13 | Moyenne | Contenu figé |
 | **QA parcours complet** : intro → tutoriel → Acte I-III → victoire → Boucle → Briser le Cycle, solo & duo, 4 Maisons | 🔴 Haute | Tous | Élevée | P1-P3 |

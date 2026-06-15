@@ -1,6 +1,11 @@
 # G7 — Donjon
 
-**Statut :** 🟧 ébauche
+**Statut :** 🟩 à jour — couvre les systèmes récents (relecture design en continu)
+
+> 📊 **Statut réel (code)** : ✅ génération, cellules spéciales, événements d'étage,
+> thèmes A/B/C/D, Boucle (Forge/Biblio/Gardien) — modules : `js/dungeon.js`,
+> `js/dungeon-spawning.js`, `js/movement*.js`, `js/floor-themes.js`, `js/floor-events.js`,
+> `js/floor-ambiance.js`, `js/renderer*.js`. Référence technique : [`CLAUDE.md`](../../CLAUDE.md).
 
 > Objectif du chapitre : décrire comment l'espace de jeu est généré à chaque
 > étage, quelles cellules spéciales le ponctuent et comment le joueur interagit
