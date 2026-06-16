@@ -10,11 +10,9 @@
 >
 > **Lot 2 — les 4 Gardiens des Chambres des Fondateurs**
 > (`gardien_lion`, `gardien_serpent`, `gardien_aigle`, `gardien_blaireau`,
-> PR #560, Boucle ét. 17+) : prompts ci-dessous (§3-§6). **`imgSrc` PAS encore
-> câblé** — ces gardiens utilisent aujourd'hui le fallback SVG de catégorie
-> (`être magique`). Câbler `imgSrc` AU MOMENT du dépôt du PNG, pas avant : un
-> `imgSrc` pointant sur un PNG absent afficherait une image cassée dans le
-> bestiaire (`getMonsterIconHtml` n'a pas d'`onerror`, `js/icons.js:1207`).
+> PR #560, Boucle ét. 17+) : prompts ci-dessous (§3-§6). **PNG livrés
+> (2026-06-16)** — détourés via `process_monster_png.py`, `imgSrc` câblé
+> dans `js/monsters.js` (78 PNG raster validés RGBA par smoke scénario 5).
 
 ## Pipeline de dépôt (une fois l'image générée)
 
