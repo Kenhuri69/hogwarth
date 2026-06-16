@@ -433,9 +433,16 @@ La Maison **colore la Boucle entière** — c'est la récompense de l'identité 
    quatre caveaux de mémoire, un par Fondateur. **Seule la Chambre de la Maison du
    héros s'illumine et l'accueille** ; les trois autres restent **hostiles et
    muettes**. Récompense atmosphérique forte et **différente à chaque partie**.
-3. 💡 **Écho de la quête signature** ([03 §3.8](03-trame-principale.md),
+3. ✅ **Écho de la quête signature** ([03 §3.8](03-trame-principale.md),
    [08 §8.5](08-quetes-et-sous-intrigues.md)) : la signature accomplie dans les
-   Actes I–III **revient en Boucle**, déchirée/altérée.
+   Actes I–III **revient en Boucle**, déchirée/altérée. **Livré** : à l'entrée
+   des Ruines (étage 14), `maybeSignatureEchoBeat` (`floor-ambiance.js`, câblé
+   dans `movement-floors.js`) joue un beat **house-aware** one-shot —
+   `SIGNATURE_ECHOES` porte la variante *signature accomplie* (« la braise
+   tient ») vs *laissée en plan* (« jamais rallumée »), Serpentard distinguant
+   `pact`/`defiance` (`slythPactChoice`). Débloque l'écho `echo_signature`
+   (Codex) + la relique vocale du Fondateur. Testé `tests/units.js` (§
+   `getSignatureEchoBeat`).
 
 > 💡 **Exemples concrets par Maison** (la « couleur » que prend la Boucle) :
 >
