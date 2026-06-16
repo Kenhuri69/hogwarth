@@ -94,6 +94,21 @@ function endBattle(won) {
     if (typeof monsterKills !== 'undefined') {
       enemyGroup.forEach(e => { if (e.id) monsterKills[e.id] = (monsterKills[e.id] || 0) + 1; });
     }
+    // Phase 3 Lot 3 — défaire un Gardien de Chambre révèle l'écho de sa Chambre
+    // (Codex « Mémoire des Ruines »). Les 3 Chambres autres que celle du héros
+    // (gardées) se débloquent ainsi ; celle du héros via l'étage-scène (§10.5).
+    if (typeof seenEchoes !== 'undefined' && seenEchoes) {
+      const CHAMBER_GUARDIAN_ECHO = {
+        gardien_lion:     'echo_chamber_gryffondor',
+        gardien_serpent:  'echo_chamber_serpentard',
+        gardien_aigle:    'echo_chamber_serdaigle',
+        gardien_blaireau: 'echo_chamber_poufsouffle',
+      };
+      enemyGroup.forEach(e => {
+        const echoId = e && e.id && CHAMBER_GUARDIAN_ECHO[e.id];
+        if (echoId) seenEchoes.add(echoId);
+      });
+    }
     // Compteurs de score Ironman (monstres vaincus + faits d'armes boss).
     if (typeof recordIronmanKills === 'function') recordIronmanKills(enemyGroup);
     const diff     = DIFFICULTY_SETTINGS[difficulty] || DIFFICULTY_SETTINGS['Normal'];

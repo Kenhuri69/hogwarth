@@ -506,7 +506,7 @@ s'assombrir.
 - 💡 **Sens narratif** : un Ténébreux n'est pas un nouvel ennemi — c'est
   **l'ombre projetée par les Ruines**, le **mythe du héros retourné** contre lui
   ([09 §9.10](09-bestiaire-et-lore.md)).
-- 🔧 **Gardiens des Chambres des Fondateurs** (Phase 3, **Lots 1-2/3 livrés**) :
+- 🔧 **Gardiens des Chambres des Fondateurs** (Phase 3, **Lots 1-3/3 — code livré, art déféré**) :
   4 boss-gardiens epic (`gardien_lion`/`gardien_serpent`/`gardien_aigle`/
   `gardien_blaireau`, `monsters.js`), un par Fondateur/Maison, thématisés par
   élément (feu/ténèbres/foudre/physique) ; drop signature = la **légende de
@@ -517,8 +517,13 @@ s'assombrir.
     des **trois Maisons autres** que `chosenHouse` ; la Chambre de la Maison du
     héros l'**accueille** (pas de combat) — fidèle à la **règle d'illumination
     §10.5**. Déterministe, idempotent, gaté `victoryAchieved`.
-  - **Lot 3 (reste)** : art PNG dédié + beat de promotion + révélation Codex à
-    la défaite. Voir `floor-ambiance.js` `FOUNDER_CHAMBERS`.
+  - **Lot 3 (code)** : à la 1re rencontre, chaque gardien **prend la parole** de
+    la voix de son Fondateur (`BOSS_PROMO_BEATS`, `battle.js`) ; le **vaincre
+    révèle l'écho de sa Chambre** au Codex « Mémoire des Ruines »
+    (`echo_chamber_<house>` → `seenEchoes`, `battle-rewards.js`) — défaire les
+    trois gardiens complète ainsi les Chambres autres que celle du héros.
+    **Reste seulement l'art PNG dédié** (fallback SVG catégorie en attendant).
+    Voir `floor-ambiance.js` `FOUNDER_CHAMBERS`.
 - ✅ **Bark one-shot « déjà tué »** (Phase 3) : face à un boss epic revenu en
   variante Ténébreuse (`variant === 'darkness'`), le héros actif lance une
   réplique dédiée *« Tu m'as déjà tué une fois… »* — événement `darkBoss` des

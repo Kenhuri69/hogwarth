@@ -262,6 +262,24 @@ const BOSS_PROMO_BEATS = {
     icon: '📯',
     line: "Le Héraut lève son cor d'os et n'attaque pas d'abord — il annonce : « Je ne suis pas la fin. Je suis ce qui vient avant. Abats-moi, et tu n'auras fait que sonner toi-même le prochain tour. Ce qui se referme ici se rouvrira plus bas, toujours. »",
   },
+  // Phase 3 Lot 3 — gardiens des Chambres des Fondateurs : chacun prend la
+  // parole à sa 1re rencontre, de la voix de son Fondateur.
+  gardien_lion: {
+    icon: '🦁',
+    line: "Le Gardien du Lion ne charge pas : il se plante en travers du seuil, brasiers ravivés. « On ne passe pas la porte de Godric par la force. On la mérite — ou on tombe. »",
+  },
+  gardien_serpent: {
+    icon: '🐍',
+    line: "Le Gardien du Serpent ne siffle pas d'abord : il jauge. « Salazar n'a laissé entrer que les rusés. Montre-moi lequel tu es — avant que le venin ne le décide pour toi. »",
+  },
+  gardien_aigle: {
+    icon: '🦅',
+    line: "Le Gardien de l'Aigle reste immobile, runes crépitantes. « Rowena ne gardait pas un trésor, mais une question. Réponds juste — ou la foudre répondra à ta place. »",
+  },
+  gardien_blaireau: {
+    icon: '🦡',
+    line: "Le Gardien du Blaireau s'interpose sans un mot, puis cède une phrase : « Helga a creusé cet abri pour les vivants. Prouve que tu en es un — je ne m'écarte que devant ceux qui tiennent. »",
+  },
 };
 
 // Orchestrateur one-shot : joue le monologue de promotion à la 1re rencontre du

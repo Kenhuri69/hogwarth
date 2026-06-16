@@ -1198,11 +1198,13 @@ function loadModule(relPath, exportNames, globals = {}) {
 //    BOSS_PROMO_BEATS (registre pur) + _maybeBossPromoBeat (one-shot)
 // ============================================================
 (function testBossPromo() {
-  // Registre pur — 2 boss promus, chacun avec une ligne de monologue.
+  // Registre pur — 2 boss historiques + 4 gardiens de Chambre (Phase 3 Lot 3),
+  // chacun avec une ligne de monologue.
   const pure = loadModule('js/battle.js', ['BOSS_PROMO_BEATS']);
   const { BOSS_PROMO_BEATS } = pure;
-  check('BOSS_PROMO_BEATS = 2 boss', Object.keys(BOSS_PROMO_BEATS).length === 2);
-  for (const id of ['maitre_detraqueur', 'heraut_tenebres']) {
+  check('BOSS_PROMO_BEATS = 6 boss', Object.keys(BOSS_PROMO_BEATS).length === 6);
+  for (const id of ['maitre_detraqueur', 'heraut_tenebres',
+                    'gardien_lion', 'gardien_serpent', 'gardien_aigle', 'gardien_blaireau']) {
     check(`${id} : ligne de promotion non vide`,
       BOSS_PROMO_BEATS[id] && typeof BOSS_PROMO_BEATS[id].line === 'string' && BOSS_PROMO_BEATS[id].line.length > 20);
   }
