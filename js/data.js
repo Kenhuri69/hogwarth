@@ -851,6 +851,8 @@ const ITEMS = [
   { id:"talisman_fondateurs",  name:"Talisman des Fondateurs",icon:"📿", desc:"MAG+4 DEF+4 · Régen +2 PV/+1 PM par tour",     type:"acc",  slot:"amulet",  formType:"talisman",  rarity:"epic",     bonusMag:4, bonusDef:4, regenHp:2, regenSp:1, power:4, price:1200, tint:"#caa84c" },
   { id:"masque_rituel",        name:"Masque Rituel",          icon:"🎭", desc:"MAG+8 · Crit de sort +8 % mais PV max −5",     type:"acc",  slot:"head",    formType:"masque",    rarity:"epic",     bonusMag:8, bonusSpellCritChance:8, bonusHpMax:-5, power:8, price:1100, tint:"#5b2c6f" },
   { id:"gantelets_aurors",     name:"Gantelets des Aurors",   icon:"🥊", desc:"ATK+5 STR+3 · Crit phys. +6 %",                type:"acc",  slot:"hands",   formType:"gantelets", rarity:"epic",     bonusAtk:5, bonusStr:3, bonusCritChance:6, power:5, price:1000, tint:"#2c5f8a" },
+  // Lot E2 — 1er epic du slot belt (étude §5.2/§6.7), acte III / Hogsmeade corrompu
+  { id:"ceinture_aurors",      name:"Ceinturon des Aurors",   icon:"➿", desc:"DEF+3 END+3 · Crit phys. +4 %",                type:"acc",  slot:"belt",    family:"belt_auror",  rarity:"epic",     bonusDef:3, bonusEnd:3, bonusCritChance:4, power:3, price:900, tint:"#c8a24a" },
   { id:"orbe_runique",         name:"Orbe Runique",           icon:"🔮", desc:"MAG+3 · +10 % dégâts de tous les éléments",    type:"acc",  slot:"trinket", formType:"orbe",      rarity:"epic",     bonusMag:3, bonusElemDmg:{ tous:0.10 }, power:3, price:1200, tint:"#9b59d0" },
   // ── Artefacts & Reliquaires 2.0 — P2 variantes Premium (plan §1.5) ──
   // Variantes recoloriées par Maison d'un artefact de base, stats PRÉ-CUITES

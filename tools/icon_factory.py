@@ -1221,6 +1221,22 @@ RECIPES: Dict[str, Recipe] = {
             {"kind": "emboss", "region": "strap", "color": ( 52,  34,  18)},
         ],
     ),
+    # Lot E2 — 1er epic du slot belt (Ceinturon des Aurors)
+    "ceinture_aurors": Recipe(
+        id="ceinture_aurors", name="Ceinturon des Aurors", rarity="epic", material="leather",
+        silhouette={"kind": "svg", "file": "belt.svg"},
+        fills={
+            "strap":  ( 58,  40,  24),    # cuir d'ordonnance brun sombre
+            "buckle": (206, 170,  86),    # boucle d'or des Aurors
+            "holes":  ( 32,  22,  12),
+            "tongue": ( 88,  62,  36),
+        },
+        accents=[
+            {"kind": "emboss", "region": "strap", "color": ( 34,  22,  12)},
+            {"kind": "runes",  "region": "strap", "color": (214, 182, 104), "count": 4},
+            {"kind": "gem_facet_shine", "region": "buckle", "color": (244, 224, 150)},
+        ],
+    ),
     "talisman_tactique": Recipe(
         id="talisman_tactique", name="Talisman du Tacticien", rarity="rare", material="metal",
         silhouette={"kind": "svg", "file": "gem-pendant.svg"},
