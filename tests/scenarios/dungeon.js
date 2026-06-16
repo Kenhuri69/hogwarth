@@ -885,6 +885,58 @@ async function scenarioChamberGuardians() {
   await browser.close();
 }
 
+// Phase 3 Lot 3 — polish des gardiens : beat de promotion (1re rencontre) +
+// révélation de l'écho de Chambre au Codex à la défaite.
+async function scenarioChamberGuardianPolish() {
+  console.log('\n── Scénario endgame : gardiens — promo beat + Codex à la défaite ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // T1 : les 4 gardiens ont un beat de promotion.
+  const t1 = await page.evaluate(() =>
+    ['gardien_lion', 'gardien_serpent', 'gardien_aigle', 'gardien_blaireau']
+      .every(id => typeof BOSS_PROMO_BEATS !== 'undefined' && !!BOSS_PROMO_BEATS[id]));
+  console.log('  T1 promo beats:', t1);
+  assert(t1, 'les 4 gardiens doivent avoir un beat de promotion');
+
+  // T2 : le beat se joue une seule fois (one-shot via seenScriptedBeat).
+  const t2 = await page.evaluate(() => {
+    seenScriptedBeat = new Set();
+    enemyGroup = [scaleMonster(MONSTERS.find(m => m.id === 'gardien_serpent'), 17)];
+    const first  = _maybeBossPromoBeat();
+    const second = _maybeBossPromoBeat();
+    return { first, second };
+  });
+  console.log('  T2 promo one-shot:', t2);
+  assert(t2.first === true,  '1re rencontre → beat joué');
+  assert(t2.second === false, '2e appel → no-op (one-shot)');
+
+  // T3 : défaire un gardien révèle l'écho de sa Chambre (seenEchoes).
+  const t3 = await page.evaluate(() => {
+    seenEchoes = new Set();
+    inBattle = true;
+    enemyGroup = [scaleMonster(MONSTERS.find(m => m.id === 'gardien_aigle'), 17)];
+    enemyGroup[0].currentHp = 0;
+    try { endBattle(true); } catch (e) { return { err: String(e) }; }
+    return {
+      aigle: seenEchoes.has('echo_chamber_serdaigle'),
+      // un non-gardien ne débloque rien
+      lionAbsent: !seenEchoes.has('echo_chamber_gryffondor'),
+    };
+  });
+  console.log('  T3 codex à la défaite:', t3);
+  assert(!t3.err, `endBattle ne doit pas throw (${t3.err || ''})`);
+  assert(t3.aigle, 'défaire gardien_aigle → écho Chambre de l\'Aigle révélé');
+  assert(t3.lionAbsent, 'aucun écho non concerné débloqué');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ promo beat + Codex à la défaite OK');
+  await browser.close();
+}
+
 async function scenarioDarkVariant() {
   console.log('\n── Scénario endgame 3 : variant darkness + scaling Ténèbres ──');
   const { browser, page, errors } = await launchGame();
@@ -3434,4 +3486,4 @@ async function scenarioStairsReachable() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioCh13EndgamePivot, scenarioScriptedFloorBeats, scenarioVoixDesRuines, scenarioDungeonLife, scenarioFountain, scenarioRefuge, scenarioSoloSoftlock, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioRespawn20Percent, scenarioVictoryTrigger, scenarioStairsGated, scenarioFinalBossGuaranteed, scenarioChamberGuardians, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioFloorTheming, scenarioZoneDEchoes, scenarioZoneDFx, scenarioFounderChamber, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioRoomOfRequirement, scenarioStairsReachable] };
+module.exports = { scenarios: [scenarioCh13EndgamePivot, scenarioScriptedFloorBeats, scenarioVoixDesRuines, scenarioDungeonLife, scenarioFountain, scenarioRefuge, scenarioSoloSoftlock, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioRespawn20Percent, scenarioVictoryTrigger, scenarioStairsGated, scenarioFinalBossGuaranteed, scenarioChamberGuardians, scenarioChamberGuardianPolish, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioFloorTheming, scenarioZoneDEchoes, scenarioZoneDFx, scenarioFounderChamber, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioRoomOfRequirement, scenarioStairsReachable] };
