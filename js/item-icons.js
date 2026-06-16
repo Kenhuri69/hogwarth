@@ -114,6 +114,7 @@ const ITEM_ICON_REGISTRY = {
   bottes_lestes:       'img/icons/items/bottes_apprenti.png',
   cape_doublee:        'img/icons/items/cape_voyageur.png',
   ceinture_etudiant:   'img/icons/items/ceinture_cuir.png',
+  ceinture_aurors:     'img/icons/items/ceinture_alchimiste.png',  // Lot E2 (repli)
   amulette_protection: 'img/icons/items/amulette_protection.png',
   circlet_serdaigle:   'img/icons/items/circlet_serdaigle.png',
   // Easter egg « Salle sur Demande » — réemploi du visuel circlet (cf. diademe_antique).
@@ -347,6 +348,7 @@ const ITEM_ICON_NEW_REGISTRY = {
   serre_tete_etude:     'img/icons_new/serre_tete_etude_64.png',
   bottes_lestes:        'img/icons_new/bottes_lestes_64.png',
   ceinture_etudiant:    'img/icons_new/ceinture_etudiant_64.png',
+  ceinture_aurors:      'img/icons_new/ceinture_aurors_64.png',   // Lot E2
   ceinture_cuir:        'img/icons_new/ceinture_cuir_64.png',
   ceinture_alchimiste:  'img/icons_new/ceinture_alchimiste_64.png',
   chapeau_apprenti:     'img/icons_new/chapeau_apprenti_64.png',

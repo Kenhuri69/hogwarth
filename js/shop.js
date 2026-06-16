@@ -104,6 +104,7 @@ const SHOP_CATALOG = [
   { id: "baton_ancestral",      minFloor: 9 },
   { id: "masque_rituel",        minFloor: 9 },
   { id: "gantelets_aurors",     minFloor: 10 },
+  { id: "ceinture_aurors",      minFloor: 9 },   // Lot E2 — 1er epic du slot belt
   // Consommables endgame (post-victoire) — voir ENDGAME_PLAN.md §7.10
   { id: "potion_xl",           minFloor: 15 },
   { id: "potion_xl_sp",        minFloor: 15 },
