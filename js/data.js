@@ -763,6 +763,14 @@ const ITEMS = [
   { id:"anneau_courage",   name:"Anneau du Courage",      icon:"💍", desc:"ATK+2 LCK+1",        type:"acc",   slot:"ring",  family:"ring_courage",  rarity:"rare",   bonusAtk:2, bonusLck:1, power:2, price:280, tint:"#c2453a" },
   { id:"bottes_silence",   name:"Bottes du Silence",      icon:"🥾", desc:"AGI+3 LCK+1",        type:"acc",   slot:"feet",  family:"boots_silence", rarity:"epic",   bonusAgi:3, bonusLck:1, power:3, price:520 },
   { id:"talisman_tactique",name:"Talisman du Tacticien",  icon:"🔮", desc:"LCK+2 MAG+1",        type:"acc",   slot:"trinket",family:"talisman_tact",rarity:"rare",   bonusLck:2, bonusMag:1, power:2, price:380 },
+  // Lot E1 — palier uncommon mid-game (plan artifact-remediation §Lot E ; comble
+  // les slots head/body/feet/cloak/belt sans uncommon). houseAffinity Pouf ×2
+  // (rééquilibrage slots-faveur, étude §5.3).
+  { id:"serre_tete_etude", name:"Serre-tête d'Étude",     icon:"🎓", desc:"MAG+1 INT+1 DEF+1",  type:"acc",   slot:"head",  family:"headband_study", rarity:"uncommon", bonusMag:1, bonusInt:1, bonusDef:1, power:1, price:180, houseAffinity:"Serdaigle", tint:"#5c8cbe" },
+  { id:"plastron_renforce",name:"Plastron Renforcé",      icon:"🦺", desc:"DEF+2 END+1",        type:"armor", slot:"body",  family:"plastron_reinf",  rarity:"uncommon", bonusDef:2, bonusEnd:1, power:2, price:200, houseAffinity:"Poufsouffle", tint:"#c8a24a" },
+  { id:"bottes_lestes",    name:"Bottes Lestes",          icon:"🥾", desc:"AGI+2 LCK+1",        type:"acc",   slot:"feet",  family:"boots_leste",     rarity:"uncommon", bonusAgi:2, bonusLck:1, power:2, price:170, tint:"#9a7d4f" },
+  { id:"cape_doublee",     name:"Cape Doublée",           icon:"🧥", desc:"DEF+1 AGI+1 END+1",  type:"acc",   slot:"cloak", family:"cloak_doublee",   rarity:"uncommon", bonusDef:1, bonusAgi:1, bonusEnd:1, power:1, price:180 },
+  { id:"ceinture_etudiant",name:"Ceinture d'Étudiant",    icon:"➿", desc:"DEF+1 LCK+1 END+1",  type:"acc",   slot:"belt",  family:"belt_etudiant",   rarity:"uncommon", bonusDef:1, bonusLck:1, bonusEnd:1, power:1, price:170, houseAffinity:"Poufsouffle", tint:"#c8a24a" },
   // ── Phase 3b : récompenses de quêtes (PNJ donneurs) ──
   // Anneau remis par le portrait de Dumbledore (quête `anneau_dumbledore`). Pierre noire sertie d'or.
   { id:"anneau_resurrection",name:"Anneau de la Résurrection",icon:"💍", desc:"MAG+3 LCK+4 · Apprend Reparo", type:"acc", slot:"ring",  family:"ring_resurrection", rarity:"epic", bonusMag:3, bonusLck:4, power:3, grantsSpell:"Reparo", price:0, tint:"#1a1a1a" },

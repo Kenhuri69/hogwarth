@@ -1187,6 +1187,40 @@ RECIPES: Dict[str, Recipe] = {
             {"kind": "orb_glow", "region": "shaft", "color": ( 96, 112, 150)},
         ],
     ),
+    # Lot E1 — palier uncommon mid-game (plan artifact-remediation §Lot E)
+    "serre_tete_etude": Recipe(
+        id="serre_tete_etude", name="Serre-tête d'Étude", rarity="uncommon", material="metal",
+        silhouette={"kind": "svg", "file": "tiara.svg"},
+        fills={"band":   (150, 120,  52), "points": (168, 136,  60),
+               "gem":    ( 70, 110, 170), "side":   (100, 140, 190)},
+        accents=[{"kind": "gem_facet_shine", "region": "gem", "color": (188, 222, 255)}],
+    ),
+    "bottes_lestes": Recipe(
+        id="bottes_lestes", name="Bottes Lestes", rarity="uncommon", material="leather",
+        silhouette={"kind": "svg", "file": "boot.svg"},
+        fills={
+            "shaft": (110,  86,  52),     # cuir souple fauve
+            "foot":  ( 92,  70,  42),
+            "sole":  ( 50,  38,  24),
+            "lace":  (150, 128,  80),
+        },
+        accents=[
+            {"kind": "emboss", "region": "shaft", "color": ( 56,  42,  24)},
+        ],
+    ),
+    "ceinture_etudiant": Recipe(
+        id="ceinture_etudiant", name="Ceinture d'Étudiant", rarity="uncommon", material="leather",
+        silhouette={"kind": "svg", "file": "belt.svg"},
+        fills={
+            "strap":  ( 96,  64,  36),    # cuir brun simple
+            "buckle": (200, 164,  84),    # laiton (clin d'œil Poufsouffle)
+            "holes":  ( 52,  32,  16),
+            "tongue": (124,  82,  46),
+        },
+        accents=[
+            {"kind": "emboss", "region": "strap", "color": ( 52,  34,  18)},
+        ],
+    ),
     "talisman_tactique": Recipe(
         id="talisman_tactique", name="Talisman du Tacticien", rarity="rare", material="metal",
         silhouette={"kind": "svg", "file": "gem-pendant.svg"},

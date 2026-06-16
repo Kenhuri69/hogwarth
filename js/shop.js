@@ -87,6 +87,12 @@ const SHOP_CATALOG = [
   { id: "grimoire_avance",      minFloor: 10 },
   // Artefacts & Reliquaires 2.0 — P3 : nouvelles formes vendables (plan §1.4/§1.7).
   // Mid-game (uncommon/rare) ; les endgame (epic) à haut étage (Hogsmeade corrompu).
+  // Lot E1 — palier uncommon mid-game (plan artifact-remediation §Lot E)
+  { id: "serre_tete_etude",     minFloor: 3 },
+  { id: "plastron_renforce",    minFloor: 4 },
+  { id: "bottes_lestes",        minFloor: 3 },
+  { id: "cape_doublee",         minFloor: 4 },
+  { id: "ceinture_etudiant",    minFloor: 3 },
   { id: "orbe_flamme",          minFloor: 4 },
   { id: "orbe_givre",           minFloor: 4 },
   { id: "baton_apprenti",       minFloor: 4 },
