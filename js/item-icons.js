@@ -105,6 +105,15 @@ const ITEM_ICON_REGISTRY = {
   ceinture_cuir:       'img/icons/items/ceinture_cuir.png',
   anneau_argent:       'img/icons/items/anneau_argent.png',
   cape_voyageur:       'img/icons/items/cape_voyageur.png',
+  // Lot E1 — uncommons : repli legacy (PNG existant réutilisé). serre_tete /
+  // bottes_lestes / ceinture_etudiant ont aussi une icône painterly dédiée
+  // (ITEM_ICON_NEW_REGISTRY, prioritaire) ; plastron/cape réutilisent (pas de
+  // part SVG body/cloak — convention robe_combat/cape_combat).
+  serre_tete_etude:    'img/icons/items/circlet_serdaigle.png',
+  plastron_renforce:   'img/icons/items/robe1.png',
+  bottes_lestes:       'img/icons/items/bottes_apprenti.png',
+  cape_doublee:        'img/icons/items/cape_voyageur.png',
+  ceinture_etudiant:   'img/icons/items/ceinture_cuir.png',
   amulette_protection: 'img/icons/items/amulette_protection.png',
   circlet_serdaigle:   'img/icons/items/circlet_serdaigle.png',
   // Easter egg « Salle sur Demande » — réemploi du visuel circlet (cf. diademe_antique).
@@ -334,6 +343,10 @@ const ITEM_ICON_NEW_REGISTRY = {
   bottes_apprenti:      'img/icons_new/bottes_apprenti_64.png',
   bottes_dragon:        'img/icons_new/bottes_dragon_64.png',
   gants_apprenti:       'img/icons_new/gants_apprenti_64.png',
+  // Lot E1 — icônes painterly dédiées (tiara / boot / belt)
+  serre_tete_etude:     'img/icons_new/serre_tete_etude_64.png',
+  bottes_lestes:        'img/icons_new/bottes_lestes_64.png',
+  ceinture_etudiant:    'img/icons_new/ceinture_etudiant_64.png',
   ceinture_cuir:        'img/icons_new/ceinture_cuir_64.png',
   ceinture_alchimiste:  'img/icons_new/ceinture_alchimiste_64.png',
   chapeau_apprenti:     'img/icons_new/chapeau_apprenti_64.png',
