@@ -349,6 +349,10 @@ const ITEM_ICON_NEW_REGISTRY = {
   bottes_lestes:        'img/icons_new/bottes_lestes_64.png',
   ceinture_etudiant:    'img/icons_new/ceinture_etudiant_64.png',
   ceinture_aurors:      'img/icons_new/ceinture_aurors_64.png',   // Lot E2
+  // Art raster bespoke (LLM image) — plastron/cape passent du repli legacy
+  // à une icône dédiée icons_new.
+  plastron_renforce:    'img/icons_new/plastron_renforce_64.png',
+  cape_doublee:         'img/icons_new/cape_doublee_64.png',
   ceinture_cuir:        'img/icons_new/ceinture_cuir_64.png',
   ceinture_alchimiste:  'img/icons_new/ceinture_alchimiste_64.png',
   chapeau_apprenti:     'img/icons_new/chapeau_apprenti_64.png',
