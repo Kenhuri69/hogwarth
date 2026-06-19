@@ -151,6 +151,15 @@ function loadModule(relPath, exportNames, globals = {}) {
   check('16 héros : événement loopEcho couvert', allHaveLoopEcho);
   check('bark harry/loopEcho non vide', typeof pickHeroBark('harry', 'loopEcho', { rng: rng0 }) === 'string');
 
+  // Phase 3 — couche légère `darkBossDown` (clôture à la défaite d'un boss Ténébreux).
+  let allHaveDarkBossDown = true;
+  for (const k of Object.keys(HERO_BARKS)) {
+    if (!Array.isArray(HERO_BARKS[k].darkBossDown) || !HERO_BARKS[k].darkBossDown.length) allHaveDarkBossDown = false;
+  }
+  check('16 héros : événement darkBossDown couvert', allHaveDarkBossDown);
+  check('darkBossDown ≠ darkBoss (harry)',
+    pickHeroBark('harry', 'darkBossDown', { rng: rng0 }) !== pickHeroBark('harry', 'darkBoss', { rng: rng0 }));
+
   // L8 — beats de trame scénarisés rattachés au bon héros (05 §5.4.2).
   check('celeste.fountainCold présent',
     Array.isArray(HERO_BARKS.celeste.fountainCold) && HERO_BARKS.celeste.fountainCold.length > 0);
