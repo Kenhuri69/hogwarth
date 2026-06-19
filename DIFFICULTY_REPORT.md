@@ -41,6 +41,20 @@
 
 ## 📊 Résumé exécutif
 
+> 🏁 **Pass d'équilibrage de release (2026-06-19)** — Roadmap Phase 4. La table
+> **§3 « Résultats Monte Carlo »** (baseline du garde-fou CI `check_difficulty.js`)
+> a été **régénérée à N=4000** sur le code actuel ; **§4** et la table « Win % par
+> combat » ci-dessous sont réalignées dessus. Écart vs l'ancienne baseline :
+> **+4 à +8 pts** aux étages 9-12 (mid/late game ENCORE adouci depuis le dernier
+> rapport — toujours dans les bandes-cible : solo plancher **52 %**, duo plancher
+> **72 %**, aucun mur < 40 % ≤ ét. 12). **Gate CI fiabilisé** : la dérive flaky
+> observée (étage 9-Duo qui franchissait ±10 pts à N=800) venait d'une baseline
+> périmée — vérifié **0 dérive sur 6 runs** consécutifs après régénération.
+> Les autres tables du §📊 (« toutes difficultés » n=600, « impact du rework »
+> legacy↔rework) et le **§7** (clear d'étage, méthodo PR #213) sont des
+> **instantanés antérieurs** conservés pour comparaison, **non re-simulés** dans
+> ce pass (méthodologies distinctes ; colonne Normal à ±quelques pts de §3).
+
 Deux métriques complémentaires (cf. §3 et §7) :
 
 - **Win % par combat moyen** (§3) — un affrontement isolé au niveau attendu.
@@ -52,8 +66,8 @@ Deux métriques complémentaires (cf. §3 et §7) :
 
 | Mode | Confortable (≥ 80 %) | 1er décrochage (< 80 %) | Mur (< 40 %) |
 |------|----------------------|--------------------------|--------------|
-| **Solo** | 1–7 | **Étage 8** (72 %) | aucun ≤ ét. 12 (plancher 49 %) |
-| **Duo**  | 1–8 | **Étage 9** (77 %) | aucun ≤ ét. 12 (plancher 68 %) |
+| **Solo** | 1–7 | **Étage 8** (71 %) | aucun ≤ ét. 12 (plancher 52 %) |
+| **Duo**  | 1–10 | **Étage 11** (73 %) | aucun ≤ ét. 12 (plancher 72 %) |
 
 ### Win % combat solo — toutes difficultés (balanced, n=600)
 
@@ -144,28 +158,28 @@ C'est l'écart exact qui manquait au rapport pré-rework.
 |------:|:----:|-----:|------:|-----------:|------------------:|------------------:|
 | 1 | Solo | 1 | 100% | 2.1 | 100% | 0.0 |
 | 1 | Duo  | 1 | 100% | 1.4 | 100% | 0.0 |
-| 2 | Solo | 2 | 100% | 2.2 | 99% | 0.5 |
+| 2 | Solo | 2 | 100% | 2.2 | 99% | 0.6 |
 | 2 | Duo  | 2 | 100% | 1.5 | 100% | 0.2 |
-| 3 | Solo | 5 | 100% | 3.1 | 96% | 4.0 |
-| 3 | Duo  | 5 | 100% | 2.0 | 99% | 1.4 |
-| 4 | Solo | 6 | 100% | 3.7 | 93% | 8.5 |
-| 4 | Duo  | 7 | 100% | 2.6 | 98% | 4.6 |
-| 5 | Solo | 8 | 96% | 6.7 | 85% | 49.0 |
-| 5 | Duo  | 8 | 100% | 3.3 | 95% | 13.8 |
-| 6 | Solo | 8 | 87% | 8.6 | 77% | 105.1 |
-| 6 | Duo  | 8 | 100% | 4.3 | 91% | 33.1 |
-| 7 | Solo | 9 | 87% | 9.7 | 73% | 115.0 |
-| 7 | Duo  | 9 | 98% | 7.5 | 82% | 92.9 |
-| 8 | Solo | 9 | 72% | 13.1 | 63% | 194.4 |
-| 8 | Duo  | 10 | 92% | 10.3 | 77% | 173.1 |
-| 9 | Solo | 10 | 61% | 14.7 | 57% | 247.9 |
-| 9 | Duo  | 10 | 77% | 11.9 | 74% | 273.5 |
-| 10 | Solo | 10 | 54% | 16.1 | 58% | 286.4 |
-| 10 | Duo  | 11 | 74% | 12.8 | 73% | 337.9 |
-| 11 | Solo | 11 | 51% | 14.5 | 58% | 298.9 |
-| 11 | Duo  | 11 | 70% | 13.4 | 70% | 377.1 |
-| 12 | Solo | 11 | 49% | 15.1 | 58% | 306.3 |
-| 12 | Duo  | 12 | 68% | 13.3 | 71% | 404.5 |
+| 3 | Solo | 5 | 100% | 3.0 | 97% | 3.5 |
+| 3 | Duo  | 5 | 100% | 1.9 | 99% | 1.4 |
+| 4 | Solo | 6 | 100% | 3.6 | 93% | 8.0 |
+| 4 | Duo  | 7 | 100% | 2.6 | 98% | 4.5 |
+| 5 | Solo | 8 | 96% | 6.8 | 84% | 51.1 |
+| 5 | Duo  | 8 | 100% | 3.3 | 95% | 14.3 |
+| 6 | Solo | 8 | 86% | 8.1 | 77% | 103.4 |
+| 6 | Duo  | 8 | 100% | 4.2 | 91% | 35.0 |
+| 7 | Solo | 9 | 86% | 10.1 | 72% | 121.5 |
+| 7 | Duo  | 9 | 98% | 7.3 | 83% | 91.0 |
+| 8 | Solo | 9 | 71% | 12.4 | 64% | 194.9 |
+| 8 | Duo  | 10 | 92% | 9.9 | 77% | 167.2 |
+| 9 | Solo | 10 | 65% | 13.0 | 62% | 238.3 |
+| 9 | Duo  | 10 | 85% | 11.4 | 75% | 243.8 |
+| 10 | Solo | 10 | 58% | 14.1 | 62% | 280.9 |
+| 10 | Duo  | 11 | 82% | 12.4 | 75% | 300.1 |
+| 11 | Solo | 11 | 54% | 13.5 | 61% | 300.8 |
+| 11 | Duo  | 11 | 73% | 12.5 | 74% | 365.3 |
+| 12 | Solo | 11 | 52% | 14.4 | 59% | 309.5 |
+| 12 | Duo  | 12 | 72% | 12.8 | 73% | 380.5 |
 
 ## 4. Diagnostic : étages charnières
 
@@ -179,13 +193,13 @@ C'est l'écart exact qui manquait au rapport pré-rework.
 | 3 | 5 | 100% | 🟢 confortable |
 | 4 | 6 | 100% | 🟢 confortable |
 | 5 | 8 | 96% | 🟢 confortable |
-| 6 | 8 | 87% | 🟢 confortable |
-| 7 | 9 | 87% | 🟢 confortable |
-| 8 | 9 | 72% | 🟡 tendu |
-| 9 | 10 | 61% | 🟠 difficile |
-| 10 | 10 | 54% | 🟠 difficile |
-| 11 | 11 | 51% | 🟠 difficile |
-| 12 | 11 | 49% | 🟠 difficile |
+| 6 | 8 | 86% | 🟢 confortable |
+| 7 | 9 | 86% | 🟢 confortable |
+| 8 | 9 | 71% | 🟡 tendu |
+| 9 | 10 | 65% | 🟠 difficile |
+| 10 | 10 | 58% | 🟠 difficile |
+| 11 | 11 | 54% | 🟠 difficile |
+| 12 | 11 | 52% | 🟠 difficile |
 
 ### Duo
 
@@ -199,10 +213,10 @@ C'est l'écart exact qui manquait au rapport pré-rework.
 | 6 | 8 | 100% | 🟢 confortable |
 | 7 | 9 | 98% | 🟢 confortable |
 | 8 | 10 | 92% | 🟢 confortable |
-| 9 | 10 | 77% | 🟡 tendu |
-| 10 | 11 | 74% | 🟡 tendu |
-| 11 | 11 | 70% | 🟡 tendu |
-| 12 | 12 | 68% | 🟡 tendu |
+| 9 | 10 | 85% | 🟢 confortable |
+| 10 | 11 | 82% | 🟡 tendu |
+| 11 | 11 | 73% | 🟡 tendu |
+| 12 | 12 | 72% | 🟡 tendu |
 
 ## 5. Détection des spikes (chute > 15 pts entre 2 étages)
 

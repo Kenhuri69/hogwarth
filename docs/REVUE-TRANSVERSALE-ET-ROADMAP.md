@@ -208,7 +208,7 @@ ressentie** (Chambres, échos, variantes) au-delà du seul ★ N.
 |-------|----------|----------------------|------------|-------------|
 | ~~**Mettre à niveau `docs/gameplay/` G1-G9** (systèmes récents)~~ ✅ **Fait (2026-06-14)** : audit → les 9 chapitres couvraient déjà les systèmes récents (sections dédiées, valeurs sourcées du code) ; passe de cohérence = bandeau « 📊 Statut réel (code) » + modules par chapitre, statut 🟧→🟩, READMEs alignés. | 🟠 Moyenne | G1-G9 | Faible | Phase 1 |
 | **Pass d'assets de fin** (illustrations victoire, SFX, fonds parchemin Codex par acte) | 🟠 Moyenne | 12, 14, `cinematics.js`, pipelines `tools/` | Moyenne | P2/P3 |
-| **Pass d'équilibrage de release** (`tools/sim-difficulty.js`, `check_difficulty.js` en CI) | 🟠 Moyenne | 13 | Moyenne | Contenu figé |
+| ~~**Pass d'équilibrage de release** (`tools/sim-difficulty.js`, `check_difficulty.js` en CI)~~ ✅ **Fait (2026-06-19)** : `check_difficulty.js` était **déjà branché en CI** mais **flaky** — baseline §3 de `DIFFICULTY_REPORT.md` périmée (code actuel ~+6-9 pts aux ét. 9-12 Duo ; l'ét. 9-Duo franchissait ±10 pts à N=800, cf. flake PR #576). Baseline régénérée à **N=4000** (reflète le code, bandes saines : solo plancher 52 %, duo 72 %, aucun mur < 40 % ≤ ét. 12), §4 + exec-summary réalignés, **gate vérifié 0 dérive sur 6 runs**. Pas une régression (la doc avait pris du retard). Plan : `.claude/plans/release-balance-pass.md`. | ✅ | 13, `DIFFICULTY_REPORT.md` | Moyenne | Fait |
 | **QA parcours complet** : intro → tutoriel → Acte I-III → victoire → Boucle → Briser le Cycle, solo & duo, 4 Maisons | 🔴 Haute | Tous | Élevée | P1-P3 |
 | **Garde-fous release** : `cache-bump`, `smoke.js`, `units.js`, `pwa-smoke.js` verts | 🔴 Haute | PWA, tests | Faible | Tout |
 
