@@ -143,6 +143,14 @@ function loadModule(relPath, exportNames, globals = {}) {
   check('darkBoss ≠ bossAppear (harry)',
     pickHeroBark('harry', 'darkBoss', { rng: rng0 }) !== pickHeroBark('harry', 'bossAppear', { rng: rng0 }));
 
+  // Phase 3 — événement `loopEcho` (voix à l'affleurement d'un écho temporel en Boucle).
+  let allHaveLoopEcho = true;
+  for (const k of Object.keys(HERO_BARKS)) {
+    if (!Array.isArray(HERO_BARKS[k].loopEcho) || !HERO_BARKS[k].loopEcho.length) allHaveLoopEcho = false;
+  }
+  check('16 héros : événement loopEcho couvert', allHaveLoopEcho);
+  check('bark harry/loopEcho non vide', typeof pickHeroBark('harry', 'loopEcho', { rng: rng0 }) === 'string');
+
   // L8 — beats de trame scénarisés rattachés au bon héros (05 §5.4.2).
   check('celeste.fountainCold présent',
     Array.isArray(HERO_BARKS.celeste.fountainCold) && HERO_BARKS.celeste.fountainCold.length > 0);

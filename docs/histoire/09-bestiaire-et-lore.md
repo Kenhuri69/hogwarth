@@ -850,8 +850,18 @@ jusqu'à l'os, plus profonde, plus sombre.
    SFX). → renforce le gradient §9.1.2 visuellement.
 4. **Dialogues conditionnels PNJ ↔ créature** + **hooks d'antre** (réutilisent
    l'existant). → profondeur narrative.
-5. **Variantes Maison/héros** (`houseSpecificVariant`) + **barks Ténébreux**
-   (❓ après arbitrage utilisateur). → rejouabilité, en dernier (touche le combat).
+5. **Variantes Maison/héros** (`houseSpecificVariant`) + **barks Ténébreux**.
+   → rejouabilité, en dernier (touche le combat).
+   - ✅ **Barks Ténébreux — tranché (2026-06-19)** : livrés et **étendus**.
+     `darkBoss` (#559, « Tu m'as déjà tué une fois », 16 héros) **+** `darkLoop`
+     (franchissement de Boucle) **+** `loopEcho` (Phase 3, 2026-06-19 : voix à
+     l'affleurement d'un **écho temporel** en Boucle, évoque *le Dormeur*
+     [10 §10.3](10-lieux-et-geographie.md) sans le nommer ; 16 héros,
+     `hero-barks.js`, câblé `movement.js`/`seenEchoes`, testé `units.js §1bis`).
+   - ⚠️ **`houseSpecificVariant`** (biais de génération par Maison) : direction
+     **V2 ouverte** (2026-06-19) mais **power-neutral strict** ; impl. = chantier
+     suivant gaté par un sim d'équilibrage ([10 §10.6](10-lieux-et-geographie.md),
+     [ROADMAP](../REVUE-TRANSVERSALE-ET-ROADMAP.md)).
 
 > Garde-fous transverses : chaque helper pur → `tests/units.js` ; tout changement
 > JS/CSS → **bump cache PWA** (skill `cache-bump`) + `node tests/smoke.js`

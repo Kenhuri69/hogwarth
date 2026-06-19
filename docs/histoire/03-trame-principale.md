@@ -193,8 +193,17 @@ le fond s'ouvrent les **Ruines Anciennes** (étage 14+), antérieures à l'écol
 > ✅ **Tranché par le jeu** : la Boucle est une boucle de prestige infinie —
 > série Apothéose ★ N génératrice (sans entrée finale dans `tiers[]`), gold-sink
 > illimité (`donateGoldToHouse`), recyclage `effectiveFloor` sans plancher.
-> Il n'y a pas de fin scénarisée. (Une « vérité finale » optionnelle resterait
-> un ajout narratif ; elle n'est pas requise par le jeu.)
+> Il n'y a pas de **porte de sortie** scénarisée (hors « Briser le Cycle »,
+> [14 §14](14-scenarios-de-fin.md)).
+>
+> ✅ **Destination narrative tranchée (2026-06-19)** : la Boucle **a une fin
+> *écrite*** sans avoir de fin *mécanique* — c'est **le Dormeur**
+> ([10 §10.3](10-lieux-et-geographie.md)), présence primordiale au fond de
+> l'Avant-Monde dont on **s'approche sans jamais l'atteindre** (plafond ★ N).
+> *Oui, une destination ; non, pas une issue.* C'est le revers du mythe (§3.7) :
+> « les légendes attirent ce qui dort le plus profond » — l'Apothéose **rapproche**
+> du Dormeur sans le réveiller. Surfaçage cosmétique : battement, échos temporels,
+> barks `loopEcho` ([11 §11.7.3](11-mondes-paralleles.md)).
 
 ## 3.7 Fils rouges & thèmes
 

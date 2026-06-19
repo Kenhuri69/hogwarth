@@ -566,9 +566,14 @@ Quatre marqueurs visuels la signent (à doser crescendo, §10.2) :
   à leur paroxysme.
 - **Hooks** : ✅ série **Apothéose ★ N** (prestige infini, gold-sink) ; **don à la
   Maison** ([state.js / house-donation.js]). 💡 Le **codex de lieu** (§10.9) se
-  complète ici : dernières entrées sur *ce qui dort*.
-- ❓ **À trancher** (§10.3) : personnifie-t-on **ce qui dort sous les Ruines** —
-  le « cœur » qui bat à l'étage 21+ — ou reste-t-il une **menace muette** ?
+  complète ici : dernières entrées sur **le Dormeur**.
+- ✅ **Tranché** (2026-06-19, §10.3) : **ce qui dort sous les Ruines est
+  personnifié — c'est *le Dormeur*** (présence magique primordiale, antérieure
+  à l'écriture, dont le **battement organique** est le « cœur » de l'Avant-Monde).
+  La descente ★ N **s'en approche sans jamais l'atteindre** (plafond de scaling) :
+  la Boucle a une destination écrite, et le mystère tient (on ne le réveille
+  jamais). Cf. la fin « Briser le Cycle » où *« le battement organique de
+  l'Avant-Monde ralentit… puis se tait »* ([14 §14](14-scenarios-de-fin.md)).
 
 > 💡 **Table de synthèse des fiches** (récap rapide pour briefer / implémenter) :
 
@@ -624,10 +629,22 @@ Zone D 14+  Ruines Anciennes — antérieures à la fondation : la roche-mère m
   s'ouvrent, les profondeurs remontent. Chaque palier descendu, c'est la fêlure
   qui s'élargit ([03 §3.1](03-trame-principale.md)).
 
-> ❓ À arbitrer : nomme-t-on / personnifie-t-on **ce qui dort sous les Ruines**
-> (une entité, un lieu, une vérité), ou la zone D reste-t-elle une **menace
-> abstraite et muette** — la profondeur pour la profondeur ? (Lié au point
-> ouvert « la Boucle a-t-elle une fin écrite ? » de [03](03-trame-principale.md).)
+> ✅ **Tranché (2026-06-19)** : **on personnifie** « ce qui dort sous les
+> Ruines » — c'est **le Dormeur**. Ni un boss, ni un lieu de plus : une
+> **présence** magique primordiale, antérieure à l'écriture (donc aux runes,
+> donc aux Fondateurs), sur laquelle Poudlard a été bâti. Son **battement
+> organique** (§10.2, ressenti dès l'Avant-Monde) *est* son cœur endormi. La
+> fêlure de la Clé de Voûte ne fait pas que libérer le mal : elle **gratte son
+> sommeil** — descendre, c'est s'en approcher. La série **★ N** (prestige
+> infini, plafond de scaling) traduit cela : on **ne l'atteint jamais**, on
+> s'enfonce vers lui. La Boucle a donc une **fin écrite** (le Dormeur, jamais
+> rejoint) **sans** cheap final boss — le mystère reste intact. Cela referme
+> le point ouvert « la Boucle a-t-elle une fin écrite ? » de
+> [03 §3.6 / §3.10](03-trame-principale.md) : **oui, une destination ; non, pas
+> une porte de sortie**. Garde-fous : ne contredit aucun canon (Ruines
+> antérieures aux Fondateurs ; Voldemort = dernière serrure, pas le fond ;
+> ✅ plafond de scaling). Le Dormeur **ne parle pas, n'a pas de stat-block, ne
+> se combat pas** : il se *ressent* (battement, échos, barks `loopEcho`).
 
 ---
 
@@ -765,6 +782,35 @@ au joueur l'illusion forte que « ma Maison change ce que je vois ».
 > carte générée — la promesse procédurale reste intacte. Cohérent avec les
 > **quêtes signature** ([07 §7.8](07-les-maisons.md)) qui, elles, posent du
 > contenu réel sans brancher l'arc.
+
+#### Biais de génération par Maison — V2 (✅ direction ouverte, 2026-06-19)
+
+> ✅ **Décision (2026-06-19)** : on **ouvre** un biais de génération par Maison
+> en V2 — mais **power-neutral strict** ([Ch.13](13-equilibrage-et-systemes.md),
+> garde-fou cardinal : même grille, même difficulté pour les 4 Maisons). Le biais
+> change **ce qu'on voit et croise**, jamais **ce qu'on gagne**.
+
+**Spec (esquisse, à figer au chantier d'implémentation)** — le biais agit
+uniquement sur des leviers **neutres en puissance** :
+
+| Levier autorisé (saveur) | Exemple | Interdit (puissance) |
+|--------------------------|---------|----------------------|
+| Pondération **cosmétique** de types de salle | 🐍 +chance de salle « passage descellé » (raccourci visuel) ; 🦅 +stèles d'énigme ; 🦡 +recoins-refuge | ❌ +coffres/+or/+fontaines (avantage matériel) |
+| **Skin/variante** thématique d'un monstre à roster équivalent | 🦁 le même ennemi en livrée « marqué de bataille » | ❌ stats/résistances/butin altérés |
+| Ordre/fréquence des **lignes d'ambiance** déjà cosmétiques | escalade A→D du registre de Maison (§10.6 détail) | ❌ rien de mécanique |
+
+**Garde-fous d'implémentation** (bloquants) :
+- Le tirage biaisé doit **conserver le même budget** de salles à butin / repos /
+  combat que le tirage neutre (réallocation iso-ressources, pas d'ajout).
+- **Gate de release** : un **sim d'équilibrage neutre** (`tools/sim-difficulty.js`,
+  variante par Maison) doit confirmer **0 écart significatif de win-rate** entre
+  les 4 Maisons avant merge.
+- Reste **désactivable** par un flag (repli V1 cosmétique) en cas de dérive.
+
+> **Statut** : la présente décision **ratifie la direction** ; le code (touche
+> `dungeon.js` / `dungeon-spawning.js`) est un **chantier suivant** tracé en
+> [ROADMAP Phase 3](../REVUE-TRANSVERSALE-ET-ROADMAP.md). Tant qu'il n'est pas
+> livré + simulé, **V1 cosmétique reste le comportement réel**.
 
 ### Le détail de chaque Maison — perceptions, hooks & escalade
 
@@ -979,7 +1025,16 @@ Fondateur, cohérents avec leur quête signature ([08 §8.5](08-quetes-et-sous-i
 - ❌ **Pas de contradiction du canon du sceau** (œuvre des Quatre ; Voldemort =
   dernière serrure ; Ruines antérieures aux Fondateurs).
 - ❌ **Pas de génération biaisée par Maison en V1** (variantes = cosmétiques ;
-  le biais procédural est un ❓ V2, §10.6).
+  le biais procédural est un ❓ V2, §10.6). ✅ **V2 ouvert (tranché 2026-06-19)** :
+  un biais de génération par Maison est **autorisé en V2**, mais **power-neutral
+  strict** (garde-fou cardinal du [Ch.13](13-equilibrage-et-systemes.md)) — il ne
+  touche que la **distribution/saveur** (pondération cosmétique de types de salle,
+  préférence de **skin** de monstre thématique de la Maison), **jamais** la
+  difficulté, le butin, les stats ni la grille de paliers. Les 4 Maisons restent
+  rigoureusement équivalentes en puissance. **Implémentation = chantier suivant**
+  (roadmap Phase 3, gaté par un **sim d'équilibrage neutre** confirmant l'absence
+  d'écart de win-rate entre Maisons) — la présente décision **ouvre la direction**,
+  elle ne code rien. Spec : voir §10.6 / [ROADMAP](../REVUE-TRANSVERSALE-ET-ROADMAP.md).
 - ✅ **Renvoyer aux sources** : tout nouvel ancrage cite le chapitre canon
   (03/04/06/07/08/09) — ce chapitre **décrit le décor**, il ne crée pas de canon
   mécanique seul.
@@ -1019,11 +1074,11 @@ Fondateur, cohérents avec leur quête signature ([08 §8.5](08-quetes-et-sous-i
 > d'ambiance fait *ressentir* la descente.
 
 ## Points à trancher (résumé)
-1. Personnifie-t-on **ce qui dort sous les Ruines Anciennes** — le « cœur » qui
-   bat à l'étage 21+ (§10.3, §10.2) ?
+1. ✅ **Tranché (2026-06-19)** : **oui, personnifié — *le Dormeur*** (§10.3, §10.2).
 2. Combien d'**étages-jalons non procéduraux** garantis (§10.7) ?
-3. Les variantes de Maison restent-elles **cosmétiques** ou **biaisent-elles la
-   génération** (§10.6, V2) ?
+3. ✅ **Tranché (2026-06-19)** : **V2 ouvert** — un biais de génération par Maison
+   est autorisé, mais **power-neutral strict** (saveur/distribution seules, jamais
+   la difficulté/le butin). Impl. = chantier suivant gaté par un sim neutre (§10.6).
 4. Adopte-t-on le **niveau de corruption** d'ambiance + les **phrases zonées**
    (§10.6, §10.7 — spéc Étape 2) ?
 5. Implémente-t-on les **échos temporels** (silhouettes/scènes rejouées) et le

@@ -18,8 +18,10 @@
 // ============================================================
 
 // Registre des répliques. Clés d'événement reconnues :
-//   bossAppear · crit · allyDown · levelUp · houseTier · tierTransition · darkLoop · darkBoss
+//   bossAppear · crit · allyDown · levelUp · houseTier · tierTransition · darkLoop · loopEcho · darkBoss
 // `darkLoop` (V2, ch.11 §11.8.2) : voix au franchissement d'un niveau de Boucle.
+// `loopEcho` (Phase 3, ch.11 §11.7.3) : voix quand un écho temporel affleure en
+// Boucle (movement.js, seenEchoes) — évoque « le Dormeur » (10 §10.3) sans le nommer.
 // `darkBoss` (Phase 3, ch.11 §11.9.2) : voix one-shot face à un boss revenu en variante
 // Ténébreuse (« Tu m'as déjà tué une fois »). Remplace `bossAppear` pour les
 // boss epic à `variant === 'darkness'`. Défensif : héros sans entrée → silence.
@@ -32,6 +34,7 @@ const HERO_BARKS = {
     allyDown:   ["Debout ! On n'a pas fini, toi et moi !"],
     levelUp:    ["Encore un cran. On descend plus loin."],
     darkLoop:   ["Encore un tour. Le château se souvient de nous — et il a plus froid à chaque fois."],
+    loopEcho:   ["Là — un bout de passé qui remonte. Et tout en dessous, quelque chose respire, lentement. Avançons."],
     darkBoss:   ["Je t'ai déjà mis à terre une fois. La Boucle t'a recousu — pas en mieux."],
     houseTier:  ["Le château reconnaît les siens. Tant mieux — on en aura besoin."],
     tierTransition: ["L'air change. On n'est plus à l'école, là."],
@@ -47,6 +50,7 @@ const HERO_BARKS = {
     allyDown:   ["Tiens bon — Episkey, tout de suite !"],
     levelUp:    ["Note méthodique : progresser, c'est survivre deux fois."],
     darkLoop:   ["Boucle suivante. Les variables changent à peine ; nous, beaucoup. Restons méthodiques."],
+    loopEcho:   ["Un écho du passé — daté, reproductible. Et sous tout ça, un battement régulier. Quelque chose dort, et compte le temps."],
     darkBoss:   ["Donnée connue : je t'ai déjà vaincu. La répétition ne joue pas en ta faveur."],
     houseTier:  ["Un palier de plus. J'ai lu ce que ça débloque — c'est précieux."],
     tierTransition: ["Nouvelle strate, nouvelles règles. J'actualise nos hypothèses."],
@@ -59,6 +63,7 @@ const HERO_BARKS = {
     allyDown:   ["Relève-toi. Je refuse de perdre devant ça."],
     levelUp:    ["La fierté, ça se mérite. Et je commence à la mériter."],
     darkLoop:   ["Encore un tour de spirale. Élégant, le désespoir, vu d'assez bas."],
+    loopEcho:   ["Une scène d'autrefois qui rejoue. Et plus bas, un souffle énorme, endormi. Même ma famille n'a jamais creusé jusque-là."],
     darkBoss:   ["Encore toi ? Je t'ai déjà tué. Recommencer ne te rendra pas plus distingué."],
     houseTier:  ["Voilà ce que valent les vrais. Prenez-en de la graine."],
     tierTransition: ["Plus on descend, plus ça sent ma famille. Charmant."],
@@ -74,6 +79,7 @@ const HERO_BARKS = {
     allyDown:   ["Tiens encore une seconde — j'arrive !"],
     levelUp:    ["Plus vive, plus haut. On ne me rattrape pas."],
     darkLoop:   ["Un tour de plus, plus profond. Je sens le courant avant de le voir."],
+    loopEcho:   ["Le passé affleure une seconde. Et dessous, une respiration lente, immense — je la sens monter avant de l'entendre."],
     darkBoss:   ["Je t'ai déjà attrapé une fois. Tu n'es pas devenu plus rapide en mourant."],
     houseTier:  ["Un cran de plus. Mes réflexes suivent, eux."],
     tierTransition: ["Le terrain s'ouvre autrement. Adaptons notre vol."]
@@ -84,6 +90,7 @@ const HERO_BARKS = {
     allyDown:   ["Personne ne tombe sous ma garde. Tiens bon !"],
     levelUp:    ["On progresse droit. C'est la seule façon que je connaisse."],
     darkLoop:   ["Un tour de plus. On le passe ensemble — c'est toujours la règle, même ici."],
+    loopEcho:   ["Une image d'avant nous, qui remonte. Et tout au fond, un cœur qui bat sans se presser. On n'est pas seuls à descendre — gardons-nous."],
     darkBoss:   ["On s'est déjà affrontés — et tu es tombé. Rien n'a changé de ce côté-ci."],
     houseTier:  ["Le mérite paie. On l'a gagné ensemble."],
     tierTransition: ["Plus de salles de classe en dessous. À partir d'ici, on passe l'examen."],
@@ -99,6 +106,7 @@ const HERO_BARKS = {
     allyDown:   ["Ne t'éteins pas. La nuit a encore besoin de toi."],
     levelUp:    ["Un palier de plus vers la lumière froide."],
     darkLoop:   ["La spirale tourne encore. Les astres, eux, ne descendent pas si bas."],
+    loopEcho:   ["Un fragment du passé scintille puis s'éteint. Sous lui, un battement plus vieux que toute lumière. Ce qui dort là n'a pas de constellation — il les précède."],
     darkBoss:   ["Les astres t'ont déjà vu chuter une fois. Ils ne se répètent pas pour rien."],
     houseTier:  ["Les constellations s'alignent un peu mieux pour nous."],
     tierTransition: ["La voûte s'efface. Plus de plafond — juste le vide et ce qu'il garde."],
@@ -113,6 +121,7 @@ const HERO_BARKS = {
     allyDown:   ["Eh, pas le droit de partir, on n'a pas fini de rire !"],
     levelUp:    ["Plus forte ET plus mignonne, c'est injuste pour les autres."],
     darkLoop:   ["Encore un tour ?! Bon, au moins le décor change. Un peu."],
+    loopEcho:   ["Oh, un souvenir qui rejoue ! …et ce gros « boum-boum » en dessous, c'est qui qui dort ? Faudrait pas le réveiller, hein."],
     darkBoss:   ["Toi ?! Je t'ai DÉJÀ battu. Tu fais le service après-vente ou quoi ?"],
     houseTier:  ["Ma Maison brille un peu plus fort. Comme moi, quoi."],
     tierTransition: ["Nouveau décor ! J'espère qu'il y a de meilleurs éclairages."],
@@ -125,6 +134,7 @@ const HERO_BARKS = {
     allyDown:   ["…Reste. Je n'ai pas envie d'être seul ici."],
     levelUp:    ["Plus fort. Donc plus dangereux. Pour eux."],
     darkLoop:   ["Encore plus bas. Mon sang aime ça, et ça m'inquiète."],
+    loopEcho:   ["Le passé remonte par bouffées. Et dessous, une respiration que mon sang reconnaît. Quelque chose dort là — et ça m'appelle par mon nom."],
     darkBoss:   ["Ton odeur, je la connais — je l'ai déjà éteinte une fois."],
     houseTier:  ["Le pouvoir s'accumule. Reste à savoir qui le tient."],
     tierTransition: ["Plus bas. Mon sang le sent avant moi."],
@@ -142,6 +152,7 @@ const HERO_BARKS = {
     allyDown:   ["Tiens — j'ai calculé qu'on s'en sortait. Ne me contredis pas."],
     levelUp:    ["Un cran de plus. La descente m'apprend plus que n'importe quel cours."],
     darkLoop:   ["Boucle suivante. J'ajoute une décimale à la peur et je continue."],
+    loopEcho:   ["Écho temporel : période constante. Le battement, plus bas, a la même. Ce qui dort là tient le tempo — j'en prends note, et je continue."],
     darkBoss:   ["Récidive enregistrée. Issue identique : tu retombes. C'est statistique."],
     houseTier:  ["Le palier était dans mes calculs. Le mérite, un peu moins."],
     tierTransition: ["Strate suivante. J'ajuste les variables et on continue."],
@@ -156,6 +167,7 @@ const HERO_BARKS = {
     allyDown:   ["Garde la flamme allumée, je te couvre !"],
     levelUp:    ["Ma baguette pulse plus fort. Bon présage."],
     darkLoop:   ["On replonge. Tant qu'il reste une braise, on descend."],
+    loopEcho:   ["Une braise du passé qui rougeoie encore. Et dessous, un souffle lent qui pourrait tout rallumer. Ce qui dort là, mieux vaut ne pas l'attiser."],
     darkBoss:   ["Je t'ai déjà réduit en cendres. La Boucle a juste rallumé la mèche."],
     houseTier:  ["La braise monte. Notre Maison aussi."],
     tierTransition: ["Ça chauffe en descendant. J'aime ça."]
@@ -166,6 +178,7 @@ const HERO_BARKS = {
     allyDown:   ["Non non non, relève-toi, on n'a pas fini de jouer !"],
     levelUp:    ["Encore un petit pas — et une étoile de plus."],
     darkLoop:   ["La spirale chante plus grave à chaque tour. J'apprends la mélodie."],
+    loopEcho:   ["Tu entends ? Un air d'avant, qui rejoue. Et tout en bas, une basse lente — quelque chose dort en mesure. Je ne voudrais pas être la fausse note qui le réveille."],
     darkBoss:   ["On t'a déjà chanté ton requiem une fois. Tu veux le bis ?"],
     houseTier:  ["Notre Maison scintille un peu plus ! Joli, non ?"],
     tierTransition: ["Nouvel étage ! Les échos résonnent différemment ici."]
@@ -176,6 +189,7 @@ const HERO_BARKS = {
     allyDown:   ["Bouge pas, je connais un enchantement — ça va aller !"],
     levelUp:    ["Encore une page comprise. Le ciel s'éclaire un peu plus."],
     darkLoop:   ["On retourne en bas ? Les astres y brillent autrement. J'aime bien."],
+    loopEcho:   ["Une page d'autrefois qui se rouvre toute seule ! Et dessous… un battement, comme un livre énorme qui respire en dormant. Je n'ose pas tourner cette page-là."],
     darkBoss:   ["Attends… je t'ai déjà vaincu, toi ! Le ciel n'oublie pas une page lue."],
     houseTier:  ["Serdaigle monte d'un cran ! L'aigle aime ça."],
     tierTransition: ["Nouvel étage — de nouvelles constellations à déchiffrer."]
@@ -186,6 +200,7 @@ const HERO_BARKS = {
     allyDown:   ["Reste avec moi — je te soigne, je te garde."],
     levelUp:    ["On s'enracine plus profond. On tiendra."],
     darkLoop:   ["Un tour de plus sous la pierre. Même ici, on tient racine."],
+    loopEcho:   ["Le passé affleure comme une pousse entre les dalles. Et plus bas, une respiration de bête endormie. Quelque chose dort sous la terre — ne piétinons pas son sommeil."],
     darkBoss:   ["Je t'ai déjà couché en terre une fois. Tu repousses bien mal."],
     houseTier:  ["Notre Maison fleurit, même sous la pierre."],
     tierTransition: ["La terre change de souffle. On s'y adapte, comme toujours."]
@@ -196,6 +211,7 @@ const HERO_BARKS = {
     allyDown:   ["Tiens bon — je nettoie le terrain et je reviens."],
     levelUp:    ["Plus de puissance à canaliser. Tant mieux."],
     darkLoop:   ["Encore un cran vers le fond. La foudre porte loin, même dans le noir."],
+    loopEcho:   ["Un éclair de passé, puis plus rien. Et dessous, une décharge lente, sourde — un cœur qui dort et qui couve l'orage. On ne le réveille pas, celui-là."],
     darkBoss:   ["Déjà foudroyé une fois. La seconde sera plus rapide."],
     houseTier:  ["Plus de puissance pour la Maison. Je sais quoi en faire."],
     tierTransition: ["Terrain neuf à foudroyer. Restons concentrés."],
@@ -209,6 +225,7 @@ const HERO_BARKS = {
     allyDown:   ["Pas toi. Tiens bon, je te relève — j'ai vu pire au potager."],
     levelUp:    ["Plus solide. On encaissera ce qui vient."],
     darkLoop:   ["Encore un étage sous la pierre. On tient le mur, comme toujours."],
+    loopEcho:   ["Un morceau d'autrefois remonte du sol. Et dessous, une respiration lente, patiente. Quelque chose dort là depuis toujours — on passe devant, sans le déranger."],
     darkBoss:   ["Je t'ai déjà arrêté net une fois. Reviens autant que tu veux — le mur tient."],
     houseTier:  ["La Maison s'enracine. On ne lâche personne."],
     tierTransition: ["Sol nouveau, mêmes racines. On tient."]
@@ -219,6 +236,7 @@ const HERO_BARKS = {
     allyDown:   ["Recule dans l'ombre — je couvre, tu récupères."],
     levelUp:    ["Plus de pouvoir. La discrétion n'en sera que plus mortelle."],
     darkLoop:   ["Plus profond, plus sombre. C'est là que je suis le mieux."],
+    loopEcho:   ["Une ombre du passé se redresse une seconde. Et tout au fond, une respiration que même moi je n'irais pas troubler. Ce qui dort là vaut mieux qu'on le laisse dormir."],
     darkBoss:   ["Je t'ai déjà fait tomber dans l'ombre une fois. Tu n'en étais jamais ressorti — jusqu'ici."],
     houseTier:  ["Serpentard remonte la lumière. Ironique, et délicieux."],
     tierTransition: ["L'ombre s'épaissit. Tant mieux."],

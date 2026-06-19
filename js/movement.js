@@ -707,6 +707,16 @@ function handleCellEntry(cell) {
             // Robinet `echo` du Codex : un fragment perçu peut ouvrir/révéler
             // une entrée (voix des Fondateurs, écho du scellement…).
             if (typeof checkCodexUnlocks === 'function') checkCodexUnlocks('echo-seen');
+            // Voix de héros « loopEcho » (Phase 3, ch.11 §11.7.3) : un membre
+            // présent réagit à l'affleurement du passé — évoque « le Dormeur »
+            // (10 §10.3) sans le nommer. Cosmétique, one-shot par écho.
+            if (typeof heroBark === 'function' && typeof party !== 'undefined') {
+              const n = (typeof partySize === 'number') ? partySize : party.length;
+              const speaker = party.slice(0, n).find(c => c && c.hp > 0) || party[0];
+              if (speaker && speaker.heroKey) {
+                heroBark(speaker.heroKey, 'loopEcho', { channel: 'explore', once: 'loopecho:' + echo.id });
+              }
+            }
           }
           // P-D4 : flash de givre quand le passé affleure.
           if (typeof pulseFrostOverlay === 'function') pulseFrostOverlay();
