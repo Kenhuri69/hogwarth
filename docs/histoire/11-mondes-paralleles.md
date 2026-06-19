@@ -400,7 +400,17 @@ le **thermomètre ❄** de [10 §10.2](10-lieux-et-geographie.md), prolongé en 
 | **Subtil** | 11–13 | Mêmes décors (zone C) mais **recouverts de runes** ; cris de créatures « familiers et faux » ; brume basse naissante. | ✅ override `rune_*` ; ✅ recyclage ; 💡 premiers échos temporels. |
 | **Net** | 14–16 | L'architecture **cesse d'être humaine** : monolithes, racines géantes, runes qui palpitent. | ✅ tranche D `rune_*`, ton `abyss` ; ✅ transition 13↔14. |
 | **Marqué** | 17–20 | La ruine **se rallume** : cristaux de magie brute, runes qui *brûlent*, **scènes du passé rejouées** traversables ; **4 timbres de Fondateurs** distincts. | ✅ boss Ténébreux (18-20) ; ✅ Chambres des Fondateurs ; 💡 échos « scène rejouée ». |
-| **Total** | 21+ | **Avant l'écriture** : plus de runes, magie brute, lumière froide compactée, un **battement organique** — *« ce qui dort »*. | ✅ plafond de scaling ; ❓ personnifier « ce qui dort » ? |
+| **Total** | 21+ | **Avant l'écriture** : plus de runes, magie brute, lumière froide compactée, un **battement organique** — celui du **Dormeur** ([10 §10.3](10-lieux-et-geographie.md)). | ✅ plafond de scaling ; ✅ **personnifié = le Dormeur** (2026-06-19), jamais atteint ; ✅ barks `loopEcho` (ch.5 / `hero-barks.js`). |
+
+> ✅ **Le Dormeur (2026-06-19)** : le « battement organique » du palier *Total*
+> est **personnifié** — c'est le **Dormeur** ([10 §10.3](10-lieux-et-geographie.md)),
+> présence primordiale antérieure à l'écriture sur laquelle Poudlard fut bâti.
+> Il n'est **ni boss ni stat-block** : on s'en **approche sans jamais l'atteindre**
+> (plafond ★ N) — la Boucle a une destination écrite, le mystère reste entier.
+> Surfaçage en jeu : le **battement** (ambiance), les **échos temporels** (§11.7.3
+> *Subtil/Marqué*), et — Phase 3, 2026-06-19 — des **barks `loopEcho`** : un héros
+> présent réagit quand un écho affleure, évoquant « quelque chose qui respire, plus
+> bas » sans le nommer (`hero-barks.js`, 16 héros ; câblé `movement.js`/`seenEchoes`).
 
 > 💡 **Règle d'or de la déformation** : la modification doit toujours **partir du
 > familier** pour le **trahir** — jamais du nouveau pur. C'est la trahison du
