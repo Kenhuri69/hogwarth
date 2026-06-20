@@ -384,11 +384,13 @@ rend :
    `startNpcAnimLoop` — boucle déclenchée par `startGame` + chargement
    de save quand `npcPlacements.size > 0`).
 3. Sprite PNG par type de PNJ — `getNpcSpriteType(npcId)` (npcs.js)
-   résout le champ `sprite` (`mage`/`prof_h`/`prof_f`/`fantome`/`vendeur`/`phenix`)
-   puis `NPC_SPRITE_SRC` (renderer-effects.js) mappe le type → PNG.
-   Tant que les PNG dédiés ne sont pas générés, toutes les entrées
-   pointent sur `img/npc/_wizard_generic.png`. Fallback vectoriel
-   `_drawNpcVectorFallback` tant que l'image n'a pas chargé.
+   résout le champ `sprite` (`mage`/`prof_h`/`prof_f`/`fantome`/`vendeur`/`phenix`,
+   + signatures `chevalier`/`echo`) puis `NPC_SPRITE_SRC` (renderer-entities.js)
+   mappe le type → PNG. Les 6 corps typés + 2 signatures ont leur PNG dédié
+   (`img/npc/_npc_<type>.png`) ; `img/npc/_wizard_generic.png` n'est plus que
+   l'ultime repli. Fallback vectoriel `_drawNpcVectorFallback` tant que l'image
+   n'a pas chargé. (L'identité d'un PNJ nommé passe par son **portrait** de
+   dialogue `img/npc/<id>.png`, pas par le corps 3D générique.)
 4. Signe ❗/❓ animé (bobbing vertical) au-dessus, basé sur
    `getNpcMarkerSign(npcId)`.
 
