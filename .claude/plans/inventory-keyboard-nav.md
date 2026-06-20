@@ -1,7 +1,8 @@
 # Plan — Navigation clavier des grilles inventaire / équipement / sorts
 
-> Statut : **Phase 1 en cours**. Donne suite au hors-scope #2 du plan
-> `ergonomics-improvement.md` (clos) : « Navigation clavier complète de
+> Statut : **Phases 1 & 2 livrées**. Phase 1 → PR #593 (mergée). Phase 2 →
+> branche `claude/inventory-keyboard-nav-phase2`. Donne suite au hors-scope #2
+> du plan `ergonomics-improvement.md` (clos) : « Navigation clavier complète de
 > l'inventaire/équipement (grille) — gros, à isoler dans un plan dédié ».
 > Créé le 2026-06-14.
 
@@ -59,17 +60,38 @@ Repère de focus : **rien à ajouter** (`[tabindex]:focus-visible` couvre déjà
 
 ---
 
-## Phase 2 — Navigation 2D aux flèches (roving tabindex) ⬜ À FAIRE
+## Phase 2 — Navigation 2D aux flèches ✅ LIVRÉE
+
+> Livré le 2026-06-20. `main.js` : helper pur `_gridArrowTarget(cur, key)` +
+> branche flèches dans le `keydown` global (après l'activation Entrée/Espace).
+> Test : `scenarioGridArrowNav` (`tests/scenarios/controls.js`). Cache bumpé
+> (main v29, CACHE_VERSION v173).
+>
+> **Choix d'implémentation (écart assumé au plan initial)** : approche
+> **géométrique agnostique au layout** plutôt que roving tabindex strict.
+> - Les cellules gardent toutes `tabindex="0"` (acquis Phase 1) — Tab continue
+>   de toutes les traverser ; les flèches ajoutent la navigation 2D **par-dessus**.
+>   On évite ainsi une 2ᵉ passe sur tous les sites de rendu (set/reset
+>   `tabindex=-1`) et la machinerie d'état du roving, pour un bénéfice
+>   (un seul arrêt Tab) marginal dans ce jeu. Conforme guidelines §2/§3.
+> - `_gridArrowTarget` : groupe = cellules de même famille (`.inv-slot` /
+>   `.equip-slot-floating` / `.spell-item`) **visibles** (une modale ouverte à
+>   la fois → scope naturel, sans coder d'ids de conteneur). ←/→ = voisin en
+>   ordre DOM (clampé) ; ↑/↓ = cellule la plus proche dans la direction, écart
+>   horizontal pénalisé (×4) pour rester dans la colonne. Fonctionne pour la
+>   grille 4 colonnes du sac, le paper-doll (layout libre) et la liste de sorts
+>   (vertical) sans cas particulier.
+> - `preventDefault` sur les 4 flèches quand une cellule est focusée → le joueur
+>   ne se déplace pas derrière la modale ; le mouvement d'exploration reste
+>   intact hors grille (vérifié `scenarioRelativeControls`).
 
 | Fichier | Changement | Vérif |
 |---------|-----------|-------|
-| nouveau hook (`main.js` ou module léger) | Sur la grille focusée : ←/→/↑/↓ déplacent le focus de cellule en cellule (roving tabindex : une seule cellule `tabindex=0`, les autres `-1`). Capturer **avant** le handler de déplacement (ces flèches ne doivent pas bouger le joueur quand une modale est ouverte). | Flèches naviguent la grille ; joueur immobile. |
-| `js/inventory*.js` | Calcul du nombre de colonnes pour ↑/↓ (grille 16 = 4 col ; paper-doll = layout libre → fallback ←/→ linéaire). | Déplacement cohérent. |
+| `js/main.js` | `_gridArrowTarget` (géométrie) + branche flèches dans le `keydown`. | Flèches naviguent la grille ; joueur immobile. |
+| `tests/scenarios/controls.js` | `scenarioGridArrowNav` : ←/→ linéaire, ↓/↑ change de rangée même colonne, modale reste ouverte. | `node tests/smoke.js GridArrowNav` vert. |
 
-> Garde-fou Phase 2 : aujourd'hui les flèches déplacent le joueur (`main.js:743`).
-> Comme une modale ouverte rend le fond `inert` et que `modal-a11y` piège le
-> focus, le handler de grille (gardé par « focus dans une cellule ») fera
-> `preventDefault` avant la branche déplacement. À vérifier finement.
+**Verify Phase 2** : `GridArrowNav` + `GridKeyboardNav` verts ; non-régression
+`RelativeControls` / `CombatKeyboard` / `ModalIsolation`. Cache-bump (`main.js`).
 
 ---
 

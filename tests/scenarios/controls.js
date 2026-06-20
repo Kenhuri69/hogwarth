@@ -893,4 +893,63 @@ async function scenarioGridKeyboardNav() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioMobileSelect, scenarioCombatMobile, scenarioRelativeControls, scenarioCanvasSwipe, scenarioCameraPresence, scenarioCombatKeyboard, scenarioConfirmModal, scenarioA11yFinish, scenarioModalIsolation, scenarioGridKeyboardNav] };
+async function scenarioGridArrowNav() {
+  console.log('\n── Scénario : navigation 2D au clavier des grilles (flèches) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // Remplir le sac de 6 consommables → 6 cellules focusables sur ≥ 2 rangées.
+  await page.evaluate(() => {
+    const pot = ITEMS.find(i => i.id === 'potion_s');
+    for (let n = 0; n < 6; n++) player.inventory.push(JSON.parse(JSON.stringify(pot)));
+    openInventory();
+  });
+
+  const sel = '#inv-grid .inv-slot[tabindex]';
+  const start = await page.evaluate((sel) => {
+    const cells = Array.from(document.querySelectorAll(sel));
+    cells[0].focus();
+    return { count: cells.length, active0: document.activeElement === cells[0] };
+  }, sel);
+  assert(start.count >= 6,  `au moins 6 cellules focusables attendues (got ${start.count})`);
+  assert(start.active0,     'focus initial sur la 1re cellule');
+
+  const idxOf = () => page.evaluate((sel) =>
+    Array.from(document.querySelectorAll(sel)).indexOf(document.activeElement), sel);
+
+  // ←/→ : voisin linéaire.
+  await page.keyboard.press('ArrowRight');
+  assert(await idxOf() === 1, 'ArrowRight → cellule 1');
+  await page.keyboard.press('ArrowLeft');
+  assert(await idxOf() === 0, 'ArrowLeft → retour cellule 0');
+
+  // ↓ : descend d'une rangée, même colonne (géométrie, sans coder le nb de col).
+  await page.keyboard.press('ArrowDown');
+  const down = await page.evaluate((sel) => {
+    const cells = Array.from(document.querySelectorAll(sel));
+    const a = document.activeElement;
+    const r0 = cells[0].getBoundingClientRect();
+    const ra = a.getBoundingClientRect();
+    return { idx: cells.indexOf(a), below: ra.top > r0.top + 2, sameCol: Math.abs(ra.left - r0.left) < 5 };
+  }, sel);
+  assert(down.idx > 0 && down.below && down.sameCol,
+    `ArrowDown doit descendre d'une rangée même colonne (idx ${down.idx}, below ${down.below}, sameCol ${down.sameCol})`);
+
+  // ↑ : remonte à la cellule 0.
+  await page.keyboard.press('ArrowUp');
+  assert(await idxOf() === 0, 'ArrowUp → remonte à la cellule 0');
+
+  // Le joueur ne s'est pas déplacé : la modale reste ouverte.
+  const stillOpen = await page.evaluate(() =>
+    getComputedStyle(document.getElementById('inventory-modal')).display !== 'none');
+  assert(stillOpen, 'la modale inventaire doit rester ouverte pendant la navigation');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (navigation flèches)`);
+  }
+  console.log('  ✅ Navigation 2D au clavier (←/→/↑/↓) OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioMobileSelect, scenarioCombatMobile, scenarioRelativeControls, scenarioCanvasSwipe, scenarioCameraPresence, scenarioCombatKeyboard, scenarioConfirmModal, scenarioA11yFinish, scenarioModalIsolation, scenarioGridKeyboardNav, scenarioGridArrowNav] };
