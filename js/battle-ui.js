@@ -2,6 +2,24 @@
 // COMBAT — Interface utilisateur (rendu ennemis, cibles, log)
 // ============================================================
 
+// ── Livrée de Maison (Lot 2c — biais de génération, levier cosmétique) ──
+// Le donjon « se lit » selon la Maison du héros (doc 10 §10.6) : une fine aura
+// colorée de Maison sur les cartes d'ennemi. POWER-NEUTRAL PAR CONSTRUCTION —
+// rendu seul, aucun nom/stat/résistance/butin/spawn touché (donc 0 sim requis,
+// contrairement à la pondération de salles, gardée derrière le gate Item 3).
+// `HOUSE_SKIN_ENABLED` = repli V1 (mettre à false → comportement cosmétique V1).
+const HOUSE_SKIN_ENABLED = true;
+const _HOUSE_SKIN_CLASSES = {
+  Gryffondor: 'house-skin-gryffondor', Serpentard: 'house-skin-serpentard',
+  Serdaigle: 'house-skin-serdaigle',  Poufsouffle: 'house-skin-poufsouffle',
+};
+// PUR & testable (units.js) : classe de livrée pour une Maison, ou '' si le
+// skin est désactivé / la Maison est absente/inconnue. Ne throw jamais.
+function houseSkinClass(house, enabled) {
+  if (!enabled || !house) return '';
+  return _HOUSE_SKIN_CLASSES[house] || '';
+}
+
 // ── Sélection de cible ───────────────────────────────────────
 // Scaffold partagé : construit les boutons dans #target-buttons et
 // affiche #target-selection. `entries` = [{label, idx}] déjà filtré ;
@@ -195,7 +213,10 @@ function renderEnemyGroup() {
     // pour les créatures des profondeurs (corruption >= 2). `||0` → no-op sur
     // les groupes pré-construits (duels) dépourvus du champ.
     const corr = enemy.corruption || 0;
-    card.className = `enemy-card variant-${variant} corruption-${corr}${dead ? ' enemy-dead' : ''}`;
+    // Livrée de Maison (Lot 2c) : cosmétique, pilotée par la Maison du héros.
+    const skin = houseSkinClass(
+      (typeof chosenHouse !== 'undefined') ? chosenHouse : null, HOUSE_SKIN_ENABLED);
+    card.className = `enemy-card variant-${variant} corruption-${corr}${skin ? ' ' + skin : ''}${dead ? ' enemy-dead' : ''}`;
     card.id = `enemy-card-${i}`;
     card.innerHTML = `
       <div style="position:relative;display:inline-block;animation:float 2s ease-in-out infinite alternate">
