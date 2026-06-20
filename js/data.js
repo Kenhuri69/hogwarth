@@ -586,6 +586,9 @@ const ITEMS = [
   { id:"potion_resistance", name:"Potion de Résistance", icon:"🛡️", desc:"Réduit de 40 % tous les dégâts subis pendant 3 tours", type:"consumable", effect:"resist_buff", power:40, turns:3, price:50 },
   { id:"wand1",   name:"Baguette de Saule",   icon:"🪄", desc:"ATK+2",                      type:"wand",  slot:"wand",   family:"wand_basic",    rarity:"common", power:2, bonusAtk:2,                                price:80,  tinted:true, tintMask:"wand_shaft_base", tintOverlay:"wand_tip_basic", tint:"willow" },
   { id:"wand2",   name:"Baguette de Sureau",  icon:"🪄", desc:"ATK+5 MAG+3 · Crit +2% (×1.7)", type:"wand",  slot:"wand",   family:"wand_elder",    rarity:"rare",   power:5, bonusAtk:5, bonusMag:3, bonusCritChance:2, bonusCritDamage:0.2, price:300, tinted:true, tintMask:"wand_shaft_base", tintOverlay:"wand_tip_runic", tint:"elder"  },
+  // Récompense de la quête de fouille d'Ollivander en Boucle (bois_ollivander_boucle).
+  // Baguette épique taillée dans un if des Profondeurs ; non vendue (price 0).
+  { id:"baguette_if_boucle", name:"Baguette d'If des Profondeurs", icon:"🪄", desc:"ATK+6 MAG+6 · Crit de sort +3% (×1.75)", type:"wand", slot:"wand", family:"wand_yew", rarity:"epic", power:6, bonusAtk:6, bonusMag:6, bonusSpellCritChance:3, bonusSpellCritDamage:0.25, price:0, tinted:true, tintMask:"wand_shaft_base", tintOverlay:"wand_tip_runic", tint:"ebony" },
   { id:"robe1",   name:"Robe Renforcée",      icon:"🧥", desc:"DEF+3",                      type:"armor", slot:"body",   family:"robe",          rarity:"common", power:3, bonusDef:3,                                    price:150 },
   { id:"amulette",name:"Amulette du Phénix",  icon:"💎", desc:"MAG+4 LCK+3 · Apprend Reparo", type:"acc", slot:"amulet", family:"amulet_phoenix",rarity:"epic",   power:4, bonusMag:4, bonusLck:3, grantsSpell:"Reparo", price:250 },
   { id:"broom",   name:"Balai Nimbus 2000",   icon:"🧹", desc:"Fuite garantie",             type:"acc",   slot:"trinket", family:"broom",        rarity:"rare",   power:0,                                                price:200 },
@@ -625,6 +628,11 @@ const ITEMS = [
   // par _countItems / _countMaterial et consommé à la remise de la quête.
   { id:"eclat_voute",      name:"Éclat de la Clé de Voûte", icon:"🔹", rarity:"rare",
     desc:"Un fragment de la relique des Fondateurs. Il est froid, et il chuchote.",
+    type:"material", price:0 },
+  // Objet de quête — récit de Manon recueilli pour le mémoire de Lockhart
+  // (chaîne manon_confier → memoire_lockhart, Boucle). Consommé à la remise.
+  { id:"recit_manon",     name:"Le récit de Manon", icon:"📜", rarity:"rare",
+    desc:"Les souvenirs d'Élara, mis en mots par sa fille. Une histoire vraie, enfin.",
     type:"material", price:0 },
   // Objet de quête — Épreuve de la Lumière Éternelle (portrait de Dumbledore).
   // Tombe des morts-vivants ; réuni ×3 pour le 1er temps de l'épreuve.

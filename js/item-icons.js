@@ -76,6 +76,9 @@ const ITEM_ICON_REGISTRY = {
   // Baguettes / armes
   wand1:              'img/icons/items/wand1.png',
   wand2:              'img/icons/items/wand2.png',
+  // Baguette d'If des Profondeurs (récompense Ollivander, Boucle) : rendue via
+  // le système de tint `ebony` au runtime ; ce PNG sert de fallback/couverture.
+  baguette_if_boucle: 'img/icons/items/wand2.png',
   sword_gryff:        'img/icons/items/sword_gryff.png',
   // Armures
   robe1:              'img/icons/items/robe1.png',
@@ -556,6 +559,9 @@ const ITEM_ICON_SVG_REGISTRY = {
   // cristal/pierre givré, facettes bleu glacé. Fallback vectoriel ; le rendu
   // painterly PNG (img/icons_new/eclat_voute_*) reste prioritaire en jeu.
   eclat_voute: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="34" r="20" fill="#aaccee" opacity="0.22"/><path d="M32 6 L46 24 L40 52 L24 50 L18 26 Z" fill="#9cc3e8"/><path d="M32 6 L46 24 L34 30 Z" fill="#cfe6fa"/><path d="M32 6 L34 30 L18 26 Z" fill="#bcd9f2"/><path d="M34 30 L40 52 L24 50 Z" fill="#7fb0db"/><path d="M18 26 L34 30 L24 50 Z" fill="#6fa3d0"/><path d="M32 6 L34 30" stroke="#eaf6ff" stroke-width="1.2" fill="none" opacity="0.85"/></svg>`,
+  // Le récit de Manon (objet de quête, chaîne manon_confier → memoire_lockhart) :
+  // un parchemin roulé, scellé d'un ruban lunaire.
+  recit_manon: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><rect x="16" y="10" width="32" height="44" rx="3" fill="#e8d9b0"/><rect x="16" y="10" width="32" height="44" rx="3" fill="none" stroke="#b89b63" stroke-width="1.5"/><path d="M22 20 H42 M22 27 H42 M22 34 H38 M22 41 H40" stroke="#9c8048" stroke-width="1.4" fill="none" opacity="0.8"/><path d="M12 14 a4 4 0 0 1 4 -4 v44 a4 4 0 0 0 -4 4 Z" fill="#cdb985"/><path d="M52 14 a4 4 0 0 0 -4 -4 v44 a4 4 0 0 1 4 4 Z" fill="#cdb985"/><circle cx="32" cy="50" r="5" fill="#7c6cae"/><path d="M30 49 a2 2 0 1 1 4 0 a2 2 0 1 1 -4 0" fill="#cfc4ec"/></svg>`,
   // Clé du Donjon (salle scellée §2.C) : clé de fer à anneau et panneton.
   cle_donjon: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><g transform="rotate(45 32 32)"><circle cx="32" cy="17" r="9" fill="none" stroke="#c9a23c" stroke-width="5"/><circle cx="32" cy="17" r="3.2" fill="#3a2c12"/><rect x="29.5" y="24" width="5" height="27" fill="#d4af45"/><rect x="34.5" y="40" width="8" height="4.5" fill="#d4af45"/><rect x="34.5" y="47" width="6" height="4.5" fill="#d4af45"/></g></svg>`,
 };

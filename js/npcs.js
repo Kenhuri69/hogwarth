@@ -146,8 +146,16 @@ const NPCS = [
     icon:  "🩺",
     portraitImg: "img/npc/pomfresh.png",
     placement: { floor: 2, anchor: "any" },
-    questsGiven:    ["mandragore_pomfresh"],
-    questsTurnedIn: ["mandragore_pomfresh"],
+    questsGiven:    ["mandragore_pomfresh", "fabrique_pomfresh"],
+    questsTurnedIn: ["mandragore_pomfresh", "fabrique_pomfresh"],
+    // Quête de fabrication répétable en Boucle (étage 12) — gate minFloor:11.
+    dialoguesByQuest: {
+      fabrique_pomfresh: {
+        questOffer:  "La Boucle me ramène les mêmes blessés, encore et encore. Si tu sais manier un chaudron, concocte-moi 3 Potions de Soin Mineure — l'infirmerie ne tient plus que par tes mains.",
+        questActive: "Mes réserves ? Trois Potions de Soin Mineure, jeune sorcier. Le chaudron de Slughorn n'est pas loin.",
+        questReady:  "Béni sois-tu. Voilà de quoi te remercier — et reviens vite, la Boucle ne cicatrise jamais."
+      }
+    },
     dialogues: {
       greeting:    [
         "Par Merlin ! L'infirmerie est saturée et il me manque des Mandragores. Aurais-tu un instant, jeune sorcier ?",
@@ -319,8 +327,17 @@ const NPCS = [
     icon:  "✨",
     portraitImg: "img/npc/lockhart.png",
     placement: { floor: 3, anchor: "any" },
-    questsGiven:    ["livre_interdit"],
-    questsTurnedIn: ["livre_interdit"],
+    questsGiven:    ["livre_interdit", "memoire_lockhart"],
+    questsTurnedIn: ["livre_interdit", "memoire_lockhart"],
+    // Rédemption en Boucle (étage 13) : Lockhart veut écrire la VRAIE histoire
+    // de Manon. Chaîne prereq manon_confier ; gate minFloor:11.
+    dialoguesByQuest: {
+      memoire_lockhart: {
+        questOffer:  "Entre nous… j'en ai assez de mes fables. La Boucle m'a montré combien elles sonnent creux. La petite du troisième étage — Manon — a une histoire vraie, bouleversante. Apporte-moi son récit : j'y mettrai mon nom, oui, mais pas un seul mensonge. Pour une fois.",
+        questActive: "Tu as le récit de Manon ? Ma plume n'attend que la vérité, cette fois.",
+        questReady:  "Voilà… des mots vrais, enfin. « Manon, fille de la lune. » Cela vaut tous mes prix d'enchanteur du sourire. Prends ce livre — tu l'as rendu possible."
+      }
+    },
     dialogues: {
       greeting:    [
         "Ah, un admirateur ! Approche, approche. As-tu lu mes mémoires ? Non ? Quel dommage — je te recommande chaudement le tome trois.",
@@ -393,8 +410,17 @@ const NPCS = [
     icon:  "🌙",
     portraitImg: "img/npc/manon.png",
     placement: { floor: 3, anchor: "any" },
-    questsGiven:    ["manon_secret", "manon_pardon", "manon_revelio", "manon_grimoire", "manon_acte3"],
-    questsTurnedIn: ["manon_secret", "manon_pardon", "manon_revelio", "manon_grimoire", "manon_acte3"],
+    questsGiven:    ["manon_secret", "manon_pardon", "manon_revelio", "manon_grimoire", "manon_acte3", "manon_confier"],
+    questsTurnedIn: ["manon_secret", "manon_pardon", "manon_revelio", "manon_grimoire", "manon_acte3", "manon_confier"],
+    // Rédemption en Boucle (étage 13) : Manon confie l'histoire d'Élara, que
+    // Lockhart mettra en mémoire (chaîne manon_confier → memoire_lockhart).
+    dialoguesByQuest: {
+      manon_confier: {
+        questOffer:  "Tu reviens, encore. La Boucle nous ramène tous… alors autant que ça serve. Je veux que l'histoire de ma mère soit dite — pour de vrai. Aide-moi à rassembler ses souvenirs épars dans ces murs, et je les mettrai en mots.",
+        questActive: "Ses souvenirs sont dispersés partout — fouille les recoins. Trois suffiront pour que je me souvienne assez.",
+        questReady:  "C'est écrit. Tout y est : la lune, le mensonge, le pardon. Porte ce récit à quelqu'un qui saura le faire lire — même ce bouffon de Lockhart, s'il le faut. Au moins, lui, on l'écoute."
+      }
+    },
     // Établi de fusion : disponible quand tous les feuillets du set actif
     // sont réunis (5 pages Acte II / 3 feuillets clairs Acte III).
     // Ouvre l'overlay #fusion-modal qui reconstitue le grimoire (= remise
@@ -891,8 +917,17 @@ const NPCS = [
       default: 0.50,
       byType:  { "wand": 0.75 }
     },
-    questsGiven:    ["bottines_ollivander"],
-    questsTurnedIn: ["bottines_ollivander"],
+    questsGiven:    ["bottines_ollivander", "bois_ollivander_boucle"],
+    questsTurnedIn: ["bottines_ollivander", "bois_ollivander_boucle"],
+    // Quête de fouille répétable en Boucle (étage 13) — récompense une baguette
+    // épique taillée dans un if des Profondeurs. Gate minFloor:11.
+    dialoguesByQuest: {
+      bois_ollivander_boucle: {
+        questOffer:  "Curieux… très curieux. La Boucle a fait pousser un if dans ses profondeurs — un bois qui chuchote, comme je n'en avais plus senti depuis un siècle. Fouille les recoins, rapporte-m'en une branche, et je t'en taillerai une baguette digne de ce nom.",
+        questActive: "Le bois t'appelle, jeune sorcier. Fouille encore — un if des Profondeurs ne se laisse pas trouver sans patience.",
+        questReady:  "Ahh… ce bois. Sens comme il vibre. Tiens — ta baguette d'if des Profondeurs. Elle se souviendra de chaque sort, et de chaque récurrence."
+      }
+    },
     dialogues: {
       greeting: [
         "Curieux... très curieux. Approche, jeune sorcier, et laisse-moi te regarder.",
