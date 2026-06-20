@@ -72,6 +72,16 @@ function _spellFilterBarHtml(spellNames, mode, charIdx) {
 }
 
 // Hors combat : liste les sorts du personnage sélectionné (onglets)
+// Lot P4b — un sort `boucleOnly` (corrompu de Maison) n'est listé que dans la
+// Boucle Ténébreuse (post-victoire, étages 11+) : même test que le contrecoup
+// de corruption (_applyCorruptionBacklash). Défensif sur les globals.
+function _isBoucleOnlySpellLocked(spell) {
+  if (!spell || !spell.boucleOnly) return false;
+  const inBoucle = (typeof victoryAchieved !== 'undefined') && victoryAchieved
+    && (typeof currentFloor === 'number') && currentFloor >= 11;
+  return !inBoucle;
+}
+
 function openSpells(charIdx = 0) {
   // En mode solo, on ne montre que Harry (partySize=1).
   if (charIdx >= partySize) charIdx = 0;
@@ -94,6 +104,7 @@ function openSpells(charIdx = 0) {
     const spell = (typeof resolveSpellForm === 'function' && resolveSpellForm(sName, c))
                   || SPELLS.find(s => s.name === sName);
     if (!spell) continue;
+    if (_isBoucleOnlySpellLocked(spell)) continue;   // P4b — corrompus de Maison hors Boucle
     if (_spellFilter !== 'tous' && spellCategory(spell) !== _spellFilter) continue;
     const div = document.createElement('div');
     div.className = 'spell-item';
@@ -595,6 +606,7 @@ function openBattleSpells() {
     const spell    = (typeof resolveSpellForm === 'function' && resolveSpellForm(sName, c))
                      || SPELLS.find(s => s.name === sName);
     if (!spell) continue;
+    if (_isBoucleOnlySpellLocked(spell)) continue;   // P4b — corrompus de Maison hors Boucle
     if (_spellFilter !== 'tous' && spellCategory(spell) !== _spellFilter) continue;
     // Portus en combat : bloqué si déjà utilisé ce combat OU si cooldown actif.
     const fightCd = (spell.effect === 'teleport' && typeof portusFightCooldown === 'number')

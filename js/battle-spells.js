@@ -323,7 +323,10 @@ function _buildSummonedAdd(ability, summoner) {
 
 const STATUS_BY_SPELL = { 'Incendio': 'burn', 'Diffindo': 'bleed', 'Sectumsempra': 'bleed', 'Glacius': 'gel',
   // Lot P3 — formes évoluées / Premium héritent du DoT de leur base.
-  'Incendio Majeur': 'burn', 'Incendio Royal': 'burn', 'Glacius Profond': 'gel', 'Givre de Rowena': 'gel' };
+  'Incendio Majeur': 'burn', 'Incendio Royal': 'burn', 'Glacius Profond': 'gel', 'Givre de Rowena': 'gel',
+  // Lot P4b — sorts corrompus de Maison (burn appliqué par _spellElementalDamage,
+  // poison par _spellLifesteal qui consulte aussi STATUS_BY_SPELL).
+  'Flamme Dévorante': 'burn', 'Venin du Cachot': 'poison' };
 
 // Morts-vivants : cible du bonus `spell.bonusVsUndead` (Lumos Solem).
 // Tous les fantômes + une liste d'ids non-fantômes mais sans vie.
@@ -702,6 +705,20 @@ function _spellLifesteal(spell, char, enemy, targetIdx) {
     UX_safe.floatDmg(`enemy:${targetIdx}`, dmg, 'dmg');
     UX_safe.floatDmg('ally', heal, 'heal');
     UX_safe.logCombat(`🩸 ${char.name} : ${spell.name} → <b>−${dmg}</b>${suffix}, <b>+${heal} PV</b>`, 'magic');
+    // Lot P4b — un sort de drain mappé dans STATUS_BY_SPELL applique aussi son
+    // DoT (Venin du Cachot → poison). Même proba que _spellElementalDamage.
+    const statusId = STATUS_BY_SPELL[spell.name];
+    if (statusId && enemy.currentHp > 0) {
+      const chance = Math.min(0.50, 0.10 + (char.int || 0) * 0.0075 + (char.lck || 0) * 0.0075);
+      if (Math.random() < chance) {
+        const dotPower = Math.max(1, Math.floor(spell.power * 0.25));
+        const dotTurns = Math.min(5, 2 + Math.floor((char.int || 0) / 24) + Math.floor((char.lck || 0) / 24));
+        applyStatus(enemy, statusId, dotPower, dotTurns);
+        const def = STATUS_DEFS[statusId];
+        msg += ` ${def.icon} ${def.label} appliqué !`;
+        UX_safe.logCombat(`${def.icon} ${enemy.name} : ${def.label} (${dotPower}/tour, ${dotTurns} tours)`, 'magic');
+      }
+    }
   }
   addMsg(msg, 'magic');
   return msg;

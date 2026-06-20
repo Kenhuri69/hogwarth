@@ -1204,4 +1204,88 @@ async function scenarioSpellsP4() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioSpellIcons, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioSpellVoiceMapping, scenarioTeleportation, scenarioHealOoc, scenarioBombardaSplash, scenarioAoeSpells, scenarioSpellCombos, scenarioSpellsP2, scenarioSpellsP3, scenarioSpellsP4] };
+async function scenarioSpellsP4b() {
+  console.log('\n── Scénario : Sorts & Magie 2.0 — Lot P4b (sorts corrompus de Maison) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Serpentard' });
+
+  // T1 — acquisition : le Gardien de la Boucle enseigne le sort corrompu de la
+  // Maison du joueur (Serpentard → Venin du Cachot).
+  const t1 = await page.evaluate(() => {
+    chosenHouse = 'Serpentard';
+    if (typeof usedSpecialNpcs !== 'undefined') usedSpecialNpcs.delete('gardien_boucle');
+    triggerNpcSpecialAction('gardien_boucle');
+    return { learned: party[0].spells.includes('Venin du Cachot'),
+             mapped: HOUSE_CORRUPT_SPELL.Serpentard };
+  });
+  console.log('  T1 acquisition:', t1);
+  assert(t1.mapped === 'Venin du Cachot', 'HOUSE_CORRUPT_SPELL Serpentard → Venin du Cachot');
+  assert(t1.learned, 'le Gardien enseigne le sort corrompu de la Maison');
+
+  // T2 — gate boucleOnly : caché hors Boucle, visible en Boucle (openBattleSpells).
+  await startDummyFight(page, { hp: 800 });
+  const t2 = await page.evaluate(() => {
+    const shown = () => { openBattleSpells();
+      const v = Array.from(document.querySelectorAll('#spell-list .spell-name'))
+        .some(el => el.textContent.includes('Venin du Cachot'));
+      closeModal('spell-modal'); return v; };
+    victoryAchieved = false; currentFloor = 5;
+    const outside = shown();
+    victoryAchieved = true; currentFloor = 12;
+    const inside = shown();
+    return { outside, inside };
+  });
+  console.log('  T2 gate boucleOnly:', t2);
+  assert(t2.outside === false, 'corrompu de Maison caché hors Boucle');
+  assert(t2.inside === true, 'corrompu de Maison visible en Boucle');
+
+  // T3 — cast en Boucle : Venin du Cachot inflige des dégâts ET draine des PV.
+  const t3 = await page.evaluate(() => {
+    victoryAchieved = true; currentFloor = 12;
+    party[0].sp = 99; party[0].hp = 1; currentBattleChar = 0;
+    enemyGroup[0].currentHp = 800;
+    const hp0 = enemyGroup[0].currentHp, pv0 = party[0].hp;
+    castSpellInBattle('Venin du Cachot', 0);
+    return { dealt: hp0 - enemyGroup[0].currentHp, healed: party[0].hp - pv0 };
+  });
+  console.log('  T3 cast:', t3);
+  assert(t3.dealt > 0 && t3.healed > 0, 'Venin du Cachot inflige des dégâts et draine');
+
+  // T4 — contrecoups offensifs (corruptionRisk forcé à 1, en Boucle) :
+  // selfburn (Flamme Dévorante) pose un statut burn sur le lanceur ; selfdmg
+  // (Savoir Interdit) inflige des PV au lanceur.
+  const t4 = await page.evaluate(() => {
+    victoryAchieved = true; currentFloor = 12; currentBattleChar = 0;
+    _teachSpellToParty('Flamme Dévorante');
+    _teachSpellToParty('Savoir Interdit');
+    // selfburn
+    const flam = SPELLS.find(s => s.name === 'Flamme Dévorante');
+    const sb = flam.corruptionRisk; flam.corruptionRisk = 1;
+    party[0].sp = 99; party[0].hp = party[0].hpMax; party[0].statusEffects = [];
+    enemyGroup[0].currentHp = 800;
+    castSpellInBattle('Flamme Dévorante', 0);
+    const hasBurn = (party[0].statusEffects || []).some(s => s.id === 'burn');
+    flam.corruptionRisk = sb;
+    // selfdmg
+    const sav = SPELLS.find(s => s.name === 'Savoir Interdit');
+    const sd = sav.corruptionRisk; sav.corruptionRisk = 1;
+    party[0].sp = 99; party[0].hp = party[0].hpMax; enemyGroup[0].currentHp = 800;
+    const pv0 = party[0].hp;
+    castSpellInBattle('Savoir Interdit', 0);
+    const selfDmg = pv0 - party[0].hp;
+    sav.corruptionRisk = sd;
+    return { hasBurn, selfDmg };
+  });
+  console.log('  T4 contrecoups:', t4);
+  assert(t4.hasBurn, 'selfburn : Flamme Dévorante embrase le lanceur (statut burn)');
+  assert(t4.selfDmg > 0, 'selfdmg : Savoir Interdit inflige des PV au lanceur');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (P4b)`);
+  }
+  console.log('  ✅ Sorts & Magie 2.0 Lot P4b OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioSpellIcons, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioSpellVoiceMapping, scenarioTeleportation, scenarioHealOoc, scenarioBombardaSplash, scenarioAoeSpells, scenarioSpellCombos, scenarioSpellsP2, scenarioSpellsP3, scenarioSpellsP4, scenarioSpellsP4b] };

@@ -1815,6 +1815,13 @@ const NPCS = [
     placement: { floor: 11, anchor: "first-room" },
     questsGiven:    ["purge_loups", "purge_acromantules", "purge_mangemorts", "purge_moremplis", "prime_boss_gardien"],
     questsTurnedIn: ["purge_loups", "purge_acromantules", "purge_mangemorts", "purge_moremplis", "prime_boss_gardien"],
+    // Lot P4b — enseigne le sort corrompu de la Maison du joueur (résolu par
+    // chosenHouse → HOUSE_CORRUPT_SPELL). One-shot par visite.
+    specialAction: {
+      type:    "teach_corrupt_spell",
+      oneShot: true,
+      label:   "🌑 Apprendre un art corrompu"
+    },
     // Prime de boss premium (cadence longue, everyLevels:3) — invoque le
     // Magyar Ancestral via spawnOnAccept, récompense un matériau primordial.
     dialoguesByQuest: {

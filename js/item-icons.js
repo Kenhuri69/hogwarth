@@ -493,6 +493,11 @@ const SPELL_ICON_REGISTRY = {
   'Maledictus':         'img/icons/spells/maledictus.png',
   'Crucio':             'img/icons/spells/crucio.png',
   'Morsmordre':         'img/icons/spells/morsmordre.png',
+  // P4b — sorts corrompus de Maison : alias sur des PNG thématiques existants.
+  'Flamme Dévorante':   'img/icons/spells/fiendfyre.png',
+  'Venin du Cachot':    'img/icons/spells/sanguini.png',
+  'Savoir Interdit':    'img/icons/spells/maledictus.png',
+  'Fardeau Partagé':    'img/icons/spells/vulnera_sanentur.png',
   'Portus':             'img/icons/spells/teleportation.png',
   'Revelio':            'img/icons/spells/revelio.png',
   'Glacius':            'img/icons/spells/glacius.png',

@@ -1944,8 +1944,8 @@ function loadModule(relPath, exportNames, globals = {}) {
     const s = getSpellByName(n);
     check(`${n} affine ${h} + signature`, s && s.houseAffinity === h && s.category === 'signature');
   }
-  // 4 sorts Mythe house-affine + 4 variantes Premium signature (Lot P3) = 8.
-  check('8 sorts house-affine (4 Mythe + 4 Premium)', SPELLS.filter(s => s.houseAffinity).length === 8);
+  // 4 Mythe + 4 Premium (P3) + 4 corrompus de Maison (P4b) = 12.
+  check('12 sorts house-affine (4 Mythe + 4 Premium + 4 corrompus)', SPELLS.filter(s => s.houseAffinity).length === 12);
   check('au moins 1 sort par rang',
     ['basique', 'avancé', 'maître', 'corrompu'].every(t => SPELLS.some(s => s.tier === t)));
   // Idempotence : un 2e passe ne change rien (clone JSON identique).
@@ -2067,8 +2067,8 @@ function loadModule(relPath, exportNames, globals = {}) {
   check('P3 : Incendio Royal = base ×1.20 (14→17)', getSpellByName('Incendio Royal').power === 17);
   check('P3 : une affinité Premium par Maison',
     new Set(PREM.map(n => getSpellByName(n).houseAffinity)).size === 4);
-  check('P3 : house-affine total = 8 (4 Mythe + 4 Premium)',
-    SPELLS.filter(s => s.houseAffinity).length === 8);
+  check('P3+P4b : house-affine total = 12 (4 Mythe + 4 Premium + 4 corrompus)',
+    SPELLS.filter(s => s.houseAffinity).length === 12);
 
   // ── resolveSpellForm — évolution artefact (PUR, char-based) ──
   const withStaff = { equipped: { wand: { id: 'baton_ancestral' } } };
@@ -2128,10 +2128,11 @@ function loadModule(relPath, exportNames, globals = {}) {
     '\n;exports._spellEvolveConditionMet = _spellEvolveConditionMet;' +
     '\n;exports.getSpellByName = getSpellByName;' +
     '\n;exports.corruptionBacklashKind = corruptionBacklashKind;' +
+    '\n;exports.HOUSE_CORRUPT_SPELL = HOUSE_CORRUPT_SPELL;' +
     '\n;exports.SPELLS = SPELLS;\n;exports.SPELL_META = SPELL_META;',
     sandbox, { filename: 'data.js' });
   const { resolveSpellForm, _spellEvolveConditionMet, getSpellByName,
-          corruptionBacklashKind, SPELL_META } = sandbox.exports;
+          corruptionBacklashKind, HOUSE_CORRUPT_SPELL, SPELL_META } = sandbox.exports;
 
   // ── Sanguini Vorace : forme corrompue étiquetée ──
   const vorace = getSpellByName('Sanguini Vorace');
@@ -2169,6 +2170,24 @@ function loadModule(relPath, exportNames, globals = {}) {
     corruptionBacklashKind({ corruptionRisk: 0.2, backlash: 'selfdmg' }) === 'selfdmg');
   check('P4 : backlashKind défaut corruption si backlash inconnu',
     corruptionBacklashKind({ corruptionRisk: 0.2, backlash: 'wat' }) === 'corruption');
+
+  // ── P4b : 4 sorts corrompus de Maison ──
+  const P4B = ['Flamme Dévorante', 'Venin du Cachot', 'Savoir Interdit', 'Fardeau Partagé'];
+  check('P4b : 4 sorts corrompus présents', P4B.every(n => !!getSpellByName(n)));
+  check('P4b : tous étiquetés corrompu', P4B.every(n => SPELL_META[n] && SPELL_META[n][1] === 'corrompu'));
+  check('P4b : tous boucleOnly + corruptionRisk', P4B.every(n => {
+    const s = getSpellByName(n); return s.boucleOnly === true && typeof s.corruptionRisk === 'number' && s.corruptionRisk > 0;
+  }));
+  check('P4b : une affinité Maison distincte par sort',
+    new Set(P4B.map(n => getSpellByName(n).houseAffinity)).size === 4);
+  check('P4b : backlashKind respecte le backlash déclaré',
+    corruptionBacklashKind(getSpellByName('Flamme Dévorante')) === 'selfburn'
+    && corruptionBacklashKind(getSpellByName('Venin du Cachot')) === 'selfdmg');
+  check('P4b : HOUSE_CORRUPT_SPELL mappe les 4 Maisons vers les sorts',
+    HOUSE_CORRUPT_SPELL.Gryffondor === 'Flamme Dévorante'
+    && HOUSE_CORRUPT_SPELL.Serpentard === 'Venin du Cachot'
+    && HOUSE_CORRUPT_SPELL.Serdaigle === 'Savoir Interdit'
+    && HOUSE_CORRUPT_SPELL.Poufsouffle === 'Fardeau Partagé');
 })();
 
 // ============================================================

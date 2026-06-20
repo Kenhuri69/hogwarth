@@ -762,6 +762,27 @@ function triggerNpcSpecialAction(npcId) {
     }
     if (typeof updateUI === 'function') updateUI();
   }
+  // teach_corrupt_spell (Lot P4b §1.4.C) — le Gardien de la Boucle enseigne le
+  // sort corrompu de la Maison du joueur (résolu via HOUSE_CORRUPT_SPELL).
+  // One-shot ; refusé hors Maison choisie. Réutilise _teachSpellToParty.
+  if (action.type === 'teach_corrupt_spell') {
+    const map = (typeof HOUSE_CORRUPT_SPELL !== 'undefined') ? HOUSE_CORRUPT_SPELL : null;
+    const spellName = (map && typeof chosenHouse !== 'undefined') ? map[chosenHouse] : null;
+    if (!spellName) {
+      if (typeof addMsg === 'function') addMsg("La Boucle ne reconnaît pas ta Maison.", 'bad');
+      return;
+    }
+    const learned = (typeof _teachSpellToParty === 'function') && _teachSpellToParty(spellName);
+    if (typeof usedSpecialNpcs !== 'undefined') usedSpecialNpcs.add(npc.id);
+    if (learned) {
+      if (typeof addMsg === 'function') addMsg(`🌑 ${npc.title || npc.name} t'enseigne un art corrompu : ${spellName} !`, 'magic');
+      if (typeof AudioSystem !== 'undefined' && AudioSystem.playLevelUp) AudioSystem.playLevelUp();
+      safeCall('autoSave', 'corrupt-spell-taught');
+    } else if (typeof addMsg === 'function') {
+      addMsg(`${spellName} t'est déjà familier.`, '');
+    }
+    if (typeof updateUI === 'function') updateUI();
+  }
 }
 
 // État courant du dialogue (multi-pages)

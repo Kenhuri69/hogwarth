@@ -6,15 +6,15 @@
 >
 > **Statut : ÉTAPE 1 + ÉTAPE 2 rédigées · Lots P0 (socle data inerte),
 > P1 (étiquetage + liseré de rang), P2 (sorts par Maison & arbre),
-> P3 (Premium & évolutifs) et P4a (cœur corruption) LIVRÉS. P4b→P5 à venir.**
+> P3 (Premium & évolutifs), P4a (cœur corruption) et P4b (sorts corrompus de
+> Maison) LIVRÉS. P4c→P5 à venir.**
 >
 > P4 (« Corrompus & Boucle ») est tranché en sous-lots — voir
-> [`sorts-p4-corrompus.md`](./sorts-p4-corrompus.md). **P4a livré** : cœur
-> corruption (`corruptionStacks` sérialisé + contrecoup `corruptionRisk` /
-> `_applyCorruptionBacklash` gated Boucle + 1ʳᵉ évolution corrompue réelle
-> Sanguini → Sanguini Vorace, condition `corruption ≥ 2`). Power-neutre côté
-> combat existant (contrecoup `corruption` = +1 compteur). P4b (4 sorts
-> corrompus de Maison + contrecoups offensifs + sim), P4c (temporels), P4d
+> [`sorts-p4-corrompus.md`](./sorts-p4-corrompus.md). **P4a + P4b livrés** :
+> cœur corruption (`corruptionStacks` + contrecoup `_applyCorruptionBacklash`
+> gated Boucle + évolution Sanguini → Sanguini Vorace) ET les 4 sorts corrompus
+> de Maison (§1.4.C, `boucleOnly`, appris auprès du Gardien de la Boucle,
+> contrecoups offensifs `selfdmg`/`selfburn`). P4c (temporels), P4d
 > (légendaires) à venir.
 >
 > ### Journal — Lot P3 (livré)
@@ -701,7 +701,7 @@ budgetSort = power×0,5 + (AoE? ×1,5) + (statut? +2) + (lifesteal? +3) + (heal?
 | ✅ **P2 — Sorts par Maison & arbre** | `houseSpellBoost` (cost-only, PUR), 8 sorts d'Éclats/familier/environnementaux, apprentissage PNJ (`teach_spell`)/Codex (`teachesSpell`). | `scenarioSpellsP2` (6 sous-tests) + units (houseSpellBoost/gates) ; smoke 234 vert ; sim baseline inchangé. |
 | ✅ **P3 — Premium & évolutifs** | 4 variantes Premium signature (octroi Apothéose), `resolveSpellForm` évolutif réel (artefact/étage/quête), synergie Bâton ancestral, FX Premium. | `scenarioSpellsP3` (3 sous-tests) + units (803) ; smoke 239 vert ; sim baseline inchangé. |
 | ✅ **P4a — Cœur corruption** | `corruptionStacks` (sérialisé), contrecoup `corruptionRisk`/`_applyCorruptionBacklash` (gated Boucle), évolution Sanguini → Sanguini Vorace (`corruption ≥ 2`). Power-neutre. | `testSpellP4` (units 825) + `scenarioSpellsP4` (4 sous-tests) ; smoke vert ; cache bumpé. |
-| **P4b — Sorts corrompus de Maison** | 4 sorts `corrompu` (§1.4.C) + contrecoups offensifs (`selfdmg`/`selfburn`) + gate d'acquisition Boucle. | smoke Boucle ; **sim-difficulty obligatoire**. |
+| ✅ **P4b — Sorts corrompus de Maison** | 4 sorts `corrompu` (§1.4.C, `boucleOnly`, house-affine) + contrecoups offensifs (`selfdmg`/`selfburn`) + gate Boucle (`_isBoucleOnlySpellLocked`) + acquisition Gardien de la Boucle (`teach_corrupt_spell`). | `scenarioSpellsP4b` (4 sous-tests) + units (P4b) ; smoke vert ; sim baseline inchangé (hors kit). |
 | **P4c — Temporels & échos** | §1.4.B (Tempus Echo, Reliquae Temporis, Écho Fantôme via `buildEcho`). | smoke. |
 | **P4d — Légendaires de quête** | §1.7 (Cœur de Lion, Pacte du Serpent, Verbe de Rowena, Serment du Blaireau, Le Mot du Dormeur). | smoke ; sim. |
 | **P5 — Équilibrage final** | Passe `tools/sim-difficulty.js`, ajustement coûts/power, Codex sorts complet. | sim + units + smoke complet. |

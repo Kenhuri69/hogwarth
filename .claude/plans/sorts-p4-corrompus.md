@@ -14,8 +14,8 @@ incrémentalement :
 
 | Sous-lot | Contenu | Sensibilité sim |
 |----------|---------|-----------------|
-| **P4a** (ce PR) | **Cœur corruption** : `corruptionLevel` (sérialisé) + mécanique `corruptionRisk`/contrecoup (`_applyCorruptionBacklash`) + **première évolution corrompue réelle** (Sanguini → Sanguini Vorace, condition `corruption ≥ 2` déjà stubée `data.js:692`). **Power-neutre** côté combat existant. | Aucune (rien de neuf ne scale les dégâts) |
-| P4b | 4 sorts corrompus de Maison (§1.4.C : Flamme Dévorante / Venin du Cachot / Savoir Interdit / Fardeau Partagé) + contrecoups auto-dégât/statut + gate d'acquisition Boucle. | **Forte → sim obligatoire** |
+| ✅ **P4a** (livré) | **Cœur corruption** : `corruptionStacks` (sérialisé) + mécanique `corruptionRisk`/contrecoup (`_applyCorruptionBacklash`) + **première évolution corrompue réelle** (Sanguini → Sanguini Vorace, condition `corruption ≥ 2`). **Power-neutre** côté combat existant. | Aucune (rien de neuf ne scale les dégâts) |
+| ✅ **P4b** (livré) | 4 sorts corrompus de Maison (§1.4.C : Flamme Dévorante / Venin du Cachot / Savoir Interdit / Fardeau Partagé) + contrecoups auto-dégât/statut (`selfdmg`/`selfburn`) + gate Boucle (`boucleOnly`) + acquisition (Gardien de la Boucle). | sim baseline inchangé (hors kit) |
 | P4c | Sorts temporels / échos (§1.4.B : Tempus Echo, Reliquae Temporis, Écho Fantôme — réemploi `buildEcho`). | Moyenne |
 | P4d | Sorts légendaires de quête (§1.7). | Moyenne→forte |
 | P5 | Passe d'équilibrage final + Codex sorts. | Sim complet |
@@ -75,6 +75,38 @@ Rendre **réelle** la branche `corruption` déjà câblée dans
 6. cache-bump (data.js, battle-spells.js, state.js, save.js) + check_cache_versions.
 
 ---
+
+## P4b — Sorts corrompus de Maison (§1.4.C)
+
+4 sorts `tier:corrompu`, `houseAffinity` canon, `boucleOnly` (cachés hors Boucle
+par `_isBoucleOnlySpellLocked` dans openSpells/openBattleSpells), `corruptionRisk`
++ `backlash` (contrecoup offensif `selfdmg`/`selfburn`, live grâce au moteur P4a).
+
+| Sort | Maison | effect (réutilisé) | risk / backlash |
+|------|--------|--------------------|-----------------|
+| Flamme Dévorante | Gryffondor | `burn` (+ STATUS burn) | 0.15 / selfburn |
+| Venin du Cachot  | Serpentard | `lifesteal` (+ STATUS poison) | 0.15 / selfdmg |
+| Savoir Interdit  | Serdaigle  | `curse` (dmg + −ATK/DEF) | 0.20 / selfdmg |
+| Fardeau Partagé  | Poufsouffle| `heal_aoe` (soin de groupe) | 0.10 / corruption |
+
+- **Acquisition** : Gardien de la Boucle (`gardien_boucle`, étage 11) —
+  `specialAction` neuve `teach_corrupt_spell` (npc-dialog.js) qui résout
+  `chosenHouse → HOUSE_CORRUPT_SPELL` (data.js) et appelle `_teachSpellToParty`.
+  One-shot par visite.
+- **`_spellLifesteal` étendu** : consulte désormais `STATUS_BY_SPELL` (comme
+  `_spellElementalDamage`) → Venin du Cachot applique `poison`. Sûr pour les
+  autres lifesteal (non mappés).
+- **Écarts (riders exotiques reportés)** : kill-streak de Flamme Dévorante,
+  mimétisme de Savoir Interdit (« copie la capacité ennemie »), redistribution
+  de PV de Fardeau Partagé — non implémentés (réutilisation des handlers
+  existants, conforme §3 chirurgical). Identités simplifiées documentées dans
+  les `desc`. À ré-enrichir en P5 si souhaité.
+- **Sim** : sorts NON auto-appris + Boucle-gated + house-affine → hors kit de
+  `tools/sim-difficulty.js` → ladder baseline **inchangé** (vérifié).
+- **Vérif** : `tests/units.js` (P4b : présence/étiquetage/boucleOnly/backlash/
+  HOUSE_CORRUPT_SPELL ; compte house-affine 8→12) ; `scenarioSpellsP4b`
+  (acquisition Gardien, gate boucleOnly, cast drain+poison, contrecoups
+  selfburn/selfdmg) ; smoke complet ; cache PWA bumpé (v184).
 
 ## Journal
 - 2026-06-20 : plan P4a rédigé après audit du code (stub `corruption`

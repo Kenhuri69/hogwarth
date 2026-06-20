@@ -408,6 +408,17 @@ const SPELLS = [
   // s'aiguise en Sanguini Vorace quand `corruptionStacks ≥ 2` (accru en Boucle
   // par le contrecoup des sorts corrompus). Réversible (resolveSpellForm).
   { name:"Sanguini Vorace",   icon:"🦇",  desc:"Vampirisme corrompu (22 dégâts, drain de vie renforcé)",           cost:14, effect:"lifesteal", element:"ténèbres", power:22 },
+  // ── Sorts & Magie 2.0 — Lot P4b : 4 sorts corrompus de Maison (§1.4.C) ──
+  // `tier:corrompu`, `houseAffinity` canon, `boucleOnly` (cachés hors Boucle par
+  // openSpells/openBattleSpells), `corruptionRisk`+`backlash` (contrecoup en
+  // Boucle). Appris auprès du Gardien de la Boucle (specialAction
+  // teach_corrupt_spell, résout chosenHouse → HOUSE_CORRUPT_SPELL). Effets
+  // câblés sur les handlers EXISTANTS (burn/lifesteal/curse/heal_aoe) ; riders
+  // exotiques (kill-streak, mimétisme, redistribution) reportés — voir plan.
+  { name:"Flamme Dévorante",  icon:"🔥",  desc:"Brasier corrompu (28 dégâts + brûlure) — risque de contrecoup",     cost:22, effect:"burn",     element:"feu",      power:28, houseAffinity:"Gryffondor", boucleOnly:true, corruptionRisk:0.15, backlash:"selfburn" },
+  { name:"Venin du Cachot",   icon:"🐍",  desc:"Morsure empoisonnée qui draine la vie (22 dégâts, +PV, poison)",     cost:18, effect:"lifesteal", element:"ténèbres", power:22, houseAffinity:"Serpentard", boucleOnly:true, corruptionRisk:0.15, backlash:"selfdmg" },
+  { name:"Savoir Interdit",   icon:"🦅",  desc:"Savoir retourné contre l'ennemi (22 dégâts, −ATK/DEF)",             cost:18, effect:"curse",    element:"ténèbres", power:22, houseAffinity:"Serdaigle",  boucleOnly:true, corruptionRisk:0.20, backlash:"selfdmg" },
+  { name:"Fardeau Partagé",   icon:"🦡",  desc:"Solidarité corrompue : soigne tout le groupe (24 PV)",              cost:20, effect:"heal_aoe",  power:24, houseAffinity:"Poufsouffle", boucleOnly:true, corruptionRisk:0.10, backlash:"corruption" },
   // Variantes Premium signature (1/Maison, §1.5) — sort de base recoloré +
   // boosté (power = base × SPELL_PREMIUM_MULT['rare'] = ×1,20, pré-cuit), offert
   // EN PLUS au palier Apothéose de la Maison affine. `premium`/`premiumOf`/
@@ -616,6 +627,20 @@ const SPELL_META = {
   'Soin du Blaireau':    ['signature', 'maître', 'rare', 'Poufsouffle'],
   // ── Lot P4 : forme corrompue (évolution Sanguini → Sanguini Vorace) ──
   'Sanguini Vorace':     ['combat',    'corrompu', 'epic', null],
+  // ── Lot P4b : 4 sorts corrompus de Maison (§1.4.C) ──
+  'Flamme Dévorante':    ['combat',  'corrompu', 'epic', 'Gryffondor'],
+  'Venin du Cachot':     ['combat',  'corrompu', 'epic', 'Serpentard'],
+  'Savoir Interdit':     ['signature','corrompu','epic', 'Serdaigle'],
+  'Fardeau Partagé':     ['defense', 'corrompu', 'epic', 'Poufsouffle'],
+};
+
+// Lot P4b — sort corrompu de chaque Maison (§1.4.C). Résolu par chosenHouse
+// à l'apprentissage (Gardien de la Boucle, specialAction teach_corrupt_spell).
+const HOUSE_CORRUPT_SPELL = {
+  Gryffondor:  'Flamme Dévorante',
+  Serpentard:  'Venin du Cachot',
+  Serdaigle:   'Savoir Interdit',
+  Poufsouffle: 'Fardeau Partagé',
 };
 
 // Passe de normalisation IDEMPOTENTE (miroir de _migrateEquippedSlots côté
