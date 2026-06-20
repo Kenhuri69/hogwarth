@@ -499,6 +499,10 @@ let elanStacks      = [0, 0]; // Apothéose Gryffondor — cumul « Élan » par
 // donne une action sup. (celeriteExtra). Cf. .claude/plans/agi-derived.md §2.3.
 let celeriteGauge   = [0, 0]; // jauge fractionnaire de tempo par personnage
 let celeriteExtra   = [0, 0]; // actions supplémentaires en réserve ce round
+// Familiers invoqués (sort Avis Praesidium — Sorts & Magie 2.0 Lot P2).
+// Combat-scoped, NON sérialisé (comme celeriteGauge) : reset par startBattle,
+// tické par tickFamiliars (battle.js). Chaque entrée { ownerName, atk, turns, icon }.
+let combatFamiliars = [];
 let battleTurn      = 0;
 // Palier 17 « Mythe » — état transient de combat (réinitialisé par startBattle).
 // Non sérialisés : un combat ne peut pas être sauvegardé (inBattle bloque autoSave/writeSlot).

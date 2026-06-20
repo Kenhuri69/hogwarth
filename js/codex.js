@@ -62,6 +62,9 @@ const CODEX_ENTRIES = [
     links: ['cle_de_voute', 'echo_scellement'],
     unlockConditions: [{ type: 'eclat', value: 1 }],
     revealedBy: [{ type: 'eclat', value: 3 }],
+    // Sorts & Magie 2.0 Lot P2 — Codex enseignant : réunir les 3 Éclats
+    // (révélation de l'entrée) enseigne le sort Éclat de Voûte au groupe.
+    teachesSpell: 'Éclat de Voûte',
     textVersions: {
       veiled: "Éclat I/III (Peeves) — Un fragment du verrou, froid comme une dent de givre. En le tenant, une certitude : quelque chose s'est brisé. Plus bas, le deuxième éclat pulse : ce n'est pas un accident isolé — on le nourrit d'en bas. La fêlure est alimentée.",
       revealed: "Éclat III/III (Mangemort d'Élite) — Les trois éclats, réunis, dessinent une vérité double : le verrou cachait deux choses, pas une — une corruption plus vieille que les Fondateurs, et, tout au fond, Voldemort qui se nourrit de la brèche pour se reformer.",

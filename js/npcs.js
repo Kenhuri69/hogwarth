@@ -238,6 +238,14 @@ const NPCS = [
     placement: { floor: 2, anchor: "any" },
     questsGiven:    ["niffleurs_trésor", "chasse_magizoologiste_boucle"],
     questsTurnedIn: ["niffleurs_trésor", "chasse_magizoologiste_boucle"],
+    // Sorts & Magie 2.0 Lot P2 — enseignant générique (teach_spell) : le
+    // magizoologiste apprend à invoquer un familier protecteur (Avis Praesidium).
+    specialAction: {
+      type:  "teach_spell",
+      spell: "Avis Praesidium",
+      oneShot: true,
+      label: "🦉 Apprendre Avis Praesidium"
+    },
     // Chasse farming en Boucle (étage 12) — cible dynamique {target}/{amount}.
     dialoguesByQuest: {
       chasse_magizoologiste_boucle: {

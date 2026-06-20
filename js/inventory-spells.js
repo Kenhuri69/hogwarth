@@ -172,7 +172,10 @@ function isOutOfCombatSpell(spell) {
       || spell.effect === 'reveal'        || spell.effect === 'portal'
       || spell.effect === 'blood_seal'    || spell.effect === 'voyager_seal'
       || spell.effect === 'outremonde_memory' || spell.effect === 'pilgrim_mark'
-      || spell.effect === 'astral_recall';
+      || spell.effect === 'astral_recall'
+      // Lot P2 — sorts environnementaux / rituels hors combat.
+      || spell.effect === 'reveal_floor'  || spell.effect === 'recharge_fountain'
+      || spell.effect === 'purge_room'    || spell.effect === 'stabilize_rune';
 }
 
 // Cooldown partagé entre tous les sorts de soin OOC (cf. .claude/plans/
@@ -462,6 +465,102 @@ const SPELL_OOC_HANDLERS = {
     if (typeof drawDungeon   === 'function') drawDungeon();
     if (typeof renderMinimap === 'function') renderMinimap();
     if (typeof updateUI === 'function') updateUI();
+  },
+  // ── Lot P2 — sorts d'Éclats / environnementaux (hors combat) ─────
+  // Resonare (rituel d'Éclats) : révèle tout l'étage (brouillard) + dévoile la
+  // page cachée. Coût réduit de 2 PM par Éclat possédé (eclatProgress réutilisé),
+  // plancher 2 PM. Nécessite ≥ 1 Éclat.
+  reveal_floor: function (spell, charIdx) {
+    const caster = party[charIdx] || party[0];
+    if (!caster || caster.hp <= 0) { addMsg('Personne ne peut canaliser le sort.', 'bad'); return; }
+    const eclats = (typeof eclatProgress === 'function') ? eclatProgress() : 0;
+    if (eclats < 1) { addMsg("Resonare exige au moins 1 Éclat de la Clé de Voûte.", 'bad'); return; }
+    const cost = Math.max(2, spell.cost - 2 * eclats);
+    if (caster.sp < cost) { addMsg(`Pas assez de magie pour ${spell.name} (${cost} PM).`, 'bad'); return; }
+    caster.sp -= cost;
+    let cleared = 0;
+    if (typeof visited !== 'undefined' && Array.isArray(visited)) {
+      for (let y = 0; y < MAP_H; y++) {
+        for (let x = 0; x < MAP_W; x++) {
+          if (visited[y] && !visited[y][x]) { visited[y][x] = true; cleared++; }
+        }
+      }
+    }
+    if (typeof _ensurePagePlacement === 'function') _ensurePagePlacement(currentFloor);
+    if (typeof pagePlacements !== 'undefined' && pagePlacements.get(currentFloor)
+        && typeof revealedPages !== 'undefined' && !revealedPages.has(currentFloor)) {
+      revealedPages.add(currentFloor);
+    }
+    if (typeof AudioSystem !== 'undefined') AudioSystem.playSpellCast(spell.name);
+    addMsg(`🔹 ${caster.name} : ${spell.name} — l'étage entier se dévoile (${cleared} cases, pages comprises).`, 'good');
+    closeModal('spell-modal');
+    if (typeof renderMinimap === 'function') renderMinimap();
+    if (typeof drawDungeon   === 'function') drawDungeon();
+    updateUI();
+  },
+  // Fontis : recharge une Fontaine tarie (le joueur doit s'y tenir).
+  recharge_fountain: function (spell, charIdx) {
+    const caster = party[charIdx] || party[0];
+    if (!caster || caster.hp <= 0) { addMsg('Personne ne peut canaliser le sort.', 'bad'); return; }
+    const onFountain = (typeof dungeon !== 'undefined' && dungeon[playerY]
+      && dungeon[playerY][playerX] === CELL.FOUNTAIN);
+    if (!onFountain) { addMsg("Fontis ne s'invoque que sur une Fontaine.", 'bad'); return; }
+    const key = `${playerX},${playerY}`;
+    if (typeof usedFountains === 'undefined' || !usedFountains.has(key)) {
+      addMsg("Cette Fontaine coule déjà — rien à recharger.", ''); return;
+    }
+    if (caster.sp < spell.cost) { addMsg(`Pas assez de magie pour ${spell.name} (${spell.cost} PM).`, 'bad'); return; }
+    caster.sp -= spell.cost;
+    usedFountains.delete(key);
+    if (typeof AudioSystem !== 'undefined') AudioSystem.playSpellCast(spell.name);
+    addMsg(`💧 ${caster.name} : ${spell.name} — la Fontaine tarie jaillit de nouveau.`, 'good');
+    closeModal('spell-modal');
+    if (typeof drawDungeon   === 'function') drawDungeon();
+    if (typeof renderMinimap === 'function') renderMinimap();
+    updateUI();
+  },
+  // Purgo : dissipe la corruption d'un étage hostile (hante = pullulement,
+  // pieges = sol piégé). Sans effet si l'étage n'est pas corrompu.
+  purge_room: function (spell, charIdx) {
+    const caster = party[charIdx] || party[0];
+    if (!caster || caster.hp <= 0) { addMsg('Personne ne peut canaliser le sort.', 'bad'); return; }
+    const ev = (typeof currentFloorEvent !== 'undefined') ? currentFloorEvent : null;
+    const HOSTILE = ['hante', 'pieges'];
+    if (!ev || HOSTILE.indexOf(ev) === -1) { addMsg("Rien de corrompu à dissiper sur cet étage.", ''); return; }
+    if (caster.sp < spell.cost) { addMsg(`Pas assez de magie pour ${spell.name} (${spell.cost} PM).`, 'bad'); return; }
+    caster.sp -= spell.cost;
+    currentFloorEvent = null;
+    if (typeof AudioSystem !== 'undefined') AudioSystem.playSpellCast(spell.name);
+    addMsg(`✨ ${caster.name} : ${spell.name} — la corruption de l'étage se dissipe.`, 'good');
+    closeModal('spell-modal');
+    if (typeof DFX_safe !== 'undefined') DFX_safe.setFloorAmbience();
+    if (typeof drawDungeon === 'function') drawDungeon();
+    updateUI();
+  },
+  // Aedificium : stabilise d'un coup un sceau runique des Ruines (allume toutes
+  // les dalles, ouvre le passage scellé). Sans effet hors d'un puzzle runique actif.
+  stabilize_rune: function (spell, charIdx) {
+    const caster = party[charIdx] || party[0];
+    if (!caster || caster.hp <= 0) { addMsg('Personne ne peut canaliser le sort.', 'bad'); return; }
+    if (typeof runePuzzle === 'undefined' || !runePuzzle || runePuzzle.solved) {
+      addMsg("Aucun sceau runique instable à stabiliser ici.", ''); return;
+    }
+    if (caster.sp < spell.cost) { addMsg(`Pas assez de magie pour ${spell.name} (${spell.cost} PM).`, 'bad'); return; }
+    caster.sp -= spell.cost;
+    if (Array.isArray(runePuzzle.runes) && typeof litRunes !== 'undefined') {
+      runePuzzle.runes.forEach(k => litRunes.add(k));
+    }
+    runePuzzle.solved = true;
+    if (runePuzzle.barrier && typeof dungeon !== 'undefined') {
+      const [bx, by] = runePuzzle.barrier.split(',').map(Number);
+      if (dungeon[by] && dungeon[by][bx] === CELL.WALL) dungeon[by][bx] = CELL.FLOOR;
+    }
+    if (typeof AudioSystem !== 'undefined') AudioSystem.playSpellCast(spell.name);
+    addMsg(`🏛️ ${caster.name} : ${spell.name} — le sceau runique se stabilise, un passage s'ouvre.`, 'good');
+    closeModal('spell-modal');
+    if (typeof renderMinimap === 'function') renderMinimap();
+    if (typeof drawDungeon   === 'function') drawDungeon();
+    updateUI();
   }
 };
 
@@ -532,7 +631,7 @@ function openBattleSpells() {
           castSpellInBattle(spell.name, -1);
           return;
         }
-        const needsTarget = ['stun','burn','instant','disarm','imperius','aoe_cleave','reveal'].includes(spell.effect);
+        const needsTarget = ['stun','burn','instant','disarm','imperius','aoe_cleave','reveal','eclat_bolt','summon_ally'].includes(spell.effect);
         if (needsTarget && livingEnemies().length > 1) {
           pendingSpell = spell.name;
           showTargetSelection('spell_dmg');

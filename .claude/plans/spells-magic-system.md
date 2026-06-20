@@ -4,8 +4,9 @@
 > Pendant du chantier Artefacts (`artifacts-reliquary-system.md`) : même
 > philosophie, mêmes garde-fous, même structure documentaire.
 >
-> **Statut : ÉTAPE 1 + ÉTAPE 2 rédigées · Lots P0 (socle data inerte) et
-> P1 (étiquetage + liseré de rang) LIVRÉS. P2→P5 à venir.**
+> **Statut : ÉTAPE 1 + ÉTAPE 2 rédigées · Lots P0 (socle data inerte),
+> P1 (étiquetage + liseré de rang) et P2 (sorts par Maison & arbre) LIVRÉS.
+> P3→P5 à venir.**
 >
 > ### Arbitrages des points ❓ (validés par le commanditaire avant P0)
 > - ❓1 → **4 variantes Premium signature** (une par Maison), extensible.
@@ -47,6 +48,69 @@
 > - **Vérif** : `tests/units.js` (assertions P1 `SPELL_META`/affinités/rangs) ;
 >   `node tests/smoke.js` vert (231 scénarios, T2bis liseré) ; cache PWA bumpé
 >   (`data.js?v=48`, `inventory-spells.js?v=4`, `CACHE_VERSION hogwarth-v173`).
+>
+> ### Journal — Lot P2 (livré)
+> Sorts par Maison & arbre (branche `claude/sorts-p2-maison`). Réutilise le
+> moteur existant (castSpellInBattle, _spellElementalDamage, _spellSpCost,
+> SPELL_OOC_HANDLERS, _teachSpellToParty, eclatProgress) — règle d'or §0
+> respectée (ZÉRO scaling monstre touché).
+> - **`houseSpellBoost(spell, house, tier)`** (`data.js`, PUR façon `_fortuneCurve`,
+>   testable hors navigateur) : réduction de **coût PM** [0..0.25] pour un sort dont
+>   `houseAffinity == chosenHouse` (15 % base, +5 % au palier Mythe 17, +5 %
+>   Apothéose 18). **Power-NEUTRE** (cf. biais Maison V2 récent) : seul le coût
+>   baisse, jamais les dégâts. Greffé dans `_spellSpCost` (`battle-spells.js`),
+>   composé multiplicativement avec le −20 % Serdaigle. N'affecte que les 4 sorts
+>   Mythe (les seuls house-affine) → reste 4 sorts affines.
+> - **8 sorts neufs** (`SPELLS` + `SPELL_META`, §1.4) : **Resonare** (rituel OOC
+>   `reveal_floor`, coût ↓ par Éclat), **Éclat de Voûte** (combat `eclat_bolt`,
+>   dégâts ×(1+0,25·Éclats), gate `requiresEclats:2`), **Sceau des Quatre**
+>   (defense `seal_shield`, bouclier groupe + anti-peur, `requiresEclats:3`),
+>   **Avis Praesidium** (combat `summon_ally`, familier 3 tours), **Patronus
+>   Corporel** (defense `patronus_corporel`, garde de groupe + anti-peur),
+>   **Fontis** (OOC `recharge_fountain`), **Purgo** (OOC `purge_room`),
+>   **Aedificium** (OOC `stabilize_rune`).
+> - **Éclats** : RÉUTILISE `eclatProgress()` (quests.js) — ❓4 tranché, AUCUN
+>   `eclatsCollected` neuf. Gate `requiresEclats` posée dans `castSpellInBattle`
+>   AVANT débit PM / consommation de tour.
+> - **Familiers** : `combatFamiliars` (state.js, combat-scoped NON sérialisé,
+>   reset par `startBattle`) + `tickFamiliars()` (battle.js, hook dans `enemyTurn`).
+> - **Effects neufs routés défensivement** : 4 handlers combat dans
+>   `SPELL_HANDLERS`, 4 handlers OOC dans `SPELL_OOC_HANDLERS` + `isOutOfCombatSpell`.
+>   Chaque call-site gardé (`if handler` / `typeof`).
+> - **Apprentissage** : action PNJ générique **`teach_spell`** (`triggerNpcSpecial
+>   Action`, npc-dialog.js, one-shot via `usedSpecialNpcs`) — câblée sur **Scamander**
+>   (magizoologiste → Avis Praesidium). **Codex enseignant** : champ `teachesSpell`
+>   sur une entrée → `_teachSpellToParty` à la **révélation** (`checkCodexUnlocks`,
+>   ui-codex.js) ; posé sur `eclat_voute_codex` (3 Éclats → Éclat de Voûte).
+> - **Vérif** : `tests/units.js` (+~20 assertions P2 : `houseSpellBoost`, gates,
+>   effects, catégorie rituel) — **785 assertions** vertes ; nouveau scénario
+>   `scenarioSpellsP2` (`tests/scenarios/spells.js`, 6 sous-tests : houseSpellBoost,
+>   Éclat gate+dégâts, familier+tick, Sceau gate+effet, OOC Purgo/Fontis,
+>   apprentissage PNJ+Codex) ; `node tests/smoke.js` vert (**234 scénarios**) ;
+>   `tools/sim-difficulty.js` : ladder de difficulté **inchangé** (les sorts P2
+>   sont additifs, non auto-appris, aucun scaling monstre — baseline confirmée) ;
+>   cache PWA bumpé (10 JS → `data.js?v=49`, `battle-spells.js?v=16`,
+>   `battle.js?v=34`, `state.js?v=36`, `inventory-spells.js?v=6`,
+>   `npc-dialog.js?v=22`, `npcs.js?v=37`, `ui-codex.js?v=7`, `codex.js?v=15`,
+>   `item-icons.js?v=32`, `CACHE_VERSION hogwarth-v176`), `pwa-smoke` vert.
+>
+> **Écarts / décisions P2 :**
+> - **« ignore 30 % DEF » d'Éclat de Voûte abandonné** : `_computeSpellDamage`
+>   n'utilise PAS la DEF de l'ennemi (les sorts ignorent déjà la DEF). Le rider
+>   est donc sans objet — la signature du sort reste la mise à l'échelle ×Éclats.
+>   Desc ajustée en conséquence.
+> - **Icônes de sorts** : alias temporaires sur des PNG existants thématiquement
+>   proches (même approche que les sorts cross-plan, `item-icons.js`). Art dédié
+>   reporté (plan §2.8, lot ultérieur). Le test strict d'icônes reste vert.
+> - **Nouvelle catégorie Codex `'sorts'` (❓3) NON livrée en P2** : le Codex
+>   enseignant réutilise une entrée existante (`eclat_voute_codex`, catégorie
+>   `eclats`) via `teachesSpell`. L'onglet Codex dédié `'sorts'` + les entrées de
+>   sorts relèvent du « Codex sorts complet » (P5) ; laissé à un lot ultérieur.
+> - **Sorts temporels/échos (§1.4.B) et corruption contrôlée (§1.4.C)** : hors
+>   P2 — relèvent de P4 (corrompus/Boucle), conformément à ❓6.
+> - **Power du houseSpellBoost omis volontairement** (power-neutre) : le plan
+>   évoquait « −coût + léger power » ; le volet power est écarté pour éviter le
+>   power creep (biais Maison V2). Réintroductible en P3/P5 si la sim le justifie.
 >
 > **Écarts P1 :**
 > - **« filtre `category` enrichi » reporté.** Le commanditaire a défini P1 =
@@ -577,7 +641,7 @@ budgetSort = power×0,5 + (AoE? ×1,5) + (statut? +2) + (lifesteal? +3) + (heal?
 |-----|---------|--------------|
 | ✅ **P0 — Socle data** | Champs `id/category/tier/rarity/houseAffinity`, registres (`SPELL_TIERS`, `SPELL_PREMIUM_MULT`), helpers purs, `_normalizeSpells`. **Inerte.** | `tests/units.js` (helpers) + smoke vert (rien ne change en jeu). |
 | ✅ **P1 — Sorts de base & étiquetage** | Étiqueter les 47 sorts existants (table `SPELL_META`), liseré de tier dans la modale Sorts. Filtre `category` enrichi **reporté** (voir écart). | smoke `spells` (T2bis liseré) ; visuel modale. |
-| **P2 — Sorts par Maison & arbre** | `houseSpellBoost`, sorts d'Éclats/familier/environnementaux, apprentissage PNJ/Codex. | smoke nouveaux scénarios ; sim coûts. |
+| ✅ **P2 — Sorts par Maison & arbre** | `houseSpellBoost` (cost-only, PUR), 8 sorts d'Éclats/familier/environnementaux, apprentissage PNJ (`teach_spell`)/Codex (`teachesSpell`). | `scenarioSpellsP2` (6 sous-tests) + units (houseSpellBoost/gates) ; smoke 234 vert ; sim baseline inchangé. |
 | **P3 — Premium & évolutifs** | 4 variantes Premium signature, `resolveSpellForm`, synergies artefacts, FX/sons. | smoke `spells`+`fx` ; cache-bump. |
 | **P4 — Corrompus & Boucle** | Sorts `corrompu`, `corruptionLevel`, contrecoup, légendaires de quête, sorts temporels. | smoke Boucle ; **sim-difficulty obligatoire**. |
 | **P5 — Équilibrage final** | Passe `tools/sim-difficulty.js`, ajustement coûts/power, Codex sorts complet. | sim + units + smoke complet. |

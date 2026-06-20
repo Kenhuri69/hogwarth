@@ -1850,11 +1850,12 @@ function loadModule(relPath, exportNames, globals = {}) {
     'HOUSE_SPELL_FX', 'HERO_PATRONUS', 'SPELL_META',
     'getSpellById', 'getSpellByName', 'spellTierTint', 'resolveSpellForm',
     'spellPmCostEstimate', '_slugifySpell', '_defaultSpellCategory', '_normalizeSpells',
+    'houseSpellBoost',
   ]);
   const { SPELLS, SPELL_TIERS, SPELL_PREMIUM_MULT, SPELL_RARITY_COST_MULT,
           HOUSE_SPELL_FX, HERO_PATRONUS, SPELL_META, getSpellById, getSpellByName, spellTierTint,
           resolveSpellForm, spellPmCostEstimate, _slugifySpell, _defaultSpellCategory,
-          _normalizeSpells } = m;
+          _normalizeSpells, houseSpellBoost } = m;
 
   // ── Registres ──
   check('SPELL_PREMIUM_MULT = rare/epic/legendary',
@@ -1903,7 +1904,7 @@ function loadModule(relPath, exportNames, globals = {}) {
     SPELLS.every(s => s.houseAffinity === null || ['Gryffondor', 'Serpentard', 'Serdaigle', 'Poufsouffle'].includes(s.houseAffinity)));
 
   // ── Étiquetage curaté P1 (SPELL_META) ──
-  check('SPELL_META couvre les 47 sorts', SPELLS.every(s => !!SPELL_META[s.name]));
+  check('SPELL_META couvre tous les sorts', SPELLS.every(s => !!SPELL_META[s.name]));
   // Précédence : la valeur curée s'applique quand le littéral n'en déclare pas.
   check('Incendio = combat/basique/common', (() => { const s = getSpellByName('Incendio'); return s.category === 'combat' && s.tier === 'basique' && s.rarity === 'common'; })());
   check('Sectumsempra = combat/maître/epic', (() => { const s = getSpellByName('Sectumsempra'); return s.tier === 'maître' && s.rarity === 'epic'; })());
@@ -1970,6 +1971,41 @@ function loadModule(relPath, exportNames, globals = {}) {
   check('pmEst AoE > single', spellPmCostEstimate({ effect: 'aoe_field', power: 12, tier: 'basique', rarity: 'common' }) >
     spellPmCostEstimate({ effect: 'burn', power: 12, tier: 'basique', rarity: 'common' }));
   check('SPELL_RARITY_COST_MULT legendary = 1.6', SPELL_RARITY_COST_MULT.legendary === 1.6);
+
+  // ── Lot P2 — nouveaux sorts (Éclats / familiers / environnementaux) ──
+  const P2_SPELLS = ['Resonare', 'Éclat de Voûte', 'Sceau des Quatre', 'Avis Praesidium',
+                     'Patronus Corporel', 'Fontis', 'Purgo', 'Aedificium'];
+  check('P2 : 8 sorts neufs présents + étiquetés',
+    P2_SPELLS.every(n => getSpellByName(n) && SPELL_META[n]));
+  check('P2 : sorts d\'Éclats gatés par requiresEclats',
+    getSpellByName('Éclat de Voûte').requiresEclats === 2
+    && getSpellByName('Sceau des Quatre').requiresEclats === 3);
+  check('P2 : effects neufs câblés',
+    getSpellByName('Éclat de Voûte').effect === 'eclat_bolt'
+    && getSpellByName('Avis Praesidium').effect === 'summon_ally'
+    && getSpellByName('Fontis').effect === 'recharge_fountain'
+    && getSpellByName('Aedificium').effect === 'stabilize_rune');
+  check('P2 : catégorie rituel posée (Resonare/Purgo/Aedificium)',
+    ['Resonare', 'Purgo', 'Aedificium'].every(n => getSpellByName(n).category === 'rituel'));
+  check('P2 : aucun nouveau sort house-affine (reste 4)',
+    SPELLS.filter(s => s.houseAffinity).length === 4);
+
+  // ── houseSpellBoost (P2) — réduction de coût d'affinité, PURE & power-neutre ──
+  const patMax = getSpellByName('Patronus Maxima');   // houseAffinity Gryffondor
+  const incend = getSpellByName('Incendio');          // houseAffinity null
+  check('houseSpellBoost : 0 si pas d\'affinité', houseSpellBoost(incend, 'Gryffondor', 18) === 0);
+  check('houseSpellBoost : 0 si Maison ne correspond pas', houseSpellBoost(patMax, 'Serpentard', 18) === 0);
+  check('houseSpellBoost : 15% base (affine, tier < 17)', approx(houseSpellBoost(patMax, 'Gryffondor', 5), 0.15));
+  check('houseSpellBoost : 20% au palier Mythe (17)', approx(houseSpellBoost(patMax, 'Gryffondor', 17), 0.20));
+  check('houseSpellBoost : 25% au palier Apothéose (18+)', approx(houseSpellBoost(patMax, 'Gryffondor', 25), 0.25));
+  check('houseSpellBoost : monotone croissant avec le tier',
+    houseSpellBoost(patMax, 'Gryffondor', 0) <= houseSpellBoost(patMax, 'Gryffondor', 17)
+    && houseSpellBoost(patMax, 'Gryffondor', 17) <= houseSpellBoost(patMax, 'Gryffondor', 18));
+  check('houseSpellBoost : gardes défensives (null spell / null house → 0)',
+    houseSpellBoost(null, 'Gryffondor', 18) === 0
+    && houseSpellBoost(patMax, null, 18) === 0);
+  check('houseSpellBoost : tier non numérique → base 0.15 (affine)',
+    approx(houseSpellBoost(patMax, 'Gryffondor'), 0.15));
 })();
 
 // ============================================================
