@@ -245,6 +245,18 @@ function endBattle(won) {
     }
 
     AudioSystem.playVictory();
+    // Voix des héros — clôture one-shot d'un boss epic revenu en variante
+    // Ténébreuse (symétrique de `darkBoss` à l'apparition). Cf. js/hero-barks.js.
+    if (typeof heroBark === 'function') {
+      const darkBoss = enemyGroup.find(e => e && e.epic && e.variant === 'darkness');
+      if (darkBoss) {
+        const speaker = party.slice(0, partySize).find(c => c.hp > 0);
+        if (speaker && speaker.heroKey) {
+          heroBark(speaker.heroKey, 'darkBossDown',
+                   { channel: 'combat', once: 'darkbossdown:' + darkBoss.id });
+        }
+      }
+    }
     setNarrative(`Victoire ! +${xpEarned} XP, +${goldEarned} Gallions.`);
     addMsg(`+${xpEarned} XP`, 'good');
     addMsg(`+${goldEarned} Gallions`, 'good');

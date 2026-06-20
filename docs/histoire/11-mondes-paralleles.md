@@ -547,6 +547,11 @@ s'assombrir.
   16 héros (`hero-barks.js`), déclenché à la place de `bossAppear` dans
   `startBattle` (`battle.js`), one-shot par boss/session. Cosmétique & défensif
   (héros sans entrée → silence).
+- ✅ **Couche légère « déjà retombé »** (Phase 3, 2026-06-19, arbitrage user) :
+  beat de clôture symétrique `darkBossDown` des 16 héros (`hero-barks.js`),
+  joué quand le **même** boss Ténébreux est À NOUVEAU vaincu (*« Et te revoilà
+  à terre »*) — déclenché depuis `endBattle` (`battle-rewards.js`), one-shot
+  par boss/session, cosmétique & défensif. Testé `units.js §1bis`.
 - 💡 **Mutation par boucle (V2, hors V1)** : champ `loopVariant` dans
   `monsters.js` pour des créatures qui **mutent** au-delà du recyclage. À évaluer
   seulement après V1.

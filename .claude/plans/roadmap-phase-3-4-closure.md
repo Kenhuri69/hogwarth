@@ -25,7 +25,16 @@ en 💡 proposé. → réconciliation roadmap.
 - Vérif : `node tools/check_doc_modules.js` exit 0 (doc-only, pas de cache bump, smoke non requis §7/§8).
 
 ## Item 2 — Décisions ❓ endgame (Phase 3) — ARBITRAGE USER
-À faire après merge Item 1. AskUserQuestion AVANT d'écrire.
+Arbitrage (2026-06-19, AskUserQuestion) : les 3 tranchées **OUI**. Livré en 3 lots/PRs.
+- **2a — barks Ténébreux supplémentaires** ✅ : couche `darkBossDown` (16 héros,
+  clôture symétrique à la re-défaite d'un boss Ténébreux). `hero-barks.js` +
+  `battle-rewards.js` (endBattle). Testé `units.js §1bis`. cache-bump v163
+  (hero-barks v10, battle-rewards v11). smoke 226 ✅, units 684 ✅, pwa ✅.
+  Doc 11 §11.9.2 ✅, roadmap row (a). → branche `claude/endgame-dark-boss-down-barks`.
+- **2b — « ce qui dort » personnifié (entité nommée)** : à faire. Nom à arbitrer
+  (AskUserQuestion). Codex entry + ambiance zone D. PAS de boss combat (scope art).
+- **2c — biais léger de génération par Maison** : à faire. Équité-safe
+  (redistribution, pas d'ajout net) ; validé au pass d'équilibrage (Item 3).
 
 ## Item 3 — Pass d'équilibrage de release (Phase 4)
 `tools/sim-difficulty.js` + `check_difficulty.js` en CI.
