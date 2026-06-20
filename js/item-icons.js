@@ -552,7 +552,7 @@ const SPELL_ICON_REGISTRY = {
   'Givre de Rowena':    'img/icons/spells/glacius.png',
   'Soin du Blaireau':   'img/icons/spells/reparo.png',
   // ── Lot P4 — alias temporaires sur des PNG existants (art dédié reporté §2.8) ──
-  'Flamme Dévorante':    'img/icons/spells/incendio.png',          // feu corrompu
+  'Flamme Dévorante':    'img/icons/spells/flamme_devorante.png',   // icône dédiée (lion de feu corrompu)
   'Venin du Cachot':     'img/icons/spells/sanguini.png',          // venin/drain
   'Savoir Interdit':     'img/icons/spells/maledictus.png',        // malédiction
   'Fardeau Partagé':     'img/icons/spells/vulnera_sanentur.png',  // redistribution PV
