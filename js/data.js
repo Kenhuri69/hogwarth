@@ -316,7 +316,7 @@ const SPELLS = [
   { name:"Episkey",           icon:"💚",   desc:"Soigne légèrement (12 PV)",          cost:5,  effect:"heal",    power:12 },
   { name:"Ferula",            icon:"🩹",   desc:"Bande un allié (+4 PV puis 4 PV/tour × 3 tours)", cost:6,  effect:"support_regen", power:4 },
   { name:"Ferula Maxima",     icon:"🩹",   desc:"Régénère PV + PM des deux alliés (3 tours)", cost:12, effect:"support_regen_aoe", power:1 },
-  { name:"Protego",           icon:"🛡️",  desc:"Bouclier magique (durée selon MAG)",  cost:5,  effect:"shield",  power:5  },
+  { name:"Protego",           icon:"🛡️",  desc:"Bouclier magique (durée selon MAG)",  cost:5,  effect:"shield",  power:5, evolvesTo:"Protego Diabolica", evolveCondition:{ type:"apotheose" } },
   { name:"Incendio",          icon:"🔥",   desc:"Flammes magiques (14 dégâts)",       cost:8,  effect:"burn",    element:"feu",      power:14, evolvesTo:"Incendio Majeur", evolveCondition:{ type:"artifact", value:"baton_ancestral" }, synergyArtifacts:["baton_ancestral"] },
   { name:"Accio",             icon:"🌀",   desc:"Tire un objet ennemi (+or)",         cost:6,  effect:"steal",   power:0  },
   // ── Sorts avancés (appris en jeu) ────────────────────────────
@@ -350,7 +350,7 @@ const SPELLS = [
   // panneau d'info du monstre ciblé. Voir .claude/plans/manon-grimoire-pages.md.
   { name:"Revelio",           icon:"🔎",   desc:"Dévoile : le brouillard et les pages cachées (hors combat) ou les secrets d'un monstre (combat)", cost:2, effect:"reveal", element:"lumière", power:0 },
   // ── Sorts de Vampirisme ─────────────────────────────────────
-  { name:"Sanguini",          icon:"🩸",   desc:"Vol de vie (12 dégâts, +6 PV)",      cost:8,  effect:"lifesteal", element:"ténèbres", power:12 },
+  { name:"Sanguini",          icon:"🩸",   desc:"Vol de vie (12 dégâts, +6 PV)",      cost:8,  effect:"lifesteal", element:"ténèbres", power:12, evolvesTo:"Sanguini Vorace", evolveCondition:{ type:"corruption", value:2 } },
   { name:"Vampyrus",          icon:"🦇",   desc:"Drain magique (18 dégâts, +9 PV)",   cost:14, effect:"lifesteal", element:"ténèbres", power:18 },
   // ── Sorts de Malédiction ────────────────────────────────────
   { name:"Tarantallegra",     icon:"💃",   desc:"Danse maudite (8 dégâts + étourdis)", cost:7, effect:"stun",   element:"foudre",   power:8  },
@@ -422,6 +422,31 @@ const SPELLS = [
   { name:"Morsure d'Émeraude",icon:"🐍",  desc:"Venin vert qui draine la vie (14 dégâts, +7 PV) — Premium Serpentard", cost:10, effect:"lifesteal", element:"ténèbres", power:14, premium:true, premiumOf:"sanguini", houseAffinity:"Serpentard", premiumFx:"slyth", tint:"#1a472a" },
   { name:"Givre de Rowena",   icon:"❄️",  desc:"Runes de givre bleu (17 dégâts, engelures) — Premium Serdaigle",    cost:10, effect:"stun",      element:"glace",    power:17, premium:true, premiumOf:"glacius",  houseAffinity:"Serdaigle",  premiumFx:"serd",  tint:"#0e1a40" },
   { name:"Soin du Blaireau",  icon:"💛",  desc:"Lueur ambrée réconfortante (24 PV) — Premium Poufsouffle",          cost:9,  effect:"heal",      power:24, premium:true, premiumOf:"reparo",   houseAffinity:"Poufsouffle",premiumFx:"pouf",  tint:"#f0c75e" },
+  // ── Sorts & Magie 2.0 — Lot P4 : corrompus, temporels, légendaires ────
+  // Voir .claude/plans/spells-magic-system.md §1.4.B/C, §1.7. Tous les `effect`
+  // neufs sont routés DÉFENSIVEMENT (SPELL_HANDLERS gardés). Les sorts à
+  // `corruptionRisk>0` (corruption contrôlée + Le Mot du Dormeur) sont gatés
+  // Boucle (corruptSpellGateOpen) AVANT débit PM, et déclenchent un contrecoup
+  // configurable (`backlash`) APRÈS l'effet. Réversible / non-bloquant.
+  // C. Corruption contrôlée — 1/Maison (tier corrompu, houseAffinity, risque).
+  { name:"Flamme Dévorante", icon:"🔥", desc:"Brûlure dévorante (30 dégâts de feu + embrase) — magie corrompue de Gryffondor", cost:24, effect:"burn", element:"feu", power:30, houseAffinity:"Gryffondor", corruptionRisk:0.15, backlash:{ type:"status", statusId:"burn", power:5, turns:3 } },
+  { name:"Venin du Cachot",  icon:"🐍", desc:"Venin drainant (24 dégâts de ténèbres, +PV, empoisonne) — magie corrompue de Serpentard", cost:22, effect:"venom_drain", element:"ténèbres", power:24, houseAffinity:"Serpentard", corruptionRisk:0.15, backlash:{ type:"counter", amount:1 } },
+  { name:"Savoir Interdit",  icon:"🦅", desc:"Retourne l'offense ennemie (26 dégâts de ténèbres, −ATK/DEF) — magie corrompue de Serdaigle", cost:24, effect:"curse", element:"ténèbres", power:26, houseAffinity:"Serdaigle", corruptionRisk:0.20, backlash:{ type:"selfdmg", frac:0.10 } },
+  { name:"Fardeau Partagé",  icon:"🦡", desc:"Redistribue les PV du groupe vers ceux qui faiblissent — magie corrompue de Poufsouffle", cost:20, effect:"share_burden", power:0, houseAffinity:"Poufsouffle", corruptionRisk:0.10, backlash:{ type:"counter", amount:1 } },
+  // B. Temporels / échos (Boucle/Ruines). Garde-fous 1×/combat.
+  { name:"Tempus Echo",      icon:"⏳", desc:"Rejoue le dernier sort offensif du lanceur, gratuitement (1×/combat)", cost:16, effect:"tempus_echo", power:0 },
+  { name:"Reliquae Temporis",icon:"🕰️", desc:"Retourneur tactique : restaure PV/PM du groupe au début du round (1×/combat, épuisant)", cost:24, effect:"time_rewind", power:0, staminaCost:12 },
+  { name:"Écho Fantôme",     icon:"👻", desc:"Invoque un écho astral du lanceur qui frappe 2 tours (1×/combat)", cost:18, effect:"echo_self", element:"ténèbres", power:0 },
+  // 1.7 — Légendaires de quête signature (octroi reward.spell) + Ruines.
+  { name:"Cœur de Lion",     icon:"🦁", desc:"Cri de ralliement : dégâts de groupe ↑ et dissipe la peur, tant qu'aucun allié n'est à terre", cost:22, effect:"lion_heart", power:0, houseAffinity:"Gryffondor" },
+  { name:"Pacte du Serpent", icon:"🐍", desc:"Sacrifie 15 % des PV max du lanceur pour doubler son prochain sort offensif", cost:16, effect:"serpent_pact", power:0, houseAffinity:"Serpentard" },
+  { name:"Verbe de Rowena",  icon:"🦅", desc:"Chœur de savoir : chaque allié vivant frappe tous les ennemis (plus fort en duo)", cost:24, effect:"rowena_verb", element:"lumière", power:14, houseAffinity:"Serdaigle" },
+  { name:"Serment du Blaireau", icon:"🦡", desc:"Relève un allié à terre à 30 % de ses PV (1×/combat)", cost:20, effect:"badger_oath", power:0, houseAffinity:"Poufsouffle" },
+  { name:"Le Mot du Dormeur",icon:"🗿", desc:"Verbe ultime des Ruines : dégâts colossaux de ténèbres à tous les ennemis — au prix de soi", cost:40, effect:"aoe_wave", element:"ténèbres", power:40, stat2:"int", magDiv:2, stat2Div:3, corruptionRisk:0.5, staminaCost:15, backlash:{ type:"selfdmg", frac:0.18 } },
+  // Reports P3 réintégrés : formes évoluées de Sanguini (corruption) et Protego
+  // (Apothéose). Renvoyées par resolveSpellForm quand la condition est remplie.
+  { name:"Sanguini Vorace",  icon:"🩸", desc:"Vampirisme corrompu (24 dégâts de ténèbres, gros drain)", cost:14, effect:"lifesteal", element:"ténèbres", power:24 },
+  { name:"Protego Diabolica",icon:"🛡️", desc:"Bouclier maudit : bloque ET renvoie 20 % des coups physiques subis", cost:7, effect:"shield", power:5, reflectFrac:0.20 },
   // ── Sort de portail inter-mondes — Cheminette Inter-Mondes ────
   // Voir .claude/plans/parallel-worlds.md §4. Hors combat uniquement,
   // refusé en mode Ironman (§2.1). Apprentissage niv. 8 dans
@@ -620,6 +645,21 @@ const SPELL_META = {
   "Morsure d'Émeraude":  ['signature', 'maître', 'rare', 'Serpentard'],
   'Givre de Rowena':     ['signature', 'maître', 'rare', 'Serdaigle'],
   'Soin du Blaireau':    ['signature', 'maître', 'rare', 'Poufsouffle'],
+  // ── Lot P4 : corruption contrôlée, temporels, légendaires (§1.4.B/C, §1.7) ──
+  'Flamme Dévorante':    ['combat',    'corrompu', 'epic',      'Gryffondor'],
+  'Venin du Cachot':     ['combat',    'corrompu', 'epic',      'Serpentard'],
+  'Savoir Interdit':     ['signature', 'corrompu', 'epic',      'Serdaigle'],
+  'Fardeau Partagé':     ['defense',   'corrompu', 'epic',      'Poufsouffle'],
+  'Tempus Echo':         ['rituel',    'maître',   'epic',      null],
+  'Reliquae Temporis':   ['defense',   'corrompu', 'epic',      null],
+  'Écho Fantôme':        ['combat',    'corrompu', 'epic',      null],
+  'Cœur de Lion':        ['signature', 'maître',   'legendary', 'Gryffondor'],
+  'Pacte du Serpent':    ['signature', 'maître',   'legendary', 'Serpentard'],
+  'Verbe de Rowena':     ['signature', 'maître',   'legendary', 'Serdaigle'],
+  'Serment du Blaireau': ['signature', 'maître',   'legendary', 'Poufsouffle'],
+  'Le Mot du Dormeur':   ['combat',    'corrompu', 'legendary', null],
+  'Sanguini Vorace':     ['combat',    'corrompu', 'epic',      null],
+  'Protego Diabolica':   ['defense',   'corrompu', 'epic',      null],
 };
 
 // Passe de normalisation IDEMPOTENTE (miroir de _migrateEquippedSlots côté
@@ -712,8 +752,8 @@ function _spellEvolveConditionMet(cond, char) {
       // si cond.value absent). `houseTier` est la source de vérité (main.js).
       return (typeof houseTier === 'number') && houseTier >= 18
         && (!cond.value || (typeof chosenHouse !== 'undefined' && chosenHouse === cond.value));
-    case 'corruption':   // P4 — inerte tant que corruptionLevel n'existe pas.
-      return (typeof corruptionLevel === 'number') && corruptionLevel >= (cond.value || 1);
+    case 'corruption':   // P4 — actif : lit le compteur de groupe spellCorruption.
+      return (typeof spellCorruption === 'number') && spellCorruption >= (cond.value || 1);
     default:
       return false;
   }
@@ -784,6 +824,52 @@ function spellPmCostEstimate(spell) {
   const tierMult   = (SPELL_TIERS[spell.tier] && SPELL_TIERS[spell.tier].mult) || 1.0;
   const rarityMult = SPELL_RARITY_COST_MULT[spell.rarity] || 1.0;
   return Math.round(budget * tierMult * rarityMult);
+}
+
+// ── Lot P4 — corruption (helpers PURS, testés units.js) ─────────
+// Modificateur de corruption (§2.6). Fraction saturante croissant avec
+// `corruptionLevel` : majore le power des sorts corrompus ET augmente leur
+// corruptionRisk → boucle risque/récompense. PUR (lit seulement son argument).
+// Cadence : +12 %/niveau, plafonné à +40 %. Niveau ≤ 0 / non fini → 0 (no-op).
+function corruptionSpellModifier(level) {
+  const l = (typeof level === 'number' && isFinite(level) && level > 0) ? level : 0;
+  return Math.min(0.40, 0.12 * l);
+}
+
+// Résolution PURE du contrecoup de corruption (❓5 — configurable par sort).
+// Ne mute RIEN : retourne une description de l'effet à appliquer. L'applicateur
+// (battle-spells.js `_applyCorruptionBacklash`) mute char/corruptionLevel.
+//   { type:"selfdmg", frac } → auto-dégât en % des PV max (plancher 1 PV côté applicateur)
+//   { type:"status",  statusId, power, turns } → statut (burn/bleed…)
+//   { type:"counter", amount } → montée de corruptionLevel (défaut)
+function resolveCorruptionBacklash(backlash, char) {
+  const cfg = (backlash && typeof backlash === 'object') ? backlash : { type: 'counter' };
+  switch (cfg.type) {
+    case 'selfdmg': {
+      const frac   = (typeof cfg.frac === 'number') ? cfg.frac : 0.10;
+      const hpMax  = (char && typeof char.hpMax === 'number') ? char.hpMax : 0;
+      const hpLoss = Math.max(1, Math.floor(hpMax * frac));
+      return { kind: 'selfdmg', hpLoss };
+    }
+    case 'status':
+      return { kind: 'status', statusId: cfg.statusId || 'burn',
+               statusPower: (typeof cfg.power === 'number') ? cfg.power : 4,
+               statusTurns: (typeof cfg.turns === 'number') ? cfg.turns : 3 };
+    case 'counter':
+    default:
+      return { kind: 'counter', corruptionInc: (typeof cfg.amount === 'number') ? cfg.amount : 1 };
+  }
+}
+
+// Gate Boucle des sorts corrompus (§2.6) — PUR. Un sort corrompu DANGEREUX
+// (corruptionRisk>0) n'est lançable qu'en Boucle : `victoryAchieved` OU
+// effectiveFloor(currentFloor) >= 11. Les corrompus legacy sans corruptionRisk
+// (Avada.../Fiendfyre/Sectumsempra Imperius) ne passent JAMAIS par cette gate.
+function corruptSpellGateOpen(floor, victory, effFloor) {
+  if (victory) return true;
+  const ef = (typeof effFloor === 'number') ? effFloor
+           : (typeof floor === 'number') ? floor : 0;
+  return ef >= 11;
 }
 
 // Application du socle : normalise SPELLS une fois au chargement (idempotent,

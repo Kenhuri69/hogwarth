@@ -1944,8 +1944,8 @@ function loadModule(relPath, exportNames, globals = {}) {
     const s = getSpellByName(n);
     check(`${n} affine ${h} + signature`, s && s.houseAffinity === h && s.category === 'signature');
   }
-  // 4 sorts Mythe house-affine + 4 variantes Premium signature (Lot P3) = 8.
-  check('8 sorts house-affine (4 Mythe + 4 Premium)', SPELLS.filter(s => s.houseAffinity).length === 8);
+  // 4 Mythe + 4 Premium (P3) + 4 corruption + 4 légendaires de Maison (P4) = 16.
+  check('16 sorts house-affine (4 Mythe + 4 Premium + 4 corruption + 4 légendaires)', SPELLS.filter(s => s.houseAffinity).length === 16);
   check('au moins 1 sort par rang',
     ['basique', 'avancé', 'maître', 'corrompu'].every(t => SPELLS.some(s => s.tier === t)));
   // Idempotence : un 2e passe ne change rien (clone JSON identique).
@@ -2114,8 +2114,8 @@ function loadModule(relPath, exportNames, globals = {}) {
   check('P3 : Incendio Royal = base ×1.20 (14→17)', getSpellByName('Incendio Royal').power === 17);
   check('P3 : une affinité Premium par Maison',
     new Set(PREM.map(n => getSpellByName(n).houseAffinity)).size === 4);
-  check('P3 : house-affine total = 8 (4 Mythe + 4 Premium)',
-    SPELLS.filter(s => s.houseAffinity).length === 8);
+  check('P3 : house-affine total = 16 (4 Mythe + 4 Premium + 4 corruption + 4 légendaires)',
+    SPELLS.filter(s => s.houseAffinity).length === 16);
 
   // ── resolveSpellForm — évolution artefact (PUR, char-based) ──
   const withStaff = { equipped: { wand: { id: 'baton_ancestral' } } };
@@ -2154,6 +2154,107 @@ function loadModule(relPath, exportNames, globals = {}) {
   // Corruption (P4) inerte tant que corruptionLevel n'existe pas.
   check('cond corruption (P4) inerte sans corruptionLevel',
     _spellEvolveConditionMet({ type: 'corruption', value: 2 }, {}) === false);
+})();
+
+// ============================================================
+// Sorts & Magie 2.0 — Lot P4 (data.js) : corruption (helpers PURS), gate
+//   Boucle, contrecoup configurable, évolution corruption (Sanguini Vorace),
+//   nouveaux sorts (corrompus / temporels / légendaires). Sandbox vm avec
+//   globals mutables (corruptionLevel) pour piloter l'évolution corruption.
+// ============================================================
+(function testSpellP4() {
+  const sandbox = {
+    console, exports: {}, Math,
+    currentFloor: 1, completedQuests: new Set(), houseTier: 0, chosenHouse: null,
+    spellCorruption: 0,
+  };
+  const src = fs.readFileSync(path.join(ROOT, 'js/data.js'), 'utf8');
+  vm.createContext(sandbox);
+  vm.runInContext(src +
+    '\n;exports.corruptionSpellModifier = corruptionSpellModifier;' +
+    '\n;exports.resolveCorruptionBacklash = resolveCorruptionBacklash;' +
+    '\n;exports.corruptSpellGateOpen = corruptSpellGateOpen;' +
+    '\n;exports.resolveSpellForm = resolveSpellForm;' +
+    '\n;exports._spellEvolveConditionMet = _spellEvolveConditionMet;' +
+    '\n;exports.getSpellByName = getSpellByName;' +
+    '\n;exports.SPELLS = SPELLS;\n;exports.SPELL_META = SPELL_META;',
+    sandbox, { filename: 'data.js' });
+  const { corruptionSpellModifier, resolveCorruptionBacklash, corruptSpellGateOpen,
+          resolveSpellForm, _spellEvolveConditionMet, getSpellByName, SPELLS, SPELL_META } = sandbox.exports;
+
+  // ── corruptionSpellModifier : saturant, monotone, cap 0.40, défensif ──
+  check('corruptionSpellModifier(0) = 0', corruptionSpellModifier(0) === 0);
+  check('corruptionSpellModifier négatif/NaN → 0',
+    corruptionSpellModifier(-3) === 0 && corruptionSpellModifier(NaN) === 0 && corruptionSpellModifier() === 0);
+  check('corruptionSpellModifier(1) = 0.12', approx(corruptionSpellModifier(1), 0.12));
+  check('corruptionSpellModifier monotone', corruptionSpellModifier(1) < corruptionSpellModifier(2));
+  check('corruptionSpellModifier cap 0.40', corruptionSpellModifier(99) === 0.40);
+
+  // ── resolveCorruptionBacklash : PUR, 3 types (❓5) ──
+  const charStub = { hp: 50, hpMax: 100 };
+  const bSelf = resolveCorruptionBacklash({ type: 'selfdmg', frac: 0.10 }, charStub);
+  check('backlash selfdmg → hpLoss = 10 % PV max', bSelf.kind === 'selfdmg' && bSelf.hpLoss === 10);
+  check('backlash selfdmg plancher 1', resolveCorruptionBacklash({ type: 'selfdmg', frac: 0 }, { hpMax: 100 }).hpLoss === 1);
+  const bStat = resolveCorruptionBacklash({ type: 'status', statusId: 'bleed', power: 6, turns: 4 }, charStub);
+  check('backlash status → statusId/power/turns', bStat.kind === 'status' && bStat.statusId === 'bleed' && bStat.statusPower === 6 && bStat.statusTurns === 4);
+  const bCount = resolveCorruptionBacklash({ type: 'counter', amount: 2 }, charStub);
+  check('backlash counter → corruptionInc', bCount.kind === 'counter' && bCount.corruptionInc === 2);
+  check('backlash défaut (absent) → counter', resolveCorruptionBacklash(null, charStub).kind === 'counter');
+  // Non destructif : ne mute pas le perso.
+  const snap = JSON.stringify(charStub);
+  resolveCorruptionBacklash({ type: 'selfdmg', frac: 0.5 }, charStub);
+  check('resolveCorruptionBacklash ne mute pas le perso', JSON.stringify(charStub) === snap);
+
+  // ── corruptSpellGateOpen : Boucle (victoire OU effFloor>=11) ──
+  check('gate : victoire → ouvert', corruptSpellGateOpen(3, true, 3) === true);
+  check('gate : pré-victoire étage 3 → fermé', corruptSpellGateOpen(3, false, 3) === false);
+  check('gate : effFloor 11 → ouvert', corruptSpellGateOpen(21, false, 11) === true);
+  check('gate : effFloor absent retombe sur floor', corruptSpellGateOpen(11, false) === true);
+
+  // ── évolution corruption désormais ACTIVE (Sanguini → Sanguini Vorace) ──
+  check('cond corruption : niveau 0 → non remplie',
+    _spellEvolveConditionMet({ type: 'corruption', value: 2 }, {}) === false);
+  sandbox.spellCorruption = 2;
+  check('cond corruption : niveau 2 → remplie',
+    _spellEvolveConditionMet({ type: 'corruption', value: 2 }, {}) === true);
+  check('évol corruption : Sanguini niveau 2 → Sanguini Vorace',
+    resolveSpellForm('Sanguini', {}).name === 'Sanguini Vorace');
+  sandbox.spellCorruption = 0;
+  check('évol corruption : Sanguini niveau 0 → base',
+    resolveSpellForm('Sanguini', {}).name === 'Sanguini');
+
+  // ── Nouveaux sorts P4 présents + étiquetés ──
+  const P4_SPELLS = ['Flamme Dévorante', 'Venin du Cachot', 'Savoir Interdit', 'Fardeau Partagé',
+    'Tempus Echo', 'Reliquae Temporis', 'Écho Fantôme', 'Cœur de Lion', 'Pacte du Serpent',
+    'Verbe de Rowena', 'Serment du Blaireau', 'Le Mot du Dormeur', 'Sanguini Vorace', 'Protego Diabolica'];
+  check('P4 : 14 sorts neufs présents + étiquetés',
+    P4_SPELLS.every(n => getSpellByName(n) && SPELL_META[n]));
+  check('P4 : corruption contrôlée porte corruptionRisk 0.10–0.20',
+    ['Flamme Dévorante', 'Venin du Cachot', 'Savoir Interdit', 'Fardeau Partagé']
+      .every(n => { const r = getSpellByName(n).corruptionRisk; return r >= 0.10 && r <= 0.20; }));
+  check('P4 : Le Mot du Dormeur corruptionRisk 0.5', getSpellByName('Le Mot du Dormeur').corruptionRisk === 0.5);
+  check('P4 : staminaCost réservé (Reliquae 12, Le Mot 15)',
+    getSpellByName('Reliquae Temporis').staminaCost === 12 && getSpellByName('Le Mot du Dormeur').staminaCost === 15);
+  check('P4 : effets neufs câblés',
+    getSpellByName('Venin du Cachot').effect === 'venom_drain'
+    && getSpellByName('Tempus Echo').effect === 'tempus_echo'
+    && getSpellByName('Écho Fantôme').effect === 'echo_self'
+    && getSpellByName('Cœur de Lion').effect === 'lion_heart');
+  check('P4 : 4 corrompus contrôlés affines 1/Maison',
+    getSpellByName('Flamme Dévorante').houseAffinity === 'Gryffondor'
+    && getSpellByName('Venin du Cachot').houseAffinity === 'Serpentard'
+    && getSpellByName('Savoir Interdit').houseAffinity === 'Serdaigle'
+    && getSpellByName('Fardeau Partagé').houseAffinity === 'Poufsouffle');
+  check('P4 : reports P3 réintégrés (Sanguini→Vorace, Protego→Diabolica)',
+    getSpellByName('Sanguini').evolvesTo === 'Sanguini Vorace'
+    && getSpellByName('Sanguini').evolveCondition.type === 'corruption'
+    && getSpellByName('Protego').evolvesTo === 'Protego Diabolica'
+    && getSpellByName('Protego').evolveCondition.type === 'apotheose');
+  check('P4 : Protego Diabolica reflectFrac 0.2', getSpellByName('Protego Diabolica').reflectFrac === 0.20);
+  // Le Mot du Dormeur réutilise le moteur AoE existant (pas de handler neuf).
+  check('P4 : Le Mot du Dormeur réutilise aoe_wave', getSpellByName('Le Mot du Dormeur').effect === 'aoe_wave');
+  // Couverture SPELL_META : chaque sort a une entrée curée.
+  check('P4 : SPELL_META couvre toujours tous les sorts', SPELLS.every(s => !!SPELL_META[s.name]));
 })();
 
 // ============================================================

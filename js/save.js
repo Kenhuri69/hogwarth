@@ -72,6 +72,7 @@ function _serializeState() {
     defeatedCellsByFloor: Array.from(defeatedCellsByFloor.entries())
                           .map(([f, set]) => [f, Array.from(set)]),
     floorKillCount: Array.from(floorKillCount.entries()),
+    corruptionLevel: spellCorruption,
     // Jardin d'herbes (Potions P6.b3) — jardins cachés + pool + éveil.
     hiddenGardens: Array.from(hiddenGardens),
     gardenStock,
@@ -490,6 +491,8 @@ function _applyState(gs) {
     (gs.defeatedCellsByFloor || []).map(([f, arr]) => [f, new Set(arr || [])])
   );
   floorKillCount = new Map(gs.floorKillCount || []);
+  // Compteur de corruption (Lot P4) — fallback 0 pour les saves antérieures.
+  spellCorruption = (typeof gs.corruptionLevel === 'number') ? gs.corruptionLevel : 0;
   // Jardin d'herbes (Potions P6.b3) — jardins cachés + pool + éveil.
   hiddenGardens = new Set(gs.hiddenGardens || []);
   gardenStock = (typeof gs.gardenStock === 'number') ? gs.gardenStock : 0;

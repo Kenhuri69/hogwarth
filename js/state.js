@@ -509,6 +509,26 @@ let battleTurn      = 0;
 let legilimensCancelCharges = 0;     // capacités ennemies à annuler (sort Legilimens)
 let legilimensCastsThisFight = 0;    // nb de lancers de Legilimens ce combat (coût PM croissant)
 let recolteGoldBonus        = false; // or de fin de combat majoré +50 % (sort Récolte Magique)
+// ── Sorts & Magie 2.0 — Lot P4 (corruption / temporels) ──────
+// Garde-fous 1×/combat + état temporel/corruption combat-scoped, NON sérialisés
+// (un combat ne peut être sauvegardé : inBattle bloque autoSave/writeSlot).
+// Reset par startBattle. Cf. .claude/plans/spells-magic-system.md §2.2/§2.6.
+let echoSpellUsedThisFight  = false; // Écho Fantôme — 1×/combat
+let timeRewindUsedThisFight = false; // Tempus Echo + Reliquae Temporis (budget partagé)
+let _lastCastSpellByChar    = [null, null]; // dernier sort offensif lancé (Tempus Echo)
+let _timeSnapshot           = null;  // snapshot PV/PM de début de round (Reliquae Temporis)
+let serpentPactDoubleNext   = false; // Pacte du Serpent — double le prochain sort offensif
+let lionHeartActive         = false; // Cœur de Lion — buff de groupe actif ce combat
+let _shieldReflect          = [0, 0];// Protego Diabolica — renvoi de coups physiques (par perso)
+let badgerOathUsedThisFight = false; // Serment du Blaireau — 1×/combat
+// Compteur de corruption du groupe (Lot P4 §2.6) — monte via le contrecoup
+// `counter`, majore le power des sorts corrompus ET leur risque. SÉRIALISÉ
+// (clé save `corruptionLevel`, comme floorKillCount). Monotone croissant ;
+// levier de style endgame réversible. NB : nommé `spellCorruption` (et non
+// `corruptionLevel`) pour ne PAS entrer en collision avec la FONCTION globale
+// `corruptionLevel(floor, victoryAchieved)` de floor-ambiance.js (corruption
+// de LIEU, distincte). La clé sérialisée reste `corruptionLevel` (spec §2.2).
+let spellCorruption         = 0;
 // Sélection de cible en combat (cycle producteur → consommateur) :
 //  - battle-ui.js — showTargetSelection(actionType)  écrit pendingAction
 //  - inventory.js — openBattleSpells onclick         écrit pendingSpell

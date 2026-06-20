@@ -323,7 +323,9 @@ function _buildSummonedAdd(ability, summoner) {
 
 const STATUS_BY_SPELL = { 'Incendio': 'burn', 'Diffindo': 'bleed', 'Sectumsempra': 'bleed', 'Glacius': 'gel',
   // Lot P3 — formes évoluées / Premium héritent du DoT de leur base.
-  'Incendio Majeur': 'burn', 'Incendio Royal': 'burn', 'Glacius Profond': 'gel', 'Givre de Rowena': 'gel' };
+  'Incendio Majeur': 'burn', 'Incendio Royal': 'burn', 'Glacius Profond': 'gel', 'Givre de Rowena': 'gel',
+  // Lot P4 — corruption contrôlée : Flamme Dévorante embrase la cible.
+  'Flamme Dévorante': 'burn' };
 
 // Morts-vivants : cible du bonus `spell.bonusVsUndead` (Lumos Solem).
 // Tous les fantômes + une liste d'ids non-fantômes mais sans vie.
@@ -462,6 +464,11 @@ function _spellDisarm(spell, char, enemy, targetIdx) {
 function _spellShield(spell, char) {
   const dur = shieldDuration(spell, char);
   shieldTurns[currentBattleChar] = dur;
+  // Lot P4 — Protego Diabolica : arme le renvoi de coups physiques pendant la
+  // durée du bouclier (lu par _enemyPhysicalHit). Défensif (champ optionnel).
+  if (spell.reflectFrac && typeof _shieldReflect !== 'undefined') {
+    _shieldReflect[currentBattleChar] = spell.reflectFrac;
+  }
   const msg = `🛡️ ${char.name} : ${spell.name} — bouclier actif ${dur} tours !`;
   addMsg(msg, 'magic');
   UX_safe.logCombat(`🛡️ ${char.name} active Protego (${dur} tours)`, 'magic');
@@ -491,13 +498,27 @@ function comboDamageMult(target, element) {
   return { mult: 1, label: null };
 }
 
+// Lot P4 — Cœur de Lion (légendaire Gryffondor) : tant que le buff est actif et
+// qu'aucun allié vivant-au-départ n'est à terre, les dégâts du groupe ×1.2.
+function _houseLionMult() {
+  if (typeof lionHeartActive === 'undefined' || !lionHeartActive) return 1;
+  if (typeof party === 'undefined' || typeof partySize !== 'number') return 1.2;
+  const anyKO = party.slice(0, partySize).some(c => c && c.hp <= 0);
+  return anyKO ? 1 : 1.2;
+}
+
 function _computeSpellDamage(spell, char, enemy, opts) {
   opts = opts || {};
   let dmg    = spell.power + Math.floor(char.mag / 2);
   // Apothéose : Vigueur (Poufsouffle) + Élan (Gryffondor) — multiplicateurs
   // de dégâts. _houseElanMult lit seulement le cumul ; la mise à jour des
   // paliers (_updateElan) est faite par les handlers offensifs.
-  dmg = Math.floor(dmg * _houseVigorMult(char) * _houseElanMult(char));
+  dmg = Math.floor(dmg * _houseVigorMult(char) * _houseElanMult(char) * _houseLionMult());
+  // Lot P4 — Pacte du Serpent : double le PROCHAIN sort offensif (consommé ici).
+  if (typeof serpentPactDoubleNext !== 'undefined' && serpentPactDoubleNext) {
+    dmg = dmg * 2;
+    serpentPactDoubleNext = false;
+  }
   let suffix = '';
   if (enemy.resist?.includes(spell.element)) { dmg = Math.floor(dmg * RESIST_MULTIPLIER); suffix = ' 🔰'; }
   if (enemy.weak?.includes(spell.element))   { dmg = Math.floor(dmg * WEAK_MULTIPLIER);   suffix = ' 💥'; }
@@ -1062,6 +1083,206 @@ function _spellPatronusCorporel(spell, char) {
   return msg;
 }
 
+// ── Sorts & Magie 2.0 — Lot P4 (corruption / temporels / légendaires) ──
+
+// Applique le contrecoup de corruption (impur — mute char / corruptionLevel /
+// statuts). Consomme le résolveur PUR resolveCorruptionBacklash (data.js).
+// Réversible / non-bloquant : un selfdmg ne descend JAMAIS le perso sous 1 PV.
+function _applyCorruptionBacklash(spell, char) {
+  if (!char || typeof resolveCorruptionBacklash !== 'function') return '';
+  const r = resolveCorruptionBacklash(spell.backlash, char);
+  if (r.kind === 'selfdmg') {
+    const loss = Math.min(r.hpLoss, Math.max(0, char.hp - 1));
+    char.hp = Math.max(1, char.hp - r.hpLoss);
+    UX_safe.floatDmg('ally', loss, 'dmg');
+    CFX_safe.shake('light');
+    const m = `🌑 La corruption se retourne contre ${char.name} : −${loss} PV !`;
+    addMsg(m, 'bad'); UX_safe.logCombat(m, 'bad');
+    return m;
+  }
+  if (r.kind === 'status') {
+    applyStatus(char, r.statusId, r.statusPower, r.statusTurns);
+    const def = (typeof STATUS_DEFS !== 'undefined' && STATUS_DEFS[r.statusId]) || { icon: '🌑', label: r.statusId };
+    const m = `🌑 Contrecoup : ${char.name} subit ${def.icon} ${def.label} !`;
+    addMsg(m, 'bad'); UX_safe.logCombat(m, 'bad');
+    return m;
+  }
+  // counter — montée du compteur de corruption (levier de style endgame).
+  if (typeof spellCorruption === 'number') spellCorruption += (r.corruptionInc || 1);
+  if (typeof heroBark === 'function' && char.heroKey) heroBark(char.heroKey, 'bossAppear');
+  const m = `🌑 La corruption s'épaissit autour du groupe… (niveau ${spellCorruption})`;
+  addMsg(m, 'magic'); UX_safe.logCombat(m, 'magic');
+  return m;
+}
+
+// Venin du Cachot (Serpentard, corrompu) — vol de vie + poison empilable.
+function _spellVenom(spell, char, enemy, targetIdx) {
+  let msg = '';
+  if (enemy) {
+    const { dmg, suffix, crit } = _computeSpellDamage(spell, char, enemy);
+    enemy.currentHp -= dmg;
+    _updateElan(char, crit);
+    const heal = Math.floor(dmg / 2);
+    char.hp = Math.min(char.hpMax, char.hp + heal);
+    if (enemy.currentHp > 0) {
+      const dotPower = Math.max(2, Math.floor(spell.power * 0.2));
+      applyStatus(enemy, 'poison', dotPower, 3);
+    }
+    msg = `🐍 ${char.name} : ${spell.name} → ${dmg} dégâts${suffix}, +${heal} PV drainés, ${enemy.name} empoisonné !`;
+    UX_safe.floatDmg(`enemy:${targetIdx}`, dmg, suffix.includes('💥') ? 'crit' : 'dmg');
+    UX_safe.floatDmg('ally', heal, 'heal');
+    UX_safe.logCombat(`🐍 ${char.name} : ${spell.name} → <b>−${dmg}</b>${suffix}, <b>+${heal} PV</b> · 🧪 poison`, 'magic');
+  }
+  addMsg(msg, 'magic');
+  return msg;
+}
+
+// Fardeau Partagé (Poufsouffle, corrompu) — redistribue les PV du groupe :
+// chaque membre vivant tend vers la PV moyenne (les forts donnent aux faibles),
+// + un petit soin de base. Solo : soin simple. Réutilise hpMax comme plafond.
+function _spellShareBurden(spell, char) {
+  const allies = party.slice(0, partySize).filter(c => c.hp > 0);
+  if (allies.length <= 1) {
+    const burst = Math.min(char.hpMax - char.hp, 10 + Math.floor((char.mag || 0) / 3));
+    char.hp += Math.max(0, burst);
+    UX_safe.floatDmg('ally', Math.max(0, burst), 'heal');
+    const m = `🦡 ${char.name} : ${spell.name} — réconfort partagé (+${Math.max(0, burst)} PV).`;
+    addMsg(m, 'good'); UX_safe.logCombat(m, 'good');
+    return m;
+  }
+  const avg = Math.floor(allies.reduce((s, c) => s + c.hp / c.hpMax, 0) / allies.length * 100); // % moyen
+  allies.forEach(c => { c.hp = Math.min(c.hpMax, Math.max(c.hp, Math.floor(c.hpMax * avg / 100))); });
+  UX_safe.floatDmg('ally', 0, 'heal');
+  const m = `🦡 ${char.name} : ${spell.name} — le fardeau est partagé ; le groupe se stabilise à ${avg}% PV.`;
+  addMsg(m, 'good'); UX_safe.logCombat(m, 'good');
+  return m;
+}
+
+// Tempus Echo (rituel) — rejoue gratuitement le dernier sort offensif du
+// lanceur ce combat. Le débit PM/garde 1×/combat est géré par castSpellInBattle.
+function _spellTempusEcho(spell, char) {
+  const lastName = (typeof _lastCastSpellByChar !== 'undefined') ? _lastCastSpellByChar[currentBattleChar] : null;
+  const replay = lastName ? SPELLS.find(s => s.name === lastName) : null;
+  if (!replay || !SPELL_HANDLERS[replay.effect]) {
+    const m = `⏳ ${char.name} : ${spell.name} — aucun écho de sort à rejouer.`;
+    addMsg(m, 'bad'); return m;
+  }
+  const tgt = (typeof livingEnemies === 'function') ? (livingEnemies()[0] || null) : null;
+  const ti  = tgt ? enemyGroup.indexOf(tgt) : 0;
+  addMsg(`⏳ ${char.name} : ${spell.name} — le temps se replie ; ${replay.name} retentit à nouveau !`, 'magic');
+  UX_safe.logCombat(`⏳ ${char.name} rejoue ${replay.name} (Tempus Echo)`, 'magic');
+  return SPELL_HANDLERS[replay.effect](replay, char, tgt, ti) || '';
+}
+
+// Reliquae Temporis (corrompu) — restaure PV/PM du groupe au snapshot de début
+// de round (_timeSnapshot, posé par enemyTurn). Garde 1×/combat (castSpellInBattle).
+function _spellTimeRewind(spell, char) {
+  if (typeof _timeSnapshot === 'undefined' || !Array.isArray(_timeSnapshot)) {
+    const m = `🕰️ ${char.name} : ${spell.name} — le fil du temps n'offre aucun ancrage.`;
+    addMsg(m, 'bad'); return m;
+  }
+  party.slice(0, partySize).forEach((c, i) => {
+    const snap = _timeSnapshot[i];
+    if (!snap || c.hp <= 0) return;
+    c.hp = Math.min(c.hpMax, Math.max(c.hp, snap.hp));
+    c.sp = Math.min(c.spMax, Math.max(c.sp, snap.sp));
+  });
+  UX_safe.floatDmg('ally', 0, 'heal');
+  const m = `🕰️ ${char.name} : ${spell.name} — le groupe retrouve ses forces du début du round !`;
+  addMsg(m, 'good'); UX_safe.logCombat(`🕰️ ${char.name} retourne le sablier (PV/PM restaurés)`, 'good');
+  return m;
+}
+
+// Écho Fantôme (corrompu) — invoque un écho astral du lanceur sous forme de
+// familier (réutilise combatFamiliars/tickFamiliars, P2) qui frappe 2 tours.
+// NB : buildEcho (dungeon-scaling) produit un ENNEMI scalé — inadapté à un allié ;
+// le mécanisme combatFamiliars EST l'abstraction « allié qui frappe N tours ».
+function _spellEchoSelf(spell, char, enemy, targetIdx) {
+  const atk = Math.max(6, (char.atk || 0) + Math.floor((char.mag || 0) / 2));
+  const tgt = (enemy && enemy.currentHp > 0) ? enemy : (livingEnemies()[0] || null);
+  let msg;
+  if (tgt) {
+    const dmg = Math.max(1, mitigatedDamage(atk, tgt.def || 0));
+    tgt.currentHp -= dmg;
+    UX_safe.floatDmg(`enemy:${enemyGroup.indexOf(tgt)}`, dmg, 'dmg');
+    msg = `👻 ${char.name} : ${spell.name} — un écho fantôme fond sur ${tgt.name} (−${dmg}) et hante le combat 2 tours !`;
+    UX_safe.logCombat(`👻 Écho de ${char.name} → ${tgt.name} : <b>−${dmg}</b>`, 'magic');
+  } else {
+    msg = `👻 ${char.name} : ${spell.name} — un écho fantôme se matérialise.`;
+  }
+  if (typeof combatFamiliars !== 'undefined' && Array.isArray(combatFamiliars)) {
+    combatFamiliars.push({ ownerName: char.name, atk, turns: 2, icon: '👻' });
+  }
+  addMsg(msg, 'magic');
+  return msg;
+}
+
+// Cœur de Lion (légendaire Gryffondor) — buff de groupe : dégâts ↑ (×1.2 tant
+// qu'aucun allié à terre, _houseLionMult) + dissipe la peur sur tout le groupe.
+function _spellLionHeart(spell, char) {
+  if (typeof lionHeartActive !== 'undefined') lionHeartActive = true;
+  party.slice(0, partySize).forEach(c => {
+    if (c.hp <= 0 || !Array.isArray(c.statusEffects)) return;
+    c.statusEffects = c.statusEffects.filter(s => s.id !== 'fear');
+  });
+  CFX_safe.buffAura('ally');
+  const m = `🦁 ${char.name} : ${spell.name} — un rugissement galvanise le groupe (dégâts ↑, peur dissipée) !`;
+  addMsg(m, 'magic'); UX_safe.logCombat(`🦁 ${char.name} invoque ${spell.name} — buff de groupe`, 'good');
+  return m;
+}
+
+// Pacte du Serpent (légendaire Serpentard) — sacrifie 15 % des PV max du lanceur
+// pour doubler son PROCHAIN sort offensif (serpentPactDoubleNext, consommé dans
+// _computeSpellDamage). Plancher 1 PV (jamais de game-over).
+function _spellSerpentPact(spell, char) {
+  const cost = Math.floor(char.hpMax * 0.15);
+  char.hp = Math.max(1, char.hp - cost);
+  if (typeof serpentPactDoubleNext !== 'undefined') serpentPactDoubleNext = true;
+  UX_safe.floatDmg('ally', cost, 'dmg');
+  const m = `🐍 ${char.name} : ${spell.name} — le sang scelle le pacte (−${cost} PV) ; le prochain sort offensif frappera deux fois !`;
+  addMsg(m, 'magic'); UX_safe.logCombat(`🐍 ${char.name} scelle le Pacte du Serpent`, 'magic');
+  return m;
+}
+
+// Verbe de Rowena (légendaire Serdaigle) — chœur de savoir : chaque allié vivant
+// frappe TOUS les ennemis (dégâts fonction de la MAG de chaque allié). Plus fort
+// en duo (équilibrage assumé §1.9). Pas de crit (chœur), pas de DoT.
+function _spellRowenaVerb(spell, char) {
+  const allies = party.slice(0, partySize).filter(c => c.hp > 0);
+  let msg = `🦅 ${char.name} : ${spell.name} —`;
+  allies.forEach(a => {
+    const base = spell.power + Math.floor((a.mag || 0) / 2);
+    livingEnemies().forEach(e => {
+      const { dmg, suffix } = _aoeHit(spell, a, e, base);
+      UX_safe.floatDmg(`enemy:${enemyGroup.indexOf(e)}`, dmg, 'dmg');
+      msg += ` ${e.name} −${dmg}${suffix}`;
+    });
+  });
+  UX_safe.logCombat(`🦅 ${char.name} : ${spell.name} — le chœur de Rowena déferle`, 'magic');
+  addMsg(msg, 'magic');
+  return msg;
+}
+
+// Serment du Blaireau (légendaire Poufsouffle) — relève un allié KO à 30 % PV
+// (1×/combat — garde dans castSpellInBattle). Solo : petit soin du lanceur.
+function _spellBadgerOath(spell, char) {
+  const ko = party.slice(0, partySize).find(c => c.hp <= 0);
+  if (ko) {
+    ko.hp = Math.max(1, Math.floor(ko.hpMax * 0.30));
+    if (Array.isArray(ko.statusEffects)) ko.statusEffects = [];
+    UX_safe.floatDmg('ally', ko.hp, 'heal');
+    const m = `🦡 ${char.name} : ${spell.name} — ${ko.name} se relève (${ko.hp} PV) ; on ne laisse personne derrière !`;
+    addMsg(m, 'good'); UX_safe.logCombat(`🦡 ${char.name} relève ${ko.name}`, 'good');
+    return m;
+  }
+  const burst = Math.min(char.hpMax - char.hp, 12 + Math.floor((char.end || 0) / 3));
+  char.hp += Math.max(0, burst);
+  UX_safe.floatDmg('ally', Math.max(0, burst), 'heal');
+  const m = `🦡 ${char.name} : ${spell.name} — nul allié à terre ; le serment réconforte (+${Math.max(0, burst)} PV).`;
+  addMsg(m, 'good'); UX_safe.logCombat(m, 'good');
+  return m;
+}
+
 const SPELL_HANDLERS = {
   heal:           _spellHeal,
   disarm:         _spellDisarm,
@@ -1091,6 +1312,16 @@ const SPELL_HANDLERS = {
   seal_shield:       _spellSealShield,
   summon_ally:       _spellSummonAlly,
   patronus_corporel: _spellPatronusCorporel,
+  // Lot P4 — corruption / temporels / légendaires.
+  venom_drain:       _spellVenom,
+  share_burden:      _spellShareBurden,
+  tempus_echo:       _spellTempusEcho,
+  time_rewind:       _spellTimeRewind,
+  echo_self:         _spellEchoSelf,
+  lion_heart:        _spellLionHeart,
+  serpent_pact:      _spellSerpentPact,
+  rowena_verb:       _spellRowenaVerb,
+  badger_oath:       _spellBadgerOath,
 };
 
 // Sorts à cible alliée — pas de sélection d'ennemi, mais éventuellement
@@ -1137,8 +1368,9 @@ function castSpellInBattle(spellName, targetIdx, targetAllyIdx) {
   // resolveSpellForm renvoie la base si aucune condition n'est remplie.
   const formSpell = (typeof resolveSpellForm === 'function')
     ? (resolveSpellForm(spellName, char) || baseSpell) : baseSpell;
-  // Wrapping Bibliothèque : applique les upgrades du caster.
-  const spell    = _spellForCaster(formSpell, char);
+  // Wrapping Bibliothèque : applique les upgrades du caster. `let` : P4 clone
+  // et majore le power des sorts corrompus selon corruptionLevel (plus bas).
+  let spell      = _spellForCaster(formSpell, char);
   if (!spell || char.sp < _spellSpCost(spell)) { addMsg("Pas assez de magie !", 'bad'); return; }
 
   // P2 — sorts d'Éclats : refus AVANT débit PM / consommation de tour si le
@@ -1149,6 +1381,41 @@ function castSpellInBattle(spellName, targetIdx, targetAllyIdx) {
       addMsg(`${spell.name} exige ${spell.requiresEclats} Éclat${spell.requiresEclats > 1 ? 's' : ''} de la Clé de Voûte (tu en as ${have}).`, 'bad');
       return;
     }
+  }
+
+  // P4 — gate Boucle des sorts corrompus DANGEREUX (corruptionRisk>0) : refus
+  // AVANT débit PM (modèle requiresEclats). Les corrompus legacy (Avada.../
+  // Fiendfyre, corruptionRisk 0) ne passent JAMAIS par cette gate.
+  if (spell.tier === 'corrompu' && (spell.corruptionRisk || 0) > 0
+      && typeof corruptSpellGateOpen === 'function') {
+    const eff = (typeof effectiveFloor === 'function' && typeof currentFloor === 'number')
+                ? effectiveFloor(currentFloor) : (typeof currentFloor === 'number' ? currentFloor : 0);
+    const vic = (typeof victoryAchieved !== 'undefined') && victoryAchieved;
+    if (!corruptSpellGateOpen(currentFloor, vic, eff)) {
+      addMsg(`${spell.name} ne peut être canalisé que dans la Boucle Ténébreuse — la magie corrompue refuse de s'éveiller ici.`, 'bad');
+      return;
+    }
+  }
+
+  // P4 — garde-fous 1×/combat (refus AVANT débit PM, modèle Portus).
+  if (spell.effect === 'echo_self' && typeof echoSpellUsedThisFight !== 'undefined' && echoSpellUsedThisFight) {
+    addMsg('Écho Fantôme déjà invoqué dans ce combat.', 'bad'); return;
+  }
+  if ((spell.effect === 'tempus_echo' || spell.effect === 'time_rewind')
+      && typeof timeRewindUsedThisFight !== 'undefined' && timeRewindUsedThisFight) {
+    addMsg('La trame temporelle a déjà été pliée dans ce combat.', 'bad'); return;
+  }
+  if (spell.effect === 'badger_oath' && typeof badgerOathUsedThisFight !== 'undefined' && badgerOathUsedThisFight) {
+    addMsg('Le Serment du Blaireau a déjà été honoré dans ce combat.', 'bad'); return;
+  }
+
+  // P4 — corruption : majore le power des sorts corrompus selon corruptionLevel
+  // (clone DÉFENSIF — ne JAMAIS muter le registre SPELLS). Power-only.
+  if (spell.tier === 'corrompu' && typeof spell.power === 'number'
+      && typeof corruptionSpellModifier === 'function'
+      && typeof spellCorruption === 'number' && spellCorruption > 0) {
+    const f = corruptionSpellModifier(spellCorruption);
+    if (f > 0) spell = { ...spell, power: Math.round(spell.power * (1 + f)) };
   }
 
   // Phase G §6.8 — Avada Kedavra refusé contre les échos. Narratif (un
@@ -1209,6 +1476,13 @@ function castSpellInBattle(spellName, targetIdx, targetAllyIdx) {
   }
 
   char.sp -= _spellSpCost(spell);
+  // P4 — staminaCost (❓2) : toll de PV des rituels lourds (Reliquae Temporis,
+  // Le Mot du Dormeur). Pas de 2ᵉ jauge ; planché à 1 PV (jamais de game-over).
+  if (typeof spell.staminaCost === 'number' && spell.staminaCost > 0) {
+    const toll = Math.min(spell.staminaCost, Math.max(0, char.hp - 1));
+    char.hp = Math.max(1, char.hp - spell.staminaCost);
+    if (toll > 0) UX_safe.floatDmg('ally', toll, 'dmg');
+  }
   AudioSystem.playSpellCast(spellName);
   AudioSystem.speakSpell(spellName);
   if (typeof HAPTICS_safe !== 'undefined') HAPTICS_safe.cast(); // N2
@@ -1227,13 +1501,39 @@ function castSpellInBattle(spellName, targetIdx, targetAllyIdx) {
     console.warn('[spell] effet inconnu:', spell.effect);
   }
 
+  // P4 — mémorise le dernier sort OFFENSIF du lanceur (Tempus Echo le rejoue).
+  // Les effets de soutien/temporels ne sont pas mémorisés (rien à rejouer).
+  if (typeof _lastCastSpellByChar !== 'undefined') {
+    const _offensive = new Set(['stun', 'burn', 'instant', 'lifesteal', 'curse', 'imperius',
+      'eclat_bolt', 'venom_drain', 'aoe_wave', 'aoe_field', 'aoe_chain', 'aoe_drain', 'aoe_cleave']);
+    if (_offensive.has(spell.effect)) _lastCastSpellByChar[currentBattleChar] = spell.name;
+  }
+  // P4 — garde-fous 1×/combat : marque l'usage après un lancement réussi.
+  if (spell.effect === 'echo_self'   && typeof echoSpellUsedThisFight  !== 'undefined') echoSpellUsedThisFight  = true;
+  if ((spell.effect === 'tempus_echo' || spell.effect === 'time_rewind')
+      && typeof timeRewindUsedThisFight !== 'undefined') timeRewindUsedThisFight = true;
+  if (spell.effect === 'badger_oath' && typeof badgerOathUsedThisFight !== 'undefined') badgerOathUsedThisFight = true;
+
+  // P4 — contrecoup de corruption (❓5) : APRÈS l'effet, proba = corruptionRisk
+  // (majoré par corruptionLevel via corruptionSpellModifier, cap 0.95).
+  if ((spell.corruptionRisk || 0) > 0) {
+    let risk = spell.corruptionRisk;
+    if (typeof corruptionSpellModifier === 'function' && typeof spellCorruption === 'number') {
+      risk = Math.min(0.95, risk + corruptionSpellModifier(spellCorruption));
+    }
+    if (Math.random() < risk) {
+      const bm = _applyCorruptionBacklash(spell, char);
+      if (bm) msg += ' ' + bm;
+    }
+  }
+
   // Immersion (Lot 1) : VFX élémentaire sur la/les cible(s). Purement visuel
   // (CFX_safe → no-op si le module FX manque). Gardé aux effets offensifs ;
   // les AoE éclatent sur chaque ennemi vivant.
   {
     const _el = spell.element || 'physique';
     const _aoe = new Set(['aoe_wave', 'aoe_field', 'aoe_chain', 'aoe_drain', 'aoe_cleave']);
-    const _single = new Set(['stun', 'burn', 'instant', 'lifesteal', 'curse', 'imperius', 'eclat_bolt', 'summon_ally']);
+    const _single = new Set(['stun', 'burn', 'instant', 'lifesteal', 'curse', 'imperius', 'eclat_bolt', 'summon_ally', 'venom_drain', 'echo_self']);
     const _heal = new Set(['heal', 'support_regen', 'support_regen_aoe', 'heal_aoe']);
     const _buff = new Set(['shield', 'patronus_maxima', 'seal_shield', 'patronus_corporel']);
     // G2 — feedback côté lanceur : le sort « émane » du personnage actif

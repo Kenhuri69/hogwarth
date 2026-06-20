@@ -546,8 +546,20 @@ function _enemyPhysicalHit(enemy, target, charIdx) {
   if (shieldTurns[charIdx] > 0) {
     shieldTurns[charIdx]--;
     UX_safe.floatDmg('ally', 0, 'shield');
+    // Lot P4 — Protego Diabolica (évolution Apothéose) : le bouclier maudit
+    // bloque ET renvoie une fraction du coup à l'assaillant. Défensif.
+    let reflectMsg = '';
+    if (typeof _shieldReflect !== 'undefined' && _shieldReflect[charIdx] > 0) {
+      const raw = mitigatedDamage(enemy.atk + Math.floor(Math.random() * 3), target.def);
+      const back = Math.max(1, Math.floor(raw * _shieldReflect[charIdx]));
+      enemy.currentHp = Math.max(0, enemy.currentHp - back);
+      _shieldReflect[charIdx] = (shieldTurns[charIdx] > 0) ? _shieldReflect[charIdx] : 0;
+      UX_safe.floatDmg(`enemy:${enemyGroup.indexOf(enemy)}`, back, 'dmg');
+      UX_safe.logCombat(`🛡️🔥 Protego Diabolica renvoie <b>−${back}</b> à ${enemy.name}`, 'magic');
+      reflectMsg = `🛡️🔥 Le bouclier maudit renvoie ${back} à ${enemy.name} ! `;
+    }
     UX_safe.logCombat(`🛡️ Protego bloque l'attaque de ${enemy.name} sur ${target.name}.`, 'magic');
-    return `🛡️ Protego protège ${target.name} ! `;
+    return `🛡️ Protego protège ${target.name} ! ` + reflectMsg;
   }
   if (Math.random() * 100 < (target.dodgeChance || 0)) {
     UX_safe.floatDmg('ally', 0, 'miss');
@@ -601,6 +613,15 @@ function startBattle(baseEnemyData, opts) {
   legilimensCastsThisFight = 0;
   recolteGoldBonus        = false;
   slythPactBuff           = false;   // signature Serpentard : armé par le levier Voldemort
+  // Lot P4 — état combat-scoped corruption / temporels (reset systématique).
+  echoSpellUsedThisFight   = false;
+  timeRewindUsedThisFight  = false;
+  _lastCastSpellByChar     = [null, null];
+  _timeSnapshot            = null;
+  serpentPactDoubleNext    = false;
+  lionHeartActive          = false;
+  badgerOathUsedThisFight  = false;
+  _shieldReflect           = [0, 0];
   if (typeof window._resetTeleportFightFlag === 'function') window._resetTeleportFightFlag();
 
   // Duel multijoueur : groupe pré-construit ; sinon tirage 1-3 monstres.
@@ -1157,6 +1178,11 @@ function _checkBossPhases(enemy) {
 function enemyTurn() {
   battleTurn++;
   UX_safe.logCombatTurn(battleTurn + 1);
+  // Lot P4 — Reliquae Temporis : snapshot PV/PM du groupe AVANT que les ennemis
+  // ne frappent (= « début du round précédent » vu du prochain tour du joueur).
+  if (typeof party !== 'undefined' && typeof partySize === 'number') {
+    _timeSnapshot = party.slice(0, partySize).map(c => ({ hp: c.hp, sp: c.sp }));
+  }
   // Télégraphe (G3) : bref wind-up sur les cartes des ennemis qui s'apprêtent
   // à agir, pour que leurs actions semblent intentionnelles. Posé en tête du
   // tour, avant tout re-render (renderEnemyGroup vide le conteneur). Purement

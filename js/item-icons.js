@@ -550,7 +550,22 @@ const SPELL_ICON_REGISTRY = {
   'Incendio Royal':     'img/icons/spells/incendio.png',
   "Morsure d'Émeraude": 'img/icons/spells/sanguini.png',
   'Givre de Rowena':    'img/icons/spells/glacius.png',
-  'Soin du Blaireau':   'img/icons/spells/reparo.png'
+  'Soin du Blaireau':   'img/icons/spells/reparo.png',
+  // ── Lot P4 — alias temporaires sur des PNG existants (art dédié reporté §2.8) ──
+  'Flamme Dévorante':    'img/icons/spells/incendio.png',          // feu corrompu
+  'Venin du Cachot':     'img/icons/spells/sanguini.png',          // venin/drain
+  'Savoir Interdit':     'img/icons/spells/maledictus.png',        // malédiction
+  'Fardeau Partagé':     'img/icons/spells/vulnera_sanentur.png',  // redistribution PV
+  'Tempus Echo':         'img/icons/spells/teleportation.png',     // temporel
+  'Reliquae Temporis':   'img/icons/spells/teleportation.png',     // temporel
+  'Écho Fantôme':        'img/icons/spells/nox_vorax.png',         // écho ténèbres
+  'Cœur de Lion':        'img/icons/spells/patronum.png',          // ralliement
+  'Pacte du Serpent':    'img/icons/spells/morsmordre.png',        // pacte sombre
+  'Verbe de Rowena':     'img/icons/spells/lux_aeterna.png',       // chœur de lumière
+  'Serment du Blaireau': 'img/icons/spells/reparo.png',            // relève un allié
+  'Le Mot du Dormeur':   'img/icons/spells/morsmordre.png',        // verbe colossal
+  'Sanguini Vorace':     'img/icons/spells/sanguini.png',
+  'Protego Diabolica':   'img/icons/spells/protego.png'
 };
 
 // ── Registre d'icônes SVG inline (herbes + potions) ──────────
