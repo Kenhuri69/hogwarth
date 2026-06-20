@@ -194,6 +194,13 @@ let outremondeActiveFissureSkin = null;
 let barksEnabled = true;
 let _barkSeen    = new Set();
 
+// Biais de génération par Maison V2 (perception déterministe, power-neutral —
+// floor-ambiance.js `housePerceptionLine`). Flag de repli : à false, la couche
+// V2 est neutralisée (retour au seul V1 cosmétique). Cosmétique pur, non
+// sérialisé. `_housePoiSeen` : anti-répétition transient (clé "floor,x,y").
+let houseGenBiasEnabled = true;
+let _housePoiSeen       = new Set();
+
 // ============================================================
 // SYSTÈME DES MAISONS
 // ============================================================
