@@ -4,10 +4,44 @@
 > Pendant du chantier Artefacts (`artifacts-reliquary-system.md`) : même
 > philosophie, mêmes garde-fous, même structure documentaire.
 >
-> **Statut : ÉTAPE 1 + ÉTAPE 2 rédigées · Lots P0 (socle data inerte),
-> P1 (étiquetage + liseré de rang), P2 (sorts par Maison & arbre),
-> P3 (Premium & évolutifs) et P4 (Corrompus & Boucle) LIVRÉS.
-> P5 (équilibrage final & Codex sorts) à venir.**
+> **Statut : ÉTAPE 1 + ÉTAPE 2 rédigées · Lots P0→P5 LIVRÉS. Chantier clos.**
+>
+> ### Journal — Lot P5 (livré)
+> Codex « Sorts & Sortilèges » + passe d'équilibrage final (branche
+> `claude/sorts-p5-equilibrage`). Règle d'or §0 respectée (ZÉRO scaling monstre).
+> - **Codex catégorie `'sorts'` (❓3)** : nouvel onglet dédié — section
+>   `CODEX_SECTIONS` (`ui-codex.js`) + bouton `data-cat="sorts"` (`index.html`) +
+>   5 entrées `CODEX_ENTRIES` category `'sorts'` (`codex.js`) couvrant les familles
+>   majeures : signature de Maison, variantes d'Apothéose, sorts temporels,
+>   magie corrompue (surcouche `corrupted` en Ruines profondes), légendaires.
+>   `veiled/revealed/corrupted` gatés par étage / écho / victoire. **`teachesSpell`
+>   réutilisé** (P2) sur `sort_rituel_temporel` : sa révélation en Boucle enseigne
+>   Tempus Echo (chemin de découverte complémentaire de la stèle Ruines, idempotent).
+> - **Passe d'équilibrage** : `tools/sim-difficulty.js` exécuté. Le modèle joueur
+>   du simulateur ne tire QUE des sorts de départ + level-up (`CHARACTERS.spells` +
+>   `_grantLevelSpells`) — les sorts P2-P4 (non auto-appris) n'y entrent jamais, et
+>   aucun scaling monstre n'a bougé : **ladder strictement inchangé** (diffs
+>   observés ≤ bruit RNG run-to-run de ±2-5 %, prouvé par double-run sur code
+>   identique). `spellPmCostEstimate` a servi de garde-fou : les coûts des sorts
+>   P2-P4 suivent la **convention de pricing endgame existante** (Avada/Fiendfyre/
+>   Premium sont déjà tarifés SOUS la formule théorique — corrompu mult 2.8) ;
+>   les corrompus restent Boucle-gated + grevés du contrecoup + de la double échelle
+>   power/risque de `corruptionLevel`. **Aucun ajustement numérique nécessaire** —
+>   le kit corrompu/légendaire ne dépasse pas le plafond de progression (Ch.13).
+> - **Vérif** : `units.js` (866 assertions, dont catégorie `'sorts'` + révélation
+>   enseignante) ; `scenarioCodexSorts` (onglet + teachesSpell) + suite smoke verte ;
+>   sim ladder inchangé ; cache PWA bumpé.
+>
+> **Écarts / décisions P5 :**
+> - **Bascule du filtre de la modale Sorts vers la taxonomie 2.0** (combat/
+>   exploration/defense/rituel/signature) **NON livrée** : explicitement optionnelle
+>   et « à trancher avec le commanditaire ». Le filtre par élément
+>   (`feu/glace/…` + soutien/utilitaire) est conservé tel quel ; bascule laissée
+>   ouverte à la décision du commanditaire (aucune régression).
+> - **Équilibrage = zéro changement numérique** : la passe sim a confirmé que les
+>   sorts sont additifs et hors modèle joueur du simulateur ; documenter le
+>   raisonnement plutôt que toucher des valeurs déjà cohérentes était le choix
+>   chirurgical (guidelines §3).
 >
 > ### Journal — Lot P4 (livré)
 > Corrompus, corruption, contrecoup, légendaires de quête, sorts temporels +
@@ -752,7 +786,7 @@ budgetSort = power×0,5 + (AoE? ×1,5) + (statut? +2) + (lifesteal? +3) + (heal?
 | ✅ **P2 — Sorts par Maison & arbre** | `houseSpellBoost` (cost-only, PUR), 8 sorts d'Éclats/familier/environnementaux, apprentissage PNJ (`teach_spell`)/Codex (`teachesSpell`). | `scenarioSpellsP2` (6 sous-tests) + units (houseSpellBoost/gates) ; smoke 234 vert ; sim baseline inchangé. |
 | ✅ **P3 — Premium & évolutifs** | 4 variantes Premium signature (octroi Apothéose), `resolveSpellForm` évolutif réel (artefact/étage/quête), synergie Bâton ancestral, FX Premium. | `scenarioSpellsP3` (3 sous-tests) + units (803) ; smoke 239 vert ; sim baseline inchangé. |
 | ✅ **P4 — Corrompus & Boucle** | Sorts `corrompu`, `corruptionLevel` (sérialisé), contrecoup configurable (❓5), légendaires de quête, sorts temporels, reports P3 (Sanguini Vorace / Protego Diabolica), `staminaCost` (❓2). | `scenarioSpellsP4` + units (corruptionSpellModifier/backlash/gate/evolveCondition) ; smoke vert ; **sim-difficulty : ladder inchangé**. |
-| **P5 — Équilibrage final** | Passe `tools/sim-difficulty.js`, ajustement coûts/power, Codex sorts complet. | sim + units + smoke complet. |
+| ✅ **P5 — Équilibrage final & Codex sorts** | Onglet Codex `'sorts'` (❓3) + 5 entrées (teachesSpell réutilisé) ; passe `sim-difficulty` (ladder inchangé, aucun ajustement numérique requis — pricing conforme à la convention endgame). Bascule du filtre 2.0 reportée (optionnelle, décision commanditaire). | `scenarioCodexSorts` + units (catégorie sorts) ; smoke complet ; sim ladder inchangé. |
 
 ## 2.8 Suggestions d'assets
 
