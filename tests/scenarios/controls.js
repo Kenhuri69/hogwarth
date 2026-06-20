@@ -1020,6 +1020,61 @@ async function scenarioGridKeyboardNavExtended() {
   await browser.close();
 }
 
+async function scenarioSpellFilterKeyboard() {
+  console.log('\n── Scénario : chips de filtre de sorts au clavier ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // Garantir ≥ 2 catégories de sorts → la barre de filtres s'affiche
+  // (feu + glace + soutien = 3 chips + « Tous » = 4).
+  await page.evaluate(() => {
+    for (const s of ['Incendio', 'Glacius', 'Episkey']) {
+      if (!player.spells.includes(s)) player.spells.push(s);
+    }
+    openSpells(0);
+  });
+
+  const bar = await page.evaluate(() => {
+    const btns = Array.from(document.querySelectorAll('#spell-list button[aria-pressed]'));
+    return {
+      count: btns.length,
+      allButtons: btns.every(b => b.tagName === 'BUTTON'),
+      focusable: btns.every(b => b.getAttribute('tabindex') === '0'),
+    };
+  });
+  assert(bar.count >= 3, `barre de filtres de sorts attendue (got ${bar.count} chips)`);
+  assert(bar.allButtons, 'les chips de filtre doivent être des <button>');
+  assert(bar.focusable, 'chaque chip doit être focusable (tabindex="0")');
+
+  // Focus un chip INACTIF (≠ filtre courant 'tous') puis Entrée → bascule.
+  await page.evaluate(() => {
+    const target = Array.from(document.querySelectorAll('#spell-list button[aria-pressed]'))
+      .find(b => b.getAttribute('aria-pressed') === 'false');
+    target.dataset.test = 'filter-target';
+    target.focus();
+  });
+  await page.waitForFunction(() =>
+    document.activeElement && document.activeElement.dataset.test === 'filter-target');
+  const beforeFilter = await page.evaluate(() => _spellFilter);
+  await page.keyboard.press('Enter');
+  const afterFilter = await page.evaluate(() => _spellFilter);
+  assert(afterFilter !== beforeFilter,
+    `Entrée sur un chip doit changer le filtre (avant ${beforeFilter}, après ${afterFilter})`);
+  const activeReflected = await page.evaluate(() => {
+    const active = Array.from(document.querySelectorAll('#spell-list button[aria-pressed]'))
+      .find(b => b.getAttribute('aria-pressed') === 'true');
+    return !!active;
+  });
+  assert(activeReflected, 'le chip actif doit porter aria-pressed="true" après bascule');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (chips filtre sorts)`);
+  }
+  console.log('  ✅ Chips de filtre de sorts au clavier (button + Entrée + aria-pressed) OK');
+  await browser.close();
+}
+
 async function scenarioKeybindings() {
   console.log('\n── Scénario : remappage configurable des touches ──');
   const { browser, page, errors } = await launchGame();
@@ -1081,4 +1136,4 @@ async function scenarioKeybindings() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioMobileSelect, scenarioCombatMobile, scenarioRelativeControls, scenarioCanvasSwipe, scenarioCameraPresence, scenarioCombatKeyboard, scenarioConfirmModal, scenarioA11yFinish, scenarioModalIsolation, scenarioGridKeyboardNav, scenarioGridArrowNav, scenarioGridKeyboardNavExtended, scenarioKeybindings] };
+module.exports = { scenarios: [scenarioMobileSelect, scenarioCombatMobile, scenarioRelativeControls, scenarioCanvasSwipe, scenarioCameraPresence, scenarioCombatKeyboard, scenarioConfirmModal, scenarioA11yFinish, scenarioModalIsolation, scenarioGridKeyboardNav, scenarioGridArrowNav, scenarioGridKeyboardNavExtended, scenarioSpellFilterKeyboard, scenarioKeybindings] };
