@@ -563,7 +563,7 @@ const SPELL_ICON_REGISTRY = {
   'Pacte du Serpent':    'img/icons/spells/morsmordre.png',        // pacte sombre
   'Verbe de Rowena':     'img/icons/spells/lux_aeterna.png',       // chœur de lumière
   'Serment du Blaireau': 'img/icons/spells/reparo.png',            // relève un allié
-  'Le Mot du Dormeur':   'img/icons/spells/morsmordre.png',        // verbe colossal
+  'Le Mot du Dormeur':   'img/icons/spells/le_mot_du_dormeur.png',  // icône dédiée (rune-stèle des Ruines)
   'Sanguini Vorace':     'img/icons/spells/sanguini.png',
   'Protego Diabolica':   'img/icons/spells/protego.png'
 };
