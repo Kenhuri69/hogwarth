@@ -1181,4 +1181,57 @@ async function scenarioRefusalFeedback() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioPartyEquipRow, scenarioTryAddItem, scenarioConsumableStacking, scenarioEquipmentAndStatusIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioEquipmentPhase3bQuests, scenarioCritDodgeFromEquip, scenarioDeathlyHallows, scenarioVoiceRelics, scenarioShopLimits, scenarioRefusalFeedback] };
+// Dissolution à la Forge : un item invendable (price:0) du sac est recyclé
+// en Essence (matériau de forge), libérant l'impasse inventaire.
+async function scenarioForgeDissolve() {
+  console.log('\n── Scénario : dissolution Forge (anti-impasse items invendables) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : un item premium price:0 (Bâton de Rowena) dans le sac est dissolvable
+  //      et son rendement inclut de l'Essence Primordiale (epic).
+  const t1 = await page.evaluate(() => {
+    const it = ITEMS.find(i => i.id === 'baton_ancestral_premium_serd');
+    player.inventory = [{ ...it }];
+    return {
+      price:        it.price,
+      dissolvable:  _isDissolvable(player.inventory[0]),
+      yld:          _dissolveYield(player.inventory[0]),
+      hasFn:        typeof dissolveItemAtForge === 'function',
+    };
+  });
+  console.log('  T1:', t1);
+  assert(t1.price === 0,       'le Bâton de Rowena est bien price:0 (invendable)');
+  assert(t1.dissolvable,       'un équipement du sac doit être dissolvable');
+  assert(t1.hasFn,             'dissolveItemAtForge doit être exposé');
+  assert((t1.yld.essence_primordiale | 0) >= 1, 'un epic doit rendre ≥1 Essence Primordiale');
+
+  // T2 : dissolution effective (confirm stubé) → item retiré, Essence gagnée.
+  const t2 = await page.evaluate(() => {
+    window.confirm = () => true;                       // stub la confirmation
+    const tenBefore  = _countMaterial('essence_tenebres');
+    const primBefore = _countMaterial('essence_primordiale');
+    const lenBefore  = player.inventory.length;
+    const ok = dissolveItemAtForge(0);
+    return {
+      ok,
+      removed:   lenBefore - player.inventory.length,
+      stillHas:  player.inventory.some(i => i.id === 'baton_ancestral_premium_serd'),
+      tenGain:   _countMaterial('essence_tenebres')   - tenBefore,
+      primGain:  _countMaterial('essence_primordiale') - primBefore,
+    };
+  });
+  console.log('  T2:', t2);
+  assert(t2.ok,                'la dissolution doit réussir');
+  assert(!t2.stillHas,        'l\'item dissous doit quitter le sac');
+  assert(t2.primGain >= 1 && t2.tenGain >= 1, 'la dissolution doit créditer l\'Essence');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Dissolution Forge OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioPartyEquipRow, scenarioTryAddItem, scenarioConsumableStacking, scenarioEquipmentAndStatusIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioEquipmentPhase3bQuests, scenarioCritDodgeFromEquip, scenarioDeathlyHallows, scenarioVoiceRelics, scenarioShopLimits, scenarioRefusalFeedback, scenarioForgeDissolve] };
