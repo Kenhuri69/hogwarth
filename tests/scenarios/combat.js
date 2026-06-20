@@ -2805,4 +2805,86 @@ async function scenarioBossPhase() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBuffBadgesPng, scenarioBruteCrush, scenarioStatRework, scenarioFortuneStat, scenarioAgiCelerite, scenarioCeleriteGuardCounting, scenarioDuoStatuses, scenarioCritDodge, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioGuardAndFerula, scenarioCombatBuffs, scenarioLegilimensEscalation, scenarioStun, scenarioStatusComboNoFreeze, scenarioCombatExtV2, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioDeathPetrify, scenarioIronmanDeath, scenarioLargeEnemyGroup, scenarioMonsterDiscovery, scenarioArtifactForms, scenarioActiveArtifact, scenarioDuoPosture, scenarioBossPhase] };
+// ============================================================
+// P4 — Environnement en combat (environmentalModifiers) : zone runique (D)
+// → +10 % feu/foudre + action 🌿 « Activer la rune » (étourdit, 1×/combat).
+// ============================================================
+async function scenarioCombatEnv() {
+  console.log('\n── Scénario P4 : Environnement en combat (rune zone D) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // Combat en zone D (étage 14 runique) : startBattle calcule envModifiers.
+  await page.evaluate(() => { currentFloor = 14; });
+  await startDummyFight(page, { hp: 60 });
+
+  // T1 : envModifiers runique, charge rune armée, bouton 🌿 visible.
+  const t1 = await page.evaluate(() => ({
+    runic:  !!(envModifiers && envModifiers.runic),
+    charge: envRuneCharge,
+    btnShown: (() => { const b = document.getElementById('btn-env'); return !!b && b.style.display !== 'none'; })()
+  }));
+  console.log('  T1 zoneD :', t1);
+  assert(t1.runic, 'zone D devrait être runique');
+  assert(t1.charge === 1, 'charge rune devrait valoir 1 en zone runique');
+  assert(t1.btnShown, 'bouton 🌿 Rune devrait être visible en zone runique');
+
+  // T2 : bonus élémentaire ambiant feu/foudre = +10 %, neutre ailleurs.
+  const t2 = await page.evaluate(() => ({
+    feu:    _envElemBonus('feu'),
+    foudre: _envElemBonus('foudre'),
+    glace:  _envElemBonus('glace')
+  }));
+  console.log('  T2 bonus :', t2);
+  assert(t2.feu === 0.10 && t2.foudre === 0.10, 'bonus runique feu/foudre attendu +10 %');
+  assert(t2.glace === 0, 'pas de bonus runique sur glace');
+
+  // T3 : action rune étourdit l'ennemi le plus proche, consomme la charge,
+  // refus à la seconde activation. On isole l'effet (override advanceBattleChar).
+  const t3 = await page.evaluate(() => {
+    const orig = advanceBattleChar;
+    window.advanceBattleChar = () => {};   // évite que le tour ennemi consomme le stun
+    enemyGroup[0].statusEffects = [];
+    envRuneCharge = 1;
+    triggerRuneEnv();
+    const stunned = enemyGroup[0].statusEffects.some(s => s.id === 'stun');
+    const left = envRuneCharge;
+    triggerRuneEnv();                       // refusé (charge épuisée)
+    const left2 = envRuneCharge;
+    window.advanceBattleChar = orig;
+    return { stunned, left, left2 };
+  });
+  console.log('  T3 rune  :', t3);
+  assert(t3.stunned, 'la rune n\'a pas étourdi l\'ennemi');
+  assert(t3.left === 0, 'charge rune non consommée');
+  assert(t3.left2 === 0, 'la rune ne devrait pas se recharger');
+
+  // T4 : hors zone runique (étage 5) → neutre, bouton caché.
+  const t4 = await page.evaluate(() => {
+    currentFloor = 5;
+    const enemy = { id: 'd2', name: 'Mannequin', icon: '🎯', hp: 30, atk: 1, def: 0, mag: 0,
+      agi: 0, lck: 0, xp: 0, gold: 0, abilities: [], drops: [], resist: [], weak: [], desc: 'x' };
+    startBattle(enemy);
+    const b = document.getElementById('btn-env');
+    return {
+      runic: !!(envModifiers && envModifiers.runic),
+      charge: envRuneCharge,
+      feu: _envElemBonus('feu'),
+      btnHidden: !!b && b.style.display === 'none'
+    };
+  });
+  console.log('  T4 zoneA :', t4);
+  assert(t4.runic === false, 'étage 5 ne devrait pas être runique');
+  assert(t4.charge === 0, 'pas de charge rune hors zone runique');
+  assert(t4.feu === 0, 'pas de bonus élémentaire hors zone runique');
+  assert(t4.btnHidden, 'bouton 🌿 devrait être caché hors zone runique');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Environnement en combat OK (zone D : +feu/foudre + rune étourdissante)');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBuffBadgesPng, scenarioBruteCrush, scenarioStatRework, scenarioFortuneStat, scenarioAgiCelerite, scenarioCeleriteGuardCounting, scenarioDuoStatuses, scenarioCritDodge, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioGuardAndFerula, scenarioCombatBuffs, scenarioLegilimensEscalation, scenarioStun, scenarioStatusComboNoFreeze, scenarioCombatExtV2, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioDeathPetrify, scenarioIronmanDeath, scenarioLargeEnemyGroup, scenarioMonsterDiscovery, scenarioArtifactForms, scenarioActiveArtifact, scenarioDuoPosture, scenarioBossPhase, scenarioCombatEnv] };

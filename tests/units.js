@@ -2320,6 +2320,36 @@ function loadModule(relPath, exportNames, globals = {}) {
 })();
 
 // ============================================================
+// O. P4 — Environnement en combat (computeEnvModifiers, PUR)
+// ============================================================
+(function testCombatEnvP4() {
+  const { getFloorTheme } = loadModule('js/floor-themes.js', ['getFloorTheme']);
+  const { computeEnvModifiers } = loadModule(
+    'js/floor-ambiance.js', ['computeEnvModifiers'], { getFloorTheme });
+
+  // Zone D (étage 14+) → runique : +10 % feu/foudre.
+  const z14 = computeEnvModifiers(14, false);
+  check('env : zone D (14) → runique', z14.runic === true);
+  check('env : zone D → +10 % feu', z14.spellElemBonus.feu === 0.10);
+  check('env : zone D → +10 % foudre', z14.spellElemBonus.foudre === 0.10);
+  check('env : zone D → pas de bonus glace', (z14.spellElemBonus.glace || 0) === 0);
+
+  // Étages non runiques (pré-victoire) → neutre.
+  check('env : étage 5 → non runique', computeEnvModifiers(5, false).runic === false);
+  check('env : étage 13 (depths) → non runique', computeEnvModifiers(13, false).runic === false);
+  check('env : non runique → spellElemBonus vide',
+    Object.keys(computeEnvModifiers(5, false).spellElemBonus).length === 0);
+
+  // Override post-victoire : étage 11+ avec victoryAchieved → runique.
+  check('env : étage 11 post-victoire → runique', computeEnvModifiers(11, true).runic === true);
+  check('env : étage 11 pré-victoire → non runique', computeEnvModifiers(11, false).runic === false);
+
+  // Défensif : entrée invalide → repli sûr (étage 1, non runique).
+  check('env : floor NaN → non runique', computeEnvModifiers(NaN, false).runic === false);
+  check('env : floor undefined → non runique', computeEnvModifiers(undefined, false).runic === false);
+})();
+
+// ============================================================
 // Rapport
 // ============================================================
 if (failures.length) {

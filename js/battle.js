@@ -608,6 +608,12 @@ function startBattle(baseEnemyData, opts) {
   artifactCharges   = {};       // P2 — charges d'artefacts actifs (reset à chaque combat)
   duoPostureSwitched = false;   // P2 — bascule gratuite de posture réarmée
   duoComboMarks      = {};      // P2 — marques Tenaille (reset par round dans enemyTurn)
+  // P4 — modificateurs d'environnement, dérivés du thème d'étage (pur). En zone
+  // runique (D / override post-victoire), arme la charge de l'action 🌿.
+  envModifiers = (typeof computeEnvModifiers === 'function')
+    ? computeEnvModifiers(currentFloor, typeof victoryAchieved !== 'undefined' && victoryAchieved)
+    : null;
+  envRuneCharge = (envModifiers && envModifiers.runic) ? 1 : 0;
   battleTurn        = 0;
   currentBattleChar = 0;
   pendingAction     = null;
@@ -840,6 +846,7 @@ function battleAction(action) {
   if (action === 'flee')  { doFlee(); return; }
   if (action === 'artifact') { triggerActiveArtifact(); return; }   // P2 — artefact actif
   if (action === 'posture')  { toggleDuoPosture();      return; }   // P2 — bascule de posture (gratuite)
+  if (action === 'env')      { triggerRuneEnv();        return; }   // P4 — interaction d'environnement (rune)
 
   if (action === 'guard') {
     const idx    = currentBattleChar;
@@ -1006,6 +1013,35 @@ function _duoComboMult(enemyIdx, heroIdx) {
 function _duoMarkTarget(enemyIdx, heroIdx) {
   if (partySize !== 2 || enemyIdx < 0) return;
   if (duoComboMarks[enemyIdx] == null) duoComboMarks[enemyIdx] = heroIdx;
+}
+
+// ── P4 · Environnement en combat (combat-system-synthesis §1.4) ──
+// Bonus élémentaire ambiant pour l'élément `element` (zone runique → feu/foudre
+// +10 %). PUR, défensif (envModifiers absent → 0). Consommé par
+// _spellElementalDamage, comme _artifactElemBonus.
+function _envElemBonus(element) {
+  if (!envModifiers || !envModifiers.runic || !element) return 0;
+  const b = envModifiers.spellElemBonus || {};
+  return b[element] || 0;
+}
+// Action 🌿 « Activer la rune » : 1×/combat en zone runique, étourdit l'ennemi
+// le plus proche (1er vivant). Consomme le tour (advanceBattleChar).
+function triggerRuneEnv() {
+  if (!inBattle) return;
+  if (envRuneCharge <= 0) { setBattleLog('🌿 La charge runique est déjà épuisée.'); return; }
+  const idx = getFirstLivingEnemy();
+  if (idx < 0) { advanceBattleChar(); return; }
+  const enemy = enemyGroup[idx];
+  envRuneCharge = 0;
+  const char = getActiveChar();
+  if (typeof applyStatus === 'function') applyStatus(enemy, 'stun', 0, 1);
+  if (typeof AudioSystem !== 'undefined' && AudioSystem.playSpellCast) AudioSystem.playSpellCast('Fulgari');
+  setBattleLog(`🌿 ${char.name} libère la charge runique : ${enemy.name} est étourdi !`);
+  addMsg(`🌿 Charge runique → ${enemy.name} étourdi.`, 'good');
+  UX_safe.floatDmg(`enemy:${idx}`, 0, 'shield');
+  UX_safe.logCombat(`🌿 <b>${char.name}</b> active la rune → 💫 ${enemy.name} étourdi`, 'magic');
+  renderEnemyGroup();
+  advanceBattleChar();
 }
 
 // showTargetSelection() → battle-ui.js

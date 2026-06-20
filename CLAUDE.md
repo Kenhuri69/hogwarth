@@ -1073,7 +1073,8 @@ pendingSpell      // nom du sort en attente de sélection de cible (ennemi ou al
 
 ### Actions de combat (#battle-actions)
 
-5 actions disponibles à chaque tour du perso actif :
+5 actions de base + 3 actions **conditionnelles** (boutons masqués hors contexte,
+montrés par `_refreshBattleActionButtons` dans `battle-ui.js`) :
 
 | Action | Coût | Effet |
 |--------|------|-------|
@@ -1082,6 +1083,9 @@ pendingSpell      // nom du sort en attente de sélection de cible (ennemi ou al
 | 🛡️ Garde | — | `guardTurns[idx]` empilé (`min(3, +1)`) ; mitige les coups physiques de 50 % ; restitue `3 + floor(mag/5)` PM par pose (cap `spMax`) **disponible 1 tour sur 2** par personnage (`guardRegenCooldown[idx]`, réarmé à 2, décrémenté par round dans `enemyTurn`). Priorité après Protego/Esquive. **Chaque coup mitigé consomme un palier** ; les paliers non touchés persistent (Double-Garde). Riposte probabiliste `_tryGuardCounter` (base 30 %, plafond 40 %, + `counterChance` d'équipement) — atk/2, sans consommer de tour. |
 | 🧪 Objet | — | Inventaire en mode combat (consommables uniquement) |
 | 💨 Fuir | — | `doFlee()` — chance basée sur AGI vs ATK ennemi, garantie avec Balai |
+| 🏺 Artefact (P2) | charge | `#btn-artifact` — `triggerActiveArtifact()`. Visible si le perso actif équipe un artefact à `item.activeEffect` avec une charge restante (`artifactCharges[idx]`, 1×/combat, reset `startBattle`). Résolveurs `elemBurst`/`purgeStatus`/`shieldGroup`. Ciblage 1-ennemi via `pendingAction='artifact'`. |
+| 🔄 Posture (P2) | — | `#btn-posture` — `toggleDuoPosture()`. Visible en **Duo** tant que la bascule gratuite n'a pas servi ce combat (`duoPostureSwitched`). Bascule `duoPosture` phalange↔tenaille. Cf. « Positionnement Duo ». |
+| 🌿 Rune (P4) | — | `#btn-env` — `triggerRuneEnv()`. Visible en **zone runique** (D / override post-victoire) tant que `envRuneCharge > 0` (1×/combat). Étourdit (`stun` 1 tour) l'ennemi le plus proche. Cf. « Environnement en combat ». |
 
 ### Tour de jeu
 ```
@@ -1090,6 +1094,39 @@ Harry agit → advanceBattleChar()
 Ennemis agissent (tryEnemyAbility ou attaque physique) → retour Harry
 ```
 Si un personnage est KO, son tour est sauté automatiquement.
+
+### Positionnement Duo (`duoPosture`, P2)
+
+Deux postures déclaratives (`state.js`, **sérialisé**, défaut `phalange`),
+**ignorées en Solo** (`partySize === 1`). Persistant + bascule gratuite 1×/combat
+(bouton 🔄, `toggleDuoPosture` ; `duoPostureSwitched` combat-scoped) ; choix
+aussi modifiable hors combat dans la fiche perso (`_renderDuoPosturePanel` /
+`setDuoPosture`).
+
+| Posture | Effet (lu en combat) |
+|---------|----------------------|
+| **Phalange** (défensif) | `_chooseEnemyTarget` (`battle.js`) : l'avant (`party[0]`) attire les coups (+20 % d'être ciblé) — protège l'arrière plus fragile. |
+| **Tenaille** (offensif) | `_duoComboMult(enemyIdx, heroIdx)` : focus-fire **+15 %** quand l'AUTRE héros a déjà frappé la même cible ce round (marques `duoComboMarks`, reset par round dans `enemyTurn`). Appliqué dans `executeAttack` (physique) et `_computeSpellDamage` (sorts). |
+
+> Le rider « +10 % mitigation Garde » de Phalange (design `combat-system-synthesis.md`
+> §1.1) a été **écarté** pour préserver la baseline Garde 50 % (zéro régression).
+
+### Environnement en combat (`envModifiers`, P4)
+
+Modificateurs dérivés du **thème d'étage** au démarrage du combat (helper PUR
+`computeEnvModifiers(floor, victoryAchieved)` dans `floor-ambiance.js`, calculé à
+`startBattle`). V1 = **1 seul modificateur** : la **charge runique** des Ruines
+(`runic` vrai en **zone D** étage 14+ ou override rune post-victoire étage 11+).
+
+- **Bonus passif** : `_envElemBonus(element)` (`battle.js`) ajoute **+10 %** aux
+  sorts `feu`/`foudre`, appliqué dans `_spellElementalDamage` après
+  `_artifactElemBonus` (même pipeline additif).
+- **Action 🌿 « Activer la rune »** (`triggerRuneEnv`, `envRuneCharge` 1×/combat) :
+  étourdit (`stun` 1 tour) l'ennemi le plus proche.
+
+> Combat-scoped, **non sérialisés** (comme `celeriteGauge`). Le scaling des
+> monstres (`dungeon-scaling.js`) n'est pas touché — apport 100 % additif.
+> Modificateurs « givre/sol glissant » & « asperger fontaine » = hors-scope V1.
 
 ### Statut `stun` (étourdissement)
 Statut non-DoT (`STATUS_DEFS.stun` 💫) qui fait **sauter le prochain tour**
