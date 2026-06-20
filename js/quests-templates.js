@@ -424,6 +424,120 @@ const QUEST_TEMPLATES = [
     repeatableReward: { xp: 230, gold: 195, item: "page_grimoire" },
     location: "Boucle Ténébreuse (étage 11+)"
   },
+  // ── Boucle Ténébreuse — quêtes des PNJ recyclés (étages 11+) ──────
+  // Rallume les PNJ recyclés en Boucle (Kingsley 18, Bill 19, Sirius 20,
+  // Marchand 18, Apothicaire 19, Forgeron 20) qui n'avaient plus rien à
+  // proposer une fois leurs quêtes one-shot rendues. Réutilise la machinerie
+  // existante : `rollOnAccept` (chasse), `item`/`herb` (collecte), `search`
+  // (fouille), `spawnOnAccept` (boss). Gate `minFloor: 11` (Boucle uniquement,
+  // étages scellés sans victoire) lu par isQuestOfferable.
+  //
+  // CHASSE — primes farming (cible aléatoire de l'étage, tirée à l'acceptation).
+  {
+    id: "chasse_kingsley_boucle",
+    title: "Battue de l'Ordre",
+    giver: "Kingsley Shacklebolt",
+    desc: "L'Ordre a repéré une concentration de créatures sur cet étage. Disperse-la.",
+    farming: true,
+    objectives: [
+      { type: "kill", monsterId: null, amount: 0, progress: 0, completed: false }
+    ],
+    reward: { xp: 420, gold: 240 },
+    location: "Boucle Ténébreuse (Kingsley, étage 18)",
+    minFloor: 11,
+    repeatable: { everyLevels: 1 },
+    rollOnAccept: { kind: "kill", minFloor: 11, maxFloor: 99, minAmount: 3, maxAmount: 6, spawnBonus: 2 }
+  },
+  {
+    id: "chasse_bill_boucle",
+    title: "Nettoyage de galerie",
+    giver: "Bill Weasley",
+    desc: "Une meute s'est reformée dans les galeries. Brise-la avant qu'elle n'enfle.",
+    farming: true,
+    objectives: [
+      { type: "kill", monsterId: null, amount: 0, progress: 0, completed: false }
+    ],
+    reward: { xp: 450, gold: 250 },
+    location: "Boucle Ténébreuse (Bill, étage 19)",
+    minFloor: 11,
+    repeatable: { everyLevels: 1 },
+    rollOnAccept: { kind: "kill", minFloor: 11, maxFloor: 99, minAmount: 3, maxAmount: 6, spawnBonus: 2 }
+  },
+  {
+    id: "chasse_sirius_boucle",
+    title: "Apaiser le précipice",
+    giver: "Esprit de Sirius Black",
+    desc: "Des présences hostiles s'attardent près du Voile. Renvoie-les au silence.",
+    farming: true,
+    objectives: [
+      { type: "kill", monsterId: null, amount: 0, progress: 0, completed: false }
+    ],
+    reward: { xp: 480, gold: 260 },
+    location: "Boucle Ténébreuse (Sirius, étage 20)",
+    minFloor: 11,
+    repeatable: { everyLevels: 1 },
+    rollOnAccept: { kind: "kill", minFloor: 11, maxFloor: 99, minAmount: 3, maxAmount: 6, spawnBonus: 2 }
+  },
+  // FOUILLE — récupération de butin en fouillant les recoins (type `search`).
+  {
+    id: "recup_marchand_boucle",
+    title: "Récupération sur le terrain",
+    giver: "Marchand Clandestin",
+    desc: "Le château regorge de butin oublié. Fouille les recoins de cet étage et le Marchand t'en récompensera.",
+    objectives: [
+      { type: "search", amount: 5, progress: 0, completed: false }
+    ],
+    reward: { xp: 280, gold: 200, item: "page_grimoire" },
+    repeatableReward: { xp: 220, gold: 240 },
+    location: "Boucle Ténébreuse (Marchand, étage 18)",
+    minFloor: 11,
+    repeatable: { everyLevels: 1 }
+  },
+  // COLLECTE — ravitaillement des vendeurs (herbes / matériaux).
+  {
+    id: "collecte_apothicaire_boucle",
+    title: "Réassort d'herbes interdites",
+    giver: "Apothicaire Ténébreux",
+    desc: "L'Apothicaire manque de plantes pour ses distillations. Rapporte-lui 6 herbes de ta besace.",
+    objectives: [
+      { type: "herb", amount: 6, progress: 0, completed: false }
+    ],
+    reward: { xp: 260, gold: 220, item: "potion_l_sp" },
+    repeatableReward: { xp: 200, gold: 260 },
+    location: "Boucle Ténébreuse (Apothicaire, étage 19)",
+    minFloor: 11,
+    repeatable: { everyLevels: 1 }
+  },
+  {
+    id: "collecte_forgeron_boucle",
+    title: "Approvisionnement de la forge",
+    giver: "Forgeron Ténébreux",
+    desc: "La forge dévore l'Essence des Ténèbres. Apporte-en 3 et le Forgeron paiera grassement ton surplus.",
+    objectives: [
+      { type: "item", itemId: "essence_tenebres", amount: 3, progress: 0, completed: false }
+    ],
+    reward: { xp: 320, gold: 560 },
+    repeatableReward: { xp: 240, gold: 520 },
+    location: "Boucle Ténébreuse (Forgeron, étage 20)",
+    minFloor: 11,
+    repeatable: { everyLevels: 2 }
+  },
+  // BOSS — prime de boss du Gardien (cible garantie via spawnOnAccept).
+  {
+    id: "prime_boss_gardien",
+    title: "Prime du Dragon Ancestral",
+    giver: "Gardien de la Boucle",
+    desc: "Le Magyar Ancestral se reforme au cœur de la Boucle. Terrasse-le — peu y survivent, mais la récompense est à la hauteur du péril.",
+    objectives: [
+      { type: "kill", monsterId: "magyar_ancestral", amount: 1, progress: 0, completed: false }
+    ],
+    reward: { xp: 700, gold: 600, item: "essence_primordiale" },
+    repeatableReward: { xp: 500, gold: 500, item: "essence_primordiale" },
+    location: "Boucle Ténébreuse (Gardien, étage 11+)",
+    minFloor: 11,
+    repeatable: { everyLevels: 3 },
+    spawnOnAccept: { targetMonsterId: "magyar_ancestral", extraRandomCount: 0 }
+  },
   // ── Manon, fille cachée de Lupin — pseudo-quête en deux volets ──
   // Données et rendues par Manon (PNJ étage 3, cf. npcs.js). Le volet 2
   // (`prereq`) ne s'ouvre qu'après remise du volet 1 — chaîne classique.

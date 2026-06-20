@@ -268,7 +268,7 @@ function _rollFarmingTarget(quest, floor) {
     step.progress  = 0;
     step.completed = false;
     quest._dynamicTarget = { type: 'item', id: picked.id, name: picked.name, amount };
-    quest._dynamicDesc   = `Apporte ${amount}× ${picked.name} à Hagrid.`;
+    quest._dynamicDesc   = `Apporte ${amount}× ${picked.name} à ${quest.giver || 'ton commanditaire'}.`;
     quest.desc           = quest._dynamicDesc;
   } else {
     return false;
@@ -295,12 +295,25 @@ function getQuestTemplate(id) {
 // depuis la dernière complétion (lastQuestCompletion[id]).
 function isQuestOfferable(id) {
   if (!id) return false;
+  const tpl = getQuestTemplate(id);
   // Pré-requis de chaîne : `tpl.prereq` doit être dans completedQuests.
-  const tplPrereq = getQuestTemplate(id);
-  if (tplPrereq && tplPrereq.prereq && !completedQuests.has(tplPrereq.prereq)) return false;
+  if (tpl && tpl.prereq && !completedQuests.has(tpl.prereq)) return false;
+  // Gate par étage : quête réservée à une tranche d'étages. `tpl.minFloor`
+  // gate les quêtes endgame (Boucle 11+) ; `rollOnAccept.minFloor/maxFloor`
+  // gate la fourchette farming (la cible n'est tirable que dans cette plage).
+  // Sans ce gate, un bouton « Accepter » s'affichait hors zone et échouait à
+  // l'acceptation (cible introuvable / étage hors fourchette).
+  if (tpl) {
+    const fl   = (typeof currentFloor === 'number') ? currentFloor : 1;
+    const roll = tpl.rollOnAccept || null;
+    const minF = (tpl.minFloor != null) ? tpl.minFloor
+               : (roll && roll.minFloor != null) ? roll.minFloor : null;
+    const maxF = (roll && roll.maxFloor != null) ? roll.maxFloor : null;
+    if (minF != null && fl < minF) return false;
+    if (maxF != null && fl > maxF) return false;
+  }
   if (availableQuests.has(id)) return true;
   if (!completedQuests.has(id)) return false;
-  const tpl = getQuestTemplate(id);
   if (!tpl || !tpl.repeatable) return false;
   const need = tpl.repeatable.everyLevels | 0;
   if (!need) return false;
@@ -553,6 +566,8 @@ function _renderQuestStep(o, isActive, ready, isFirst) {
     label = `Résoudre les énigmes de Dumbledore`;
   } else if (o.type === 'discover_garden') {
     label = `Découvrir un jardin d'herbes caché`;
+  } else if (o.type === 'search') {
+    label = `Fouiller ${o.amount} recoin${o.amount > 1 ? 's' : ''}`;
   } else if (o.type === 'herb') {
     const it = o.itemId && typeof ITEMS !== 'undefined' ? ITEMS.find(x => x.id === o.itemId) : null;
     label = it
@@ -939,6 +954,27 @@ function _consumeBesaceHerbs(herbId, amount) {
     if (player.herbs[id] <= 0) delete player.herbs[id];
   }
 }
+
+// ── Appelée depuis searchRoom (movement-interactions.js) ──────────
+// Incrémente la progression des étapes "search" actives (quête de fouille,
+// ex. Marchand Clandestin). Une fouille fraîche compte pour 1 recoin ; la
+// quête devient remettable au seuil — comme les étapes "kill", la complétion
+// n'est jamais automatique (retour chez le donneur).
+window.checkSearchQuests = function() {
+  if (typeof activeQuests === 'undefined') return;
+  activeQuests.forEach((q) => {
+    const step = getActiveStep(q);
+    if (!step || step.type !== 'search') return;
+    step.progress++;
+    if (step.progress >= step.amount) {
+      step.completed = true;
+      addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/quest.png" alt=""> Quête « ${q.title} » prête — retourne voir ${q.giver}.`, 'good');
+    } else {
+      addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/quest.png" alt=""> Quête « ${q.title} » : ${step.progress}/${step.amount} recoins fouillés.`, '');
+    }
+  });
+  if (typeof updateQuestTracker === 'function') updateQuestTracker();
+};
 
 // ── Appelée à la révélation d'un jardin (_revealGardensNear) ──────
 // Marque comme accomplies les étapes "discover_garden" actives.

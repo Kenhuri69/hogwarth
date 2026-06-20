@@ -1431,4 +1431,100 @@ async function scenarioQuestFanfare() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioChainedQuest, scenarioHeadlessHunt, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioFarmingQuests, scenarioDelayedSearch, scenarioCleVoute, scenarioQuestFanfare] };
+// Quêtes des PNJ recyclés en Boucle Ténébreuse (étages 11+) : gate par étage
+// (isQuestOfferable), nouveau type d'objectif `search`, collecte vendeur.
+async function scenarioLoopNpcQuests() {
+  console.log('\n── Scénario : quêtes PNJ de la Boucle (étages 11+) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // T1 : templates présents + champs attendus.
+  const t1 = await page.evaluate(() => {
+    const ids = ['chasse_kingsley_boucle', 'chasse_bill_boucle', 'chasse_sirius_boucle',
+                 'recup_marchand_boucle', 'collecte_apothicaire_boucle',
+                 'collecte_forgeron_boucle', 'prime_boss_gardien'];
+    const all = ids.every(id => QUEST_TEMPLATES.some(t => t.id === id));
+    const search = QUEST_TEMPLATES.find(t => t.id === 'recup_marchand_boucle');
+    const boss   = QUEST_TEMPLATES.find(t => t.id === 'prime_boss_gardien');
+    return {
+      all,
+      searchType: search && search.objectives[0].type === 'search',
+      searchMinFloor: search && search.minFloor === 11,
+      bossSpawn: !!(boss && boss.spawnOnAccept && boss.spawnOnAccept.targetMonsterId === 'magyar_ancestral'),
+      hasCheckSearch: typeof checkSearchQuests === 'function'
+    };
+  });
+  console.log('  T1:', t1);
+  assert(t1.all,            'tous les templates de quêtes Boucle doivent exister');
+  assert(t1.searchType,     'recup_marchand_boucle doit porter un objectif type:search');
+  assert(t1.searchMinFloor, 'recup_marchand_boucle doit être gaté minFloor:11');
+  assert(t1.bossSpawn,      'prime_boss_gardien doit spawn magyar_ancestral');
+  assert(t1.hasCheckSearch, 'checkSearchQuests doit être exposée');
+
+  // T2 : gate par étage — non offrable hors Boucle, offrable en Boucle.
+  const t2 = await page.evaluate(() => {
+    completedQuests.delete('chasse_kingsley_boucle');
+    availableQuests.add('chasse_kingsley_boucle');
+    currentFloor = 8;
+    const surfaceOffer = isQuestOfferable('chasse_kingsley_boucle');   // false attendu
+    currentFloor = 18;
+    const loopOffer = isQuestOfferable('chasse_kingsley_boucle');      // true attendu
+    return { surfaceOffer, loopOffer };
+  });
+  console.log('  T2:', t2);
+  assert(t2.surfaceOffer === false, 'quête Boucle ne doit PAS être offrable à l\'étage 8');
+  assert(t2.loopOffer === true,     'quête Boucle doit être offrable à l\'étage 18');
+
+  // T3 : type `search` — checkSearchQuests fait progresser puis complète.
+  const t3 = await page.evaluate(() => {
+    completedQuests.delete('recup_marchand_boucle');
+    availableQuests.add('recup_marchand_boucle');
+    activeQuests = activeQuests.filter(q => q.id !== 'recup_marchand_boucle');
+    currentFloor = 18;
+    const accepted = acceptQuest('recup_marchand_boucle');
+    const q = activeQuests.find(x => x.id === 'recup_marchand_boucle');
+    const amount = q ? q.objectives[0].amount : -1;
+    for (let i = 0; i < amount; i++) checkSearchQuests();
+    const done = q && q.objectives[0].completed;
+    return { accepted, amount, progress: q ? q.objectives[0].progress : -1, done };
+  });
+  console.log('  T3:', t3);
+  assert(t3.accepted,            'recup_marchand_boucle doit être acceptable en Boucle');
+  assert(t3.progress === t3.amount, 'la fouille doit atteindre l\'objectif');
+  assert(t3.done,                'l\'étape search doit être complétée');
+
+  // T4 : collecte item (Forgeron) — consomme l'Essence à la remise.
+  const t4 = await page.evaluate(() => {
+    completedQuests.delete('collecte_forgeron_boucle');
+    availableQuests.add('collecte_forgeron_boucle');
+    activeQuests = activeQuests.filter(q => q.id !== 'collecte_forgeron_boucle');
+    currentFloor = 20;
+    const ess = ITEMS.find(i => i.id === 'essence_tenebres');
+    for (let i = 0; i < 3; i++) tryAddItem(ess, { silent: true });
+    const accepted = acceptQuest('collecte_forgeron_boucle');
+    if (typeof _refreshObjectives === 'function') _refreshObjectives();
+    const q = activeQuests.find(x => x.id === 'collecte_forgeron_boucle');
+    const ready = q && q.objectives.every(o => o.completed);
+    const goldBefore = player.gold;
+    const turned = turnInQuestById('collecte_forgeron_boucle');
+    const essLeft = (typeof _countItems === 'function')
+      ? _countItems('essence_tenebres')
+      : player.inventory.filter(i => i.id === 'essence_tenebres').length;
+    return { accepted, ready, turned, goldGained: player.gold - goldBefore, essLeft };
+  });
+  console.log('  T4:', t4);
+  assert(t4.accepted,       'collecte_forgeron_boucle doit être acceptable en Boucle');
+  assert(t4.ready,          'la collecte doit être prête avec 3 Essences en poche');
+  assert(t4.turned,         'la collecte doit être remettable');
+  assert(t4.goldGained > 0, 'la remise doit créditer de l\'or');
+  assert(t4.essLeft === 0,  'la remise doit consommer les 3 Essences');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (quêtes Boucle)`);
+  }
+  console.log('  ✅ Quêtes PNJ de la Boucle OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioChainedQuest, scenarioHeadlessHunt, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioFarmingQuests, scenarioDelayedSearch, scenarioCleVoute, scenarioQuestFanfare, scenarioLoopNpcQuests] };
