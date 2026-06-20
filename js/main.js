@@ -793,27 +793,52 @@ document.addEventListener('keydown',e=>{
       return el && el.style.display !== 'none';
     });
     if (subOpen) return;
-    // A = Attaquer · S = Sortilège · G = Garde · O = Objet · F = Fuir.
-    const act = { a: 'attack', s: 'spell', g: 'guard', o: 'item', f: 'flee' }[k.toLowerCase()];
-    if (act) { battleAction(act); e.preventDefault(); }
+    // Raccourcis d'action de combat (défauts A/S/G/O/F) — touches résolues
+    // via keybindings.js. Fallback littéral si le module n'a pas chargé ;
+    // si le module EST là et la touche n'est liée à rien, on ne fait rien
+    // (un unbind volontaire est respecté).
+    if (typeof kbResolveCombat === 'function') {
+      const id = kbResolveCombat(k);
+      if (id) { battleAction(KB_COMBAT_ARG[id]); e.preventDefault(); }
+    } else {
+      const act = { a: 'attack', s: 'spell', g: 'guard', o: 'item', f: 'flee' }[k.toLowerCase()];
+      if (act) { battleAction(act); e.preventDefault(); }
+    }
     return;
   }
 
-  // ── Hors combat : déplacement relatif (↑/W avancer, ↓/S reculer, ←/A pivoter
-  //    G, →/D pivoter D ; Z/Q pour AZERTY) + raccourcis d'exploration.
-  const fwd   = (k==='ArrowUp'    || k==='w' || k==='W' || k==='z' || k==='Z');
-  const back  = (k==='ArrowDown'  || k==='s' || k==='S');
-  const left  = (k==='ArrowLeft'  || k==='a' || k==='A' || k==='q' || k==='Q');
-  const right = (k==='ArrowRight' || k==='d' || k==='D');
-  if (fwd)        { moveForward();  e.preventDefault(); }
-  else if (back)  { moveBackward(); e.preventDefault(); }
-  else if (left)  { turnLeft();     e.preventDefault(); }
-  else if (right) { turnRight();    e.preventDefault(); }
-  if(k==='i') openInventory();
-  if(k==='p') openSpells();
-  if(k==='c') openCharacter();
-  if(k==='f') searchRoom();
-  if(k==='r') rest();
+  // ── Hors combat : déplacement relatif + raccourcis d'exploration, touches
+  //    résolues via keybindings.js (défauts ↑/W/Z avancer, ↓/S reculer,
+  //    ←/A/Q pivoter G, →/D pivoter D ; i/p/c/f/r). preventDefault sur les
+  //    seules actions de déplacement (parité stricte avec l'historique).
+  if (typeof kbResolveExplore === 'function') {
+    switch (kbResolveExplore(k)) {
+      case 'moveForward':   moveForward();  e.preventDefault(); break;
+      case 'moveBackward':  moveBackward(); e.preventDefault(); break;
+      case 'turnLeft':      turnLeft();     e.preventDefault(); break;
+      case 'turnRight':     turnRight();    e.preventDefault(); break;
+      case 'openInventory': openInventory(); break;
+      case 'openSpells':    openSpells();    break;
+      case 'openCharacter': openCharacter(); break;
+      case 'search':        searchRoom();    break;
+      case 'rest':          rest();          break;
+    }
+  } else {
+    // Fallback défensif : comportement historique si le module est absent.
+    const fwd   = (k==='ArrowUp'    || k==='w' || k==='W' || k==='z' || k==='Z');
+    const back  = (k==='ArrowDown'  || k==='s' || k==='S');
+    const left  = (k==='ArrowLeft'  || k==='a' || k==='A' || k==='q' || k==='Q');
+    const right = (k==='ArrowRight' || k==='d' || k==='D');
+    if (fwd)        { moveForward();  e.preventDefault(); }
+    else if (back)  { moveBackward(); e.preventDefault(); }
+    else if (left)  { turnLeft();     e.preventDefault(); }
+    else if (right) { turnRight();    e.preventDefault(); }
+    if(k==='i') openInventory();
+    if(k==='p') openSpells();
+    if(k==='c') openCharacter();
+    if(k==='f') searchRoom();
+    if(k==='r') rest();
+  }
 });
 
 // ============================================================

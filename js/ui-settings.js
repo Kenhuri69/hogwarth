@@ -92,6 +92,7 @@ function openSettingsModal() {
   }
   _updateVisitsBtn();
   _updateBarksBtn();
+  if (typeof kbRenderSettings === 'function') kbRenderSettings();
   const modal = document.getElementById('settings-modal');
   if (modal) modal.style.display = 'flex';
 }
