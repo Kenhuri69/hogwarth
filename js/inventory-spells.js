@@ -90,7 +90,9 @@ function openSpells(charIdx = 0) {
                  + _spellFilterBarHtml(c.spells, 'spell', charIdx);
 
   for (const sName of c.spells) {
-    const spell = SPELLS.find(s => s.name === sName);
+    // P3 — forme effective (évolution réversible) pour l'affichage.
+    const spell = (typeof resolveSpellForm === 'function' && resolveSpellForm(sName, c))
+                  || SPELLS.find(s => s.name === sName);
     if (!spell) continue;
     if (_spellFilter !== 'tous' && spellCategory(spell) !== _spellFilter) continue;
     const div = document.createElement('div');
@@ -589,7 +591,9 @@ function openBattleSpells() {
     </div>` + _spellFilterBarHtml(c.spells, 'battle', 0);
 
   for (const sName of c.spells) {
-    const spell    = SPELLS.find(s => s.name === sName);
+    // P3 — forme effective (évolution réversible) pour l'affichage et le lancement.
+    const spell    = (typeof resolveSpellForm === 'function' && resolveSpellForm(sName, c))
+                     || SPELLS.find(s => s.name === sName);
     if (!spell) continue;
     if (_spellFilter !== 'tous' && spellCategory(spell) !== _spellFilter) continue;
     // Portus en combat : bloqué si déjà utilisé ce combat OU si cooldown actif.

@@ -1047,4 +1047,79 @@ async function scenarioSpellsP2() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioSpellIcons, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioSpellVoiceMapping, scenarioTeleportation, scenarioHealOoc, scenarioBombardaSplash, scenarioAoeSpells, scenarioSpellCombos, scenarioSpellsP2] };
+// ── Lot P3 — formes évoluées (resolveSpellForm) + variantes Premium signature ──
+async function scenarioSpellsP3() {
+  console.log('\n── Scénario : Sorts & Magie 2.0 — Lot P3 ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // T1 — évolution réversible : Incendio + Bâton ancestral équipé → Incendio
+  // Majeur (affichage modale + lancement), déséquiper ré-affiche la base.
+  await startDummyFight(page, { hp: 800 });
+  const t1 = await page.evaluate(() => {
+    if (!party[0].spells.includes('Incendio')) party[0].spells.push('Incendio');
+    const staff = ITEMS.find(i => i.id === 'baton_ancestral');
+    party[0].equipped.wand = staff ? { ...staff } : { id: 'baton_ancestral' };
+    const resolvedName = resolveSpellForm('Incendio', party[0]).name;
+    // La modale de combat affiche bien la forme évoluée.
+    openBattleSpells();
+    const shownEvolved = Array.from(document.querySelectorAll('#spell-list .spell-name'))
+      .some(el => el.textContent.includes('Incendio Majeur'));
+    closeModal('spell-modal');
+    party[0].sp = 99; enemyGroup[0].currentHp = 800; currentBattleChar = 0;
+    const hp0 = enemyGroup[0].currentHp;
+    castSpellInBattle('Incendio', 0);   // doit lancer la forme évoluée
+    const dealt = hp0 - enemyGroup[0].currentHp;
+    party[0].equipped.wand = { id: 'wand1' };   // déséquiper
+    const baseName = resolveSpellForm('Incendio', party[0]).name;
+    return { resolvedName, shownEvolved, dealt, baseName };
+  });
+  console.log('  T1 évolution:', t1);
+  assert(t1.resolvedName === 'Incendio Majeur', 'Incendio + Bâton → Incendio Majeur');
+  assert(t1.shownEvolved, 'la modale de combat affiche la forme évoluée');
+  assert(t1.dealt > 0, 'la forme évoluée inflige des dégâts');
+  assert(t1.baseName === 'Incendio', 'déséquiper le Bâton ré-affiche Incendio (réversible)');
+  await page.evaluate(() => { if (inBattle) endBattle(false); });
+
+  // T2 — Premium : appris via _teachSpellToParty (vecteur Apothéose) + le
+  // houseSpellBoost réduit son coût pour la Maison affine.
+  const t2 = await page.evaluate(() => {
+    const learned = _teachSpellToParty('Incendio Royal');
+    const royal = SPELLS.find(s => s.name === 'Incendio Royal');
+    chosenHouse = 'Gryffondor'; houseTier = 18;
+    const costAffine = _spellSpCost(royal, party[0]);
+    chosenHouse = 'Serpentard';
+    const costOther = _spellSpCost(royal, party[0]);
+    chosenHouse = 'Gryffondor';
+    return { learned, premium: royal.premium, premiumOf: royal.premiumOf,
+             base: royal.cost, costAffine, costOther,
+             grantWired: HOUSE_BONUSES.Gryffondor.tiers.some(t => t.bonus && t.bonus.grantsSpell === 'Incendio Royal') };
+  });
+  console.log('  T2 Premium:', t2);
+  assert(t2.learned && t2.premium === true && t2.premiumOf === 'incendio', 'Incendio Royal appris + flags Premium');
+  assert(t2.grantWired, 'Incendio Royal câblé sur l\'Apothéose Gryffondor (grantsSpell)');
+  assert(t2.costOther === t2.base && t2.costAffine < t2.costOther,
+    `houseSpellBoost réduit le coût Premium pour sa Maison (${t2.costAffine} < ${t2.costOther})`);
+
+  // T3 — cast d'un Premium en combat (lifesteal + fioriture FX ne throw pas).
+  await startDummyFight(page, { hp: 400 });
+  const t3 = await page.evaluate(() => {
+    _teachSpellToParty("Morsure d'Émeraude");
+    party[0].hp = 1; party[0].sp = 99; currentBattleChar = 0;
+    const hp0 = enemyGroup[0].currentHp, pv0 = party[0].hp;
+    castSpellInBattle("Morsure d'Émeraude", 0);
+    return { dealt: hp0 - enemyGroup[0].currentHp, healed: party[0].hp - pv0 };
+  });
+  console.log('  T3 cast Premium:', t3);
+  assert(t3.dealt > 0, 'Morsure d\'Émeraude inflige des dégâts');
+  assert(t3.healed > 0, 'Morsure d\'Émeraude draine des PV (lifesteal Premium)');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (P3)`);
+  }
+  console.log('  ✅ Sorts & Magie 2.0 Lot P3 OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioSpellIcons, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioSpellVoiceMapping, scenarioTeleportation, scenarioHealOoc, scenarioBombardaSplash, scenarioAoeSpells, scenarioSpellCombos, scenarioSpellsP2, scenarioSpellsP3] };

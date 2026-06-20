@@ -317,7 +317,7 @@ const SPELLS = [
   { name:"Ferula",            icon:"🩹",   desc:"Bande un allié (+4 PV puis 4 PV/tour × 3 tours)", cost:6,  effect:"support_regen", power:4 },
   { name:"Ferula Maxima",     icon:"🩹",   desc:"Régénère PV + PM des deux alliés (3 tours)", cost:12, effect:"support_regen_aoe", power:1 },
   { name:"Protego",           icon:"🛡️",  desc:"Bouclier magique (durée selon MAG)",  cost:5,  effect:"shield",  power:5  },
-  { name:"Incendio",          icon:"🔥",   desc:"Flammes magiques (14 dégâts)",       cost:8,  effect:"burn",    element:"feu",      power:14 },
+  { name:"Incendio",          icon:"🔥",   desc:"Flammes magiques (14 dégâts)",       cost:8,  effect:"burn",    element:"feu",      power:14, evolvesTo:"Incendio Majeur", evolveCondition:{ type:"artifact", value:"baton_ancestral" }, synergyArtifacts:["baton_ancestral"] },
   { name:"Accio",             icon:"🌀",   desc:"Tire un objet ennemi (+or)",         cost:6,  effect:"steal",   power:0  },
   // ── Sorts avancés (appris en jeu) ────────────────────────────
   { name:"Wingardium Leviosa",icon:"🌬️",  desc:"Soulève et assomme (10 dégâts)",     cost:7,  effect:"stun",    element:"physique", power:10 },
@@ -332,9 +332,9 @@ const SPELLS = [
   { name:"Alohomora",         icon:"🔓",   desc:"Vole une grosse bourse de Gallions", cost:5,  effect:"steal",   power:20 },
   { name:"Patronum",          icon:"✨",   desc:"Patronus : 18 dégâts anti-Détraqueur", cost:12, effect:"burn",  element:"lumière",  power:18 },
   // ── Sorts élémentaires (glace / foudre / lumière) ────────────
-  { name:"Glacius",           icon:"❄️",   desc:"Givre mordant (14 dégâts, engelures)", cost:8,  effect:"stun",  element:"glace",    power:14 },
+  { name:"Glacius",           icon:"❄️",   desc:"Givre mordant (14 dégâts, engelures)", cost:8,  effect:"stun",  element:"glace",    power:14, evolvesTo:"Glacius Profond", evolveCondition:{ type:"quest", value:"manon_grimoire" } },
   { name:"Fulgari",           icon:"⚡",   desc:"Foudre canalisée (16 dégâts)",         cost:9,  effect:"stun",  element:"foudre",   power:16 },
-  { name:"Lumos Solem",       icon:"☀️",   desc:"Lumière solaire — ravage les morts-vivants", cost:10, effect:"burn", element:"lumière", power:16, bonusVsUndead:1.5 },
+  { name:"Lumos Solem",       icon:"☀️",   desc:"Lumière solaire — ravage les morts-vivants", cost:10, effect:"burn", element:"lumière", power:16, bonusVsUndead:1.5, evolvesTo:"Lux Aeterna", evolveCondition:{ type:"floor", value:9 } },
   // ── Sort interdit (débloqué au niveau 9) ─────────────────────
   { name:"Avada...",          icon:"💚✨", desc:"Malédiction mortelle (50 dégâts)",   cost:20, effect:"instant", element:"ténèbres", power:50, locked:true },
   // ── Sort utilitaire — Téléportation (Portus) ─────────────────
@@ -396,6 +396,21 @@ const SPELLS = [
   { name:"Fontis",           icon:"💧", desc:"Recharge une Fontaine tarie (hors combat, gros coût)", cost:30, effect:"recharge_fountain", power:0 },
   { name:"Purgo",            icon:"✨", desc:"Dissipe la corruption d'une salle (retire un événement d'étage hostile)", cost:14, effect:"purge_room", power:0 },
   { name:"Aedificium",       icon:"🏛️", desc:"Stabilise un sceau runique des Ruines pour ouvrir un passage scellé", cost:12, effect:"stabilize_rune", power:0 },
+  // ── Sorts & Magie 2.0 — Lot P3 : formes évoluées + variantes Premium ──
+  // Voir .claude/plans/spells-magic-system.md §1.5/§1.6. Étiquetage dans
+  // SPELL_META. Les formes évoluées sont des entrées à part entière renvoyées
+  // par resolveSpellForm quand l'evolveCondition de la base est satisfaite
+  // (réversible : déséquiper l'artefact / quitter l'étage ré-affiche la base).
+  { name:"Incendio Majeur",   icon:"🔥",  desc:"Incendio amplifié par le Bâton ancestral (24 dégâts + éclaboussure)", cost:11, effect:"burn",  element:"feu",   power:24, splash:true },
+  { name:"Glacius Profond",   icon:"❄️",  desc:"Givre des profondeurs (20 dégâts, engelures renforcées)",          cost:12, effect:"stun",  element:"glace", power:20 },
+  // Variantes Premium signature (1/Maison, §1.5) — sort de base recoloré +
+  // boosté (power = base × SPELL_PREMIUM_MULT['rare'] = ×1,20, pré-cuit), offert
+  // EN PLUS au palier Apothéose de la Maison affine. `premium`/`premiumOf`/
+  // `premiumFx`/`tint` = miroir EXACT des artefacts Premium (data.js ITEMS).
+  { name:"Incendio Royal",    icon:"🔥",  desc:"Flammes dorées de Godric (17 dégâts) — Premium Gryffondor", cost:10, effect:"burn",      element:"feu",      power:17, premium:true, premiumOf:"incendio", houseAffinity:"Gryffondor", premiumFx:"gryff", tint:"#d3a625" },
+  { name:"Morsure d'Émeraude",icon:"🐍",  desc:"Venin vert qui draine la vie (14 dégâts, +7 PV) — Premium Serpentard", cost:10, effect:"lifesteal", element:"ténèbres", power:14, premium:true, premiumOf:"sanguini", houseAffinity:"Serpentard", premiumFx:"slyth", tint:"#1a472a" },
+  { name:"Givre de Rowena",   icon:"❄️",  desc:"Runes de givre bleu (17 dégâts, engelures) — Premium Serdaigle",    cost:10, effect:"stun",      element:"glace",    power:17, premium:true, premiumOf:"glacius",  houseAffinity:"Serdaigle",  premiumFx:"serd",  tint:"#0e1a40" },
+  { name:"Soin du Blaireau",  icon:"💛",  desc:"Lueur ambrée réconfortante (24 PV) — Premium Poufsouffle",          cost:9,  effect:"heal",      power:24, premium:true, premiumOf:"reparo",   houseAffinity:"Poufsouffle",premiumFx:"pouf",  tint:"#f0c75e" },
   // ── Sort de portail inter-mondes — Cheminette Inter-Mondes ────
   // Voir .claude/plans/parallel-worlds.md §4. Hors combat uniquement,
   // refusé en mode Ironman (§2.1). Apprentissage niv. 8 dans
@@ -587,6 +602,13 @@ const SPELL_META = {
   'Fontis':             ['exploration', 'maître', 'rare',     null],
   'Purgo':              ['rituel',      'avancé', 'rare',     null],
   'Aedificium':         ['rituel',      'maître', 'rare',     null],
+  // ── Lot P3 : formes évoluées + variantes Premium signature (§1.5/§1.6) ──
+  'Incendio Majeur':     ['combat',    'maître', 'rare', null],
+  'Glacius Profond':     ['combat',    'maître', 'rare', null],
+  'Incendio Royal':      ['signature', 'maître', 'rare', 'Gryffondor'],
+  "Morsure d'Émeraude":  ['signature', 'maître', 'rare', 'Serpentard'],
+  'Givre de Rowena':     ['signature', 'maître', 'rare', 'Serdaigle'],
+  'Soin du Blaireau':    ['signature', 'maître', 'rare', 'Poufsouffle'],
 };
 
 // Passe de normalisation IDEMPOTENTE (miroir de _migrateEquippedSlots côté
@@ -645,15 +667,47 @@ function houseSpellBoost(spell, house, tier) {
   if (t >= 18) r += 0.05;
   return r;
 }
+// Condition d'évolution d'un sort satisfaite ? (P3 §1.6). NON destructif :
+// lit `char.equipped` (artefact) et, défensivement, quelques globals runtime
+// (étage / quêtes / palier de Maison) via `typeof` — donc rejouable hors
+// navigateur (les globals absents ⇒ false). `corruption` (Sanguini Vorace)
+// est reporté au P4 : la branche existe mais reste inerte tant que
+// `corruptionLevel` n'est pas défini.
+function _spellEvolveConditionMet(cond, char) {
+  if (!cond || !cond.type) return false;
+  switch (cond.type) {
+    case 'artifact':
+      return !!(char && char.equipped && Object.values(char.equipped)
+        .some(it => it && it.id === cond.value));
+    case 'floor':
+      return (typeof currentFloor === 'number') && currentFloor >= cond.value;
+    case 'quest':
+      return (typeof completedQuests !== 'undefined') && !!completedQuests.has
+        && completedQuests.has(cond.value);
+    case 'apotheose':
+      // Palier Apothéose (tier 18) de la Maison du sort (ou de toute Maison
+      // si cond.value absent). `houseTier` est la source de vérité (main.js).
+      return (typeof houseTier === 'number') && houseTier >= 18
+        && (!cond.value || (typeof chosenHouse !== 'undefined' && chosenHouse === cond.value));
+    case 'corruption':   // P4 — inerte tant que corruptionLevel n'existe pas.
+      return (typeof corruptionLevel === 'number') && corruptionLevel >= (cond.value || 1);
+    default:
+      return false;
+  }
+}
 // Forme EFFECTIVE d'un sort pour un personnage (non destructif, runtime).
-// P0 : aucun sort ne déclare encore evolvesTo/evolveCondition → renvoie
-// toujours la forme de base. Point d'extension P3 (synergies artefacts /
-// évolution réversible). PUR : ne mute jamais char.spells.
+// P3 §1.6 : si `base.evolvesTo` + `base.evolveCondition` est satisfaite par
+// `char` (artefact équipé / étage / quête / Apothéose), renvoie la forme
+// évoluée (une autre entrée de SPELLS). RÉVERSIBLE : la résolution est
+// recalculée à chaque appel (modale + lancement) — déséquiper l'artefact
+// ré-affiche la base. PUR : ne mute JAMAIS char.spells.
 function resolveSpellForm(spellName, char) {
   const base = getSpellByName(spellName);
   if (!base) return null;
-  // (P3) : si base.evolvesTo et base.evolveCondition satisfaite par `char`
-  // (artefact équipé / corruption / quête / étage) → renvoyer la forme évoluée.
+  if (!base.evolvesTo || !base.evolveCondition) return base;
+  if (_spellEvolveConditionMet(base.evolveCondition, char)) {
+    return getSpellByName(base.evolvesTo) || base;
+  }
   return base;
 }
 // Estimation du coût PM d'un sort (formule §1.8) — outil de SIMULATION /

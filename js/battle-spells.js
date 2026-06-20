@@ -321,7 +321,9 @@ function _buildSummonedAdd(ability, summoner) {
 // stun/burn/instant partagent _spellElementalDamage — la nature du
 // statut DoT est déterminée par STATUS_BY_SPELL.
 
-const STATUS_BY_SPELL = { 'Incendio': 'burn', 'Diffindo': 'bleed', 'Sectumsempra': 'bleed', 'Glacius': 'gel' };
+const STATUS_BY_SPELL = { 'Incendio': 'burn', 'Diffindo': 'bleed', 'Sectumsempra': 'bleed', 'Glacius': 'gel',
+  // Lot P3 — formes évoluées / Premium héritent du DoT de leur base.
+  'Incendio Majeur': 'burn', 'Incendio Royal': 'burn', 'Glacius Profond': 'gel', 'Givre de Rowena': 'gel' };
 
 // Morts-vivants : cible du bonus `spell.bonusVsUndead` (Lumos Solem).
 // Tous les fantômes + une liste d'ids non-fantômes mais sans vie.
@@ -1102,7 +1104,11 @@ window._spellForCaster = _spellForCaster;
 
 function castSpellInBattle(spellName, targetIdx, targetAllyIdx) {
   const char     = getActiveChar();
-  const baseSpell = SPELLS.find(s => s.name === spellName);
+  // P3 — forme EFFECTIVE (évolution réversible : Incendio→Incendio Majeur si le
+  // Bâton ancestral est équipé, etc.). resolveSpellForm renvoie la base si aucune
+  // condition n'est remplie. Idempotent si `spellName` est déjà une forme évoluée.
+  const resolved = (typeof resolveSpellForm === 'function') ? resolveSpellForm(spellName, char) : null;
+  const baseSpell = resolved || SPELLS.find(s => s.name === spellName);
   // Wrapping Bibliothèque : applique les upgrades du caster.
   const spell    = _spellForCaster(baseSpell, char);
   if (!spell || char.sp < _spellSpCost(spell)) { addMsg("Pas assez de magie !", 'bad'); return; }
@@ -1217,6 +1223,9 @@ function castSpellInBattle(spellName, targetIdx, targetAllyIdx) {
     }
     // Crit de sort (suffixe 💥CRIT dans le message) → secousse légère.
     if (typeof msg === 'string' && msg.indexOf('CRIT') >= 0) CFX_safe.shake('light');
+    // P3 — fioriture Premium : un sort de Maison Premium ajoute un halo teinté
+    // côté lanceur (premiumFx/tint). Purement cosmétique, défensif.
+    if (spell.premium) { CFX_safe.buffAura('ally'); CFX_safe.castFlash('ally', _el); }
   }
 
   setBattleLog(msg);

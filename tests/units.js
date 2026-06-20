@@ -1944,7 +1944,8 @@ function loadModule(relPath, exportNames, globals = {}) {
     const s = getSpellByName(n);
     check(`${n} affine ${h} + signature`, s && s.houseAffinity === h && s.category === 'signature');
   }
-  check('exactement 4 sorts house-affine', SPELLS.filter(s => s.houseAffinity).length === 4);
+  // 4 sorts Mythe house-affine + 4 variantes Premium signature (Lot P3) = 8.
+  check('8 sorts house-affine (4 Mythe + 4 Premium)', SPELLS.filter(s => s.houseAffinity).length === 8);
   check('au moins 1 sort par rang',
     ['basique', 'avancé', 'maître', 'corrompu'].every(t => SPELLS.some(s => s.tier === t)));
   // Idempotence : un 2e passe ne change rien (clone JSON identique).
@@ -2015,8 +2016,8 @@ function loadModule(relPath, exportNames, globals = {}) {
     && getSpellByName('Aedificium').effect === 'stabilize_rune');
   check('P2 : catégorie rituel posée (Resonare/Purgo/Aedificium)',
     ['Resonare', 'Purgo', 'Aedificium'].every(n => getSpellByName(n).category === 'rituel'));
-  check('P2 : aucun nouveau sort house-affine (reste 4)',
-    SPELLS.filter(s => s.houseAffinity).length === 4);
+  check('P2 : les 8 sorts P2 ne sont pas house-affine',
+    P2_SPELLS.every(n => getSpellByName(n).houseAffinity === null));
 
   // ── houseSpellBoost (P2) — réduction de coût d'affinité, PURE & power-neutre ──
   const patMax = getSpellByName('Patronus Maxima');   // houseAffinity Gryffondor
@@ -2034,6 +2035,78 @@ function loadModule(relPath, exportNames, globals = {}) {
     && houseSpellBoost(patMax, null, 18) === 0);
   check('houseSpellBoost : tier non numérique → base 0.15 (affine)',
     approx(houseSpellBoost(patMax, 'Gryffondor'), 0.15));
+})();
+
+// ============================================================
+// Sorts & Magie 2.0 — Lot P3 (data.js) : Premium signature + resolveSpellForm
+//   évolutif (artefact / étage / quête). On charge data.js dans un sandbox vm
+//   AVEC des globals mutables (currentFloor / completedQuests / houseTier /
+//   chosenHouse) pour piloter les conditions d'évolution sans navigateur.
+// ============================================================
+(function testSpellP3() {
+  const sandbox = {
+    console, exports: {}, Math,
+    currentFloor: 1, completedQuests: new Set(), houseTier: 0, chosenHouse: null,
+  };
+  const src = fs.readFileSync(path.join(ROOT, 'js/data.js'), 'utf8');
+  vm.createContext(sandbox);
+  vm.runInContext(src +
+    '\n;exports.resolveSpellForm = resolveSpellForm;' +
+    '\n;exports._spellEvolveConditionMet = _spellEvolveConditionMet;' +
+    '\n;exports.getSpellByName = getSpellByName;' +
+    '\n;exports.SPELLS = SPELLS;\n;exports.SPELL_META = SPELL_META;',
+    sandbox, { filename: 'data.js' });
+  const { resolveSpellForm, _spellEvolveConditionMet, getSpellByName, SPELLS, SPELL_META } = sandbox.exports;
+
+  // ── 4 variantes Premium signature (§1.5) ──
+  const PREM = ['Incendio Royal', "Morsure d'Émeraude", 'Givre de Rowena', 'Soin du Blaireau'];
+  check('P3 : 4 Premium signature présents + étiquetés',
+    PREM.every(n => getSpellByName(n) && SPELL_META[n]));
+  check('P3 : Premium portent premium/premiumOf/premiumFx/houseAffinity',
+    PREM.every(n => { const s = getSpellByName(n); return s.premium === true && !!s.premiumOf && !!s.premiumFx && !!s.houseAffinity; }));
+  check('P3 : Incendio Royal = base ×1.20 (14→17)', getSpellByName('Incendio Royal').power === 17);
+  check('P3 : une affinité Premium par Maison',
+    new Set(PREM.map(n => getSpellByName(n).houseAffinity)).size === 4);
+  check('P3 : house-affine total = 8 (4 Mythe + 4 Premium)',
+    SPELLS.filter(s => s.houseAffinity).length === 8);
+
+  // ── resolveSpellForm — évolution artefact (PUR, char-based) ──
+  const withStaff = { equipped: { wand: { id: 'baton_ancestral' } } };
+  const noStaff   = { equipped: { wand: { id: 'wand1' } } };
+  check('évol artefact : Incendio + Bâton ancestral → Incendio Majeur',
+    resolveSpellForm('Incendio', withStaff).name === 'Incendio Majeur');
+  check('évol artefact : sans Bâton → Incendio base',
+    resolveSpellForm('Incendio', noStaff).name === 'Incendio');
+  check('évol : sort sans evolveCondition → lui-même', resolveSpellForm('Protego', withStaff).name === 'Protego');
+  check('évol : inconnu → null', resolveSpellForm('Inexistant', withStaff) === null);
+  // Non destructif : aucune mutation du perso.
+  const c = { spells: ['Incendio'], equipped: { wand: { id: 'baton_ancestral' } } };
+  const snap = JSON.stringify(c);
+  resolveSpellForm('Incendio', c);
+  check('évol réversible : resolveSpellForm ne mute pas le perso', JSON.stringify(c) === snap);
+
+  // ── évolution par étage (global mutable injecté) ──
+  sandbox.currentFloor = 5;
+  check('évol étage : Lumos Solem étage 5 → base', resolveSpellForm('Lumos Solem', {}).name === 'Lumos Solem');
+  sandbox.currentFloor = 9;
+  check('évol étage : Lumos Solem étage 9 → Lux Aeterna', resolveSpellForm('Lumos Solem', {}).name === 'Lux Aeterna');
+
+  // ── évolution par quête (Set mutable injecté) ──
+  check('évol quête : Glacius sans quête → base', resolveSpellForm('Glacius', {}).name === 'Glacius');
+  sandbox.completedQuests.add('manon_grimoire');
+  check('évol quête : Glacius + manon_grimoire → Glacius Profond', resolveSpellForm('Glacius', {}).name === 'Glacius Profond');
+
+  // ── évolution par Apothéose (houseTier global) ──
+  check('cond apothéose : tier 0 → non remplie',
+    _spellEvolveConditionMet({ type: 'apotheose', value: 'Gryffondor' }, {}) === false);
+  sandbox.houseTier = 18; sandbox.chosenHouse = 'Gryffondor';
+  check('cond apothéose : tier 18 + bonne Maison → remplie',
+    _spellEvolveConditionMet({ type: 'apotheose', value: 'Gryffondor' }, {}) === true);
+  check('cond apothéose : mauvaise Maison → non remplie',
+    _spellEvolveConditionMet({ type: 'apotheose', value: 'Serpentard' }, {}) === false);
+  // Corruption (P4) inerte tant que corruptionLevel n'existe pas.
+  check('cond corruption (P4) inerte sans corruptionLevel',
+    _spellEvolveConditionMet({ type: 'corruption', value: 2 }, {}) === false);
 })();
 
 // ============================================================
