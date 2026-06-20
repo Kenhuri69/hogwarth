@@ -1,7 +1,8 @@
 # Potions, Consommables & Craft 2.0 — Spécifications & Plan d'implémentation
 
 > **Branche** : `claude/hogwarth-potions-crafting-yc5tcy`
-> **Statut** : 🟡 **SPÉCIFICATION & PLAN — en attente d'arbitrage des ❓ avant impl.**
+> **Statut** : 🟢 **SPÉCIFICATION & PLAN AFFINÉS — 9 formes figées, P7 prêt à démarrer**
+> (5 ❓ résiduelles = calibration/policy, non bloquantes ; voir §3).
 > **Objectif** : *finaliser* le 3ᵉ pilier de personnalisation — **Consommables &
 > Alchimie** — pour compléter le triangle **Artefacts + Sorts + Potions**.
 >
@@ -179,26 +180,57 @@ Champs **nouveaux** sur une recette `POTION_RECIPES` :
 > `corruptionRisk`/`evolves` se comporte **exactement** comme aujourd'hui. Les
 > nouveaux champs voyagent avec l'item (déjà sérialisé). Aucune migration.
 
-## 1.5 Nouvelles formes (potions signature)
+## 1.5 Nouvelles formes (potions signature) — **9 formes, toutes en scope** ✅
 
-> Toutes **craftées** sauf mention. Effets exprimés via le moteur existant quand
-> possible ; les ⚙️ marquent une **nouvelle branche d'effet** à ajouter (§2.5).
+> ✅ **Décision figée (2026-06-20)** : **les 9 formes sont livrées** (cahier des
+> charges). Réparties sur les lots P7→P12 (§2.7). Toutes **craftées** ; effets
+> exprimés via le moteur existant quand possible — les ⚙️ marquent une **nouvelle
+> branche d'effet** à ajouter dans `_applyConsumableEffect` (détail §2.5).
+> `huile_arme` et `poudre_runique` sont des **familles** (3 + 2 variantes) →
+> **14 items** au total. Chaque item est spécifié en JSON-esquisse §1.5bis.
 
-| Potion | `category` | Effet | ⚙️ ? | Ingrédients (proposés) | Disponibilité |
-|--------|-----------|-------|------|------------------------|---------------|
-| 💡 **Élixir de Lucidité** | `anti_corruption` | `corruptionPurge` : −3 `spellCorruption`, hors combat | ⚙️ `purge_corruption` | dictame×2 + asphodèle_noire×1 | Craft (Boucle) + Apothicaire Tén. |
-| 💡 **Baume du Patronus** | `anti_corruption` | −2 corruption **et** soigne `fear`/`gel` du groupe | ⚙️ (réutilise `cure` + purge) | dictame×1 + branchiflore×1 + armoise×1 | Craft · quête signature Poufsouffle |
-| 💡 **Potion de Corruption Contrôlée** | `buff` | +X MAG & +X% dégâts sorts N tours **mais** `corruptionRisk:2` | réutilise `temp_buff` + risk | asphodèle_noire×2 + aconit×1 | Craft (Boucle) — high-risk/high-reward |
-| 💡 **Potion de Résilience Maison** | `buff` | Buff dont l'ampleur dépend de `chosenHouse` (Gryff ATK / Slyth MAG-lifesteal / Serd PM / Pouf DEF+régén) | ⚙️ `house_buff` | herbe T2 + relique/ingrédient Maison | Craft · quête Chef de Maison |
-| 💡 **Potion d'Écho Temporel** | `utilitaire` | Hors combat : annule le **dernier déplacement/dégât de salle** (mini Reliquae). En combat : repose un buff expiré | ⚙️ `temporal_echo` | dictame×2 + retourneur (ingrédient rare) | Craft · rare (synergie Reliquae Temporis) |
-| 💡 **Potion de Vision des Éclats** | `utilitaire` | Révèle coffres/jardins/Éclats & cases cachées de l'étage (mini-Revelio large) + bonus de fouille N pas | ⚙️ `reveal_treasures` | branchiflore×1 + ortie×1 | Craft + boutique (étage ≥3) |
-| 💡 **Huile d'Arme (feu/givre/foudre)** | `debuff`/`buff` | Enduit l'arme : +X dégâts **élémentaires** sur les attaques **physiques** N tours (consommable de prépa) | ⚙️ `weapon_oil` | herbe élément + huile de base | Craft + Forgeron (Ruines) |
-| 💡 **Poudre Runique (étourdissante/aveuglante)** | `debuff` | Jetée : applique `stun`/`fear` à **tout le groupe ennemi** sans dégâts (contrôle pur) | ⚙️ étend `throw` (statut AoE, 0 dmg) | aconit×1 + page_grimoire×1 | Craft (Ruines) — coûteux |
-| 💡 **Élixir d'Immunité** | `anti_corruption` | Bloque le **prochain** effet secondaire/corruption subi (charge) | ⚙️ `ward_charge` | dictame×1 + asphodèle×1 | Craft · quête Serdaigle |
+| # | Potion | `category` | `rarity` | Effet | ⚙️ branche | Ingrédients (figés) | `corruptionRisk` | Atelier / Source | Lot |
+|---|--------|-----------|----------|-------|-----------|---------------------|------------------|------------------|-----|
+| 1 | **Élixir de Lucidité** | `anti_corruption` | epic | `corruptionPurge:3` (−3 `spellCorruption`, hors combat) | `purge_corruption` | dictame×2 + asphodele_noire×1 | 0 | Ruines + Apothicaire Tén. | **P7** |
+| 2 | **Baume du Patronus** | `anti_corruption` | rare | `corruptionPurge:2` **+** `cure` group (`fear`/`gel`) | `purge_corruption`+`cure` | dictame×1 + branchiflore×1 + armoise×1 | 0 | Slughorn · quête sig. Poufsouffle | **P7** |
+| 3 | **Élixir d'Immunité** | `anti_corruption` | rare | `wardCharges+1` : absorbe le prochain `sideEffect`/corruption | `ward_charge` | dictame×1 + asphodele×1 | 0 | Slughorn · quête sig. Serdaigle | **P7** |
+| 4 | **Potion de Corruption Contrôlée** | `buff` (évolutif) | epic | +8 MAG **+** dégâts sorts ×(1+0.05·corr.) 3 t — **mais** s'auto-corrompt | `temp_buff` + `evolves:corruption` + risk | asphodele_noire×2 + aconit×1 | **2** | Ruines (Boucle) | **P10** |
+| 5 | **Potion de Résilience Maison** | `buff` | epic | Buff aligné sur `chosenHouse` (Gryff +ATK/crit · Slyth +MAG/spell-lifesteal · Serd +PM/−coût · Pouf +DEF/régén) | `house_buff` | herbe T2 ×2 + ingrédient Maison | 0 | Quête Chef de Maison | **P9** |
+| 6 | **Potion de Vision des Éclats** | `utilitaire` | rare | Révèle coffres/jardins/cases cachées de l'étage + fouille majorée N pas | `reveal_treasures` | branchiflore×1 + ortie×1 | 0 | Slughorn + boutique (≥3) | **P12** |
+| 7 | **Potion d'Écho Temporel** | `utilitaire` | epic | Hors combat : annule le **dernier pas/dégât de salle**. En combat : recharge le **budget temporel** 1×/combat | `temporal_echo` | dictame×2 + retourneur_temps×1 | 0 | Ruines · rare | **P12** |
+| 8 | **Huile d'Arme** ×3 (feu/givre/foudre) | `buff` | rare | Enduit l'arme : attaques **physiques** infligent +X dégâts **élémentaires** N tours (combat) | `weapon_oil` | herbe-élément×2 + huile_base×1 | 0 | Forge + Ruines | **P12** |
+| 9 | **Poudre Runique** ×2 (étourdissante/aveuglante) | `debuff` | rare | Jetée : `stun`/`fear` à **tout le groupe ennemi**, 0 dégât (contrôle pur) | `throw` (statut AoE, 0 dmg) | aconit×1 + page_grimoire×1 | 0 | Ruines — coûteux | **P12** |
 
-> ❓ **À valider** : faut-il livrer **les 9** ou un **sous-ensemble MVP** ? Voir
-> §3 (proposition : MVP = Lucidité, Corruption Contrôlée, Résilience Maison,
-> Vision des Éclats, Huiles d'arme — couvre les 4 trous majeurs).
+### 1.5bis Esquisses JSON (figées — à transcrire en P7→P12)
+
+```js
+// 1 — anti_corruption (P7)
+{ id:"elixir_lucidite", name:"Élixir de Lucidité", category:"anti_corruption",
+  type:"consumable", rarity:"epic", effect:"purge_corruption", corruptionPurge:3,
+  icon:"🧪", price:220, synergy:{ spells:["Sectumsempra","Morsmordre"],
+  note:"Seule soupape pour faire redescendre la corruption." } }
+
+// 4 — buff évolutif risqué (P10)
+{ id:"potion_corruption_ctrl", name:"Potion de Corruption Contrôlée", category:"buff",
+  type:"consumable", rarity:"epic", effect:"temp_buff", buffStat:"mag", power:8, turns:3,
+  corruptionRisk:2, evolves:{ source:"corruption", perStep:0.05, cap:1.5 },
+  synergy:{ artifacts:["TENEBRES_SET"], spells:["Sectumsempra"] }, icon:"🌑" }
+
+// 5 — house_buff (P9) — un item, 4 comportements selon chosenHouse
+{ id:"potion_resilience_maison", name:"Potion de Résilience Maison", category:"buff",
+  type:"consumable", rarity:"epic", effect:"house_buff", turns:3, houseAffinity:null,
+  synergy:{ note:"S'aligne sur le passif d'Apothéose de ta Maison." }, icon:"🛡️" }
+
+// 8 — weapon_oil (P12) — gabarit, ×3 éléments
+{ id:"huile_feu", name:"Huile de Feu", category:"buff", type:"consumable", rarity:"rare",
+  effect:"weapon_oil", element:"feu", power:6, turns:4, price:60, icon:"🔥",
+  synergy:{ note:"Les attaques physiques déclenchent les combos élémentaires." } }
+
+// 9 — poudre runique (P12) — étend `throw`, dégât 0, statut AoE
+{ id:"poudre_stun", name:"Poudre Runique Étourdissante", category:"debuff",
+  type:"consumable", rarity:"rare", effect:"throw", power:0, aoe:true,
+  statusId:"stun", statusTurns:1, price:70, icon:"💫" }
+```
 
 ## 1.6 Variantes Premium par Maison
 
@@ -362,20 +394,28 @@ Champ `synergy` (déclaratif, alimente tooltip + Codex) **et** effet réel via
 > deux autres piliers — c'est l'objectif « forte synergie avec les systèmes
 > précédents ».
 
-## 1.12 Table de synthèse maître (extrait MVP)
+## 1.12 Table de synthèse maître (complète)
 
-| Potion | Catégorie | Effet | Coût / Ingrédients | Variante Premium | Disponibilité | Synergies |
-|--------|-----------|-------|--------------------|--------------------|---------------|-----------|
-| Élixir de Lucidité 💡 | anti_corruption | −3 corruption | dictame×2 + asphodèle_noire×1 | — | Craft Ruines + Apothicaire Tén. | sorts corrompus |
-| Corruption Contrôlée 💡 | buff (évolutif) | +MAG/dégâts sorts, risk:2 | asphodèle_noire×2 + aconit×1 | par Maison | Craft Boucle | Set Ténèbres, corruption |
-| Résilience Maison 💡 | buff | buff selon `chosenHouse` | herbe T2 + ingrédient Maison | = la potion (4 colos) | Quête Chef de Maison | reliques + passif Maison |
-| Vision des Éclats 💡 | utilitaire | révèle étage + fouille | branchiflore×1 + ortie×1 | — | Craft + shop ≥3 | niffleurs, jardins, coffres |
-| Huile d'Arme (×3) 💡 | debuff/buff | +dégâts élém. phys. N t | herbe élément + huile | — | Craft + Forge | combos, armes |
-| Poudre Runique (×2) 💡 | debuff | stun/fear AoE ennemis | aconit + page_grimoire | — | Craft Ruines | contrôle, sorts |
-| Élixir du Lion Ardent 💡 | buff (Premium) | +ATK +crit | base potion_force + colo Gryff | — | Quête McGonagall | reliques Gryffondor |
-| Philtre du Mage 💡 | mana (évolutif) | +PM × pièces caster | herbe T3 + Éclat | — | Craft | `formType` baton/grimoire |
+> 17 ajouts (9 formes dont 2 familles → 14 items + Philtre évolutif + 4 Premium).
+> ✅ = base existante réutilisée ; 💡 = nouveauté de cette finalisation.
 
-*(Table maître complète des ~15 ajouts à figer à l'implémentation, après §3.)*
+| Potion | Catégorie | Effet | Coût / Ingrédients | Premium | Disponibilité | Synergies | Lot |
+|--------|-----------|-------|--------------------|---------|---------------|-----------|-----|
+| Élixir de Lucidité 💡 | anti_corruption | −3 corruption | dictame×2 + asphodèle_noire×1 (220 G) | — | Ruines + Apothicaire Tén. | sorts corrompus | P7 |
+| Baume du Patronus 💡 | anti_corruption | −2 corr. + cure groupe | dictame+branchiflore+armoise | — | Slughorn · q. Poufsouffle | Patronus, `fear`/`gel` | P7 |
+| Élixir d'Immunité 💡 | anti_corruption | bloque 1 sideEffect | dictame×1 + asphodèle×1 | — | Slughorn · q. Serdaigle | risques Boucle | P7 |
+| Corruption Contrôlée 💡 | buff (évolutif) | +MAG, dégâts sorts ↑ corr., risk:2 | asphodèle_noire×2 + aconit×1 | — | Ruines (Boucle) | Set Ténèbres, corruption | P10 |
+| Résilience Maison 💡 | buff | buff selon `chosenHouse` | herbe T2×2 + ingrédient Maison | = 4 colorations | Quête Chef de Maison | reliques + passif Apothéose | P9 |
+| Vision des Éclats 💡 | utilitaire | révèle étage + fouille | branchiflore×1 + ortie×1 (rare) | — | Slughorn + shop ≥3 | niffleurs, jardins, coffres, Revelio | P12 |
+| Écho Temporel 💡 | utilitaire | annule dernier pas / recharge budget temporel | dictame×2 + retourneur_temps×1 | — | Ruines · rare | Reliquae Temporis, Tempus Echo | P12 |
+| Huile de Feu/Givre/Foudre 💡 ×3 | buff | +dégâts élém. sur attaques phys. N t | herbe-élément×2 + huile_base | — | Forge + Ruines | combos, armes (`wand`/`sword`) | P12 |
+| Poudre Runique (stun/fear) 💡 ×2 | debuff | statut AoE ennemis, 0 dmg | aconit×1 + page_grimoire×1 | — | Ruines — coûteux | contrôle, sorts | P12 |
+| Philtre du Mage 💡 | mana (évolutif) | +PM × pièces caster équipées | herbe T3 + Éclat | — | Craft | `formType` baton/grimoire | P8 |
+| Élixir du Lion Ardent 💡 | buff (Premium) | +ATK +crit court | base potion_force + colo Gryff | Gryffondor | Quête McGonagall | reliques Gryffondor | P9 |
+| Venin du Serpent 💡 | debuff/mana (Premium) | spell-lifesteal majoré | base potion_xl_sp + colo Slyth | Serpentard | Quête Rogue | Set Ténèbres | P9 |
+| Sagesse de l'Aigle 💡 | mana (Premium) | +LCK/MAG, −coût PM | base potion_precision + colo Serd | Serdaigle | Quête Flitwick | sorts, `formType` caster | P9 |
+| Vigueur du Blaireau 💡 | buff (Premium) | régén + −corruption | base potion_resistance + colo Pouf | Poufsouffle | Quête Chourave | anti-corruption, régén | P9 |
+| *(bases ✅)* | soin/mana/buff/debuff | — | — | — | shop/craft/loot | — | livré |
 
 ---
 
@@ -461,15 +501,15 @@ P7 (data + anti-corruption)  ← socle + comble le trou n°1, faible risque
    → P13 (équilibrage)           sim-difficulty + pass final
 ```
 
-| Lot | Contenu | Effort | Risque | Dépend |
-|-----|---------|--------|--------|--------|
-| **P7** | champs data + `category` + anti-corruption (Lucidité, Immunité) | ~1 j | faible | — |
-| **P8** | `evolves` + `potionEvolveMult` + synergies déclaratives | ~1 j | faible | P7 |
-| **P9** | Premium ×4 Maisons + quêtes signature + `fx` | ~2 j | moyen | P7 |
-| **P10** | `corruptionRisk` + `sideEffect` Boucle + `wardCharges` | ~1,5 j | moyen | P7 |
-| **P11** | Chaudron des Ruines + `workshopLevel` + cellule | ~1,5 j | moyen | — |
-| **P12** | huiles d'arme, poudres runiques, Écho Temporel, Vision des Éclats | ~2 j | moyen | P7 |
-| **P13** | calibration `tools/sim-difficulty.js` + pass éco | ~1 j | faible | tous |
+| Lot | Contenu (formes §1.5 incluses) | Effort | Risque | Dépend |
+|-----|--------------------------------|--------|--------|--------|
+| **P7** | champs data §1.4 + `category` + **anti-corruption** : Lucidité (1), Baume du Patronus (2), Immunité (3) ; effet `purge_corruption`/`ward_charge` | ~1,5 j | faible | — |
+| **P8** | `evolves` + `potionEvolveMult` + synergies déclaratives ; **Philtre du Mage** (10, mana évolutif) | ~1 j | faible | P7 |
+| **P9** | **Premium ×4 Maisons** (11–14) + **Résilience Maison** (5, `house_buff`) + quêtes signature + `fx` | ~2,5 j | moyen | P7 |
+| **P10** | `corruptionRisk` + `sideEffect` Boucle + `wardCharges` ; **Corruption Contrôlée** (4) | ~1,5 j | moyen | P7,P8 |
+| **P11** | **Chaudron des Ruines** + `workshopLevel` + cellule `CELL.CAULDRON` | ~1,5 j | moyen | — |
+| **P12** | formes utilitaires/debuff : **Vision des Éclats** (6), **Écho Temporel** (7), **Huiles d'arme** ×3 (8), **Poudres runiques** ×2 (9) | ~2,5 j | moyen | P7,P11 |
+| **P13** | calibration `tools/sim-difficulty.js` (évolutif, risk, Premium) + pass éco | ~1 j | faible | tous |
 
 **Première vague recommandée** = **P7 + P8** (comble les trous structurants —
 anti-corruption + évolutif/synergie — à risque faible, sans nouvelle UI).
@@ -501,9 +541,8 @@ anti-corruption + évolutif/synergie — à risque faible, sans nouvelle UI).
 
 ## 3. Décisions à valider (❓ — à arbitrer AVANT P7)
 
-1. ❓ **Périmètre des nouvelles formes** : livrer les **9** (§1.5) ou le **MVP 5**
-   (Lucidité, Corruption Contrôlée, Résilience Maison, Vision des Éclats, Huiles) ?
-   *Proposition : MVP 5 d'abord, le reste en P12.*
+1. ✅ **Périmètre des nouvelles formes** — **RÉSOLU (2026-06-20)** : **les 9
+   formes** sont livrées (§1.5, 14 items + Philtre + 4 Premium), réparties P7→P12.
 2. ❓ **Anti-corruption** : la purge agit-elle **uniquement** sur `spellCorruption`
    (combat), ou aussi cosmétiquement sur la corruption de **lieu** (ambiance) ?
    *Proposition : combat seulement (gameplay), un VFX léger d'ambiance en bonus.*
@@ -529,3 +568,4 @@ anti-corruption + évolutif/synergie — à risque faible, sans nouvelle UI).
 | Date | Note |
 |------|------|
 | 2026-06-20 | **Document rédigé** après audit complet du système existant. Constat : base + craft + enrichissement P0→P6 **déjà livrés** (26 recettes, 7 herbes, codex, maîtrise, buffs, flacons offensifs, upgrade-craft, jardin, Slug Club). Cette finalisation cible les **7 trous** : anti-corruption, Premium par Maison, évolutif, risques/effets secondaires Boucle, formes signature, Chaudron des Ruines, synergies explicites. ÉTAPE 1 (specs+contenu) et ÉTAPE 2 (plan d'impl., lots P7→P13) posées. **6 décisions ❓ en attente d'arbitrage avant P7.** Aucune ligne de code modifiée (document `.claude/` uniquement → pas de bump PWA ni smoke requis, guidelines §7/§8). |
+| 2026-06-20 | **Affinage (feu vert utilisateur)** : décision ❓1 **résolue → les 9 formes en scope**. §1.5 refait (table figée : effet→branche ⚙️, ingrédients fixés, `corruptionRisk`, lot) + §1.5bis (esquisses JSON). §1.12 = **table maître complète** (17 ajouts : 14 items + Philtre + 4 Premium). §2.7 mappe chaque forme à son lot (P7 anti-corr · P8 Philtre/évolutif · P9 Premium+Résilience · P10 Corruption Contrôlée · P12 Vision/Écho/Huiles/Poudres). **Reste 5 ❓** (purge lieu, intensité sideEffect, accès Premium, bonus atelier, coeffs évolutif) — calibration/policy, non bloquantes pour P7. Toujours document `.claude/` uniquement. |
