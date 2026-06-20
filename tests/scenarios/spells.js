@@ -51,6 +51,25 @@ async function scenarioSpellIcons() {
     assert(t2.all.some(s => s.endsWith(`spells/${name}.png`)), `manque ${name}.png dans modale`);
   });
 
+  // T2bis : liseré de rang (tier) — socle Sorts 2.0 P1. Chaque rangée
+  // .spell-item porte une bordure gauche teintée + une pastille de rang.
+  const t2b = await page.evaluate(() => {
+    openSpells();
+    const rows = Array.from(document.querySelectorAll('#spell-list .spell-item'));
+    const tint = (typeof spellTierTint === 'function') ? spellTierTint(getSpellByName('Incendio')) : null;
+    return {
+      rows: rows.length,
+      allBordered: rows.length > 0 && rows.every(r => /3px solid/.test(r.style.borderLeft)),
+      hasBadge: rows.some(r => /BASIQUE|AVANCÉ|MAÎTRE|CORROMPU/.test(r.textContent)),
+      incendioTint: tint,
+    };
+  });
+  console.log('  T2bis liseré →', t2b);
+  assert(t2b.rows >= 5,           'modale Sorts doit lister les rangées .spell-item');
+  assert(t2b.allBordered,         'chaque .spell-item doit porter un liseré de rang (borderLeft)');
+  assert(t2b.hasBadge,            'la modale doit afficher au moins une pastille de rang');
+  assert(t2b.incendioTint === '#5fa85f', `tint basique d'Incendio attendu #5fa85f, vu ${t2b.incendioTint}`);
+
   // T3 : fallback emoji si sort absent du registre
   const t3 = await page.evaluate(() => {
     const fakeSpell = { name: 'SortInconnu', icon: '🦄' };
