@@ -20,9 +20,40 @@ function _enemyPotionConsume(enemy, a) {
   if (left > 0) enemy._potions[_enemyPotionKey(a)] = left - 1;
 }
 
+// P2 — Boss à phases (combat-system-synthesis §1.4). Une capacité portant
+// `phase:true` (+ seuil `phaseHpFrac`, défaut 0.5) reste GARDÉE tant que les PV
+// de l'ennemi sont au-dessus du seuil ; sous le seuil, elle se débloque. PUR
+// (lecture seule). Une capacité sans `phase` est toujours prête.
+function _abilityPhaseReady(a, enemy) {
+  if (!a || !a.phase) return true;
+  const maxHp = enemy.hp || enemy.currentHp || 1;
+  const frac  = (typeof a.phaseHpFrac === 'number') ? a.phaseHpFrac : 0.5;
+  return enemy.currentHp <= maxHp * frac;
+}
+// Beat narratif one-shot au franchissement du seuil de phase d'un boss : un
+// héros vivant réagit (heroBarkScripted, défensif). Marqué via `_phaseBeatDone`.
+function _maybeBossPhaseBeat(enemy, appendLog) {
+  if (!enemy || enemy._phaseBeatDone) return;
+  const gated = (enemy.abilities || []).filter(a => a && a.phase);
+  if (!gated.length) return;
+  const crossed = gated.some(a => _abilityPhaseReady(a, enemy));
+  if (!crossed) return;
+  enemy._phaseBeatDone = true;
+  const msg = enemy.phaseMsg || `${enemy.name} change de tactique — ses forces se réveillent !`;
+  if (typeof appendLog === 'function') appendLog(`⚡ ${msg} `);
+  UX_safe.logCombat(`⚡ ${msg}`, 'bad');
+  if (typeof heroBarkScripted === 'function' && typeof party !== 'undefined') {
+    const speaker = party.slice(0, partySize).find(c => c && c.hp > 0 && c.heroKey);
+    if (speaker) heroBarkScripted(speaker.heroKey, 'bossPhase',
+      { channel: 'combat', once: 'bossphase:' + (enemy.id || enemy.name) });
+  }
+}
+
 // ── Utilisation d'une capacité spéciale par un ennemi ────────
 function tryEnemyAbility(enemy, target, charIdx, appendLog) {
   if (!enemy.abilities || !enemy.abilities.length) return false;
+  // P2 — Boss à phases : beat narratif au franchissement du seuil de PV.
+  _maybeBossPhaseBeat(enemy, appendLog);
   // Heuristique anti-stalling : face à une cible en Double-Garde
   // (guardTurns ≥ 2), les ennemis privilégient `weaken` pour briser la
   // posture (chance ×1.5). Cf. combat-extensions-v2.md §B.
@@ -31,6 +62,8 @@ function tryEnemyAbility(enemy, target, charIdx, appendLog) {
   const fired = enemy.abilities.filter(a => {
     // Potion ennemie : un consommable épuisé (charges par instance) ne tire plus.
     if (a.effect === 'consumable' && _enemyPotionLeft(enemy, a) <= 0) return false;
+    // P2 — capacité de phase gardée tant que les PV sont au-dessus du seuil.
+    if (!_abilityPhaseReady(a, enemy)) return false;
     let ch = a.chance;
     if (heavyGuard && a.effect === 'weaken') ch = Math.min(1, ch * 1.5);
     return Math.random() < ch;
@@ -528,6 +561,15 @@ function _computeSpellDamage(spell, char, enemy, opts) {
   // Combo : amplification si la cible porte un statut déclencheur.
   const combo = comboDamageMult(enemy, spell.element);
   if (combo.mult !== 1) { dmg = Math.floor(dmg * combo.mult); suffix += ' ' + combo.label; }
+  // P2 — Tenaille (Duo offensif) : focus-fire sur une cible déjà frappée par
+  // l'autre héros ce round (+15 %). Marque ensuite la cible. Solo / Phalange → 1.
+  if (typeof _duoComboMult === 'function') {
+    const eIdx = (typeof enemyGroup !== 'undefined') ? enemyGroup.indexOf(enemy) : -1;
+    const hIdx = (typeof party !== 'undefined') ? party.indexOf(char) : -1;
+    const tenaille = _duoComboMult(eIdx, hIdx);
+    if (tenaille !== 1) { dmg = Math.floor(dmg * tenaille); suffix += ' 🤝'; }
+    if (typeof _duoMarkTarget === 'function') _duoMarkTarget(eIdx, hIdx);
+  }
   const cr = rollSpellCrit(dmg, char);
   dmg = cr.dmg;
   if (cr.crit) suffix += ' 💥CRIT';

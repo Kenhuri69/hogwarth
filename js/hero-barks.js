@@ -18,7 +18,9 @@
 // ============================================================
 
 // Registre des répliques. Clés d'événement reconnues :
-//   bossAppear · crit · allyDown · levelUp · houseTier · tierTransition · darkLoop · loopEcho · darkBoss · darkBossDown
+//   bossAppear · bossPhase · crit · allyDown · levelUp · houseTier · tierTransition · darkLoop · loopEcho · darkBoss · darkBossDown
+// `bossPhase` (P2, combat-system-synthesis §1.4) : voix one-shot au franchissement
+// d'un seuil de phase de boss (capacité `phase` débloquée). Joué par le héros actif.
 // `darkLoop` (V2, ch.11 §11.8.2) : voix au franchissement d'un niveau de Boucle.
 // `loopEcho` (Phase 3, ch.11 §11.7.3) : voix quand un écho temporel affleure en
 // Boucle (movement.js, seenEchoes) — évoque « le Dormeur » (10 §10.3) sans le nommer.
@@ -33,6 +35,7 @@
 const HERO_BARKS = {
   harry: {
     bossAppear: ["Bon. On fait comme d'habitude — on tient, on frappe."],
+    bossPhase:  ["Il change de registre — accroche-toi, ça va frapper plus fort !"],
     crit:       ["Ça, c'était pour rester poli.", "Voilà. On avance."],
     allyDown:   ["Debout ! On n'a pas fini, toi et moi !"],
     levelUp:    ["Encore un cran. On descend plus loin."],
@@ -50,6 +53,7 @@ const HERO_BARKS = {
   },
   hermione: {
     bossAppear: ["Trois capacités, deux résistances. J'ai vu pire. Concentre-toi."],
+    bossPhase:  ["Seuil critique franchi — son schéma d'attaque vient de changer. Adapte-toi."],
     crit:       ["Mécaniquement imparable."],
     allyDown:   ["Tiens bon — Episkey, tout de suite !"],
     levelUp:    ["Note méthodique : progresser, c'est survivre deux fois."],

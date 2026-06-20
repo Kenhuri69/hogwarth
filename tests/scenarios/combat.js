@@ -2559,4 +2559,250 @@ async function scenarioArtifactForms() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBuffBadgesPng, scenarioBruteCrush, scenarioStatRework, scenarioFortuneStat, scenarioAgiCelerite, scenarioCeleriteGuardCounting, scenarioDuoStatuses, scenarioCritDodge, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioGuardAndFerula, scenarioCombatBuffs, scenarioLegilimensEscalation, scenarioStun, scenarioStatusComboNoFreeze, scenarioCombatExtV2, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioDeathPetrify, scenarioIronmanDeath, scenarioLargeEnemyGroup, scenarioMonsterDiscovery, scenarioArtifactForms] };
+// ============================================================
+// P2 — Artefacts actifs (activeEffect) : action 🏺, charges 1×/combat,
+// résolveurs elemBurst / purgeStatus / shieldGroup, ciblage via pendingAction.
+// ============================================================
+async function scenarioActiveArtifact() {
+  console.log('\n── Scénario P2 : Artefacts actifs (🏺) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+  await startDummyFight(page, { hp: 60 });
+
+  // T1 : equiper l'Orbe Runique (elemBurst) → _activeArtifactFor le détecte,
+  // charge initialisée à 1 (reset par startBattle).
+  const t1 = await page.evaluate(() => {
+    const orbe = ITEMS.find(i => i.id === 'orbe_runique');
+    party[0].equipped.trinket = JSON.parse(JSON.stringify(orbe));
+    artifactCharges = {};
+    const item = _activeArtifactFor(party[0]);
+    return {
+      found:   !!(item && item.activeEffect),
+      resolve: item?.activeEffect?.resolve,
+      left:    _artifactChargesLeft(0, item.activeEffect)
+    };
+  });
+  console.log('  T1 equip :', t1);
+  assert(t1.found && t1.resolve === 'elemBurst', 'Orbe activeEffect elemBurst non détecté');
+  assert(t1.left === 1, 'charge initiale doit valoir 1');
+
+  // T2 : elemBurst sur la cible → dégâts appliqués, charge consommée.
+  const t2 = await page.evaluate(() => {
+    const e = enemyGroup[0];
+    e.currentHp = 60;
+    const before = e.currentHp;
+    useActiveArtifact(0, 0);
+    return { before, after: enemyGroup[0].currentHp, left: artifactCharges[0] };
+  });
+  console.log('  T2 burst :', t2);
+  assert(t2.after < t2.before, 'elemBurst n\'a pas infligé de dégâts');
+  assert(t2.left === 0, 'charge non consommée après usage');
+
+  // T3 : seconde activation refusée (0 charge) → aucun dégât supplémentaire.
+  const t3 = await page.evaluate(() => {
+    const e = enemyGroup[0];
+    e.currentHp = 50;
+    const before = e.currentHp;
+    triggerActiveArtifact();        // doit être refusé (charge épuisée)
+    return { before, after: enemyGroup[0].currentHp, left: artifactCharges[0] };
+  });
+  console.log('  T3 refus :', t3);
+  assert(t3.after === t3.before, 'artefact rechargé alors qu\'il devrait être épuisé');
+
+  // T4 : ciblage via pendingAction (2 ennemis) → showTargetSelection('artifact').
+  const t4 = await page.evaluate(() => {
+    enemyGroup.push({ ...enemyGroup[0], name: 'Mannequin 2', currentHp: 30, statusEffects: [] });
+    artifactCharges = {};           // recharge pour ce test
+    pendingAction = null;
+    triggerActiveArtifact();
+    return { pending: pendingAction, len: enemyGroup.length };
+  });
+  console.log('  T4 cible :', t4);
+  assert(t4.pending === 'artifact', 'pendingAction artifact non posé pour ciblage multi');
+
+  // T5 : purgeStatus (Talisman) dissipe les statuts du groupe.
+  const t5 = await page.evaluate(() => {
+    const tal = ITEMS.find(i => i.id === 'talisman_fondateurs');
+    party[0].equipped.amulet = JSON.parse(JSON.stringify(tal));
+    artifactCharges = {};
+    party[0].statusEffects = [];
+    applyStatus(party[0], 'burn', 3, 3);
+    const had = party[0].statusEffects.length;
+    useActiveArtifact(0, null);
+    return { had, after: party[0].statusEffects.length };
+  });
+  console.log('  T5 purge :', t5);
+  assert(t5.had > 0 && t5.after === 0, 'purgeStatus n\'a pas dissipé les statuts');
+
+  // T6 : shieldGroup (Larmes du Phénix) pose un bouclier de groupe. On neutralise
+  // d'abord les ennemis pour que le tour ennemi (déclenché par advanceBattleChar)
+  // ne consomme pas le Protego de groupe avant la lecture.
+  const t6 = await page.evaluate(() => {
+    enemyGroup.forEach(e => { e.currentHp = 0; });
+    const lar = ITEMS.find(i => i.id === 'larmes_phenix');
+    party[0].equipped.amulet = JSON.parse(JSON.stringify(lar));
+    party[0].equipped.trinket = null;
+    artifactCharges = {};
+    shieldTurns = [0, 0];
+    useActiveArtifact(0, null);
+    return { shield: shieldTurns[0] };
+  });
+  console.log('  T6 shield:', t6);
+  assert(t6.shield >= 1, 'shieldGroup n\'a pas posé de bouclier');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Artefacts actifs OK (elemBurst/purgeStatus/shieldGroup + charges + ciblage)');
+  await browser.close();
+}
+
+// ============================================================
+// P2 — Positionnement Duo (duoPosture) : persistant + bascule 1×/combat,
+// Tenaille (focus-fire), sérialisation, solo ignoré.
+// ============================================================
+async function scenarioDuoPosture() {
+  console.log('\n── Scénario P2 : Positionnement Duo (postures) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'] });
+  await startDummyFight(page, { hp: 80 });
+
+  // T1 : défaut 'phalange' ; bascule en combat gratuite 1×, puis refus.
+  const t1 = await page.evaluate(() => {
+    duoPosture = 'phalange'; duoPostureSwitched = false;
+    toggleDuoPosture();
+    const after1 = duoPosture, switched = duoPostureSwitched;
+    toggleDuoPosture();             // refusée (déjà basculée)
+    return { after1, switched, after2: duoPosture };
+  });
+  console.log('  T1 toggle:', t1);
+  assert(t1.after1 === 'tenaille', 'bascule de posture n\'a pas pris');
+  assert(t1.switched === true, 'flag duoPostureSwitched non armé');
+  assert(t1.after2 === 'tenaille', 'seconde bascule aurait dû être refusée');
+
+  // T2 : Tenaille — focus-fire (+15 %) sur une cible déjà frappée par l'autre héros.
+  const t2 = await page.evaluate(() => {
+    partySize = 2; duoPosture = 'tenaille'; duoComboMarks = {};
+    const virgin = _duoComboMult(0, 0);          // cible vierge → 1
+    _duoMarkTarget(0, 1);                          // Hermione marque l'ennemi 0
+    const combo = _duoComboMult(0, 0);            // Harry frappe la même → 1.15
+    const same  = (() => { duoComboMarks = { 0: 0 }; return _duoComboMult(0, 0); })(); // même héros → 1
+    return { virgin, combo, same };
+  });
+  console.log('  T2 combo :', t2);
+  assert(t2.virgin === 1, 'cible vierge ne doit pas donner de combo');
+  assert(t2.combo === 1.15, 'combo Tenaille +15 % non appliqué');
+  assert(t2.same === 1, 'pas de combo si même héros a marqué');
+
+  // T3 : solo ignore la posture.
+  const t3 = await page.evaluate(() => {
+    partySize = 1; duoPosture = 'tenaille'; duoComboMarks = { 0: 1 };
+    const m = _duoComboMult(0, 0);
+    partySize = 2;
+    return m;
+  });
+  console.log('  T3 solo  :', t3);
+  assert(t3 === 1, 'la posture ne doit avoir aucun effet en solo');
+
+  // T4 : duoPosture sérialisé / restauré.
+  const t4 = await page.evaluate(() => {
+    duoPosture = 'tenaille';
+    const ser = _serializeState();
+    duoPosture = 'phalange';
+    _applyState(ser);
+    return { inSer: ser.duoPosture, restored: duoPosture };
+  });
+  console.log('  T4 save  :', t4);
+  assert(t4.inSer === 'tenaille', 'duoPosture absent du payload de save');
+  assert(t4.restored === 'tenaille', 'duoPosture non restauré au chargement');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Positionnement Duo OK (bascule 1×/combat + Tenaille + solo ignoré + save)');
+  await browser.close();
+}
+
+// ============================================================
+// P2 — Boss à phases (ability.phase + phaseHpFrac) : capacité gardée sous un
+// seuil de PV, beat narratif au franchissement.
+// ============================================================
+async function scenarioBossPhase() {
+  console.log('\n── Scénario P2 : Boss à phases ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // Boss custom : capacité normale (chance 0, ne tire jamais) + capacité de
+  // phase (chance 1, gardée sous 40 % PV).
+  await page.evaluate(() => {
+    const boss = {
+      id: 'test_boss_phase', name: 'Sentinelle d\'Épreuve', icon: '🗿',
+      hp: 100, atk: 1, def: 0, mag: 0, agi: 0, lck: 0, epic: true,
+      xp: 0, gold: 0, resist: [], weak: [], desc: 'Test phase',
+      phaseMsg: 'La Sentinelle entre en éveil !',
+      abilities: [
+        { name: 'Repos', icon: '·', effect: 'damage', power: 0, chance: 0 },
+        { name: 'Éveil', icon: '🌋', effect: 'status', statusId: 'burn', power: 3, chance: 1.0, turns: 3, phase: true, phaseHpFrac: 0.4 }
+      ]
+    };
+    startBattle(boss);
+  });
+  await page.waitForFunction(() => inBattle === true && enemyGroup.length > 0,
+    { timeout: 5000 });
+
+  // T1 : au-dessus du seuil (100 % PV) → capacité de phase GARDÉE (tryEnemyAbility
+  // renvoie false, aucun statut posé sur le héros).
+  const t1 = await page.evaluate(() => {
+    const e = enemyGroup[0]; e.currentHp = 100; delete e._phaseBeatDone;
+    party[0].statusEffects = [];
+    const fired = tryEnemyAbility(e, party[0], 0, () => {});
+    return { fired, statuses: party[0].statusEffects.length, beat: !!e._phaseBeatDone };
+  });
+  console.log('  T1 haut  :', t1);
+  assert(t1.fired === false, 'la capacité de phase ne doit pas tirer au-dessus du seuil');
+  assert(t1.statuses === 0, 'aucun statut ne doit être posé au-dessus du seuil');
+
+  // T2 : sous le seuil (30 % PV) → capacité débloquée (tire + burn posé) + beat
+  // one-shot (_phaseBeatDone armé).
+  const t2 = await page.evaluate(() => {
+    const e = enemyGroup[0]; e.currentHp = 30; delete e._phaseBeatDone;
+    party[0].statusEffects = [];
+    const fired = tryEnemyAbility(e, party[0], 0, () => {});
+    return { fired, hasBurn: party[0].statusEffects.some(s => s.id === 'burn'), beat: !!e._phaseBeatDone };
+  });
+  console.log('  T2 bas   :', t2);
+  assert(t2.fired === true, 'la capacité de phase doit tirer sous le seuil');
+  assert(t2.hasBurn, 'le burn de phase n\'a pas été appliqué');
+  assert(t2.beat === true, 'le beat de phase (_phaseBeatDone) n\'a pas été armé');
+
+  // T3 : helper pur _abilityPhaseReady cohérent.
+  const t3 = await page.evaluate(() => ({
+    gardedHaut: _abilityPhaseReady({ phase: true, phaseHpFrac: 0.4 }, { hp: 100, currentHp: 100 }),
+    pretBas:    _abilityPhaseReady({ phase: true, phaseHpFrac: 0.4 }, { hp: 100, currentHp: 30 }),
+    sansPhase:  _abilityPhaseReady({ effect: 'damage' }, { hp: 100, currentHp: 100 })
+  }));
+  console.log('  T3 helper:', t3);
+  assert(t3.gardedHaut === false && t3.pretBas === true && t3.sansPhase === true,
+    '_abilityPhaseReady incohérent');
+
+  // T4 : le Gardien du Lion (data) porte bien une capacité de phase.
+  const t4 = await page.evaluate(() => {
+    const m = MONSTERS.find(x => x.id === 'gardien_lion');
+    const ph = (m?.abilities || []).find(a => a.phase);
+    return { found: !!m, hasPhase: !!ph, frac: ph?.phaseHpFrac };
+  });
+  console.log('  T4 data  :', t4);
+  assert(t4.found && t4.hasPhase, 'gardien_lion sans capacité de phase');
+  assert(t4.frac === 0.4, 'phaseHpFrac du Gardien du Lion attendu à 0.4');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Boss à phases OK (gate hpFrac + beat one-shot + data Gardien)');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBuffBadgesPng, scenarioBruteCrush, scenarioStatRework, scenarioFortuneStat, scenarioAgiCelerite, scenarioCeleriteGuardCounting, scenarioDuoStatuses, scenarioCritDodge, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioGuardAndFerula, scenarioCombatBuffs, scenarioLegilimensEscalation, scenarioStun, scenarioStatusComboNoFreeze, scenarioCombatExtV2, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioDeathPetrify, scenarioIronmanDeath, scenarioLargeEnemyGroup, scenarioMonsterDiscovery, scenarioArtifactForms, scenarioActiveArtifact, scenarioDuoPosture, scenarioBossPhase] };

@@ -504,6 +504,21 @@ let celeriteExtra   = [0, 0]; // actions supplémentaires en réserve ce round
 // tické par tickFamiliars (battle.js). Chaque entrée { ownerName, atk, turns, icon }.
 let combatFamiliars = [];
 let battleTurn      = 0;
+// P2 — Artefacts actifs (combat-system-synthesis §2.1) : charges restantes par
+// personnage des artefacts à `activeEffect` déclenchables 1×/combat. Map
+// idx→charges, combat-scoped (reset par startBattle), NON sérialisé (autoSave
+// refusé en combat). Réutilise pendingAction pour le ciblage.
+let artifactCharges = {};
+// P2 — Positionnement Duo (combat-system-synthesis §1.1). `duoPosture` est
+// PERSISTANT (sérialisé, set-and-forget) ; les deux autres sont combat-scoped.
+//  - 'phalange' (défensif) : l'avant (party[0]) attire les coups (+20 % d'être
+//    ciblé) ; l'arrière, plus fragile, est d'autant moins visé.
+//  - 'tenaille' (offensif) : focus-fire — frapper une cible déjà touchée par
+//    l'autre héros ce round accorde +15 % de dégâts.
+// Solo : posture ignorée (partySize===1). Défaut 'phalange'.
+let duoPosture        = 'phalange';
+let duoPostureSwitched = false;  // bascule gratuite déjà utilisée ce combat ?
+let duoComboMarks      = {};     // marque Tenaille : enemyIdx → heroIdx ayant frappé ce round
 // Palier 17 « Mythe » — état transient de combat (réinitialisé par startBattle).
 // Non sérialisés : un combat ne peut pas être sauvegardé (inBattle bloque autoSave/writeSlot).
 let legilimensCancelCharges = 0;     // capacités ennemies à annuler (sort Legilimens)

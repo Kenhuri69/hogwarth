@@ -71,6 +71,7 @@ function showTargetSelection(actionType) {
     if      (pendingAction === 'attack')     executeAttack(i);
     else if (pendingAction === 'spell_dmg')  castSpellInBattle(pendingSpell, i);
     else if (pendingAction === 'throw_item') throwItemAtEnemy(pendingThrowIdx, i);
+    else if (pendingAction === 'artifact')   useActiveArtifact(currentBattleChar, i); // P2 — artefact actif
     pendingAction   = null;
     pendingSpell    = null;
     pendingThrowIdx = null;
@@ -249,6 +250,32 @@ function updateBattleCharIndicator() {
     const card = document.getElementById(`char-card-${i}`);
     if (card) card.classList.toggle('active-char', i === currentBattleChar && inBattle);
   });
+  _refreshBattleActionButtons();
+}
+
+// P2 — Affiche/masque les boutons d'action conditionnels (🏺 Artefact actif,
+// 🔄 Posture du Duo) selon le perso actif et l'état du combat. Défensif :
+// no-op si les boutons ne sont pas dans le DOM (anciens index.html).
+function _refreshBattleActionButtons() {
+  const artBtn = document.getElementById('btn-artifact');
+  if (artBtn) {
+    const char = party[currentBattleChar];
+    const item = (typeof _activeArtifactFor === 'function') ? _activeArtifactFor(char) : null;
+    const left = (item && typeof _artifactChargesLeft === 'function')
+      ? _artifactChargesLeft(currentBattleChar, item.activeEffect) : 0;
+    const show = !!(inBattle && item && left > 0);
+    artBtn.style.display = show ? '' : 'none';
+    if (show) artBtn.title = `${item.activeEffect.label} (1×/combat)`;
+  }
+  const postBtn = document.getElementById('btn-posture');
+  if (postBtn) {
+    const show = !!(inBattle && partySize === 2
+      && typeof duoPostureSwitched !== 'undefined' && !duoPostureSwitched);
+    postBtn.style.display = show ? '' : 'none';
+    if (show && typeof duoPosture !== 'undefined') {
+      postBtn.title = `Posture : ${duoPosture === 'phalange' ? 'Phalange → Tenaille' : 'Tenaille → Phalange'} (gratuit, 1×/combat)`;
+    }
+  }
 }
 
 function setBattleLog(text) {

@@ -307,7 +307,40 @@ function _renderSynergyPanel(c) {
 // Paper-doll : flex column avec une paper-doll-main (3 cols [50px][auto][50px])
 // et une paper-doll-bottom (rangée wand/belt/trinket). Stage carré contraint
 // par les 4 slots latéraux via align-items:stretch.
+// P2 — Encart « Posture du Duo » (combat-system-synthesis §1.1). Visible
+// uniquement en Duo. Choix persistant (sérialisé), set-and-forget hors combat ;
+// en combat, une bascule gratuite 1×/combat reste disponible (bouton 🔄).
+function _renderDuoPosturePanel() {
+  if (typeof partySize === 'undefined' || partySize !== 2) return '';
+  const cur = (typeof duoPosture !== 'undefined') ? duoPosture : 'phalange';
+  const card = (key, title, desc) => {
+    const on = cur === key;
+    return `<button class="cmd-btn" onclick="setDuoPosture('${key}')" style="flex:1;text-align:left;padding:6px;font-size:10px;${on ? 'border-color:var(--gold);background:rgba(216,182,71,0.12)' : ''}">
+        <div style="color:${on ? '#f7e4a8' : '#c9b27a'};font-weight:bold">${on ? '✓ ' : ''}${title}</div>
+        <div style="color:#8a7050;font-size:9px;margin-top:2px">${desc}</div>
+      </button>`;
+  };
+  return `
+    <div class="section section-posture">
+      <button class="section-toggle" onclick="_toggleCharSection(this)">Posture du Duo</button>
+      <div class="panel-title">⸻ POSTURE DU DUO ⸻</div>
+      <div style="display:flex;gap:6px">
+        ${card('phalange', '🛡️ Phalange', 'Défensif : l\'avant attire les coups (+20 %) ; l\'arrière, plus fragile, est protégé.')}
+        ${card('tenaille', '⚔️ Tenaille', 'Offensif : focus-fire (+15 % sur une cible déjà frappée par l\'autre héros).')}
+      </div>
+    </div>`;
+}
+// Change la posture persistante hors combat (refuse en combat : passer par 🔄).
+function setDuoPosture(key) {
+  if (typeof inBattle !== 'undefined' && inBattle) return;
+  if (key !== 'phalange' && key !== 'tenaille') return;
+  duoPosture = key;
+  if (typeof openCharacter === 'function') openCharacter(_lastCharIdx || 0);
+}
+let _lastCharIdx = 0;
+
 function openCharacter(charIdx = 0) {
+  _lastCharIdx = (charIdx >= 0 && charIdx < (typeof partySize !== 'undefined' ? partySize : 2)) ? charIdx : 0;
   // En mode solo, partySize=1 → on borne charIdx à 0 même si l'appel
   // demande Hermione (peut arriver via état legacy ou bouton resté affiché).
   if (charIdx >= partySize) charIdx = 0;
@@ -442,6 +475,8 @@ function openCharacter(charIdx = 0) {
       </div>
 
       ${_renderSynergyPanel(c)}
+
+      ${_renderDuoPosturePanel()}
 
       ${_renderCarnetVoyagePanel(c)}
 
