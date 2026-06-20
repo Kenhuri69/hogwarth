@@ -90,11 +90,14 @@ function openSpells(charIdx = 0) {
                  + _spellFilterBarHtml(c.spells, 'spell', charIdx);
 
   for (const sName of c.spells) {
-    // P3 — forme effective (évolution réversible) pour l'affichage.
-    const spell = (typeof resolveSpellForm === 'function' && resolveSpellForm(sName, c))
-                  || SPELLS.find(s => s.name === sName);
+    const baseSp = SPELLS.find(s => s.name === sName);
+    // P3 — forme effective (évolution réversible) ; P1 — surcharge signature.
+    const spell  = (typeof resolveSpellForm === 'function' && resolveSpellForm(sName, c))
+                   || baseSp;
     if (!spell) continue;
     if (_spellFilter !== 'tous' && spellCategory(spell) !== _spellFilter) continue;
+    // Synergie P1 active si la forme résolue diffère de la base (badge 🔗).
+    const synActive = spell !== baseSp;
     const div = document.createElement('div');
     div.className = 'spell-item';
     div.style.borderLeft = '3px solid ' + _spellTierTintSafe(spell);
@@ -147,10 +150,13 @@ function openSpells(charIdx = 0) {
     const previewHtml = preview
       ? `<div style="font-size:9px;color:var(--gold-dark);margin-top:2px">${preview}</div>`
       : '';
+    const synBadge = synActive
+      ? ' <span style="font-size:8px;color:#d3a625;letter-spacing:1px" title="Synergie d\'artefact active">🔗 SYNERGIE</span>'
+      : '';
     div.innerHTML = `
       <div class="spell-icon">${getSpellIconHtml(spell, 'ui-icon-xl')}</div>
       <div class="spell-info">
-        <div class="spell-name">${spell.name}${_spellTierBadgeHtml(spell)}</div>
+        <div class="spell-name">${spell.name}${_spellTierBadgeHtml(spell)}${synBadge}</div>
         <div class="spell-desc">${spell.desc}</div>
         ${previewHtml}
         <div style="margin-top:3px">${hint}</div>
@@ -591,11 +597,16 @@ function openBattleSpells() {
     </div>` + _spellFilterBarHtml(c.spells, 'battle', 0);
 
   for (const sName of c.spells) {
-    // P3 — forme effective (évolution réversible) pour l'affichage et le lancement.
-    const spell    = (typeof resolveSpellForm === 'function' && resolveSpellForm(sName, c))
-                     || SPELLS.find(s => s.name === sName);
+    const baseSp = SPELLS.find(s => s.name === sName);
+    // P3 — forme effective (évolution réversible) ; P1 — surcharge signature.
+    // Le clic passe toujours le nom de la forme résolue à castSpellInBattle,
+    // qui re-résout (idempotent).
+    const spell  = (typeof resolveSpellForm === 'function' && resolveSpellForm(sName, c))
+                   || baseSp;
     if (!spell) continue;
     if (_spellFilter !== 'tous' && spellCategory(spell) !== _spellFilter) continue;
+    // Synergie P1 active si la forme résolue diffère de la base (badge 🔗).
+    const synActive = spell !== baseSp;
     // Portus en combat : bloqué si déjà utilisé ce combat OU si cooldown actif.
     const fightCd = (spell.effect === 'teleport' && typeof portusFightCooldown === 'number')
                     ? portusFightCooldown : 0;
@@ -615,6 +626,9 @@ function openBattleSpells() {
     const cdHint = (spell.effect === 'teleport' && cdBlocked)
       ? `<div style="font-size:9px;color:#a04020;margin-top:2px">⏳ ${alreadyUsed ? 'déjà utilisé ce combat' : `recharge ${fightCd} combat${fightCd > 1 ? 's' : ''}`}</div>`
       : '';
+    const synBadge = synActive
+      ? ' <span style="font-size:8px;color:#d3a625;letter-spacing:1px" title="Synergie d\'artefact active">🔗 SYNERGIE</span>'
+      : '';
     const preview     = spellEffectPreview(spell, c);
     const previewHtml = preview
       ? `<div style="font-size:9px;color:var(--gold-dark);margin-top:2px">${preview}</div>`
@@ -622,7 +636,7 @@ function openBattleSpells() {
     div.innerHTML  = `
       <div class="spell-icon">${getSpellIconHtml(spell, 'ui-icon-xl')}</div>
       <div class="spell-info">
-        <div class="spell-name">${spell.name}${_spellTierBadgeHtml(spell)}</div>
+        <div class="spell-name">${spell.name}${_spellTierBadgeHtml(spell)}${synBadge}</div>
         <div class="spell-desc">${spell.desc}</div>
         ${previewHtml}
         ${cdHint}

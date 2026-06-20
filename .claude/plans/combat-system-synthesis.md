@@ -473,7 +473,7 @@ Tous **défensifs** (`if (window.UX) …`) — absence de module = jeu nominal.
 ```
 P0 · Socle (✅ déjà livré)            — moteur, statuts, éléments, crit, Garde, Célérité,
                                         Artefacts P0-P3, Sorts P0-P1
-P1 · Synergie Artefact↔Sort           — resolveSpellForm actif (évolution + override
+P1 · Synergie Artefact↔Sort (✅ LIVRÉ) — resolveSpellForm actif (évolution + override
      (le plus fort ROI)                 signature Premium), encart « Synergies » fiche
 P2 · Variantes avancées               — artefacts ACTIFS (action 🏺), duoPosture,
                                         boss à phases
@@ -518,6 +518,34 @@ P5 · Équilibrage & polish             — sim-difficulty (coûts, corruptionRi
 ---
 
 ## Journal du plan
+
+- **2026-06-20** — **P1 livré (Synergie Artefact ↔ Sort).** Apport 100 %
+  additif, zéro régression, scaling monstres intouché.
+  - `js/data.js` : `resolveSpellForm(spellName, char)` **activé** (helper PUR
+    `_charHasArtifactForm` matchant `item.id` OU `item.premiumOf`) — résout
+    l'évolution (`evolvesTo`/`evolveCondition`) puis la surcharge signature
+    (`synergyArtifact`/`synergyForm`). Renvoie l'objet base **par identité** si
+    aucune synergie → déséquiper = retour immédiat, jamais de mutation de
+    `char.spells`. Nouveau sort **Incendio Majeur** (power 22, atteint
+    uniquement via évolution) + `SPELL_META`. Champs branchés : `Incendio`
+    (pivot `baton_ancestral`) et les 4 sorts Mythe (artefacts Premium du
+    tableau §1.3). Helper PUR `spellSynergiesFor(char)` (lecture du build).
+  - `js/battle-spells.js` : `castSpellInBattle` insère `resolveSpellForm` avant
+    `_spellForCaster` ; les 4 handlers signature lisent défensivement leurs
+    riders (Patronus +1 tour & dissipe `weaken` ; Imperius `bleed` +1 palier &
+    vol de vie 22,5 % ; Legilimens annule 2 capacités sans surcoût ; Récolte
+    purge les DoT).
+  - `js/inventory-spells.js` : `openSpells`/`openBattleSpells` résolvent la
+    forme à l'affichage (nom/desc/preview/coût + badge `🔗 SYNERGIE`).
+  - `js/ui-character-sheet.js` : encart **« Synergies actives »**
+    (`_renderSynergyPanel`, masqué si vide).
+  - `js/item-icons.js` : `Incendio Majeur` → icône feu (réutilisée).
+  - **Vérif** : `tests/units.js` (33 assertions P1 ajoutées) vert ;
+    `tests/scenarios/spells.js` → `scenarioSpellArtifactSynergy` (T1 résolution
+    non destructive, T2 Patronus surchargé, T3 Legilimens, T4 encart fiche)
+    vert ; `pwa-smoke` vert ; cache PWA bumpé (CACHE_VERSION v181, 5 assets).
+  - Non touché : P0 (moteur), P2-P5 (corruption, postures, env., artefacts
+    actifs), `dungeon-scaling.js`.
 
 - **2026-06-20** — Rédaction ÉTAPE 1 + ÉTAPE 2. Synthèse des chantiers Artefacts 2.0
   (P0-P3 livrés) et Sorts 2.0 (P0-P1 livrés) vérifiée sur le code (`data.js`,

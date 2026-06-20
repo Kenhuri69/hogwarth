@@ -268,6 +268,36 @@ function _renderHouseSetPanel(c) {
   `;
 }
 
+// Encart « Synergies actives » (combat-synthesis §1.3 / P1) : lecture du build,
+// liste les couples Artefact↔Sort↔Maison effectivement débloqués (artefact Premium
+// de Maison ou pivot d'évolution équipé). Masqué si aucune synergie active.
+function _renderSynergyPanel(c) {
+  if (typeof spellSynergiesFor !== 'function') return '';
+  const syns = spellSynergiesFor(c) || [];
+  if (!syns.length) return '';
+  const rows = syns.map(syn => {
+    // Nom réel de l'artefact équipé (id ou premiumOf correspondant).
+    const eqItem = c.equipped
+      ? Object.values(c.equipped).find(it => it && (it.id === syn.artifact || it.premiumOf === syn.artifact))
+      : null;
+    const artName = eqItem ? eqItem.name : syn.artifact;
+    const arrow   = syn.kind === 'evolution'
+      ? `${syn.spell} → <strong>${syn.form}</strong>`
+      : `<strong>${syn.spell}</strong> surchargé`;
+    const houseTag = syn.house ? ` · ${syn.house}` : '';
+    return `<div class="synergy-row" style="display:flex;flex-direction:column;gap:1px;padding:4px 0;border-bottom:1px dashed rgba(216,182,71,0.18)">
+        <span style="font-size:11px;color:#f7e4a8">🔗 ${arrow}</span>
+        <span style="font-size:9px;color:#8a7050">via ${artName}${houseTag}</span>
+      </div>`;
+  }).join('');
+  return `
+    <div class="section section-synergies">
+      <button class="section-toggle" onclick="_toggleCharSection(this)">Synergies</button>
+      <div class="panel-title">⸻ SYNERGIES ACTIVES (${syns.length}) ⸻</div>
+      ${rows}
+    </div>`;
+}
+
 // Fiche de personnage v2 — grid-template-areas :
 //   "stats equip"
 //   "stats spells"
@@ -410,6 +440,8 @@ function openCharacter(charIdx = 0) {
         <div class="panel-title">⸻ SORTILÈGES CONNUS ⸻</div>
         <div class="spells-row">${spellsHtml}</div>
       </div>
+
+      ${_renderSynergyPanel(c)}
 
       ${_renderCarnetVoyagePanel(c)}
 
