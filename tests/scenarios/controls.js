@@ -952,4 +952,65 @@ async function scenarioGridArrowNav() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioMobileSelect, scenarioCombatMobile, scenarioRelativeControls, scenarioCanvasSwipe, scenarioCameraPresence, scenarioCombatKeyboard, scenarioConfirmModal, scenarioA11yFinish, scenarioModalIsolation, scenarioGridKeyboardNav, scenarioGridArrowNav] };
+async function scenarioKeybindings() {
+  console.log('\n── Scénario : remappage configurable des touches ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  const dispatch = (key) => page.evaluate((key) =>
+    document.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true })), key);
+  const invOpen = () => page.evaluate(() =>
+    getComputedStyle(document.getElementById('inventory-modal')).display !== 'none');
+  const closeInv = () => page.evaluate(() => closeModal('inventory-modal'));
+
+  // Le module est-il bien chargé ?
+  const hasModule = await page.evaluate(() => typeof kbResolveExplore === 'function');
+  assert(hasModule, 'keybindings.js doit exposer kbResolveExplore');
+
+  // 1) Défaut : « i » ouvre le sac.
+  await dispatch('i');
+  assert(await invOpen(), "défaut : 'i' ouvre le sac");
+  await closeInv();
+
+  // 2) Rebind « Sac » : i → b (retire i, ajoute b).
+  await page.evaluate(() => { kbRemoveKey('openInventory', 'i'); kbAddKey('openInventory', 'b'); });
+  const resolved = await page.evaluate(() => ({
+    b: kbResolveExplore('b'), i: kbResolveExplore('i'),
+  }));
+  assert(resolved.b === 'openInventory', "après rebind : 'b' résout openInventory");
+  assert(resolved.i === null,            "après rebind : 'i' n'est plus lié");
+
+  // 3) La nouvelle touche ouvre le sac…
+  await dispatch('b');
+  assert(await invOpen(), "rebind : 'b' ouvre le sac");
+  await closeInv();
+
+  // 4) …et l'ancienne ne fait plus rien (unbind respecté, pas de fallback).
+  await dispatch('i');
+  assert(!(await invOpen()), "rebind : 'i' n'ouvre plus le sac");
+
+  // 5) Persistance : l'override est écrit dans localStorage.
+  const persisted = await page.evaluate(() => {
+    try { return JSON.parse(localStorage.getItem('hogwarts_rpg_keybindings')); }
+    catch (_) { return null; }
+  });
+  assert(persisted && Array.isArray(persisted.openInventory) && persisted.openInventory.includes('b'),
+    'le binding personnalisé est persisté dans localStorage');
+
+  // 6) Réinitialisation : « i » ré-ouvre le sac, « b » ne le fait plus.
+  await page.evaluate(() => kbResetAll());
+  await dispatch('i');
+  assert(await invOpen(), "reset : 'i' ré-ouvre le sac");
+  await closeInv();
+  await dispatch('b');
+  assert(!(await invOpen()), "reset : 'b' n'ouvre plus le sac");
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (keybindings)`);
+  }
+  console.log('  ✅ Remappage des touches (rebind / unbind / persistance / reset) OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioMobileSelect, scenarioCombatMobile, scenarioRelativeControls, scenarioCanvasSwipe, scenarioCameraPresence, scenarioCombatKeyboard, scenarioConfirmModal, scenarioA11yFinish, scenarioModalIsolation, scenarioGridKeyboardNav, scenarioGridArrowNav, scenarioKeybindings] };
