@@ -774,3 +774,28 @@ function pulseFrostOverlay() {
     }
   }, 900);
 }
+
+// ============================================================
+// P4 — Modificateurs d'environnement de combat (combat-system-synthesis §1.4)
+// ------------------------------------------------------------
+// Helper PUR : calcule un objet de modificateurs dérivé du THÈME d'étage
+// (zone D « Ruines », runique) au démarrage d'un combat. V1 = 1 seul
+// modificateur — la « charge runique ambiante » : +10 % aux sorts feu/foudre
+// et déblocage de l'action 🌿 « Activer la rune » (étourdissement, 1×/combat).
+//
+// `runic` est vrai quand le tileset est runique : zone D (étage 14+,
+// getFloorTheme().wall === 'rune_wall') OU override post-victoire (étage 11+
+// avec victoryAchieved — le renderer bascule alors sur rune_* dès l'étage 11).
+// Ne lit aucun état mutable interne : tout passe par les arguments → testable.
+function computeEnvModifiers(floor, victoryAchieved) {
+  const f = (typeof floor === 'number' && isFinite(floor)) ? floor : 1;
+  const theme = (typeof getFloorTheme === 'function') ? getFloorTheme(f) : null;
+  const runicTheme = !!(theme && theme.wall === 'rune_wall');
+  const runicOverride = !!(victoryAchieved && f >= 11);
+  const runic = runicTheme || runicOverride;
+  return {
+    runic,
+    // Bonus élémentaire ambiant (additif, appliqué après résist/faiblesse/crit).
+    spellElemBonus: runic ? { feu: 0.10, foudre: 0.10 } : {}
+  };
+}

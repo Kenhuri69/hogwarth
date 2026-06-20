@@ -659,6 +659,10 @@ function _spellElementalDamage(spell, char, enemy, targetIdx) {
     // résist/faiblesse/crit). Aucun effet si le lanceur n'en porte pas.
     const elemBonus = _artifactElemBonus(char, spell.element);
     if (elemBonus > 0) { dmg = Math.floor(dmg * (1 + elemBonus)); suffix += ' 🔆'; }
+    // Environnement (P4) — charge runique ambiante (zone D) : +% feu/foudre.
+    // Additif, même pipeline. Défensif (hors zone runique → 0).
+    const envBonus = (typeof _envElemBonus === 'function') ? _envElemBonus(spell.element) : 0;
+    if (envBonus > 0) { dmg = Math.floor(dmg * (1 + envBonus)); suffix += ' 🪨'; }
     enemy.currentHp -= dmg;
     // Accent SFX : crit prioritaire, sinon faiblesse élémentaire touchée.
     if (typeof AudioSystem !== 'undefined') {

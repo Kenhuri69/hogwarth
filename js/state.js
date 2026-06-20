@@ -519,6 +519,12 @@ let artifactCharges = {};
 let duoPosture        = 'phalange';
 let duoPostureSwitched = false;  // bascule gratuite déjà utilisée ce combat ?
 let duoComboMarks      = {};     // marque Tenaille : enemyIdx → heroIdx ayant frappé ce round
+// P4 — Modificateurs d'environnement de combat (combat-system-synthesis §1.4).
+// Calculés à startBattle depuis le thème d'étage (pur, computeEnvModifiers).
+// Combat-scoped, NON sérialisés (comme celeriteGauge). V1 : zone D runique →
+// +10 % feu/foudre + action 🌿 « Activer la rune » (étourdit, 1×/combat).
+let envModifiers = null;   // { runic, spellElemBonus } ou null hors combat
+let envRuneCharge = 0;     // charges de l'action rune restantes ce combat (0 ou 1)
 // Palier 17 « Mythe » — état transient de combat (réinitialisé par startBattle).
 // Non sérialisés : un combat ne peut pas être sauvegardé (inBattle bloque autoSave/writeSlot).
 let legilimensCancelCharges = 0;     // capacités ennemies à annuler (sort Legilimens)

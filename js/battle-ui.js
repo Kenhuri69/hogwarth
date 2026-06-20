@@ -276,6 +276,13 @@ function _refreshBattleActionButtons() {
       postBtn.title = `Posture : ${duoPosture === 'phalange' ? 'Phalange → Tenaille' : 'Tenaille → Phalange'} (gratuit, 1×/combat)`;
     }
   }
+  // P4 — bouton 🌿 Rune : visible en zone runique tant que la charge subsiste.
+  const envBtn = document.getElementById('btn-env');
+  if (envBtn) {
+    const show = !!(inBattle && typeof envRuneCharge !== 'undefined' && envRuneCharge > 0);
+    envBtn.style.display = show ? '' : 'none';
+    if (show) envBtn.title = 'Activer la rune : étourdit l\'ennemi le plus proche (1×/combat)';
+  }
 }
 
 function setBattleLog(text) {

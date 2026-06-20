@@ -519,6 +519,42 @@ P5 · Équilibrage & polish             — sim-difficulty (coûts, corruptionRi
 
 ## Journal du plan
 
+- **2026-06-20** — **P4 LIVRÉ (Environnement en combat).** Vérif : `node
+  tests/units.js` (886, dont `computeEnvModifiers`) ✅ ; `node tests/smoke.js`
+  (248/248, dont `scenarioCombatEnv`) ✅ ; `node tests/pwa-smoke.js`
+  (CACHE_VERSION v187) ✅ ; `check_doc_modules` ✅. Apport 100 % additif, gaté
+  endgame (zone D / post-victoire), `dungeon-scaling.js` intouché → win-rates
+  baseline définitionnellement inchangés (la sim ne modélise pas les modificateurs
+  d'environnement, qui sont des buffs joueur gatés). Reste **P5** (polish/équilibrage)
+  comme dernier palier du plan. Détail ci-dessous.
+
+- **2026-06-20** — **P4 (Environnement en combat) — détail.** P3 (Corruption)
+  est **déjà livré** par le chantier *Sorts & Magie 2.0* (PR #610 « corrompus,
+  corruption, contrecoup & Boucle » : `corruptionSpellModifier`,
+  `resolveCorruptionBacklash`, `corruptSpellGateOpen`, `spellCorruption` sérialisé)
+  → le palier combat-synthesis P3 est couvert ; on enchaîne sur **P4**. Périmètre
+  **V1 = 1 seul modificateur** (la rune en zone D), additif, scaling intouché.
+
+  - `js/floor-ambiance.js` : helper **PUR** `computeEnvModifiers(floor,
+    victoryAchieved)` → `{ runic, spellElemBonus:{feu:0.10,foudre:0.10} }`. `runic`
+    vrai en **zone D** (étage 14+, `getFloorTheme().wall === 'rune_wall'`) **ou**
+    override rune post-victoire (étage 11+ `victoryAchieved`). Cohérent avec le
+    look runique du renderer.
+  - `js/state.js` : `envModifiers` (objet pur) + `envRuneCharge` (1×/combat),
+    combat-scoped, **non sérialisés** (comme `celeriteGauge`).
+  - `js/battle.js` : calc à `startBattle` ; `_envElemBonus(element)` (feu/foudre
+    +10 % en zone runique, défensif) ; `triggerRuneEnv()` (action 🌿, 1×/combat :
+    étourdit `stun` l'ennemi le plus proche, consomme le tour).
+  - `js/battle-spells.js` : `_envElemBonus` appliqué dans `_spellElementalDamage`
+    (après `_artifactElemBonus`, même pipeline additif).
+  - `js/battle-ui.js` + `index.html` : bouton **🌿 Rune** conditionnel
+    (`_refreshBattleActionButtons`), visible en zone runique tant que la charge
+    n'est pas dépensée.
+  - **Vérif** : `node tests/units.js` (`computeEnvModifiers`) + `node tests/smoke.js`
+    (`scenarioCombatEnv`) ; cache PWA bumpé. Non touché : `dungeon-scaling.js`,
+    P0/P1/P2/P3. Le modificateur « givre/sol glissant » (doFlee) et l'« asperger
+    fontaine » restent **hors-scope V1** (plan §1.4 : valider la plomberie d'abord).
+
 - **2026-06-20** — **P2 LIVRÉ (Variantes avancées).** Trois briques additives,
   scaling monstres (`dungeon-scaling.js`) **jamais touché**. Apport 100 % additif,
   call-sites défensifs.
