@@ -89,9 +89,13 @@ function openSpells(charIdx = 0) {
     const spell = SPELLS.find(s => s.name === sName);
     if (!spell) continue;
     if (_spellFilter !== 'tous' && spellCategory(spell) !== _spellFilter) continue;
+    // Synergie P1 : forme effective au point d'affichage (badge 🔗 si active).
+    const eff = (typeof resolveSpellForm === 'function')
+                ? (resolveSpellForm(sName, c) || spell) : spell;
+    const synActive = eff !== spell;
     const div = document.createElement('div');
     div.className = 'spell-item';
-    div.style.borderLeft = '3px solid ' + _spellTierTintSafe(spell);
+    div.style.borderLeft = '3px solid ' + _spellTierTintSafe(eff);
     // Sorts utilisables hors combat (teleport + heal pour V1). Les autres
     // affichent un tag "Combat uniquement" pour ne pas tromper le joueur.
     const oocCost   = spell.outOfCombatCost || null;
@@ -137,15 +141,18 @@ function openSpells(charIdx = 0) {
     } else {
       hint = '<span style="font-size:9px;color:#6a8030">▶ cliquer pour lancer</span>';
     }
-    const preview     = spellEffectPreview(spell, c);
+    const preview     = spellEffectPreview(eff, c);
     const previewHtml = preview
       ? `<div style="font-size:9px;color:var(--gold-dark);margin-top:2px">${preview}</div>`
       : '';
+    const synBadge = synActive
+      ? ' <span style="font-size:8px;color:#d3a625;letter-spacing:1px" title="Synergie d\'artefact active">🔗 SYNERGIE</span>'
+      : '';
     div.innerHTML = `
-      <div class="spell-icon">${getSpellIconHtml(spell, 'ui-icon-xl')}</div>
+      <div class="spell-icon">${getSpellIconHtml(eff, 'ui-icon-xl')}</div>
       <div class="spell-info">
-        <div class="spell-name">${spell.name}${_spellTierBadgeHtml(spell)}</div>
-        <div class="spell-desc">${spell.desc}</div>
+        <div class="spell-name">${eff.name}${_spellTierBadgeHtml(eff)}${synBadge}</div>
+        <div class="spell-desc">${eff.desc}</div>
         ${previewHtml}
         <div style="margin-top:3px">${hint}</div>
       </div>
@@ -588,6 +595,12 @@ function openBattleSpells() {
     const spell    = SPELLS.find(s => s.name === sName);
     if (!spell) continue;
     if (_spellFilter !== 'tous' && spellCategory(spell) !== _spellFilter) continue;
+    // Synergie P1 : forme effective au point d'AFFICHAGE (évolution / surcharge
+    // signature). eff !== spell ⇒ une synergie est active (badge 🔗). Le clic
+    // passe toujours le NOM DE BASE à castSpellInBattle, qui re-résout.
+    const eff = (typeof resolveSpellForm === 'function')
+                ? (resolveSpellForm(sName, c) || spell) : spell;
+    const synActive = eff !== spell;
     // Portus en combat : bloqué si déjà utilisé ce combat OU si cooldown actif.
     const fightCd = (spell.effect === 'teleport' && typeof portusFightCooldown === 'number')
                     ? portusFightCooldown : 0;
@@ -598,24 +611,27 @@ function openBattleSpells() {
     // Coût effectif pour CE lanceur : Legilimens enchérit à chaque relance,
     // l'Apothéose Serdaigle et les artefacts (spCostReduction) le réduisent.
     const effCost  = (typeof _spellSpCost === 'function')
-                     ? _spellSpCost(spell, c) : spell.cost;
+                     ? _spellSpCost(eff, c) : eff.cost;
     const canCast  = c.sp >= effCost && !spell.locked && !cdBlocked;
     const div      = document.createElement('div');
     div.className  = 'spell-item';
     div.style.opacity = canCast ? '1' : '0.5';
-    div.style.borderLeft = '3px solid ' + _spellTierTintSafe(spell);
+    div.style.borderLeft = '3px solid ' + _spellTierTintSafe(eff);
     const cdHint = (spell.effect === 'teleport' && cdBlocked)
       ? `<div style="font-size:9px;color:#a04020;margin-top:2px">⏳ ${alreadyUsed ? 'déjà utilisé ce combat' : `recharge ${fightCd} combat${fightCd > 1 ? 's' : ''}`}</div>`
       : '';
-    const preview     = spellEffectPreview(spell, c);
+    const synBadge = synActive
+      ? ' <span style="font-size:8px;color:#d3a625;letter-spacing:1px" title="Synergie d\'artefact active">🔗 SYNERGIE</span>'
+      : '';
+    const preview     = spellEffectPreview(eff, c);
     const previewHtml = preview
       ? `<div style="font-size:9px;color:var(--gold-dark);margin-top:2px">${preview}</div>`
       : '';
     div.innerHTML  = `
-      <div class="spell-icon">${getSpellIconHtml(spell, 'ui-icon-xl')}</div>
+      <div class="spell-icon">${getSpellIconHtml(eff, 'ui-icon-xl')}</div>
       <div class="spell-info">
-        <div class="spell-name">${spell.name}${_spellTierBadgeHtml(spell)}</div>
-        <div class="spell-desc">${spell.desc}</div>
+        <div class="spell-name">${eff.name}${_spellTierBadgeHtml(eff)}${synBadge}</div>
+        <div class="spell-desc">${eff.desc}</div>
         ${previewHtml}
         ${cdHint}
       </div>
@@ -631,7 +647,7 @@ function openBattleSpells() {
           castSpellInBattle(spell.name, -1);
           return;
         }
-        const needsTarget = ['stun','burn','instant','disarm','imperius','aoe_cleave','reveal','eclat_bolt','summon_ally'].includes(spell.effect);
+        const needsTarget = ['stun','burn','instant','disarm','imperius','aoe_cleave','reveal','eclat_bolt','summon_ally'].includes(eff.effect);
         if (needsTarget && livingEnemies().length > 1) {
           pendingSpell = spell.name;
           showTargetSelection('spell_dmg');

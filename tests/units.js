@@ -1878,12 +1878,12 @@ function loadModule(relPath, exportNames, globals = {}) {
     'HOUSE_SPELL_FX', 'HERO_PATRONUS', 'SPELL_META',
     'getSpellById', 'getSpellByName', 'spellTierTint', 'resolveSpellForm',
     'spellPmCostEstimate', '_slugifySpell', '_defaultSpellCategory', '_normalizeSpells',
-    'houseSpellBoost',
+    'houseSpellBoost', '_charHasArtifactForm', 'spellSynergiesFor',
   ]);
   const { SPELLS, SPELL_TIERS, SPELL_PREMIUM_MULT, SPELL_RARITY_COST_MULT,
           HOUSE_SPELL_FX, HERO_PATRONUS, SPELL_META, getSpellById, getSpellByName, spellTierTint,
           resolveSpellForm, spellPmCostEstimate, _slugifySpell, _defaultSpellCategory,
-          _normalizeSpells, houseSpellBoost } = m;
+          _normalizeSpells, houseSpellBoost, _charHasArtifactForm, spellSynergiesFor } = m;
 
   // ── Registres ──
   check('SPELL_PREMIUM_MULT = rare/epic/legendary',
@@ -1986,6 +1986,53 @@ function loadModule(relPath, exportNames, globals = {}) {
   const snapBefore = JSON.stringify(charStub);
   resolveSpellForm('Incendio', charStub);
   check('resolveSpellForm ne mute pas le perso', JSON.stringify(charStub) === snapBefore);
+
+  // ── Synergie P1 — évolution & surcharge signature (non destructif) ──
+  // _charHasArtifactForm : match sur id OU premiumOf, défensif.
+  check('_charHasArtifactForm équip vide → false', _charHasArtifactForm({ equipped: {} }, 'baton_ancestral') === false);
+  check('_charHasArtifactForm null → false', _charHasArtifactForm(null, 'x') === false);
+  check('_charHasArtifactForm match premiumOf',
+    _charHasArtifactForm({ equipped: { wand: { id: 'baton_ancestral_premium_serd', premiumOf: 'baton_ancestral' } } }, 'baton_ancestral') === true);
+  check('_charHasArtifactForm match id direct',
+    _charHasArtifactForm({ equipped: { head: { id: 'orbe_runique_premium_gryff' } } }, 'orbe_runique_premium_gryff') === true);
+
+  // Évolution : Bâton Ancestral équipé → Incendio devient Incendio Majeur.
+  const serdChar = { spells: ['Incendio', 'Legilimens'],
+    equipped: { wand: { id: 'baton_ancestral_premium_serd', premiumOf: 'baton_ancestral' } } };
+  const evoSpell = resolveSpellForm('Incendio', serdChar);
+  check('évolution Incendio → Incendio Majeur', evoSpell && evoSpell.name === 'Incendio Majeur' && evoSpell.power === 22);
+  check('Incendio Majeur dans SPELL_META', !!SPELL_META['Incendio Majeur']);
+  // Le même artefact surcharge aussi Legilimens (signature Serdaigle).
+  const legi = resolveSpellForm('Legilimens', serdChar);
+  check('surcharge Legilimens (cancelChargesBonus)', legi && legi._synergy === true && legi.cancelChargesBonus === 1 && legi.noCostEscalation === true);
+  // Non destructif : déséquiper (equipped vide) → forme de base par identité.
+  const noArt = { spells: ['Incendio'], equipped: {} };
+  check('déséquiper = base Incendio (identité)', resolveSpellForm('Incendio', noArt) === getSpellByName('Incendio'));
+  check('déséquiper = base Legilimens (identité)', resolveSpellForm('Legilimens', noArt) === getSpellByName('Legilimens'));
+
+  // Surcharge signature par Maison (les 4 couples du tableau §1.3).
+  const SIG = {
+    'Patronus Maxima':       'orbe_runique_premium_gryff',
+    'Sectumsempra Imperius': 'masque_rituel_premium_slyth',
+    'Legilimens':            'baton_ancestral_premium_serd',
+    'Récolte Magique':       'talisman_fondateurs_premium_pouf',
+  };
+  for (const [spell, art] of Object.entries(SIG)) {
+    const ch = { spells: [spell], equipped: { slotA: { id: art } } };
+    const f = resolveSpellForm(spell, ch);
+    check(`surcharge ${spell} active`, f && f._synergy === true && f.name === spell);
+  }
+
+  // spellSynergiesFor : ne liste que les sorts connus dont l'artefact est équipé.
+  const synList = spellSynergiesFor(serdChar);
+  check('spellSynergiesFor liste 2 couples (Incendio évol + Legilimens)', synList.length === 2);
+  check('spellSynergiesFor évolution forme = Incendio Majeur',
+    synList.some(s => s.spell === 'Incendio' && s.kind === 'evolution' && s.form === 'Incendio Majeur'));
+  check('spellSynergiesFor override Legilimens',
+    synList.some(s => s.spell === 'Legilimens' && s.kind === 'override' && s.house === 'Serdaigle'));
+  check('spellSynergiesFor vide si rien équipé', spellSynergiesFor(noArt).length === 0);
+  check('spellSynergiesFor ignore sort non connu',
+    spellSynergiesFor({ spells: [], equipped: { w: { id: 'baton_ancestral_premium_serd', premiumOf: 'baton_ancestral' } } }).length === 0);
 
   // ── spellPmCostEstimate : croît avec tier ET rareté, pur ──
   check('pmEst(null) = 0', spellPmCostEstimate(null) === 0);

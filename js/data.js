@@ -317,13 +317,20 @@ const SPELLS = [
   { name:"Ferula",            icon:"🩹",   desc:"Bande un allié (+4 PV puis 4 PV/tour × 3 tours)", cost:6,  effect:"support_regen", power:4 },
   { name:"Ferula Maxima",     icon:"🩹",   desc:"Régénère PV + PM des deux alliés (3 tours)", cost:12, effect:"support_regen_aoe", power:1 },
   { name:"Protego",           icon:"🛡️",  desc:"Bouclier magique (durée selon MAG)",  cost:5,  effect:"shield",  power:5  },
-  { name:"Incendio",          icon:"🔥",   desc:"Flammes magiques (14 dégâts)",       cost:8,  effect:"burn",    element:"feu",      power:14 },
+  { name:"Incendio",          icon:"🔥",   desc:"Flammes magiques (14 dégâts)",       cost:8,  effect:"burn",    element:"feu",      power:14,
+    // Synergie P1 — évolution par artefact (spells-magic §2.5 / combat-synthesis §1.3) :
+    // équiper le Bâton Ancestral de Rowena fait évoluer Incendio en Incendio Majeur.
+    // Résolu par resolveSpellForm (non destructif), déséquiper = retour immédiat.
+    evolvesTo:"incendio_majeur", evolveCondition:{ type:"artifact", value:"baton_ancestral" } },
   { name:"Accio",             icon:"🌀",   desc:"Tire un objet ennemi (+or)",         cost:6,  effect:"steal",   power:0  },
   // ── Sorts avancés (appris en jeu) ────────────────────────────
   { name:"Wingardium Leviosa",icon:"🌬️",  desc:"Soulève et assomme (10 dégâts)",     cost:7,  effect:"stun",    element:"physique", power:10 },
   { name:"Diffindo",          icon:"✂️",   desc:"Lacère l'ennemi (16 dégâts)",        cost:9,  effect:"burn",    element:"physique", power:16 },
   { name:"Reparo",            icon:"💛",   desc:"Soin renforcé (20 PV)",              cost:7,  effect:"heal",    power:20 },
   { name:"Sectumsempra",      icon:"🩸",   desc:"Sort maudit (24 dégâts)",            cost:14, effect:"burn",    element:"physique", power:24 },
+  // Forme évoluée d'Incendio (synergie Bâton Ancestral de Rowena, P1). Jamais
+  // dans la liste d'un héros : atteinte uniquement via resolveSpellForm.
+  { name:"Incendio Majeur",   icon:"🔥",   desc:"Brasier ancestral (22 dégâts + embrasement)", cost:12, effect:"burn", element:"feu", power:22, id:"incendio_majeur" },
   // ── Sorts intermédiaires ─────────────────────────────────────
   { name:"Lumos Maxima",      icon:"💡",   desc:"Éclat aveuglant (12 dégâts + stun)", cost:8,  effect:"stun",    element:"lumière",  power:12 },
   { name:"Aguamenti",         icon:"💧",   desc:"Jet d'eau (10 dégâts, -2 DEF)",      cost:7,  effect:"burn",    element:"glace",    power:10 },
@@ -359,10 +366,21 @@ const SPELLS = [
   { name:"Morsmordre",        icon:"💀",   desc:"Marque des Ténèbres (26 dégâts)",     cost:18, effect:"burn", element:"ténèbres", power:26 },
   // ── Sorts de Maison — palier 17 « Mythe » (1 sort exclusif/Maison) ──
   // Enseignés au franchissement du palier Mythe via `grantsSpell`.
-  { name:"Patronus Maxima",       icon:"🦌", desc:"Bouclier de groupe (2 tours) + dissipe l'étourdissement", cost:22, effect:"patronus_maxima", power:0 },
-  { name:"Sectumsempra Imperius", icon:"🩸", desc:"Saignement lourd + asservit la cible (2 tours)",          cost:24, effect:"imperius", element:"ténèbres", power:20 },
-  { name:"Legilimens",            icon:"👁️", desc:"Lit l'esprit ennemi : annule la prochaine capacité",      cost:18, effect:"legilimens", power:0 },
-  { name:"Récolte Magique",       icon:"🌾", desc:"Restaure tout le groupe · or du combat majoré (+50%)",    cost:26, effect:"recolte", power:0 },
+  // Synergie signature P1 (combat-synthesis §1.3) : équiper l'artefact Premium
+  // de la Maison affine SURCHARGE le sort signature (resolveSpellForm + synergyForm).
+  // Non destructif : déséquiper = retour immédiat à la forme de base.
+  { name:"Patronus Maxima",       icon:"🦌", desc:"Bouclier de groupe (2 tours) + dissipe l'étourdissement", cost:22, effect:"patronus_maxima", power:0,
+    synergyArtifact:"orbe_runique_premium_gryff",
+    synergyForm:{ shieldTurnsBonus:1, dispelWeaken:true, desc:"Bouclier de groupe (3 tours) — dissipe étourdissement, peur ET affaiblissement" } },
+  { name:"Sectumsempra Imperius", icon:"🩸", desc:"Saignement lourd + asservit la cible (2 tours)",          cost:24, effect:"imperius", element:"ténèbres", power:20,
+    synergyArtifact:"masque_rituel_premium_slyth",
+    synergyForm:{ bleedTurnsBonus:1, synergyLifestealFrac:0.225, desc:"Saignement aggravé + asservit + draine la vie (Masque de Salazar)" } },
+  { name:"Legilimens",            icon:"👁️", desc:"Lit l'esprit ennemi : annule la prochaine capacité",      cost:18, effect:"legilimens", power:0,
+    synergyArtifact:"baton_ancestral_premium_serd",
+    synergyForm:{ cancelChargesBonus:1, noCostEscalation:true, desc:"Annule les 2 prochaines capacités ennemies — sans surcoût d'incrément" } },
+  { name:"Récolte Magique",       icon:"🌾", desc:"Restaure tout le groupe · or du combat majoré (+50%)",    cost:26, effect:"recolte", power:0,
+    synergyArtifact:"talisman_fondateurs_premium_pouf",
+    synergyForm:{ cleanseDot:true, desc:"Restaure le groupe · purge les afflictions (DoT) · or +50% (Talisman de Helga)" } },
   // ── Sorts de zone (AoE) — un mode distinct par élément + soin ──
   // Modes : nappe (glace), chaîne (foudre), vague (lumière), drain
   // (ténèbres), fauchage (physique). Voir .claude/plans/aoe-spells.md.
@@ -555,6 +573,7 @@ const SPELL_META = {
   'Marque du Pèlerin':  ['exploration', 'avancé',  'uncommon',  null],
   // ── Maîtres (Acte III) ──
   'Sectumsempra':       ['combat',      'maître',  'epic',      null],
+  'Incendio Majeur':    ['combat',      'maître',  'rare',      null],
   'Patronum':           ['combat',      'maître',  'rare',      null],
   'Vampyrus':           ['combat',      'maître',  'rare',      null],
   'Crucio':             ['combat',      'maître',  'rare',      null],
@@ -645,16 +664,61 @@ function houseSpellBoost(spell, house, tier) {
   if (t >= 18) r += 0.05;
   return r;
 }
+// Un personnage porte-t-il un artefact dont l'id OU la base Premium (premiumOf)
+// vaut `value` ? PUR, défensif. Match sur les deux pour qu'une condition exprimée
+// en base (ex. "baton_ancestral") réponde à la variante Premium équipée.
+function _charHasArtifactForm(char, value) {
+  if (!char || !char.equipped || value == null) return false;
+  for (const slot of Object.keys(char.equipped)) {
+    const it = char.equipped[slot];
+    if (it && (it.id === value || it.premiumOf === value)) return true;
+  }
+  return false;
+}
 // Forme EFFECTIVE d'un sort pour un personnage (non destructif, runtime).
-// P0 : aucun sort ne déclare encore evolvesTo/evolveCondition → renvoie
-// toujours la forme de base. Point d'extension P3 (synergies artefacts /
-// évolution réversible). PUR : ne mute jamais char.spells.
+// Synergie P1 (combat-synthesis §1.3) : résout l'évolution par artefact pivot
+// (evolvesTo/evolveCondition) PUIS la surcharge signature (synergyArtifact/
+// synergyForm). Renvoie l'objet de base PAR IDENTITÉ si aucune synergie active
+// (déséquiper = retour immédiat). PUR : ne mute jamais char ni char.spells.
 function resolveSpellForm(spellName, char) {
   const base = getSpellByName(spellName);
   if (!base) return null;
-  // (P3) : si base.evolvesTo et base.evolveCondition satisfaite par `char`
-  // (artefact équipé / corruption / quête / étage) → renvoyer la forme évoluée.
+  if (!char || !char.equipped) return base;
+  // 1) Évolution vers un AUTRE sort (artefact pivot équipé).
+  if (base.evolvesTo && base.evolveCondition && base.evolveCondition.type === 'artifact'
+      && _charHasArtifactForm(char, base.evolveCondition.value)) {
+    const evolved = getSpellById(base.evolvesTo);
+    if (evolved) return evolved;
+  }
+  // 2) Surcharge signature (même sort, riders) — artefact Premium de Maison.
+  if (base.synergyArtifact && base.synergyForm
+      && _charHasArtifactForm(char, base.synergyArtifact)) {
+    return Object.assign({}, base, base.synergyForm, { _synergy: true });
+  }
   return base;
+}
+// Couples Artefact↔Sort↔Maison effectivement débloqués pour `char` (lecture du
+// build, encart « Synergies actives » de la fiche perso). PUR. Ne liste que les
+// sorts connus du perso dont l'artefact pivot/Premium est équipé.
+function spellSynergiesFor(char) {
+  if (typeof SPELLS === 'undefined' || !char) return [];
+  const known = Array.isArray(char.spells) ? char.spells : [];
+  const out = [];
+  for (const base of SPELLS) {
+    if (!base || !known.includes(base.name)) continue;
+    if (base.synergyArtifact && base.synergyForm
+        && _charHasArtifactForm(char, base.synergyArtifact)) {
+      out.push({ spell: base.name, form: base.name, artifact: base.synergyArtifact,
+                 house: base.houseAffinity || null, kind: 'override' });
+    } else if (base.evolvesTo && base.evolveCondition && base.evolveCondition.type === 'artifact'
+        && _charHasArtifactForm(char, base.evolveCondition.value)) {
+      const ev = getSpellById(base.evolvesTo);
+      out.push({ spell: base.name, form: ev ? ev.name : base.evolvesTo,
+                 artifact: base.evolveCondition.value, house: base.houseAffinity || null,
+                 kind: 'evolution' });
+    }
+  }
+  return out;
 }
 // Estimation du coût PM d'un sort (formule §1.8) — outil de SIMULATION /
 // équilibrage, jamais consommé par un chemin chaud. PUR.

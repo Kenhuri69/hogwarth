@@ -474,6 +474,7 @@ const SPELL_ICON_REGISTRY = {
   'Ferula Maxima':      'img/icons/spells/ferula_maxima.png',
   'Protego':            'img/icons/spells/protego.png',
   'Incendio':           'img/icons/spells/incendio.png',
+  'Incendio Majeur':    'img/icons/spells/incendio.png',  // forme évoluée (synergie P1) — réutilise l'icône feu
   'Accio':              'img/icons/spells/accio.png',
   'Wingardium Leviosa': 'img/icons/spells/wingardium_leviosa.png',
   'Diffindo':           'img/icons/spells/diffindo.png',
