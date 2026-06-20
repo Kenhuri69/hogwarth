@@ -192,8 +192,16 @@ const NPCS = [
     icon:  "👻",
     portraitImg: "img/npc/mimi.png",
     placement: { floor: 2, anchor: "any" },
-    questsGiven:    ["troll_toilettes"],
-    questsTurnedIn: ["troll_toilettes"],
+    questsGiven:    ["troll_toilettes", "mimi_esprits"],
+    questsTurnedIn: ["troll_toilettes", "mimi_esprits"],
+    // Quête répétable en Boucle (étage 12) — apaiser les esprits hostiles.
+    dialoguesByQuest: {
+      mimi_esprits: {
+        questOffer:  "Snif... Avant, j'étais seule. Maintenant il y a PIRE : des esprits méchants qui remontent par mes tuyaux et se moquent de moi ! Détruis-en deux, s'il te plaît... je te donnerai quelque chose que j'ai repêché.",
+        questActive: "Ils sont encore là, à ricaner dans les canalisations... Tu les chasses, dis ?",
+        questReady:  "Ils sont partis ! C'est… c'est presque calme. Tiens, j'ai gardé ça au fond du siphon pour toi. Reviens me voir, hein ?"
+      }
+    },
     dialogues: {
       greeting:    [
         "Snif... Personne ne vient jamais me voir... Personne, jamais, je suis tellement seule...",
@@ -228,8 +236,16 @@ const NPCS = [
     icon:  "🐾",
     portraitImg: "img/npc/scamander.png",
     placement: { floor: 2, anchor: "any" },
-    questsGiven:    ["niffleurs_trésor"],
-    questsTurnedIn: ["niffleurs_trésor"],
+    questsGiven:    ["niffleurs_trésor", "chasse_magizoologiste_boucle"],
+    questsTurnedIn: ["niffleurs_trésor", "chasse_magizoologiste_boucle"],
+    // Chasse farming en Boucle (étage 12) — cible dynamique {target}/{amount}.
+    dialoguesByQuest: {
+      chasse_magizoologiste_boucle: {
+        questOffer:  "Fascinant ! La Boucle reforme des spécimens que je croyais perdus. Pour mon recensement, élimine {amount}× {target} repérés sur cet étage — au nom de la science, bien sûr.",
+        questActive: "Mon carnet attend ! Ces {target}, tu les recenses ?",
+        questReady:  "Extraordinaire travail de terrain ! Voilà ta part — et reviens, la Boucle a tant à cataloguer."
+      }
+    },
     dialogues: {
       greeting:    [
         "Oh ! Un visiteur ! Mes Niffleurs se sont... euh... échappés. Encore.",
@@ -327,8 +343,8 @@ const NPCS = [
     icon:  "✨",
     portraitImg: "img/npc/lockhart.png",
     placement: { floor: 3, anchor: "any" },
-    questsGiven:    ["livre_interdit", "memoire_lockhart"],
-    questsTurnedIn: ["livre_interdit", "memoire_lockhart"],
+    questsGiven:    ["livre_interdit", "memoire_lockhart", "chroniques_lockhart"],
+    questsTurnedIn: ["livre_interdit", "memoire_lockhart", "chroniques_lockhart"],
     // Rédemption en Boucle (étage 13) : Lockhart veut écrire la VRAIE histoire
     // de Manon. Chaîne prereq manon_confier ; gate minFloor:11.
     dialoguesByQuest: {
@@ -336,6 +352,12 @@ const NPCS = [
         questOffer:  "Entre nous… j'en ai assez de mes fables. La Boucle m'a montré combien elles sonnent creux. La petite du troisième étage — Manon — a une histoire vraie, bouleversante. Apporte-moi son récit : j'y mettrai mon nom, oui, mais pas un seul mensonge. Pour une fois.",
         questActive: "Tu as le récit de Manon ? Ma plume n'attend que la vérité, cette fois.",
         questReady:  "Voilà… des mots vrais, enfin. « Manon, fille de la lune. » Cela vaut tous mes prix d'enchanteur du sourire. Prends ce livre — tu l'as rendu possible."
+      },
+      // Suite répétable : galvanisé, Lockhart chronique la Boucle entière.
+      chroniques_lockhart: {
+        questOffer:  "Le succès de mon mémoire véridique m'a grisé ! Je chronique désormais la Boucle tout entière. Fouille-moi 4 recoins et rapporte de quoi nourrir un chapitre de plus — l'authenticité, quel filon !",
+        questActive: "Du matériau, mon cher, du matériau ! Quatre recoins, et fouille bien.",
+        questReady:  "Délicieux ! Voilà un chapitre de plus. Tiens, prends cette plume — elle a signé des vérités, désormais. Reviens vite, la Boucle est inépuisable."
       }
     },
     dialogues: {
@@ -410,8 +432,8 @@ const NPCS = [
     icon:  "🌙",
     portraitImg: "img/npc/manon.png",
     placement: { floor: 3, anchor: "any" },
-    questsGiven:    ["manon_secret", "manon_pardon", "manon_revelio", "manon_grimoire", "manon_acte3", "manon_confier"],
-    questsTurnedIn: ["manon_secret", "manon_pardon", "manon_revelio", "manon_grimoire", "manon_acte3", "manon_confier"],
+    questsGiven:    ["manon_secret", "manon_pardon", "manon_revelio", "manon_grimoire", "manon_acte3", "manon_confier", "manon_compagnie"],
+    questsTurnedIn: ["manon_secret", "manon_pardon", "manon_revelio", "manon_grimoire", "manon_acte3", "manon_confier", "manon_compagnie"],
     // Rédemption en Boucle (étage 13) : Manon confie l'histoire d'Élara, que
     // Lockhart mettra en mémoire (chaîne manon_confier → memoire_lockhart).
     dialoguesByQuest: {
@@ -419,6 +441,12 @@ const NPCS = [
         questOffer:  "Tu reviens, encore. La Boucle nous ramène tous… alors autant que ça serve. Je veux que l'histoire de ma mère soit dite — pour de vrai. Aide-moi à rassembler ses souvenirs épars dans ces murs, et je les mettrai en mots.",
         questActive: "Ses souvenirs sont dispersés partout — fouille les recoins. Trois suffiront pour que je me souvienne assez.",
         questReady:  "C'est écrit. Tout y est : la lune, le mensonge, le pardon. Porte ce récit à quelqu'un qui saura le faire lire — même ce bouffon de Lockhart, s'il le faut. Au moins, lui, on l'écoute."
+      },
+      // Visite répétable : la Boucle est longue et Manon redoute le silence.
+      manon_compagnie: {
+        questOffer:  "Reste un peu… non, d'abord, rends-moi service : des Spectres Maudits rôdent près de ma salle et me terrifient. Chasses-en deux, et puis reviens t'asseoir. Juste un moment. Je n'aime pas être seule, dans la Boucle.",
+        questActive: "Ils sont encore là, à gratter aux murs… Tu les éloignes, dis ?",
+        questReady:  "Merci… c'est plus calme. Et tu es revenu. Ça compte, tu sais. Reviens encore, quand la Boucle pèsera trop."
       }
     },
     // Établi de fusion : disponible quand tous les feuillets du set actif
@@ -532,8 +560,16 @@ const NPCS = [
     icon:  "💀",
     portraitImg: "img/npc/sir_patrick.png",
     placement: { floor: 6, anchor: "any" },
-    questsGiven:    ["chasse_sans_tete"],
-    questsTurnedIn: ["chasse_sans_tete"],
+    questsGiven:    ["chasse_sans_tete", "chasse_sans_tete_boucle"],
+    questsTurnedIn: ["chasse_sans_tete", "chasse_sans_tete_boucle"],
+    // Quête répétable en Boucle (étage 16) — chevaucher la Chasse Sans Tête.
+    dialoguesByQuest: {
+      chasse_sans_tete_boucle: {
+        questOffer:  "Ha ! La Boucle nous offre une chevauchée éternelle, et il nous manque des cavaliers ! Terrasse 3 Chevaliers Fantômes — montre-nous ta fougue — et tu galoperas à nos côtés, tête ou pas.",
+        questActive: "Alors, ces Chevaliers Fantômes ? La Chasse n'attend pas les traînards !",
+        questReady:  "Magnifique chevauchée ! Au nom de la Chasse Sans Tête, accepte ce cor — sonne-le, et nous accourrons. Enfin… si nous retrouvons nos montures."
+      }
+    },
     dialogues: {
       greeting: [
         "Halte-là ! (Sa tête, parfaitement détachée, roule sous son bras le temps d'un salut goguenard.) Vous tombez sur Sir Patrick Delaney-Podmore, fondateur de la Chasse Sans Tête. Membres : décapités intégralement. Recalés : les autres.",
@@ -964,8 +1000,16 @@ const NPCS = [
       default: 0.50,
       bySlot:  { "body": 0.75, "head": 0.75, "cloak": 0.75 }
     },
-    questsGiven:    ["fil_acromantule"],
-    questsTurnedIn: ["fil_acromantule"],
+    questsGiven:    ["fil_acromantule", "confection_guipure"],
+    questsTurnedIn: ["fil_acromantule", "confection_guipure"],
+    // Quête répétable en Boucle (étage 15) — confection d'une cape de soie.
+    dialoguesByQuest: {
+      confection_guipure: {
+        questOffer:  "Une couturière digne de ce nom ne travaille que la soie d'Acromantule la plus fine. Rapporte-m'en — abats 3 Jeunes Acromantules — et je t'en taille une cape comme la Boucle n'en a jamais vu.",
+        questActive: "La soie, ma chère ! Trois Acromantules. Mes aiguilles s'impatientent.",
+        questReady:  "Quelle soie magnifique… Voilà, ta cape est prête. Drapée à la perfection, si je puis me permettre. Reviens quand tu en voudras une autre."
+      }
+    },
     dialogues: {
       greeting: [
         "Oh, un nouveau client ! Tiens-toi droit, que je prenne tes mesures du regard.",

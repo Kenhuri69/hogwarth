@@ -277,12 +277,17 @@ function _rollFarmingTarget(quest, floor) {
   // Fluctuation ±20 % sur les récompenses + bonus sous-level sur l'XP
   const baseXp   = quest.reward && quest.reward.xp   ? quest.reward.xp   : 0;
   const baseGold = quest.reward && quest.reward.gold ? quest.reward.gold : 0;
+  // `keepRewardItem` : conserve l'item matériau du template malgré la passe
+  // farming (sinon le tirage écrase reward en {xp,gold}). Permet aux chasses
+  // de Boucle de droper Essence/Page à chaque cycle.
+  const keepItem = (quest.keepRewardItem && quest.reward) ? quest.reward.item : null;
   const xpJitter   = 0.8 + Math.random() * 0.4;
   const goldJitter = 0.8 + Math.random() * 0.4;
   quest.reward = {
     xp:   _farmingXpBonus(Math.floor(baseXp * xpJitter), floor),
     gold: Math.floor(baseGold * goldJitter)
   };
+  if (keepItem) quest.reward.item = keepItem;
   return true;
 }
 
