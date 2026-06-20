@@ -2773,6 +2773,10 @@ body {
 .forge-progress-line {
   font-size: 12px; color: #c0a070; line-height: 1.4;
 }
+.forge-dissolve-section {
+  margin-top: 14px; padding-top: 10px;
+  border-top: 1px dashed rgba(168, 216, 120, 0.4);
+}
 .forge-hint, .library-hint {
   margin-top: 12px; padding-top: 10px;
   border-top: 1px solid rgba(106, 80, 48, 0.4);

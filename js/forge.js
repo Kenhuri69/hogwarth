@@ -118,6 +118,78 @@ function _forgeProgressSummary() {
   return out;
 }
 
+// ── Dissolution — recycler une relique du sac en Essence (anti-impasse) ──
+// Les récompenses de Maison / premiums ont `price:0` (invendables, cf.
+// shop.js) et le sac n'offre aucune action « jeter ». La Forge propose donc
+// une sortie cohérente : dissoudre un équipement du sac en Essence (matériau
+// de forge), rendement selon la rareté. Voir
+// .claude/plans/unsellable-items-dissolution.md.
+const DISSOLVE_YIELD = {
+  common:    { essence_tenebres: 1 },
+  uncommon:  { essence_tenebres: 1 },
+  rare:      { essence_tenebres: 2 },
+  epic:      { essence_tenebres: 3, essence_primordiale: 1 },
+  legendary: { essence_tenebres: 4, essence_primordiale: 2 },
+};
+
+// True si l'item du sac peut être dissous : équipement non empilable (exclut
+// consommables/matériaux/herbes/quête via _isStackable). Les livres de sort
+// restent vendables → hors scope.
+function _isDissolvable(item) {
+  if (!item) return false;
+  if (typeof _isStackable === 'function' && _isStackable(item)) return false;
+  const equipTypes = ['wand', 'armor', 'acc', 'trinket'];
+  return equipTypes.includes(item.type) || !!item.slot;
+}
+
+// Rendement (matériaux) de la dissolution d'un item, selon sa rareté.
+function _dissolveYield(item) {
+  return DISSOLVE_YIELD[(item && item.rarity)] || DISSOLVE_YIELD.common;
+}
+
+// Libellé lisible du rendement pour l'aperçu UI (ex. « 4 🌑 · 2 🔮 »).
+function _dissolveYieldLabel(yld) {
+  const parts = [];
+  if (yld.essence_tenebres)    parts.push(`${yld.essence_tenebres} 🌑`);
+  if (yld.essence_primordiale) parts.push(`${yld.essence_primordiale} 🔮`);
+  return parts.join(' · ') || '—';
+}
+
+// Dissout l'item du sac à `idx` : confirmation, retrait, octroi des matériaux.
+// Retourne true si la dissolution a eu lieu.
+function dissolveItemAtForge(idx) {
+  const item = player.inventory && player.inventory[idx];
+  if (!item || !_isDissolvable(item)) return false;
+  const yld   = _dissolveYield(item);
+  const label = _dissolveYieldLabel(yld);
+  if (typeof confirm === 'function'
+      && !confirm(`Dissoudre ${item.name} en Essence (${label}) ? Cette relique sera détruite définitivement.`)) {
+    return false;
+  }
+  _removeInvItem(idx);
+  // Octroi des matériaux (primordiale d'abord — la plus précieuse — pour
+  // profiter de la case libérée si le sac était plein). Empilables : fusion.
+  for (const matId of ['essence_primordiale', 'essence_tenebres']) {
+    const n = yld[matId] | 0;
+    for (let k = 0; k < n; k++) tryAddItem(matId, { silent: true });
+  }
+  addMsg(`♻️ ${item.name} dissoute → ${label} d'Essence.`, 'good');
+  if (typeof AudioSystem !== 'undefined' && AudioSystem.playChestOpen) AudioSystem.playChestOpen();
+  if (typeof updateUI === 'function') updateUI();
+  openForge();
+  return true;
+}
+
+window.dissolveItemAtForge = dissolveItemAtForge;
+
+// Construit la liste des items du sac dissolvables. Retourne [{ item, idx }].
+function _dissolvableBagItems() {
+  if (!player || !Array.isArray(player.inventory)) return [];
+  return player.inventory
+    .map((item, idx) => ({ item, idx }))
+    .filter(({ item }) => _isDissolvable(item));
+}
+
 // Construit la liste des items équipés sur tous les persos actifs.
 // Retourne [{ charIdx, slot, item }] — items non-null uniquement.
 function _equippedItems() {
@@ -210,10 +282,11 @@ function openForge() {
        </div>`
     : '';
   const items = _equippedItems();
+  let equipHtml;
   if (items.length === 0) {
-    list.innerHTML = `${summaryHtml}<div class="forge-empty">Aucun équipement à renforcer.</div>`;
+    equipHtml = `<div class="forge-empty">Aucun équipement à renforcer.</div>`;
   } else {
-    list.innerHTML = summaryHtml + items.map(({ charIdx, slot, item }) => {
+    equipHtml = items.map(({ charIdx, slot, item }) => {
       const lvl    = item.upgradeLevel | 0;
       const maxed  = lvl >= FORGE_MAX_LEVEL;
       const cost   = maxed ? null : FORGE_COSTS[lvl + 1];
@@ -266,6 +339,33 @@ function openForge() {
         </div>`;
     }).join('');
   }
+
+  // Section Dissolution : items du sac recyclables en Essence (anti-impasse —
+  // sortie pour les reliques invendables/non jetables, cf. plan).
+  const dissolvables = _dissolvableBagItems();
+  let dissolveHtml = '';
+  if (dissolvables.length) {
+    dissolveHtml = `
+      <div class="forge-dissolve-section">
+        <div class="forge-progress-title">♻️ Dissoudre une relique du sac → Essence</div>
+        ${dissolvables.map(({ item, idx }) => {
+          const yld      = _dissolveYield(item);
+          const iconHtml = (typeof getItemIconHtml === 'function')
+            ? getItemIconHtml(item, 'ui-icon-md') : (item.icon || '🔮');
+          return `
+            <div class="forge-item">
+              <div class="forge-item-icon">${iconHtml}</div>
+              <div class="forge-item-text">
+                <div class="forge-item-name">${item.name}</div>
+                <div class="forge-preview">Rendement : ${_dissolveYieldLabel(yld)}</div>
+              </div>
+              <button class="forge-upgrade-btn" onclick="dissolveItemAtForge(${idx})">♻️ Dissoudre</button>
+            </div>`;
+        }).join('')}
+      </div>`;
+  }
+
+  list.innerHTML = summaryHtml + equipHtml + dissolveHtml;
 
   modal.style.display = 'flex';
 }
