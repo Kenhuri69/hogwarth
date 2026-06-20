@@ -952,6 +952,74 @@ async function scenarioGridArrowNav() {
   await browser.close();
 }
 
+async function scenarioGridKeyboardNavExtended() {
+  console.log('\n── Scénario : navigation clavier des grilles (boutique / bestiaire / codex) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // a) Boutique : les articles sont focusables ; ArrowRight déplace le focus
+  //    (voisin en ordre DOM, indépendant du layout).
+  const shop = await page.evaluate(() => {
+    openShop();
+    const cells = Array.from(document.querySelectorAll('.shop-item[tabindex="0"]'));
+    return { count: cells.length };
+  });
+  assert(shop.count >= 2, `au moins 2 articles boutique focusables (got ${shop.count})`);
+  await page.evaluate(() => document.querySelector('.shop-item[tabindex="0"]').focus());
+  await page.waitForFunction(() =>
+    document.activeElement && document.activeElement.classList.contains('shop-item'));
+  await page.keyboard.press('ArrowRight');
+  const shopMoved = await page.evaluate(() => {
+    const cells = Array.from(document.querySelectorAll('.shop-item[tabindex="0"]'));
+    return document.activeElement === cells[1];
+  });
+  assert(shopMoved, 'ArrowRight déplace le focus vers l\'article boutique suivant');
+  await page.evaluate(() => closeModal('shop-modal'));
+
+  // b) Bestiaire : les cartes de créature sont focusables.
+  const bestiary = await page.evaluate(() => {
+    openBestiary();
+    return document.querySelectorAll('.bestiary-card[tabindex="0"]').length;
+  });
+  assert(bestiary >= 1, `au moins 1 carte bestiaire focusable (got ${bestiary})`);
+  // La carte bestiaire porte la classe spell-item → couverte par l'activation
+  // Entrée/Espace existante. On vérifie que cliquer via clavier ouvre le détail.
+  await page.evaluate(() => document.querySelector('.bestiary-card[tabindex="0"]').focus());
+  await page.keyboard.press('Enter');
+  const detailOpen = await page.evaluate(() =>
+    !!document.querySelector('.bestiary-detail-header'));
+  assert(detailOpen, 'Entrée sur une carte bestiaire ouvre la fiche détaillée');
+  await page.evaluate(() => closeModal('bestiary-modal'));
+
+  // c) Codex : une entrée déverrouillée (cliquable) est focusable ; une entrée
+  //    verrouillée ne l'est pas. Invariant : tabindex présent SSI onclick présent.
+  const codex = await page.evaluate(() => {
+    openCodex();
+    const cards = Array.from(document.querySelectorAll('.codex-card'));
+    let unlockedFocusable = 0, lockedFocusable = 0, invariantOk = true;
+    for (const c of cards) {
+      const hasTab   = c.getAttribute('tabindex') === '0';
+      const hasClick = !!c.getAttribute('onclick');
+      if (hasTab !== hasClick) invariantOk = false;
+      if (hasClick && hasTab) unlockedFocusable++;
+      if (!hasClick && hasTab) lockedFocusable++;
+    }
+    return { total: cards.length, unlockedFocusable, lockedFocusable, invariantOk };
+  });
+  assert(codex.total >= 1, 'le codex doit afficher des entrées');
+  assert(codex.invariantOk, 'une carte codex est focusable SSI elle est cliquable');
+  assert(codex.unlockedFocusable >= 1,
+    `au moins 1 entrée codex déverrouillée focusable (got ${codex.unlockedFocusable})`);
+  assert(codex.lockedFocusable === 0, 'aucune entrée codex verrouillée ne doit être focusable');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (nav clavier boutique/bestiaire/codex)`);
+  }
+  console.log('  ✅ Navigation clavier boutique / bestiaire / codex OK');
+  await browser.close();
+}
+
 async function scenarioKeybindings() {
   console.log('\n── Scénario : remappage configurable des touches ──');
   const { browser, page, errors } = await launchGame();
@@ -1013,4 +1081,4 @@ async function scenarioKeybindings() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioMobileSelect, scenarioCombatMobile, scenarioRelativeControls, scenarioCanvasSwipe, scenarioCameraPresence, scenarioCombatKeyboard, scenarioConfirmModal, scenarioA11yFinish, scenarioModalIsolation, scenarioGridKeyboardNav, scenarioGridArrowNav, scenarioKeybindings] };
+module.exports = { scenarios: [scenarioMobileSelect, scenarioCombatMobile, scenarioRelativeControls, scenarioCanvasSwipe, scenarioCameraPresence, scenarioCombatKeyboard, scenarioConfirmModal, scenarioA11yFinish, scenarioModalIsolation, scenarioGridKeyboardNav, scenarioGridArrowNav, scenarioGridKeyboardNavExtended, scenarioKeybindings] };

@@ -163,6 +163,7 @@ function filterBestiary() {
         </div>` : ''}
       </div>
     `;
+    card.tabIndex = 0; // parité clavier (Entrée/Espace + flèches via main.js)
     card.onclick = () => showMonsterDetail(monster);
     grid.appendChild(card);
   });
