@@ -4,7 +4,22 @@
 > Pendant du chantier Artefacts (`artifacts-reliquary-system.md`) : même
 > philosophie, mêmes garde-fous, même structure documentaire.
 >
-> **Statut : ÉTAPE 1 + ÉTAPE 2 rédigées · Lots P0→P5 LIVRÉS. Chantier clos.**
+> **Statut : ÉTAPE 1 + ÉTAPE 2 rédigées · Lots P0→P5 LIVRÉS + suivi P5.3
+> (filtre modale Sorts → taxonomie 2.0) LIVRÉ. Chantier clos.**
+>
+> ### Journal — Suivi P5.3 (livré)
+> Bascule du filtre de la modale Sorts vers la **taxonomie 2.0** (branche
+> `claude/sorts-filter-taxonomy-2`), validée par le commanditaire après P5.
+> - `SPELL_FILTERS` (`inventory-spells.js`) : chips **Tous / Combat ⚔️ /
+>   Exploration 🧭 / Défense 🛡️ / Rituel 📜 / Signature ✨**. Le filtre lit
+>   désormais `spell.category` (posé par `_normalizeSpells`) via le helper
+>   `_spellFilterCat` (repli défensif sur `spellCategory()` legacy, conservé).
+> - `openSpells` / `openBattleSpells` / `_spellFilterBarHtml` consomment
+>   `_spellFilterCat`. La barre n'affiche que les catégories présentes (+ Tous).
+> - `spellCategory()` (dérivé élémentaire legacy) **conservé** (découplé du filtre,
+>   toujours testé) — zéro suppression.
+> - Vérif : `scenarioSpellUx` T2 (filtre combat/défense + taxonomie 2.0),
+>   `scenarioSpellFilterKeyboard` (chips clavier), smoke vert ; cache PWA bumpé.
 >
 > ### Journal — Lot P5 (livré)
 > Codex « Sorts & Sortilèges » + passe d'équilibrage final (branche

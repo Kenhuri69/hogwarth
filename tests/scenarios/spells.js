@@ -249,31 +249,39 @@ async function scenarioSpellUx() {
   assert(t1.bookGone,       'le livre doit être consommé');
   assert(t1.teachTwice === false, '_teachSpellToOne refuse un sort déjà connu');
 
-  // T2 : spellCategory + filtre de la modale Sorts
+  // T2 : filtre de la modale Sorts par taxonomie 2.0 (P5.3 — combat/exploration/
+  // defense/rituel/signature, lu sur spell.category). spellCategory() reste le
+  // dérivé legacy (helper conservé, découplé du filtre).
   const t2 = await page.evaluate(() => {
     const cat = (n) => spellCategory(SPELLS.find(s => s.name === n));
+    const cat2 = (n) => SPELLS.find(s => s.name === n).category;
     const countVisible = () => document.querySelectorAll('#spell-list .spell-item').length;
     openSpells(0);
     const total = countVisible();
-    setSpellFilter('feu', 'spell', 0);
-    const feu = countVisible();
-    setSpellFilter('soutien', 'spell', 0);
-    const soutien = countVisible();
+    setSpellFilter('combat', 'spell', 0);
+    const combat = countVisible();
+    setSpellFilter('defense', 'spell', 0);
+    const defense = countVisible();
     setSpellFilter('tous', 'spell', 0);
     return {
       catIncendio: cat('Incendio'), catGlacius: cat('Glacius'),
       catEpiskey: cat('Episkey'),   catExpelliarmus: cat('Expelliarmus'),
-      total, feu, soutien, backToTotal: countVisible(),
+      cat2Incendio: cat2('Incendio'), cat2Expelliarmus: cat2('Expelliarmus'),
+      total, combat, defense, backToTotal: countVisible(),
     };
   });
   console.log('  T2 filtre:', t2);
-  assert(t2.catIncendio === 'feu',        'Incendio → feu');
-  assert(t2.catGlacius === 'glace',       'Glacius → glace');
-  assert(t2.catEpiskey === 'soutien',     'Episkey → soutien');
-  assert(t2.catExpelliarmus === 'utilitaire', 'Expelliarmus → utilitaire');
-  assert(t2.feu < t2.total && t2.feu >= 1, `filtre feu réduit la liste (${t2.feu}/${t2.total})`);
-  assert(t2.soutien >= 1,                 'filtre soutien montre des sorts');
-  assert(t2.backToTotal === t2.total,     'filtre Tous restaure la liste complète');
+  // Dérivé legacy (spellCategory) — inchangé.
+  assert(t2.catIncendio === 'feu',        'Incendio → feu (legacy)');
+  assert(t2.catGlacius === 'glace',       'Glacius → glace (legacy)');
+  assert(t2.catEpiskey === 'soutien',     'Episkey → soutien (legacy)');
+  assert(t2.catExpelliarmus === 'utilitaire', 'Expelliarmus → utilitaire (legacy)');
+  // Taxonomie 2.0 (spell.category) — pilote désormais le filtre.
+  assert(t2.cat2Incendio === 'combat',        'Incendio → combat (2.0)');
+  assert(t2.cat2Expelliarmus === 'exploration', 'Expelliarmus → exploration (2.0)');
+  assert(t2.combat < t2.total && t2.combat >= 1, `filtre combat réduit la liste (${t2.combat}/${t2.total})`);
+  assert(t2.defense >= 1,                  'filtre défense montre des sorts');
+  assert(t2.backToTotal === t2.total,      'filtre Tous restaure la liste complète');
 
   // T3 : aperçu d'effet calculé selon les stats du lanceur
   const t3 = await page.evaluate(() => {
