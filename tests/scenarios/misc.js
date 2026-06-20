@@ -667,4 +667,104 @@ async function scenarioIronmanConfirm() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioStartup, scenarioLoader, scenarioIronman, scenarioIronmanConfirm, scenarioContentConsumablesTradeoffs, scenarioHeroBarks] };
+// ── QA parcours complet — bout-en-bout DUO (Roadmap Phase 4) ──
+// Les scénarios endgame existants (scenarioVictoryTrigger, scenarioDarkLoopV1-4,
+// scenarioVictorySpeechVariants, scenarioCh13EndgamePivot…) couvrent chaque beat
+// du parcours, mais TOUS en solo (partySize 1) et de façon morcelée (état forcé,
+// instances séparées). Ce scénario comble la lacune : il enchaîne, dans UNE seule
+// instance DUO, la chaîne contiguë intro → groupe duo → entrée en Boucle →
+// discours de victoire (4 Maisons) → Briser le Cycle → persistance. Garde-fou
+// d'intégrité de séquence (fuite d'état entre phases) que les tests morcelés ne
+// captent pas. Complète le solo scenarioDarkLoopV3 (codex.js).
+async function scenarioFullJourneyDuo() {
+  console.log('\n── Scénario : QA parcours complet — bout-en-bout DUO ──');
+  const { browser, page, errors } = await launchGame();
+  // skipIntro:true (défaut) déroule TOUTES les pages d'intro Dumbledore
+  // (_advanceIntro × N puis _finishIntro) avant startGame() — c.-à-d. exerce
+  // bien le flux d'intro/tutoriel, en duo, plutôt que de le court-circuiter.
+  await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'], house: 'Serpentard' });
+
+  // (1) Groupe duo bien constitué après l'intro.
+  const duo = await page.evaluate(() => ({
+    size: partySize,
+    bothAlive: Array.isArray(party) && party[0] && party[1] && party[0].hp > 0 && party[1].hp > 0,
+    house: chosenHouse,
+  }));
+  console.log('  duo :', duo);
+  assert(duo.size === 2, 'partySize devrait être 2');
+  assert(duo.bothAlive, 'les deux héros devraient être vivants après l\'intro');
+  assert(duo.house === 'Serpentard', 'chosenHouse devrait être Serpentard');
+
+  // (2) Entrée en Boucle Ténébreuse (post-victoire) : crédit d'Éclats en duo.
+  const loop = await page.evaluate(() => {
+    victoryAchieved = true; accumulatedEclats = 0;
+    floorReached = 10;
+    _maybeAdvanceDarkLoop(10, 11);   // entrée Boucle 1 (+1)
+    floorReached = 11;
+    _maybeAdvanceDarkLoop(11, 12);   // +1
+    return { eclats: accumulatedEclats, loop11: loopNumber(11), loop21: loopNumber(21) };
+  });
+  console.log('  loop :', loop);
+  assert(loop.eclats === 2, `2 étages franchis en Boucle = 2 Éclats (obtenu ${loop.eclats})`);
+  assert(loop.loop11 === 1 && loop.loop21 === 2, 'loopNumber incorrect aux paliers de Boucle');
+
+  // (3) Discours de victoire — un dernier mot distinct par Maison (les 4).
+  const speech = await page.evaluate(() => {
+    const el = document.getElementById('victory-speech');
+    const founders = { Gryffondor: 'Godric', Serpentard: 'Salazar', Serdaigle: 'Rowena', Poufsouffle: 'Helga' };
+    const res = {};
+    for (const h of Object.keys(founders)) {
+      chosenHouse = h;
+      showVictoryScreen();
+      res[h] = el.innerHTML.includes(founders[h]);
+      closeVictoryScreen();
+    }
+    chosenHouse = 'Serpentard';
+    return res;
+  });
+  console.log('  speech (4 Maisons) :', speech);
+  assert(speech.Gryffondor && speech.Serpentard && speech.Serdaigle && speech.Poufsouffle,
+    'le discours de victoire devrait être coloré par chacune des 4 Maisons');
+
+  // (4) Briser le Cycle — flux complet en duo (3 jalons → choix → cinématique).
+  const broke = await page.evaluate(() => {
+    seenEchoes = new Set(); seenEchoes.add('echo_scene_sceau');   // jalon I
+    accumulatedEclats = 15;                                        // jalon II
+    if (typeof seenMonsters !== 'undefined') seenMonsters.add('reflet_mythe');
+    monsterKills = { reflet_mythe: 1 };                            // jalon III
+    const offered = maybeOfferBreakCycle([{ id: 'reflet_mythe' }]);
+    openBreakCycleModal();
+    confirmBreakCycle();   // 1/3
+    advanceBreakCycle();   // 2/3
+    advanceBreakCycle();   // 3/3
+    finishBreakCycle();
+    checkCodexUnlocks('cycle-broken');
+    const ov = document.getElementById('break-cycle-overlay');
+    return { offered, broken: cycleBroken === true, hidden: ov && ov.style.display === 'none',
+             codex: unlockedCodexEntries.has('cycle_brise') };
+  });
+  console.log('  broke :', broke);
+  assert(broke.offered === true, 'le choix « Briser » devrait être proposé (3 jalons remplis)');
+  assert(broke.broken, 'cycleBroken devrait être true après Briser (duo)');
+  assert(broke.hidden, 'la modale de Briser devrait se fermer après la cinématique');
+  assert(broke.codex, 'cycle_brise devrait être déverrouillée dans le Codex');
+
+  // (5) Persistance : l'état de fin survit à un cycle save/load (toujours en duo).
+  const persisted = await page.evaluate(() => {
+    const gs = _serializeState();
+    cycleBroken = false; partySize = 1;
+    _applyState(gs);
+    return { broken: cycleBroken === true, duo: partySize === 2 };
+  });
+  assert(persisted.broken, 'cycleBroken non sérialisé/restauré');
+  assert(persisted.duo, 'partySize duo non sérialisé/restauré');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS (parcours complet duo)`);
+  }
+  console.log('  ✅ QA parcours complet DUO : intro → Boucle → victoire (4 Maisons) → Briser le Cycle → save/load OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioStartup, scenarioLoader, scenarioIronman, scenarioIronmanConfirm, scenarioContentConsumablesTradeoffs, scenarioHeroBarks, scenarioFullJourneyDuo] };
