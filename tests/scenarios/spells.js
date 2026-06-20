@@ -1122,4 +1122,86 @@ async function scenarioSpellsP3() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioSpellIcons, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioSpellVoiceMapping, scenarioTeleportation, scenarioHealOoc, scenarioBombardaSplash, scenarioAoeSpells, scenarioSpellCombos, scenarioSpellsP2, scenarioSpellsP3] };
+async function scenarioSpellsP4() {
+  console.log('\n── Scénario : Sorts & Magie 2.0 — Lot P4a (corruption) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Serpentard' });
+
+  // T1 — hors Boucle : le contrecoup ne fait JAMAIS monter la corruption.
+  await startDummyFight(page, { hp: 800 });
+  const t1 = await page.evaluate(() => {
+    victoryAchieved = false; currentFloor = 5; corruptionStacks = 0;
+    if (!party[0].spells.includes('Fiendfyre')) party[0].spells.push('Fiendfyre');
+    party[0].sp = 99; currentBattleChar = 0;
+    const before = corruptionStacks;
+    // corruptionRisk forcé à 1 pour rendre le jet déterministe.
+    const fiend = SPELLS.find(s => s.name === 'Fiendfyre');
+    const saved = fiend.corruptionRisk; fiend.corruptionRisk = 1;
+    for (let i = 0; i < 5; i++) { party[0].sp = 99; enemyGroup[0].currentHp = 800; castSpellInBattle('Fiendfyre', 0); }
+    fiend.corruptionRisk = saved;
+    return { before, after: corruptionStacks };
+  });
+  console.log('  T1 hors Boucle:', t1);
+  assert(t1.after === t1.before, 'hors Boucle : corruptionStacks inchangé (contrecoup neutralisé)');
+  await page.evaluate(() => { if (inBattle) endBattle(false); });
+
+  // T2 — en Boucle : le contrecoup `corruption` monte le compteur (power-neutre).
+  await startDummyFight(page, { hp: 800 });
+  const t2 = await page.evaluate(() => {
+    victoryAchieved = true; currentFloor = 12; corruptionStacks = 0;
+    party[0].sp = 99; currentBattleChar = 0;
+    const fiend = SPELLS.find(s => s.name === 'Fiendfyre');
+    const saved = fiend.corruptionRisk; fiend.corruptionRisk = 1;
+    castSpellInBattle('Fiendfyre', 0);
+    castSpellInBattle('Fiendfyre', 0);
+    fiend.corruptionRisk = saved;
+    return { level: corruptionStacks };
+  });
+  console.log('  T2 en Boucle:', t2);
+  assert(t2.level >= 2, `en Boucle : corruptionStacks monte (=${t2.level})`);
+
+  // T3 — évolution réelle : corruption ≥ 2 → Sanguini devient Sanguini Vorace
+  // (modale + lancement) ; réversible si la corruption retombe.
+  const t3 = await page.evaluate(() => {
+    if (!party[0].spells.includes('Sanguini')) party[0].spells.push('Sanguini');
+    corruptionStacks = 2;
+    const resolvedName = resolveSpellForm('Sanguini', party[0]).name;
+    openBattleSpells();
+    const shownEvolved = Array.from(document.querySelectorAll('#spell-list .spell-name'))
+      .some(el => el.textContent.includes('Sanguini Vorace'));
+    closeModal('spell-modal');
+    party[0].sp = 99; party[0].hp = 1; enemyGroup[0].currentHp = 800; currentBattleChar = 0;
+    const hp0 = enemyGroup[0].currentHp, pv0 = party[0].hp;
+    castSpellInBattle('Sanguini', 0);   // doit lancer la forme évoluée
+    const dealt = hp0 - enemyGroup[0].currentHp, healed = party[0].hp - pv0;
+    corruptionStacks = 0;
+    const baseName = resolveSpellForm('Sanguini', party[0]).name;
+    return { resolvedName, shownEvolved, dealt, healed, baseName };
+  });
+  console.log('  T3 évolution corrompue:', t3);
+  assert(t3.resolvedName === 'Sanguini Vorace', 'corruption ≥ 2 → Sanguini Vorace');
+  assert(t3.shownEvolved, 'la modale affiche la forme corrompue');
+  assert(t3.dealt > 0 && t3.healed > 0, 'Sanguini Vorace inflige des dégâts et draine');
+  assert(t3.baseName === 'Sanguini', 'corruption retombée → Sanguini base (réversible)');
+  await page.evaluate(() => { if (inBattle) endBattle(false); });
+
+  // T4 — corruptionStacks survit au round-trip de sauvegarde.
+  const t4 = await page.evaluate(() => {
+    corruptionStacks = 7;
+    const snap = _serializeState();
+    corruptionStacks = 0;
+    _applyState(snap);
+    return corruptionStacks;
+  });
+  console.log('  T4 save round-trip:', t4);
+  assert(t4 === 7, 'corruptionStacks sérialisé/restauré');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (P4)`);
+  }
+  console.log('  ✅ Sorts & Magie 2.0 Lot P4a OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioSpellIcons, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioSpellVoiceMapping, scenarioTeleportation, scenarioHealOoc, scenarioBombardaSplash, scenarioAoeSpells, scenarioSpellCombos, scenarioSpellsP2, scenarioSpellsP3, scenarioSpellsP4] };

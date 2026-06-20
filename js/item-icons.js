@@ -487,6 +487,7 @@ const SPELL_ICON_REGISTRY = {
   'Patronum':           'img/icons/spells/patronum.png',
   'Avada...':           'img/icons/spells/avada.png',
   'Sanguini':           'img/icons/spells/sanguini.png',
+  'Sanguini Vorace':    'img/icons/spells/vampyrus.png',  // P4a — alias (vampirisme renforcé)
   'Vampyrus':           'img/icons/spells/vampyrus.png',
   'Tarantallegra':      'img/icons/spells/tarantallegra.png',
   'Maledictus':         'img/icons/spells/maledictus.png',

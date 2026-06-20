@@ -98,6 +98,7 @@ function _serializeState() {
     ngPlusLevel,
     ngPlusTitle,
     accumulatedEclats,
+    corruptionStacks,
     combatTutorialSeen,
     endgamePivotSeen,
     hiverClair,
@@ -413,6 +414,10 @@ function _applyState(gs) {
   // Boucle Ténébreuse — Porteur d'Éclats : saves antérieures au flag → 0.
   if (typeof accumulatedEclats !== 'undefined') {
     accumulatedEclats = (typeof gs.accumulatedEclats === 'number') ? gs.accumulatedEclats : 0;
+  }
+  // Lot P4 — corruption : saves antérieures au flag → 0.
+  if (typeof corruptionStacks !== 'undefined') {
+    corruptionStacks = (typeof gs.corruptionStacks === 'number') ? gs.corruptionStacks : 0;
   }
   // Saves antérieures à D2 : champ absent → tuto réaffiché au prochain combat.
   combatTutorialSeen = !!gs.combatTutorialSeen;

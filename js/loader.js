@@ -294,6 +294,7 @@ window.UX_safe = new Proxy({}, {
     // ── Endgame (écran de victoire + boucle Ténébreuse) ──
     { name: 'victoryAchieved',    source: 'state.js',        kind: 'obj' },
     { name: 'accumulatedEclats',  source: 'state.js',        kind: 'obj' },
+    { name: 'corruptionStacks',   source: 'state.js',        kind: 'obj' },
     { name: 'cycleBroken',        source: 'state.js',        kind: 'obj' },
     { name: 'checkVictoryTrigger',source: 'endgame.js',      kind: 'fn'  },
     { name: 'showVictoryScreen',  source: 'endgame.js',      kind: 'fn'  },

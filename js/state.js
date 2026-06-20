@@ -819,6 +819,18 @@ let ngPlusTitle = '';
 // floorReached — non persisté. Sérialisé via _serializeState / _applyState.
 let accumulatedEclats = 0;
 
+// ── Sorts & Magie 2.0 — Lot P4 « Corrompus & Boucle » ─────────────
+// Compteur de corruption PERSISTANT du groupe. Monte UNIQUEMENT en Boucle
+// (effectiveFloor ≥ 11) via le contrecoup des sorts corrompus
+// (_applyCorruptionBacklash, battle-spells.js). Gate l'évolution corrompue
+// Sanguini → Sanguini Vorace (condition `corruption ≥ 2`, data.js). Sérialisé
+// via _serializeState / _applyState (back-compat 0). Source de vérité de la
+// branche `corruption` de _spellEvolveConditionMet.
+// NB : nommé `corruptionStacks` (et NON `corruptionLevel` comme le plan §2.2) car
+// `corruptionLevel` est déjà un helper PUR d'ambiance (floor-ambiance.js:180,
+// intensité de corruption d'un étage) — collision de scope global évitée.
+let corruptionStacks = 0;
+
 // Tuto contextuel du premier combat (LOT D2) — true une fois la bulle
 // affichée. Réinitialisé par startGame, persisté via _serializeState /
 // _applyState pour ne s'afficher qu'une fois par partie.

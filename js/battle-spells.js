@@ -588,6 +588,48 @@ function _applySerpentLifesteal(char, dmg) {
   return heal;
 }
 
+// Lot P4 — contrecoup de corruption. Un sort porteur d'un `corruptionRisk`
+// déclenche, EN BOUCLE uniquement (post-victoire, étages 11+), un contrecoup
+// probabiliste (Math.random() < risk). P4a n'active que le contrecoup
+// `corruption` (power-neutre : +1 corruptionStacks, qui débloque l'évolution
+// Sanguini → Sanguini Vorace) ; `selfburn`/`selfdmg` sont implémentés mais
+// réservés aux sorts corrompus offensifs du P4b. Retourne un suffixe de
+// message (vide si aucun contrecoup). Défensif sur tous les globals.
+function _applyCorruptionBacklash(spell, char) {
+  if (!spell || !spell.corruptionRisk || !char) return '';
+  // « En Boucle » = post-victoire, étages 11+ (même test que currentMaxGroupSize).
+  // NB : ne PAS utiliser effectiveFloor() ici — il REMAPPE les étages de Boucle
+  // vers 1-10 (12→2) pour le scaling, donc inadapté à un gate « profondeur 11+ ».
+  const inBoucle = (typeof victoryAchieved !== 'undefined') && victoryAchieved
+    && (typeof currentFloor === 'number') && currentFloor >= 11;
+  if (!inBoucle) return '';
+  if (Math.random() >= spell.corruptionRisk) return '';
+  const kind = (typeof corruptionBacklashKind === 'function')
+    ? corruptionBacklashKind(spell) : 'corruption';
+  if (kind === 'selfdmg') {
+    const dmg = Math.max(1, Math.floor((char.hpMax || 1) * 0.08));
+    char.hp = Math.max(0, char.hp - dmg);
+    UX_safe.floatDmg('ally', dmg, 'dmg');
+    CFX_safe.shake('light');
+    return ` 🌑 Contrecoup : ${char.name} subit ${dmg} dégâts de corruption !`;
+  }
+  if (kind === 'selfburn') {
+    if (typeof applyStatus === 'function') {
+      applyStatus(char, 'burn', Math.max(1, Math.floor((char.mag || 4) * 0.5)), 2);
+    }
+    CFX_safe.shake('light');
+    return ` 🌑 Contrecoup : la magie corrompue embrase ${char.name} !`;
+  }
+  // 'corruption' (défaut, P4a) — power-neutre : monte le compteur de groupe.
+  if (typeof corruptionStacks === 'number') {
+    corruptionStacks += 1;
+    CFX_safe.buffAura('ally');
+    return ` 🌑 La corruption s'insinue… (corruption ${corruptionStacks})`;
+  }
+  return '';
+}
+window._applyCorruptionBacklash = _applyCorruptionBacklash;
+
 function _spellElementalDamage(spell, char, enemy, targetIdx) {
   let msg = '';
   if (enemy) {
@@ -1198,6 +1240,11 @@ function castSpellInBattle(spellName, targetIdx, targetAllyIdx) {
   } else {
     console.warn('[spell] effet inconnu:', spell.effect);
   }
+
+  // Lot P4 — contrecoup de corruption (Boucle uniquement) : append au message
+  // de combat. Power-neutre en P4a (kind 'corruption' → +1 corruptionStacks).
+  const _backlash = _applyCorruptionBacklash(spell, char);
+  if (_backlash) { msg = (msg || '') + _backlash; addMsg(_backlash.trim(), 'bad'); }
 
   // Immersion (Lot 1) : VFX élémentaire sur la/les cible(s). Purement visuel
   // (CFX_safe → no-op si le module FX manque). Gardé aux effets offensifs ;

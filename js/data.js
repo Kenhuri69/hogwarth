@@ -336,7 +336,7 @@ const SPELLS = [
   { name:"Fulgari",           icon:"⚡",   desc:"Foudre canalisée (16 dégâts)",         cost:9,  effect:"stun",  element:"foudre",   power:16 },
   { name:"Lumos Solem",       icon:"☀️",   desc:"Lumière solaire — ravage les morts-vivants", cost:10, effect:"burn", element:"lumière", power:16, bonusVsUndead:1.5, evolvesTo:"Lux Aeterna", evolveCondition:{ type:"floor", value:9 } },
   // ── Sort interdit (débloqué au niveau 9) ─────────────────────
-  { name:"Avada...",          icon:"💚✨", desc:"Malédiction mortelle (50 dégâts)",   cost:20, effect:"instant", element:"ténèbres", power:50, locked:true },
+  { name:"Avada...",          icon:"💚✨", desc:"Malédiction mortelle (50 dégâts)",   cost:20, effect:"instant", element:"ténèbres", power:50, locked:true, corruptionRisk:0.20, backlash:"corruption" },
   // ── Sort utilitaire — Téléportation (Portus) ─────────────────
   // Achetable cher en boutique (livre_portus). Utilisable en combat
   // (déplace le groupe OU bannit un ennemi non-boss) et hors combat
@@ -350,7 +350,7 @@ const SPELLS = [
   // panneau d'info du monstre ciblé. Voir .claude/plans/manon-grimoire-pages.md.
   { name:"Revelio",           icon:"🔎",   desc:"Dévoile : le brouillard et les pages cachées (hors combat) ou les secrets d'un monstre (combat)", cost:2, effect:"reveal", element:"lumière", power:0 },
   // ── Sorts de Vampirisme ─────────────────────────────────────
-  { name:"Sanguini",          icon:"🩸",   desc:"Vol de vie (12 dégâts, +6 PV)",      cost:8,  effect:"lifesteal", element:"ténèbres", power:12 },
+  { name:"Sanguini",          icon:"🩸",   desc:"Vol de vie (12 dégâts, +6 PV)",      cost:8,  effect:"lifesteal", element:"ténèbres", power:12, evolvesTo:"Sanguini Vorace", evolveCondition:{ type:"corruption", value:2 } },
   { name:"Vampyrus",          icon:"🦇",   desc:"Drain magique (18 dégâts, +9 PV)",   cost:14, effect:"lifesteal", element:"ténèbres", power:18 },
   // ── Sorts de Malédiction ────────────────────────────────────
   { name:"Tarantallegra",     icon:"💃",   desc:"Danse maudite (8 dégâts + étourdis)", cost:7, effect:"stun",   element:"foudre",   power:8  },
@@ -360,7 +360,7 @@ const SPELLS = [
   // ── Sorts de Maison — palier 17 « Mythe » (1 sort exclusif/Maison) ──
   // Enseignés au franchissement du palier Mythe via `grantsSpell`.
   { name:"Patronus Maxima",       icon:"🦌", desc:"Bouclier de groupe (2 tours) + dissipe l'étourdissement", cost:22, effect:"patronus_maxima", power:0 },
-  { name:"Sectumsempra Imperius", icon:"🩸", desc:"Saignement lourd + asservit la cible (2 tours)",          cost:24, effect:"imperius", element:"ténèbres", power:20 },
+  { name:"Sectumsempra Imperius", icon:"🩸", desc:"Saignement lourd + asservit la cible (2 tours)",          cost:24, effect:"imperius", element:"ténèbres", power:20, corruptionRisk:0.15, backlash:"corruption" },
   { name:"Legilimens",            icon:"👁️", desc:"Lit l'esprit ennemi : annule la prochaine capacité",      cost:18, effect:"legilimens", power:0 },
   { name:"Récolte Magique",       icon:"🌾", desc:"Restaure tout le groupe · or du combat majoré (+50%)",    cost:26, effect:"recolte", power:0 },
   // ── Sorts de zone (AoE) — un mode distinct par élément + soin ──
@@ -378,7 +378,7 @@ const SPELLS = [
   // ── Sort exclusif endgame (Grimoire Interdit, sinks A+E) ──────
   // Feu Maudit : flammes vivantes, dégâts massifs single-target,
   // brûlure persistante. Coût prohibitif → utilisation parcimonieuse.
-  { name:"Fiendfyre",         icon:"🔥",  desc:"Feu Maudit : flammes vivantes (35 dégâts + brûle)",                cost:32, effect:"burn", element:"feu", power:35 },
+  { name:"Fiendfyre",         icon:"🔥",  desc:"Feu Maudit : flammes vivantes (35 dégâts + brûle)",                cost:32, effect:"burn", element:"feu", power:35, corruptionRisk:0.25, backlash:"corruption" },
   // ── Sorts & Magie 2.0 — Lot P2 : Éclats, familiers, environnementaux ──
   // Voir .claude/plans/spells-magic-system.md §1.4. Tous les `effect` neufs sont
   // routés DÉFENSIVEMENT (handlers gardés : SPELL_HANDLERS combat, SPELL_OOC_
@@ -403,6 +403,11 @@ const SPELLS = [
   // (réversible : déséquiper l'artefact / quitter l'étage ré-affiche la base).
   { name:"Incendio Majeur",   icon:"🔥",  desc:"Incendio amplifié par le Bâton ancestral (24 dégâts + éclaboussure)", cost:11, effect:"burn",  element:"feu",   power:24, splash:true },
   { name:"Glacius Profond",   icon:"❄️",  desc:"Givre des profondeurs (20 dégâts, engelures renforcées)",          cost:12, effect:"stun",  element:"glace", power:20 },
+  // ── Sorts & Magie 2.0 — Lot P4 : forme corrompue (évolution réelle de la
+  // branche `corruption` de _spellEvolveConditionMet, data.js). Sanguini
+  // s'aiguise en Sanguini Vorace quand `corruptionStacks ≥ 2` (accru en Boucle
+  // par le contrecoup des sorts corrompus). Réversible (resolveSpellForm).
+  { name:"Sanguini Vorace",   icon:"🦇",  desc:"Vampirisme corrompu (22 dégâts, drain de vie renforcé)",           cost:14, effect:"lifesteal", element:"ténèbres", power:22 },
   // Variantes Premium signature (1/Maison, §1.5) — sort de base recoloré +
   // boosté (power = base × SPELL_PREMIUM_MULT['rare'] = ×1,20, pré-cuit), offert
   // EN PLUS au palier Apothéose de la Maison affine. `premium`/`premiumOf`/
@@ -609,6 +614,8 @@ const SPELL_META = {
   "Morsure d'Émeraude":  ['signature', 'maître', 'rare', 'Serpentard'],
   'Givre de Rowena':     ['signature', 'maître', 'rare', 'Serdaigle'],
   'Soin du Blaireau':    ['signature', 'maître', 'rare', 'Poufsouffle'],
+  // ── Lot P4 : forme corrompue (évolution Sanguini → Sanguini Vorace) ──
+  'Sanguini Vorace':     ['combat',    'corrompu', 'epic', null],
 };
 
 // Passe de normalisation IDEMPOTENTE (miroir de _migrateEquippedSlots côté
@@ -670,9 +677,9 @@ function houseSpellBoost(spell, house, tier) {
 // Condition d'évolution d'un sort satisfaite ? (P3 §1.6). NON destructif :
 // lit `char.equipped` (artefact) et, défensivement, quelques globals runtime
 // (étage / quêtes / palier de Maison) via `typeof` — donc rejouable hors
-// navigateur (les globals absents ⇒ false). `corruption` (Sanguini Vorace)
-// est reporté au P4 : la branche existe mais reste inerte tant que
-// `corruptionLevel` n'est pas défini.
+// navigateur (les globals absents ⇒ false). `corruption` (Sanguini Vorace, P4a)
+// lit `corruptionStacks` (state.js) — distinct du helper d'ambiance
+// `corruptionLevel(floor, va)` (floor-ambiance.js).
 function _spellEvolveConditionMet(cond, char) {
   if (!cond || !cond.type) return false;
   switch (cond.type) {
@@ -689,8 +696,8 @@ function _spellEvolveConditionMet(cond, char) {
       // si cond.value absent). `houseTier` est la source de vérité (main.js).
       return (typeof houseTier === 'number') && houseTier >= 18
         && (!cond.value || (typeof chosenHouse !== 'undefined' && chosenHouse === cond.value));
-    case 'corruption':   // P4 — inerte tant que corruptionLevel n'existe pas.
-      return (typeof corruptionLevel === 'number') && corruptionLevel >= (cond.value || 1);
+    case 'corruption':   // P4a — corruptionStacks (state.js), 0 hors Boucle.
+      return (typeof corruptionStacks === 'number') && corruptionStacks >= (cond.value || 1);
     default:
       return false;
   }
@@ -709,6 +716,20 @@ function resolveSpellForm(spellName, char) {
     return getSpellByName(base.evolvesTo) || base;
   }
   return base;
+}
+// Lot P4 — type de contrecoup d'un sort corrompu (❓5 : configurable par sort).
+// PUR : lit le seul `spell.backlash` (ou un défaut par tier). Le contrecoup réel
+// (rng + application) vit dans _applyCorruptionBacklash (battle-spells.js).
+//   'corruption' → +1 corruptionStacks (power-neutre, P4a)
+//   'selfburn'   → statut burn auto-infligé (réservé P4b)
+//   'selfdmg'    → % PV max auto-infligé (réservé P4b)
+// Un sort sans `corruptionRisk` n'a jamais de contrecoup (kind null).
+function corruptionBacklashKind(spell) {
+  if (!spell || !spell.corruptionRisk) return null;
+  if (spell.backlash === 'selfburn' || spell.backlash === 'selfdmg'
+      || spell.backlash === 'corruption') return spell.backlash;
+  // Défaut : les sorts corrompus accroissent la corruption (P4a power-neutre).
+  return 'corruption';
 }
 // Estimation du coût PM d'un sort (formule §1.8) — outil de SIMULATION /
 // équilibrage, jamais consommé par un chemin chaud. PUR.

@@ -2110,6 +2110,68 @@ function loadModule(relPath, exportNames, globals = {}) {
 })();
 
 // ============================================================
+// Sorts & Magie 2.0 — Lot P4a (data.js) : cœur corruption — évolution
+//   Sanguini → Sanguini Vorace (condition `corruption ≥ 2`) + corruptionRisk /
+//   corruptionBacklashKind. Sandbox vm AVEC `corruptionStacks` mutable (distinct
+//   du helper d'ambiance `corruptionLevel`, non chargé ici).
+// ============================================================
+(function testSpellP4() {
+  const sandbox = {
+    console, exports: {}, Math,
+    currentFloor: 1, completedQuests: new Set(), houseTier: 0, chosenHouse: null,
+    corruptionStacks: 0,
+  };
+  const src = fs.readFileSync(path.join(ROOT, 'js/data.js'), 'utf8');
+  vm.createContext(sandbox);
+  vm.runInContext(src +
+    '\n;exports.resolveSpellForm = resolveSpellForm;' +
+    '\n;exports._spellEvolveConditionMet = _spellEvolveConditionMet;' +
+    '\n;exports.getSpellByName = getSpellByName;' +
+    '\n;exports.corruptionBacklashKind = corruptionBacklashKind;' +
+    '\n;exports.SPELLS = SPELLS;\n;exports.SPELL_META = SPELL_META;',
+    sandbox, { filename: 'data.js' });
+  const { resolveSpellForm, _spellEvolveConditionMet, getSpellByName,
+          corruptionBacklashKind, SPELL_META } = sandbox.exports;
+
+  // ── Sanguini Vorace : forme corrompue étiquetée ──
+  const vorace = getSpellByName('Sanguini Vorace');
+  check('P4 : Sanguini Vorace présent', !!vorace);
+  check('P4 : Sanguini Vorace effect lifesteal ténèbres', vorace.effect === 'lifesteal' && vorace.element === 'ténèbres');
+  check('P4 : Sanguini Vorace étiqueté corrompu', SPELL_META['Sanguini Vorace'] && SPELL_META['Sanguini Vorace'][1] === 'corrompu');
+  check('P4 : Sanguini.evolveCondition = corruption ≥ 2', (() => {
+    const s = getSpellByName('Sanguini');
+    return s.evolvesTo === 'Sanguini Vorace' && s.evolveCondition
+      && s.evolveCondition.type === 'corruption' && s.evolveCondition.value === 2;
+  })());
+
+  // ── condition corruption gated par corruptionStacks (global mutable) ──
+  sandbox.corruptionStacks = 0;
+  check('P4 : corruption 0 → condition non remplie',
+    _spellEvolveConditionMet({ type: 'corruption', value: 2 }, {}) === false);
+  check('P4 : corruption 0 → Sanguini base', resolveSpellForm('Sanguini', {}).name === 'Sanguini');
+  sandbox.corruptionStacks = 1;
+  check('P4 : corruption 1 (<2) → Sanguini base', resolveSpellForm('Sanguini', {}).name === 'Sanguini');
+  sandbox.corruptionStacks = 2;
+  check('P4 : corruption 2 → condition remplie',
+    _spellEvolveConditionMet({ type: 'corruption', value: 2 }, {}) === true);
+  check('P4 : corruption 2 → Sanguini Vorace', resolveSpellForm('Sanguini', {}).name === 'Sanguini Vorace');
+  check('P4 : évolution réversible (corruption retombe → base)', (() => {
+    sandbox.corruptionStacks = 1;
+    const r = resolveSpellForm('Sanguini', {}).name;
+    sandbox.corruptionStacks = 2;
+    return r === 'Sanguini';
+  })());
+
+  // ── corruptionBacklashKind (pur, ❓5) ──
+  check('P4 : backlashKind null sans corruptionRisk', corruptionBacklashKind(getSpellByName('Incendio')) === null);
+  check('P4 : backlashKind corruption (Avada)', corruptionBacklashKind(getSpellByName('Avada...')) === 'corruption');
+  check('P4 : backlashKind respecte backlash explicite',
+    corruptionBacklashKind({ corruptionRisk: 0.2, backlash: 'selfdmg' }) === 'selfdmg');
+  check('P4 : backlashKind défaut corruption si backlash inconnu',
+    corruptionBacklashKind({ corruptionRisk: 0.2, backlash: 'wat' }) === 'corruption');
+})();
+
+// ============================================================
 // Rapport
 // ============================================================
 if (failures.length) {
