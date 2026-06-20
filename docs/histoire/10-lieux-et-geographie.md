@@ -645,6 +645,12 @@ Zone D 14+  Ruines Anciennes — antérieures à la fondation : la roche-mère m
 > antérieures aux Fondateurs ; Voldemort = dernière serrure, pas le fond ;
 > ✅ plafond de scaling). Le Dormeur **ne parle pas, n'a pas de stat-block, ne
 > se combat pas** : il se *ressent* (battement, échos, barks `loopEcho`).
+>
+> ✅ **Implémenté (2026-06-20, Phase 3 item 2b)** : nom canon ratifié
+> **« Le Dormeur des Fondations »**. Surfaces : entrée Codex `le_dormeur`
+> (glossaire — `js/codex.js`, robinet 3-temps victory → étage 21 → étage 28) +
+> 2 lignes d'ambiance **nommées** au palier `before` (21+) de la zone D
+> (`js/floor-ambiance.js`). Conforme au garde-fou « pas de boss combat ».
 
 ---
 

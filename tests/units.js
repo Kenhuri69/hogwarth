@@ -495,6 +495,11 @@ function loadModule(relPath, exportNames, globals = {}) {
   // Le contenu des paliers diffère réellement (pas seulement la référence).
   check('1re ligne megalith ≠ 1re ligne runic', a14.floorLines[0] !== a17.floorLines[0]);
   check('1re ligne runic ≠ 1re ligne before',   a17.floorLines[0] !== a21.floorLines[0]);
+  // Item 2b : le palier before (21+) NOMME le Dormeur des Fondations ; les
+  // paliers supérieurs (megalith/runic) restent muets sur l'entité.
+  check('palier before nomme le Dormeur', a21.floorLines.some(l => /Dormeur/.test(l)));
+  check('palier megalith ne nomme pas le Dormeur', !a14.floorLines.some(l => /Dormeur/.test(l)));
+  check('palier runic ne nomme pas le Dormeur',    !a17.floorLines.some(l => /Dormeur/.test(l)));
 
   // Fallback sur hogwarts pour entrée invalide (miroir du comportement de getFloorTheme).
   check('ambiance floor 0 → hogwarts',   getFloorAmbiance(0)         === ZONE_AMBIANCE.hogwarts);
@@ -1107,6 +1112,18 @@ function loadModule(relPath, exportNames, globals = {}) {
   // Scène vue mais hors zone D (revealed exige floor 14) → pas de corrupted.
   check('echos_temporels: scène vue floor12 → veiled (pas zone D)',
     codexEntryState(et, { ...empty, floorReached: 12, echoSeen: new Set(['echo_scene_sceau']) }) === 'veiled');
+
+  // ── Item 2b — Le Dormeur des Fondations (victory → floor 21 → floor 28) ──
+  const dorm = getCodexEntry('le_dormeur');
+  check('le_dormeur présent (glossaire)', !!dorm && dorm.category === 'glossaire');
+  check('le_dormeur: pré-victoire → locked', codexEntryState(dorm, { ...empty, floorReached: 21 }) === 'locked');
+  check('le_dormeur: victoire → veiled', codexEntryState(dorm, { ...empty, victoryAchieved: true }) === 'veiled');
+  check('le_dormeur: victoire + floor20 → veiled (Avant-Monde non atteint)',
+    codexEntryState(dorm, { ...empty, victoryAchieved: true, floorReached: 20 }) === 'veiled');
+  check('le_dormeur: victoire + floor21 → revealed',
+    codexEntryState(dorm, { ...empty, victoryAchieved: true, floorReached: 21 }) === 'revealed');
+  check('le_dormeur: victoire + floor28 → corrupted',
+    codexEntryState(dorm, { ...empty, victoryAchieved: true, floorReached: 28 }) === 'corrupted');
 
   // ── monster : type bestiaire (couverture évaluateur, sans/avec kills) ──
   const monsterEntry = {
