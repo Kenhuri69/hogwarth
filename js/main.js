@@ -695,9 +695,70 @@ const ESC_CLOSEABLE_MODALS = [
   'fusion-modal', 'riddle-modal'
 ];
 
+// Cellule cible d'un déplacement aux flèches dans une grille focusée.
+// `cur` = cellule actuellement focusée ; `key` = ArrowUp/Down/Left/Right.
+// Le groupe de navigation = cellules focusables de MÊME famille (.inv-slot /
+// .equip-slot-floating / .spell-item) actuellement VISIBLES (une seule modale
+// ouverte à la fois → scope naturel). ←/→ : voisin en ordre DOM (clampé aux
+// bords). ↑/↓ : cellule la plus proche dans la direction, l'écart horizontal
+// étant pénalisé pour privilégier la même colonne. Retourne null si aucune.
+function _gridArrowTarget(cur, key) {
+  const family = cur.classList.contains('spell-item')          ? '.spell-item[tabindex]'
+               : cur.classList.contains('equip-slot-floating') ? '.equip-slot-floating[tabindex]'
+               :                                                  '.inv-slot[tabindex]';
+  const cells = Array.from(document.querySelectorAll(family))
+    .filter(el => el.offsetParent !== null); // exclut les cellules masquées (modale fermée)
+  if (cells.length < 2) return null;
+  const i = cells.indexOf(cur);
+  if (i < 0) return null;
+  if (key === 'ArrowLeft')  return cells[Math.max(0, i - 1)];
+  if (key === 'ArrowRight') return cells[Math.min(cells.length - 1, i + 1)];
+  // ↑/↓ : géométrie.
+  const r = cur.getBoundingClientRect();
+  const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  const up = key === 'ArrowUp';
+  let best = null, bestScore = Infinity;
+  for (const el of cells) {
+    if (el === cur) continue;
+    const b = el.getBoundingClientRect();
+    const ex = b.left + b.width / 2, ey = b.top + b.height / 2;
+    if (up ? ey >= cy - 2 : ey <= cy + 2) continue; // mauvaise direction
+    const dx = ex - cx, dy = ey - cy;
+    const score = dx * dx * 4 + dy * dy;            // pénalise l'écart horizontal
+    if (score < bestScore) { bestScore = score; best = el; }
+  }
+  return best;
+}
+
 document.addEventListener('keydown',e=>{
   if(e.target.tagName==='INPUT') return;
   const k = e.key;
+
+  // ── Activation clavier (Entrée/Espace) d'une cellule de grille focusable
+  //    (sac, paper-doll, sort lançable) — parité avec le clic souris. Les
+  //    cellules portent tabindex="0" ; le repère de focus doré vient de la
+  //    règle [tabindex]:focus-visible (css/style.css).
+  if (k === 'Enter' || k === ' ') {
+    const cell = e.target.closest &&
+      e.target.closest('.inv-slot[tabindex],.equip-slot-floating[tabindex],.spell-item[tabindex]');
+    if (cell) { cell.click(); e.preventDefault(); return; }
+  }
+
+  // ── Navigation 2D au clavier dans une grille focusée (flèches) — sac,
+  //    paper-doll, liste de sorts. Géométrique (agnostique au layout) :
+  //    ←/→ = cellule précédente/suivante (ordre DOM) ; ↑/↓ = cellule la plus
+  //    proche dans la rangée adjacente. preventDefault empêche le déplacement
+  //    du joueur derrière la modale ouverte. (Phase 2 — plan inventory-keyboard-nav.)
+  if (k === 'ArrowUp' || k === 'ArrowDown' || k === 'ArrowLeft' || k === 'ArrowRight') {
+    const cur = e.target.closest &&
+      e.target.closest('.inv-slot[tabindex],.equip-slot-floating[tabindex],.spell-item[tabindex]');
+    if (cur) {
+      const next = _gridArrowTarget(cur, k);
+      if (next) next.focus();
+      e.preventDefault();
+      return;
+    }
+  }
 
   // ── Échap : confirmation custom (résout « Annuler ») > sélection de cible
   //    en combat > toute modale ouverte.

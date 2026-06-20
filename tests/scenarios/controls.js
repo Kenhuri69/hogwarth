@@ -832,4 +832,124 @@ async function scenarioModalIsolation() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioMobileSelect, scenarioCombatMobile, scenarioRelativeControls, scenarioCanvasSwipe, scenarioCameraPresence, scenarioCombatKeyboard, scenarioConfirmModal, scenarioA11yFinish, scenarioModalIsolation] };
+async function scenarioGridKeyboardNav() {
+  console.log('\n── Scénario : navigation clavier des grilles (sac / paper-doll / sorts) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // a) Les slots d'item du sac sont focusables ; les slots vides ne le sont pas.
+  //    On donne un équipement déterministe (robe1, slot body) à Harry.
+  await page.evaluate(() => {
+    const robe = JSON.parse(JSON.stringify(ITEMS.find(i => i.id === 'robe1')));
+    player.inventory.push(robe);
+    openInventory();
+  });
+  const grid = await page.evaluate(() => {
+    const slots = Array.from(document.querySelectorAll('#inv-grid .inv-slot'));
+    const item  = slots.find(s => s.classList.contains('has-item'));
+    const empty = slots.find(s => !s.classList.contains('has-item'));
+    return {
+      itemFocusable:  item  ? item.getAttribute('tabindex') === '0'  : false,
+      emptyFocusable: empty ? empty.getAttribute('tabindex') === '0' : false,
+    };
+  });
+  assert(grid.itemFocusable,   'un slot d\'item doit porter tabindex="0"');
+  assert(!grid.emptyFocusable, 'un slot vide ne doit pas être focusable');
+
+  // b) Focus + Entrée sur l'équipement → équipé (en solo, équipe directement
+  //    Harry et quitte l'inventaire).
+  await page.evaluate(() => {
+    const item = Array.from(document.querySelectorAll('#inv-grid .inv-slot'))
+      .find(s => s.classList.contains('has-item'));
+    item.focus();
+  });
+  await page.waitForFunction(() => {
+    const item = Array.from(document.querySelectorAll('#inv-grid .inv-slot'))
+      .find(s => s.classList.contains('has-item'));
+    return item && document.activeElement === item;
+  });
+  await page.keyboard.press('Enter');
+  const equipped = await page.evaluate(() => ({
+    bodyEquipped: !!(player.equipped && player.equipped.body && player.equipped.body.id === 'robe1'),
+    goneFromBag:  !player.inventory.some(i => i && i.id === 'robe1'),
+  }));
+  assert(equipped.bodyEquipped, 'Entrée sur l\'équipement doit l\'équiper (slot body)');
+  assert(equipped.goneFromBag,  'l\'item équipé doit quitter l\'inventaire');
+
+  // c) Paper-doll : le slot rempli (robe que l'on vient d'équiper) est focusable.
+  const paperDoll = await page.evaluate(() => {
+    closeModal('inventory-modal');
+    openCharacter(0);
+    const filled = document.querySelector('#character-modal .equip-slot-floating.filled');
+    return filled ? filled.getAttribute('tabindex') === '0' : false;
+  });
+  assert(paperDoll, 'un slot d\'équipement rempli du paper-doll doit être focusable');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (navigation clavier grilles)`);
+  }
+  console.log('  ✅ Navigation clavier des grilles (tabindex + Entrée) OK');
+  await browser.close();
+}
+
+async function scenarioGridArrowNav() {
+  console.log('\n── Scénario : navigation 2D au clavier des grilles (flèches) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // Remplir le sac de 6 consommables → 6 cellules focusables sur ≥ 2 rangées.
+  await page.evaluate(() => {
+    const pot = ITEMS.find(i => i.id === 'potion_s');
+    for (let n = 0; n < 6; n++) player.inventory.push(JSON.parse(JSON.stringify(pot)));
+    openInventory();
+  });
+
+  const sel = '#inv-grid .inv-slot[tabindex]';
+  const start = await page.evaluate((sel) => {
+    const cells = Array.from(document.querySelectorAll(sel));
+    cells[0].focus();
+    return { count: cells.length, active0: document.activeElement === cells[0] };
+  }, sel);
+  assert(start.count >= 6,  `au moins 6 cellules focusables attendues (got ${start.count})`);
+  assert(start.active0,     'focus initial sur la 1re cellule');
+
+  const idxOf = () => page.evaluate((sel) =>
+    Array.from(document.querySelectorAll(sel)).indexOf(document.activeElement), sel);
+
+  // ←/→ : voisin linéaire.
+  await page.keyboard.press('ArrowRight');
+  assert(await idxOf() === 1, 'ArrowRight → cellule 1');
+  await page.keyboard.press('ArrowLeft');
+  assert(await idxOf() === 0, 'ArrowLeft → retour cellule 0');
+
+  // ↓ : descend d'une rangée, même colonne (géométrie, sans coder le nb de col).
+  await page.keyboard.press('ArrowDown');
+  const down = await page.evaluate((sel) => {
+    const cells = Array.from(document.querySelectorAll(sel));
+    const a = document.activeElement;
+    const r0 = cells[0].getBoundingClientRect();
+    const ra = a.getBoundingClientRect();
+    return { idx: cells.indexOf(a), below: ra.top > r0.top + 2, sameCol: Math.abs(ra.left - r0.left) < 5 };
+  }, sel);
+  assert(down.idx > 0 && down.below && down.sameCol,
+    `ArrowDown doit descendre d'une rangée même colonne (idx ${down.idx}, below ${down.below}, sameCol ${down.sameCol})`);
+
+  // ↑ : remonte à la cellule 0.
+  await page.keyboard.press('ArrowUp');
+  assert(await idxOf() === 0, 'ArrowUp → remonte à la cellule 0');
+
+  // Le joueur ne s'est pas déplacé : la modale reste ouverte.
+  const stillOpen = await page.evaluate(() =>
+    getComputedStyle(document.getElementById('inventory-modal')).display !== 'none');
+  assert(stillOpen, 'la modale inventaire doit rester ouverte pendant la navigation');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (navigation flèches)`);
+  }
+  console.log('  ✅ Navigation 2D au clavier (←/→/↑/↓) OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioMobileSelect, scenarioCombatMobile, scenarioRelativeControls, scenarioCanvasSwipe, scenarioCameraPresence, scenarioCombatKeyboard, scenarioConfirmModal, scenarioA11yFinish, scenarioModalIsolation, scenarioGridKeyboardNav, scenarioGridArrowNav] };

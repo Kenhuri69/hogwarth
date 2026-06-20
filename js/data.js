@@ -500,20 +500,85 @@ function _defaultSpellCategory(spell) {
   return 'combat';
 }
 
+// ── Étiquetage curaté des sorts existants (Lot P1) ──────────────
+// Table de méta-données par NOM (clé runtime), source de vérité de
+// l'identité 2.0 des ~47 sorts du catalogue. Tuple [category, tier, rarity,
+// houseAffinity] — appliqué par _normalizeSpells SANS écraser une valeur
+// déjà déclarée sur le littéral (précédence : littéral > SPELL_META > défaut
+// dérivé). Centralisé ici plutôt qu'éparpillé sur 47 littéraux : diff lisible,
+// idempotent, testable. Curating aligné sur le plan §1.3 / §1.10. Les seules
+// affinités de Maison posées sont les 4 sorts « Mythe » (canon, §1.3 note).
+const SPELL_META = {
+  // ── Basiques (Acte I) ──
+  'Expelliarmus':       ['exploration', 'basique', 'common',    null],
+  'Stupefix':           ['combat',      'basique', 'common',    null],
+  'Episkey':            ['defense',     'basique', 'common',    null],
+  'Ferula':             ['defense',     'basique', 'common',    null],
+  'Protego':            ['defense',     'basique', 'common',    null],
+  'Incendio':           ['combat',      'basique', 'common',    null],
+  'Accio':              ['exploration', 'basique', 'common',    null],
+  'Wingardium Leviosa': ['combat',      'basique', 'common',    null],
+  'Reparo':             ['defense',     'basique', 'common',    null],
+  'Aguamenti':          ['combat',      'basique', 'common',    null],
+  'Riddikulus':         ['combat',      'basique', 'common',    null],
+  'Alohomora':          ['exploration', 'basique', 'common',    null],
+  'Revelio':            ['exploration', 'basique', 'common',    null],
+  'Tarantallegra':      ['combat',      'basique', 'common',    null],
+  // ── Avancés (Acte II) ──
+  'Ferula Maxima':      ['defense',     'avancé',  'uncommon',  null],
+  'Diffindo':           ['combat',      'avancé',  'uncommon',  null],
+  'Lumos Maxima':       ['combat',      'avancé',  'uncommon',  null],
+  'Bombarda':           ['combat',      'avancé',  'rare',      null],
+  'Glacius':            ['combat',      'avancé',  'uncommon',  null],
+  'Fulgari':            ['combat',      'avancé',  'uncommon',  null],
+  'Lumos Solem':        ['combat',      'avancé',  'rare',      null],
+  'Sanguini':           ['combat',      'avancé',  'uncommon',  null],
+  'Maledictus':         ['combat',      'avancé',  'uncommon',  null],
+  'Verrou de Sang':     ['exploration', 'avancé',  'rare',      null],
+  'Marque du Pèlerin':  ['exploration', 'avancé',  'uncommon',  null],
+  // ── Maîtres (Acte III) ──
+  'Sectumsempra':       ['combat',      'maître',  'epic',      null],
+  'Patronum':           ['combat',      'maître',  'rare',      null],
+  'Vampyrus':           ['combat',      'maître',  'rare',      null],
+  'Crucio':             ['combat',      'maître',  'rare',      null],
+  'Morsmordre':         ['combat',      'maître',  'epic',      null],
+  'Glacius Tempête':    ['combat',      'maître',  'rare',      null],
+  'Fulgur Catena':      ['combat',      'maître',  'rare',      null],
+  'Lux Aeterna':        ['combat',      'maître',  'rare',      null],
+  'Nox Vorax':          ['combat',      'maître',  'rare',      null],
+  'Diffindo Maxima':    ['combat',      'maître',  'rare',      null],
+  'Vulnera Sanentur':   ['defense',     'maître',  'rare',      null],
+  'Portus':             ['exploration', 'maître',  'rare',      null],
+  'Cheminette Inter-Mondes': ['exploration', 'maître', 'epic',  null],
+  'Sceau du Voyageur':  ['exploration', 'maître',  'rare',      null],
+  "Mémoire d'Outremonde": ['exploration', 'maître', 'rare',     null],
+  'Rappel Astral':      ['exploration', 'maître',  'rare',      null],
+  // ── Sorts « Mythe » de Maison (signature, affinité canon — §1.3) ──
+  'Patronus Maxima':       ['signature', 'maître',   'epic', 'Gryffondor'],
+  'Sectumsempra Imperius': ['signature', 'corrompu', 'epic', 'Serpentard'],
+  'Legilimens':            ['signature', 'maître',   'epic', 'Serdaigle'],
+  'Récolte Magique':       ['signature', 'maître',   'epic', 'Poufsouffle'],
+  // ── Corrompus / interdits (legendary) ──
+  'Avada...':           ['signature', 'corrompu', 'legendary', null],
+  'Fiendfyre':          ['combat',    'corrompu', 'legendary', null],
+};
+
 // Passe de normalisation IDEMPOTENTE (miroir de _migrateEquippedSlots côté
-// save) : ajoute les champs d'identité par défaut à chaque entrée SPELLS
-// SANS écraser une valeur déjà déclarée. Rejouable sans effet de bord.
-// Retourne la liste pour permettre un appel testable hors `SPELLS`.
+// save) : ajoute les champs d'identité à chaque entrée SPELLS SANS écraser une
+// valeur déjà déclarée. Précédence : littéral > SPELL_META (étiquetage curaté
+// P1) > défaut dérivé. Rejouable sans effet de bord. Retourne la liste pour
+// permettre un appel testable hors `SPELLS`.
 function _normalizeSpells(list) {
   const spells = list || (typeof SPELLS !== 'undefined' ? SPELLS : null);
   if (!Array.isArray(spells)) return spells;
   for (const s of spells) {
     if (!s || typeof s !== 'object') continue;
+    const meta = (s.name != null && SPELL_META[s.name]) || null;
     if (s.id == null)              s.id = _slugifySpell(s.name);
-    if (s.category == null)        s.category = _defaultSpellCategory(s);
-    if (s.tier == null)            s.tier = 'basique';
-    if (s.rarity == null)          s.rarity = 'common';
-    if (s.houseAffinity === undefined) s.houseAffinity = null;
+    if (s.category == null)        s.category = (meta && meta[0]) || _defaultSpellCategory(s);
+    if (s.tier == null)            s.tier = (meta && meta[1]) || 'basique';
+    if (s.rarity == null)          s.rarity = (meta && meta[2]) || 'common';
+    if (s.houseAffinity === undefined) s.houseAffinity = meta ? meta[3] : null;
   }
   return spells;
 }

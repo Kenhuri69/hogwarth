@@ -1847,12 +1847,12 @@ function loadModule(relPath, exportNames, globals = {}) {
 (function testSpellSocleP0() {
   const m = loadModule('js/data.js', [
     'SPELLS', 'SPELL_TIERS', 'SPELL_PREMIUM_MULT', 'SPELL_RARITY_COST_MULT',
-    'HOUSE_SPELL_FX', 'HERO_PATRONUS',
+    'HOUSE_SPELL_FX', 'HERO_PATRONUS', 'SPELL_META',
     'getSpellById', 'getSpellByName', 'spellTierTint', 'resolveSpellForm',
     'spellPmCostEstimate', '_slugifySpell', '_defaultSpellCategory', '_normalizeSpells',
   ]);
   const { SPELLS, SPELL_TIERS, SPELL_PREMIUM_MULT, SPELL_RARITY_COST_MULT,
-          HOUSE_SPELL_FX, HERO_PATRONUS, getSpellById, getSpellByName, spellTierTint,
+          HOUSE_SPELL_FX, HERO_PATRONUS, SPELL_META, getSpellById, getSpellByName, spellTierTint,
           resolveSpellForm, spellPmCostEstimate, _slugifySpell, _defaultSpellCategory,
           _normalizeSpells } = m;
 
@@ -1897,8 +1897,27 @@ function loadModule(relPath, exportNames, globals = {}) {
   check('tous les tiers ∈ SPELL_TIERS', SPELLS.every(s => !!SPELL_TIERS[s.tier]));
   check('toutes les catégories ∈ taxonomie 2.0',
     SPELLS.every(s => ['combat', 'exploration', 'defense', 'rituel', 'signature'].includes(s.category)));
-  check('défaut P0 : tier basique partout', SPELLS.every(s => s.tier === 'basique'));
-  check('défaut P0 : houseAffinity null partout', SPELLS.every(s => s.houseAffinity === null));
+  check('toutes les raretés valides',
+    SPELLS.every(s => ['common', 'uncommon', 'rare', 'epic', 'legendary'].includes(s.rarity)));
+  check('houseAffinity ∈ {null, 4 Maisons}',
+    SPELLS.every(s => s.houseAffinity === null || ['Gryffondor', 'Serpentard', 'Serdaigle', 'Poufsouffle'].includes(s.houseAffinity)));
+
+  // ── Étiquetage curaté P1 (SPELL_META) ──
+  check('SPELL_META couvre les 47 sorts', SPELLS.every(s => !!SPELL_META[s.name]));
+  // Précédence : la valeur curée s'applique quand le littéral n'en déclare pas.
+  check('Incendio = combat/basique/common', (() => { const s = getSpellByName('Incendio'); return s.category === 'combat' && s.tier === 'basique' && s.rarity === 'common'; })());
+  check('Sectumsempra = combat/maître/epic', (() => { const s = getSpellByName('Sectumsempra'); return s.tier === 'maître' && s.rarity === 'epic'; })());
+  check('Fiendfyre = corrompu/legendary', (() => { const s = getSpellByName('Fiendfyre'); return s.tier === 'corrompu' && s.rarity === 'legendary'; })());
+  check('Avada... = signature/corrompu/legendary', (() => { const s = getSpellByName('Avada...'); return s.category === 'signature' && s.tier === 'corrompu' && s.rarity === 'legendary'; })());
+  // Les 4 sorts « Mythe » portent l'affinité de Maison canon (et eux seuls).
+  const myth = { 'Patronus Maxima': 'Gryffondor', 'Sectumsempra Imperius': 'Serpentard', 'Legilimens': 'Serdaigle', 'Récolte Magique': 'Poufsouffle' };
+  for (const [n, h] of Object.entries(myth)) {
+    const s = getSpellByName(n);
+    check(`${n} affine ${h} + signature`, s && s.houseAffinity === h && s.category === 'signature');
+  }
+  check('exactement 4 sorts house-affine', SPELLS.filter(s => s.houseAffinity).length === 4);
+  check('au moins 1 sort par rang',
+    ['basique', 'avancé', 'maître', 'corrompu'].every(t => SPELLS.some(s => s.tier === t)));
   // Idempotence : un 2e passe ne change rien (clone JSON identique).
   const before = JSON.stringify(SPELLS);
   _normalizeSpells(SPELLS);
