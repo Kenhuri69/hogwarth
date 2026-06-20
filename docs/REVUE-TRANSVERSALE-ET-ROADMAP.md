@@ -221,7 +221,9 @@ narration↔gameplay, tests verts, doc fidèle au code.
 > uniquement des tâches d'ART séparées** (session dédiée, ne bloquent pas la
 > démo jouable) :
 > - **Art PNG des 4 boss-gardiens** des Chambres des Fondateurs (code complet,
->   fallback SVG par catégorie en place — cf. Phase 3).
+>   fallback SVG par catégorie en place — cf. Phase 3). **Prompts Nano Banana
+>   prêts** : [`.claude/plans/nano-banana-prompts-boss-gardiens.md`](../.claude/plans/nano-banana-prompts-boss-gardiens.md)
+>   (4 prompts 512² + checklist de câblage `imgSrc`/cache-bump post-génération).
 > - **Pass d'assets de fin** (illustrations victoire, SFX « froid surnaturel »,
 >   fonds parchemin Codex par acte — ligne Phase 4 dédiée, encore ouverte).
 > - **Biais de génération par Maison V2** (direction ratifiée 2026-06-19,
