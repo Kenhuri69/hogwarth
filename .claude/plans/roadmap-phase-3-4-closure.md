@@ -39,8 +39,15 @@ Arbitrage (2026-06-19, AskUserQuestion) : les 3 tranchées **OUI**. Livré en 3 
   boss combat (scope art). Testé `units.js` (codex §8 + ambiance §5). cache-bump
   v165 (codex v14, floor-ambiance v12). Doc 10 §10.3/§10.5 + doc 11 §11.10 ✅.
   → branche `claude/endgame-dormeur-fondations` (PR #580).
-- **2c — biais léger de génération par Maison** : à faire. Équité-safe
-  (redistribution, pas d'ajout net) ; validé au pass d'équilibrage (Item 3).
+- **2c — biais léger de génération par Maison** ✅ (levier cosmétique) : arbitrage
+  user (2026-06-20) = **skin visuel de Maison**. Livrée cosmétique sur les cartes
+  d'ennemi en combat (`houseSkinClass` + flag `HOUSE_SKIN_ENABLED`, `battle-ui.js` ;
+  aura CSS palette de Maison, `style.css`), pilotée par `chosenHouse`.
+  **Power-neutral par construction** (rendu seul → 0 stat/butin/spawn, 0 sim
+  requis). Testé `units.js` (4 Maisons + flag off + inconnu). cache-bump v166
+  (battle-ui v8, style v44). Doc 10 §10.6 ✅. **Pondération de salles différée**
+  derrière le gate sim de l'Item 3. → branche `claude/endgame-house-gen-bias`.
+  Plan détaillé : `.claude/plans/house-gen-bias-2c.md`.
 
 ## Item 3 — Pass d'équilibrage de release (Phase 4)
 `tools/sim-difficulty.js` + `check_difficulty.js` en CI.
