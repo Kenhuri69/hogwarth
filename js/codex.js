@@ -443,6 +443,46 @@ const CODEX_ENTRIES = [
     },
   },
 
+  // ── 📖 Tactique de combat (systèmes P2/P4 — combat-system-synthesis) ──
+  {
+    id: 'artefacts_actifs', category: 'glossaire', icon: '🏺', act: 2,
+    title: 'Artefacts à éveil',
+    links: ['orbe_runique_premium_gryff', 'talisman_fondateurs_premium_pouf'],
+    unlockConditions: [
+      { type: 'item', value: 'orbe_runique' },
+      { type: 'item', value: 'talisman_fondateurs' },
+      { type: 'item', value: 'larmes_phenix' },
+      { type: 'item', value: 'orbe_runique_premium_gryff' },
+      { type: 'item', value: 'talisman_fondateurs_premium_pouf' },
+    ],
+    revealedBy: [{ type: 'floor', value: 8 }],
+    textVersions: {
+      veiled: "Certains artefacts ne se contentent pas de murmurer une force passive : ils gardent une décharge, lovée pour l'instant juste. Une fois par affrontement, on peut la libérer — puis l'objet se tait, épuisé, jusqu'au combat suivant. J'ai senti l'Orbe vibrer dans ma poche avant même d'en comprendre l'usage.",
+      revealed: "Trois éveils se distinguent. La décharge runique (Orbe) foudroie une cible d'un éclat élémentaire. La purge des Fondateurs (Talisman) dissipe d'un souffle les afflictions du groupe. Le voile du Phénix (Larmes) dresse un bouclier sur tous. Les variantes Premium de Maison portent la même charge, recolorée de leur blason. Une seule fois par combat : il faut choisir l'instant où l'éveil pèsera le plus lourd.",
+    },
+  },
+  {
+    id: 'postures_duo', category: 'glossaire', icon: '🤝', act: 1,
+    title: 'Phalange & Tenaille',
+    unlockConditions: [{ type: 'floor', value: 2 }],
+    revealedBy: [{ type: 'floor', value: 6 }],
+    textVersions: {
+      veiled: "À deux, on ne combat pas comme un seul deux fois. Il y a une manière de se tenir — l'un devant, l'autre couvert — et une manière de frapper ensemble. On peut changer de pied une fois par échange, sans perdre le tempo.",
+      revealed: "Deux postures, lisibles. En Phalange (défensive), celui de devant attire les coups et protège l'arrière, plus fragile. En Tenaille (offensive), frapper une cible que l'autre a déjà entamée ce tour la déchire de quinze pour cent de plus — la concentration du feu récompensée. Le choix se garde d'un combat à l'autre ; une bascule reste gratuite à chaque affrontement. En solo, tout cela n'a pas de sens : on est sa propre ligne.",
+    },
+  },
+  {
+    id: 'environnement_runique', category: 'glossaire', icon: '🌿', act: 4,
+    title: 'Charge runique des Ruines',
+    links: ['ruines_anciennes', 'boucle_tenebreuse'],
+    unlockConditions: [{ type: 'floor', value: 14 }, { type: 'victory' }],
+    revealedBy: [{ type: 'victory' }],
+    textVersions: {
+      veiled: "Dans les Ruines Anciennes, l'air lui-même est chargé. Les murs runiques rendent le feu et la foudre plus mordants, et certaines pierres, si on les active au bon moment, libèrent une décharge qui fige l'ennemi le plus proche. Le combat ne se joue plus seulement entre nous et eux : le lieu y prend part.",
+      revealed: "La charge runique des Ruines (zone profonde, ou tout étage rouvert après la victoire) augmente de dix pour cent les sortilèges de feu et de foudre — l'ambiance amplifie ce qui brûle. Une fois par combat, activer la rune étourdit l'ennemi le plus proche : un répit volé au lieu. Ce n'est pas une magie qu'on porte, mais une qu'on emprunte au sol des Fondateurs ; elle n'existe que là où la pierre se souvient.",
+    },
+  },
+
   // ── ⚜️ Objets & Artefacts (robinet item/palier, Lot 5) ──
   {
     id: 'sword_gryff', category: 'objets', icon: '⚔️', act: 4,

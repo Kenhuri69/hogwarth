@@ -1302,6 +1302,27 @@ function loadModule(relPath, exportNames, globals = {}) {
   try { codexEntryState(cle, {}); codexEntryState(cle, { floorReached: 1 }); unlockedCodexFor({}); }
   catch (e) { noThrow = false; }
   check('codex helpers tolèrent un ctx incomplet', noThrow);
+
+  // ── P5 : entrées « tactique de combat » (systèmes P2/P4) ──
+  const art = getCodexEntry('artefacts_actifs');
+  check('P5 codex : artefacts_actifs présent', !!art && art.category === 'glossaire');
+  check('P5 codex : artefacts_actifs locked sans artefact', codexEntryState(art, empty) === 'locked');
+  check('P5 codex : artefacts_actifs veiled si artefact possédé',
+    codexEntryState(art, { ...empty, itemsOwned: new Set(['orbe_runique']) }) === 'veiled');
+  check('P5 codex : artefacts_actifs revealed (artefact + étage 8)',
+    codexEntryState(art, { ...empty, itemsOwned: new Set(['talisman_fondateurs']), floorReached: 8 }) === 'revealed');
+
+  const post = getCodexEntry('postures_duo');
+  check('P5 codex : postures_duo présent', !!post && post.category === 'glossaire');
+  check('P5 codex : postures_duo veiled (étage 2)', codexEntryState(post, { ...empty, floorReached: 2 }) === 'veiled');
+  check('P5 codex : postures_duo revealed (étage 6)', codexEntryState(post, { ...empty, floorReached: 6 }) === 'revealed');
+
+  const envc = getCodexEntry('environnement_runique');
+  check('P5 codex : environnement_runique présent', !!envc && envc.category === 'glossaire');
+  check('P5 codex : environnement_runique locked étage 5', codexEntryState(envc, { ...empty, floorReached: 5 }) === 'locked');
+  check('P5 codex : environnement_runique veiled étage 14', codexEntryState(envc, { ...empty, floorReached: 14 }) === 'veiled');
+  check('P5 codex : environnement_runique revealed (victoire)',
+    codexEntryState(envc, { ...empty, floorReached: 14, victoryAchieved: true }) === 'revealed');
 })();
 
 // ============================================================
