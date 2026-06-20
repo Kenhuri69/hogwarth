@@ -654,6 +654,14 @@ function triggerNpcSpecialAction(npcId) {
     for (const id of claimable) {
       const item = ITEMS.find(it => it.id === id);
       if (!item) continue;
+      // Anti-doublon (catch-all) : une relique unique non empilable déjà
+      // possédée (sac OU équipée) ne doit pas être re-remise — sinon elle
+      // s'empile en doublon invendable. On purge simplement la file.
+      if (typeof _ownsItemId === 'function' && _ownsItemId(id)
+          && !(typeof _isStackable === 'function' && _isStackable(item))) {
+        pendingHouseRewards.delete(id);
+        continue;
+      }
       if (!tryAddItem(item, { silent: true })) {
         if (typeof addMsg === 'function') addMsg('Inventaire plein — libérez de la place et revenez.', 'bad');
         break;

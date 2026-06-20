@@ -1792,6 +1792,24 @@ function loadModule(relPath, exportNames, globals = {}) {
 })();
 
 // ============================================================
+// Lot 2c — battle-ui.js : houseSkinClass (livrée de Maison, PUR)
+// ============================================================
+(function testHouseSkin() {
+  const { houseSkinClass } = loadModule('js/battle-ui.js', ['houseSkinClass']);
+  // 4 Maisons → classe dédiée quand activé.
+  check('skin Gryffondor', houseSkinClass('Gryffondor', true) === 'house-skin-gryffondor');
+  check('skin Serpentard', houseSkinClass('Serpentard', true) === 'house-skin-serpentard');
+  check('skin Serdaigle',  houseSkinClass('Serdaigle', true)  === 'house-skin-serdaigle');
+  check('skin Poufsouffle', houseSkinClass('Poufsouffle', true) === 'house-skin-poufsouffle');
+  // Flag de repli V1 (désactivé) → aucune classe, quelle que soit la Maison.
+  check('skin désactivé → vide', houseSkinClass('Gryffondor', false) === '');
+  // Maison absente / inconnue → vide, jamais d'exception (défensif).
+  check('skin sans Maison → vide', houseSkinClass(null, true) === '');
+  check('skin Maison inconnue → vide', houseSkinClass('Durmstrang', true) === '');
+  check('skin undefined → vide', houseSkinClass(undefined, true) === '');
+})();
+
+// ============================================================
 // Rapport
 // ============================================================
 if (failures.length) {

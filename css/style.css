@@ -2668,6 +2668,25 @@ body {
   from { filter: drop-shadow(0 0 6px #a040ff)  drop-shadow(0 0 12px #6020c0); }
   to   { filter: drop-shadow(0 0 12px #c060ff) drop-shadow(0 0 24px #8040e0); }
 }
+
+/* Livrée de Maison (Lot 2c — biais de génération, levier cosmétique).
+   Le donjon « se lit » selon la Maison du héros (doc 10 §10.6) : une fine aura
+   colorée de Maison derrière l'icône d'ennemi. POWER-NEUTRAL (visuel pur). Pseudo
+   ::before dédié → ne touche pas le `filter` des couches variant/corruption ;
+   cède la priorité au halo Ténébreux (variant-darkness) et aux ennemis morts. */
+.enemy-card[class*="house-skin-"] { position: relative; }
+.enemy-card[class*="house-skin-"]::before {
+  content: ""; position: absolute; top: -2px; left: 50%;
+  width: 64px; height: 64px; transform: translateX(-50%);
+  border-radius: 50%; z-index: 0; pointer-events: none; opacity: 0.45;
+}
+.enemy-card.house-skin-gryffondor::before  { background: radial-gradient(circle, rgba(211,166,37,0.55) 0%, rgba(116,0,1,0.28) 48%, transparent 72%); }
+.enemy-card.house-skin-serpentard::before  { background: radial-gradient(circle, rgba(170,170,170,0.5) 0%, rgba(26,71,42,0.32) 48%, transparent 72%); }
+.enemy-card.house-skin-serdaigle::before   { background: radial-gradient(circle, rgba(148,107,45,0.5) 0%, rgba(14,26,64,0.34) 48%, transparent 72%); }
+.enemy-card.house-skin-poufsouffle::before { background: radial-gradient(circle, rgba(240,199,94,0.55) 0%, rgba(55,46,41,0.28) 48%, transparent 72%); }
+/* Le halo Ténébreux et la mort effacent la livrée (priorité visuelle). */
+.enemy-card.variant-darkness::before,
+.enemy-card.enemy-dead::before { opacity: 0; }
 /* ===== Forge des Ténèbres & Bibliothèque interdite (endgame Tranche 2) ===== */
 #forge-modal, #library-modal {
   display: none;
@@ -2753,6 +2772,10 @@ body {
 }
 .forge-progress-line {
   font-size: 12px; color: #c0a070; line-height: 1.4;
+}
+.forge-dissolve-section {
+  margin-top: 14px; padding-top: 10px;
+  border-top: 1px dashed rgba(168, 216, 120, 0.4);
 }
 .forge-hint, .library-hint {
   margin-top: 12px; padding-top: 10px;
