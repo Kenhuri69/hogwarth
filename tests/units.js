@@ -2279,6 +2279,47 @@ function loadModule(relPath, exportNames, globals = {}) {
 })();
 
 // ============================================================
+// N. P2 — Boss à phases (_abilityPhaseReady) + Tenaille (_duoComboMult)
+// ============================================================
+(function testCombatP2() {
+  // _abilityPhaseReady : helper PUR de battle-spells.js (lit seulement ses args).
+  const sp = loadModule('js/battle-spells.js', ['_abilityPhaseReady'], { window: {} });
+  const { _abilityPhaseReady } = sp;
+  const boss = { hp: 100, currentHp: 100 };
+  check('phase : capacité sans flag → toujours prête',
+    _abilityPhaseReady({ effect: 'damage' }, boss) === true);
+  check('phase : gardée au-dessus du seuil (100 % PV)',
+    _abilityPhaseReady({ phase: true, phaseHpFrac: 0.4 }, { hp: 100, currentHp: 100 }) === false);
+  check('phase : débloquée sous le seuil (30 % PV)',
+    _abilityPhaseReady({ phase: true, phaseHpFrac: 0.4 }, { hp: 100, currentHp: 30 }) === true);
+  check('phase : seuil par défaut 0.5',
+    _abilityPhaseReady({ phase: true }, { hp: 100, currentHp: 49 }) === true &&
+    _abilityPhaseReady({ phase: true }, { hp: 100, currentHp: 51 }) === false);
+
+  // _duoComboMult : helper de battle.js lisant partySize/duoPosture/duoComboMarks.
+  // battle.js n'a aucun code top-level exécutable → chargeable avec globals injectés.
+  function loadDuo(globals) {
+    return loadModule('js/battle.js', ['_duoComboMult'], globals).
+      _duoComboMult;
+  }
+  // Solo → jamais de bonus.
+  check('tenaille : solo ignoré',
+    loadDuo({ partySize: 1, duoPosture: 'tenaille', duoComboMarks: { 0: 1 } })(0, 0) === 1);
+  // Duo Phalange → pas de combo.
+  check('tenaille : posture phalange → 1',
+    loadDuo({ partySize: 2, duoPosture: 'phalange', duoComboMarks: { 0: 1 } })(0, 0) === 1);
+  // Duo Tenaille, cible non marquée → 1.
+  check('tenaille : cible vierge → 1',
+    loadDuo({ partySize: 2, duoPosture: 'tenaille', duoComboMarks: {} })(0, 0) === 1);
+  // Duo Tenaille, cible marquée par l'AUTRE héros → 1.15.
+  check('tenaille : cible marquée par l\'autre héros → 1.15',
+    loadDuo({ partySize: 2, duoPosture: 'tenaille', duoComboMarks: { 0: 1 } })(0, 0) === 1.15);
+  // Duo Tenaille, cible marquée par LE MÊME héros → 1 (pas d'auto-combo).
+  check('tenaille : même héros → pas de combo',
+    loadDuo({ partySize: 2, duoPosture: 'tenaille', duoComboMarks: { 0: 0 } })(0, 0) === 1);
+})();
+
+// ============================================================
 // Rapport
 // ============================================================
 if (failures.length) {

@@ -475,7 +475,7 @@ P0 · Socle (✅ déjà livré)            — moteur, statuts, éléments, crit
                                         Artefacts P0-P3, Sorts P0-P1
 P1 · Synergie Artefact↔Sort (✅ LIVRÉ) — resolveSpellForm actif (évolution + override
      (le plus fort ROI)                 signature Premium), encart « Synergies » fiche
-P2 · Variantes avancées               — artefacts ACTIFS (action 🏺), duoPosture,
+P2 · Variantes avancées (✅ LIVRÉ)    — artefacts ACTIFS (action 🏺), duoPosture,
                                         boss à phases
 P3 · Corruption                       — corruptionLevel + sorts corrompus + contrecoup,
      (gate Boucle, sim obligatoire)     HUD/teinte/barks, gate effectiveFloor>=11
@@ -518,6 +518,72 @@ P5 · Équilibrage & polish             — sim-difficulty (coûts, corruptionRi
 ---
 
 ## Journal du plan
+
+- **2026-06-20** — **P2 LIVRÉ (Variantes avancées).** Trois briques additives,
+  scaling monstres (`dungeon-scaling.js`) **jamais touché**. Apport 100 % additif,
+  call-sites défensifs.
+
+  **Vérif finale** : `node tests/units.js` (838 assertions, dont `_abilityPhaseReady`
+  + `_duoComboMult`) ✅ ; `node tests/smoke.js` (245/245, dont les 3 scénarios
+  dédiés `scenarioActiveArtifact` / `scenarioDuoPosture` / `scenarioBossPhase`) ✅ ;
+  `node tools/sim-difficulty.js` → win-rates baseline inchangés (les apports P2 sont
+  des buffs joueur opt-in / une capacité boss gatée, hors modèle de sim ; scaling
+  intouché) ✅ ; `node tests/pwa-smoke.js` (CACHE_VERSION v184) ✅ ; cache PWA bumpé
+  (9 assets : data/state/save/battle/battle-spells/battle-ui/monsters/hero-barks/
+  ui-character-sheet).
+
+  **Écart assumé** : le rider « +10 % mitigation Garde » de Phalange (plan §1.1)
+  est **abandonné** — la baseline Garde 50 % est verrouillée par un test existant
+  (`scenarioGuardAndFerula`) et la changer par défaut = régression silencieuse.
+  Phalange conserve son identité défensive via le **biais de ciblage** (l'avant
+  encaisse +20 %, l'arrière plus fragile est protégé). Deux tests existants
+  ajustés sans changer leur intention : `scenarioGuardAndFerula` (inchangé,
+  re-validé) et `scenarioCombatMobile` (compte désormais les boutons *visibles* —
+  les 2 boutons conditionnels 🏺/🔄 sont masqués hors contexte).
+
+  Détail des briques :
+
+  **Brique A — Artefacts actifs (`activeEffect`)** :
+  - `state.js` : `artifactCharges` (map idx→charges restantes, combat-scoped,
+    reset `startBattle`).
+  - `data.js` : `activeEffect` ajouté à `orbe_runique` (+`orbe_runique_premium_gryff`)
+    → `elemBurst` (foudre, 1 ennemi) ; `talisman_fondateurs`
+    (+`talisman_fondateurs_premium_pouf`) → `purgeStatus` (groupe) ; `larmes_phenix`
+    → `shieldGroup` (groupe). Passifs existants **intouchés**.
+  - `battle.js` : `_activeArtifactFor(char)`, `battleAction('artifact')`,
+    `useActiveArtifact(charIdx, targetIdx)` + résolveurs `elemBurst`/`purgeStatus`/
+    `shieldGroup`. Ciblage 1-ennemi via `showTargetSelection('artifact')` (réutilise
+    `pendingAction`). Charge consommée 1×/combat.
+  - `battle-ui.js` : branche `pendingAction==='artifact'` ;
+    `_refreshBattleActionButtons()` (montre 🏺 si charge dispo).
+  - `index.html` : bouton 🏺 conditionnel (caché par défaut).
+
+  **Brique B — Positionnement Duo (`duoPosture`)** :
+  - `state.js` : `duoPosture` ('phalange'|'tenaille', **sérialisé**, défaut
+    'phalange'), `duoPostureSwitched` (combat-scoped, bascule gratuite 1×/combat),
+    `duoComboMarks` (combat-scoped, marque Tenaille par index ennemi).
+  - `save.js` : sérialise/applique `duoPosture` (défaut 'phalange').
+  - `battle.js` : Phalange → `_chooseEnemyTarget` biais cible avant (+20 %, l'avant
+    encaisse pour protéger l'arrière plus fragile — **le rider « +10 % mitigation
+    Garde » du plan §1.1 est écarté pour préserver la baseline Garde 50 % bien
+    testée → zéro régression**) ; Tenaille → `_duoComboMult(enemyIdx, heroIdx)`
+    (+15 % si l'autre héros a déjà frappé cette cible ce round) appliqué dans
+    `executeAttack` + marque. `battleAction('posture')` = action gratuite.
+  - `battle-spells.js` : Tenaille appliqué dans `_computeSpellDamage` (hub dégâts
+    de sort) + marque. **Solo : posture ignorée** (`partySize===1`).
+  - `ui-character-sheet.js` : encart « Posture du Duo » (hors combat, duo only).
+
+  **Brique C — Boss à phases (`ability.phase`)** :
+  - `battle-spells.js` : `_abilityPhaseReady(a, enemy)` (pur) garde une capacité
+    `phase` sous `phaseHpFrac` dans le filtre `fired` de `tryEnemyAbility` ; beat
+    `heroBarkScripted` au franchissement (one-shot `enemy._phaseBeatDone`).
+  - `monsters.js` : capacité `phase` sur le Gardien de la Chambre du Lion (démo).
+  - `hero-barks.js` : lignes `bossPhase` (harry/hermione).
+
+  **Vérif** : `node tests/units.js` + `node tests/smoke.js` (scénarios artefact
+  actif / posture / boss-phase dans `tests/scenarios/combat.js`) ;
+  `node tools/sim-difficulty.js` (win-rates inchangés hors apports joueur) ; cache
+  PWA bumpé. Non touché : P0, P1, P3-P5, `dungeon-scaling.js`.
 
 - **2026-06-20** — **P1 livré (Synergie Artefact ↔ Sort).** Apport 100 %
   additif, zéro régression, scaling monstres intouché.

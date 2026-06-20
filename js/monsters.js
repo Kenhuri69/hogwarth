@@ -2341,8 +2341,12 @@ const MONSTERS = [
     abilities: [
       { name: "Charge Ardente",  icon: "🔥", desc: "Une ruée enflammée",            effect: "damage", power: 16, chance: 0.40 },
       { name: "Brasier Vivace",  icon: "♨️", desc: "Embrase la cible",               effect: "status", statusId: "burn", power: 0, chance: 0.30, turns: 3 },
-      { name: "Tenir la Porte",  icon: "🛡️", desc: "Se renforce et tient bon",       effect: "heal",   power: 18, chance: 0.20 }
+      { name: "Tenir la Porte",  icon: "🛡️", desc: "Se renforce et tient bon",       effect: "heal",   power: 18, chance: 0.20 },
+      // P2 — Boss à phases (combat-system-synthesis §1.4) : « rage de feu »
+      // débloquée sous 40 % PV (burn garanti, dégâts accrus). Gardée au-dessus.
+      { name: "Rage de Braise",  icon: "🌋", desc: "Embrasement de désespoir",        effect: "status", statusId: "burn", power: 4, chance: 1.0, turns: 4, phase: true, phaseHpFrac: 0.40 }
     ],
+    phaseMsg: "Le Gardien du Lion s'embrase de fureur — ses braises rugissent !",
     ai: "aggressive",
     resist: ["feu", "disarm"],
     weak:   ["glace"],

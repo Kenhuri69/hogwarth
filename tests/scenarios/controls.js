@@ -180,12 +180,16 @@ async function scenarioCombatMobile() {
     const actions = document.querySelector('.battle-actions');
     const btn = actions ? actions.querySelector('.cmd-btn') : null;
     const btns = actions ? Array.from(actions.querySelectorAll('.cmd-btn')) : [];
+    // P2 : 2 boutons conditionnels (🏺 Artefact actif, 🔄 Posture) sont ajoutés
+    // mais masqués (display:none) hors de leur contexte (solo sans artefact actif
+    // → tous deux cachés). On compte les boutons VISIBLES pour l'ergonomie.
+    const visible = btns.filter(b => getComputedStyle(b).display !== 'none');
     return {
       bodyHasInBattle: document.body.classList.contains('in-battle'),
       cmdBarHidden:    cmdBar ? getComputedStyle(cmdBar).display === 'none' : null,
       actionsDisplay:  actions ? getComputedStyle(actions).display : null,
       actionsCols:     actions ? getComputedStyle(actions).gridTemplateColumns : null,
-      btnCount:        btns.length,
+      btnCount:        visible.length,
       btnMinHeight:    btn ? parseFloat(getComputedStyle(btn).minHeight) : 0
     };
   });

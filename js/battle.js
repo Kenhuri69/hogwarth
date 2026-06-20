@@ -605,6 +605,9 @@ function startBattle(baseEnemyData, opts) {
   celeriteGauge     = [0, 0];   // D5 Célérité — accumulateur de tempo (combat-scoped)
   celeriteExtra     = [0, 0];
   combatFamiliars   = [];       // P2 — familiers invoqués (Avis Praesidium), combat-scoped
+  artifactCharges   = {};       // P2 — charges d'artefacts actifs (reset à chaque combat)
+  duoPostureSwitched = false;   // P2 — bascule gratuite de posture réarmée
+  duoComboMarks      = {};      // P2 — marques Tenaille (reset par round dans enemyTurn)
   battleTurn        = 0;
   currentBattleChar = 0;
   pendingAction     = null;
@@ -835,6 +838,8 @@ function battleAction(action) {
   if (action === 'spell') { openBattleSpells(); return; }
   if (action === 'item')  { openBattleItems();  return; }
   if (action === 'flee')  { doFlee(); return; }
+  if (action === 'artifact') { triggerActiveArtifact(); return; }   // P2 — artefact actif
+  if (action === 'posture')  { toggleDuoPosture();      return; }   // P2 — bascule de posture (gratuite)
 
   if (action === 'guard') {
     const idx    = currentBattleChar;
@@ -870,6 +875,137 @@ function battleAction(action) {
       executeAttack(getFirstLivingEnemy());
     }
   }
+}
+
+// ── P2 · Artefacts actifs (combat-system-synthesis §2.1) ─────
+// Sous-classe d'artefacts déclenchables 1×/combat (`item.activeEffect`),
+// distincte des passifs (stats/regen/grantsSpell — intouchés). Charges suivies
+// dans `artifactCharges[idx]` (reset startBattle). Le ciblage 1-ennemi réutilise
+// `pendingAction` ('artifact') via showTargetSelection. PUR (lecture seule).
+function _activeArtifactFor(char) {
+  if (!char || !char.equipped) return null;
+  for (const item of Object.values(char.equipped)) {
+    if (item && item.activeEffect && item.activeEffect.resolve) return item;
+  }
+  return null;
+}
+// Charges restantes pour le perso `idx` (init paresseuse depuis activeEffect.charges).
+function _artifactChargesLeft(idx, art) {
+  if (artifactCharges[idx] === undefined) {
+    artifactCharges[idx] = (art && art.charges != null) ? art.charges : 1;
+  }
+  return artifactCharges[idx];
+}
+// Entrée depuis battleAction('artifact') : valide la charge, route le ciblage.
+function triggerActiveArtifact() {
+  const idx  = currentBattleChar;
+  const char = party[idx];
+  const item = _activeArtifactFor(char);
+  if (!item) { setBattleLog('Aucun artefact actif équipé.'); return; }
+  const art = item.activeEffect;
+  if (_artifactChargesLeft(idx, art) <= 0) {
+    setBattleLog(`🏺 ${art.label} est déjà déchargé pour ce combat.`);
+    return;
+  }
+  // Cible 1 ennemi → réutilise pendingAction (showTargetSelection). Sinon
+  // (groupe allié / soi / tout ennemi) → résolution immédiate.
+  if (art.target === 'enemy' && livingEnemies().length > 1) {
+    showTargetSelection('artifact');
+  } else {
+    const tgt = (art.target === 'enemy') ? getFirstLivingEnemy() : null;
+    useActiveArtifact(idx, tgt);
+  }
+}
+// Résout l'effet actif et consomme la charge. `targetIdx` = index ennemi (cibles
+// 'enemy') ou null. Trois résolveurs : elemBurst / purgeStatus / shieldGroup.
+function useActiveArtifact(charIdx, targetIdx) {
+  const char = party[charIdx];
+  const item = _activeArtifactFor(char);
+  if (!item) return;
+  const art = item.activeEffect;
+  if (_artifactChargesLeft(charIdx, art) <= 0) return;
+  artifactCharges[charIdx] = _artifactChargesLeft(charIdx, art) - 1;
+
+  if (typeof AudioSystem !== 'undefined' && AudioSystem.playSpellCast) {
+    AudioSystem.playSpellCast(art.element === 'feu' ? 'Incendio'
+      : (art.element === 'glace' ? 'Glacius' : 'Protego'));
+  }
+
+  if (art.resolve === 'elemBurst') {
+    // Décharge élémentaire sur une cible (respecte resist/faiblesse + combos).
+    let enemy = (targetIdx != null) ? enemyGroup[targetIdx] : null;
+    if (!enemy || enemy.currentHp <= 0) enemy = livingEnemies()[0];
+    if (!enemy) { advanceBattleChar(); return; }
+    const tIdx = enemyGroup.indexOf(enemy);
+    let dmg = Math.max(1, art.power || 0);
+    let suffix = '';
+    if (art.element && enemy.resist?.includes(art.element)) { dmg = Math.max(1, Math.floor(dmg * RESIST_MULTIPLIER)); suffix += ' 🔰'; }
+    if (art.element && enemy.weak?.includes(art.element))   { dmg = Math.floor(dmg * WEAK_MULTIPLIER); suffix += ' 💥'; }
+    const combo = (typeof comboDamageMult === 'function') ? comboDamageMult(enemy, art.element || 'physique') : { mult: 1, label: null };
+    if (combo.mult !== 1) { dmg = Math.max(1, Math.floor(dmg * combo.mult)); suffix += combo.label ? ` ${combo.label}` : ''; }
+    enemy.currentHp -= dmg;
+    setBattleLog(`🏺 ${char.name} libère ${art.label} sur ${enemy.name} : ${dmg} dégâts${suffix} !`);
+    addMsg(`🏺 ${art.label} : ${dmg} dégâts sur ${enemy.name}.`, 'good');
+    UX_safe.floatDmg(`enemy:${tIdx}`, dmg, 'crit');
+    UX_safe.logCombat(`🏺 <b>${char.name}</b> — ${art.label} → <b>−${dmg}</b>${suffix} sur ${enemy.name}`, 'magic');
+    renderEnemyGroup();
+    if (checkAllEnemiesDead()) return;
+  } else if (art.resolve === 'purgeStatus') {
+    // Dissipe les statuts négatifs (DoT/weaken…) du groupe.
+    let cleared = 0;
+    party.slice(0, partySize).forEach(c => {
+      if (c.hp <= 0 || !Array.isArray(c.statusEffects)) return;
+      cleared += c.statusEffects.length;
+      c.statusEffects = [];
+    });
+    setBattleLog(`🏺 ${char.name} invoque ${art.label} : ${cleared} altération${cleared > 1 ? 's' : ''} dissipée${cleared > 1 ? 's' : ''} !`);
+    addMsg(`🏺 ${art.label} : groupe purifié.`, 'good');
+    UX_safe.logCombat(`🏺 <b>${char.name}</b> — ${art.label} purifie le groupe (${cleared})`, 'good');
+    updateUI();
+  } else if (art.resolve === 'shieldGroup') {
+    // Bouclier de groupe (Protego collectif) — `power` tours (défaut 1).
+    const turns = Math.max(1, art.power || 1);
+    party.slice(0, partySize).forEach((c, i) => {
+      if (c.hp <= 0) return;
+      shieldTurns[i] = Math.max(shieldTurns[i] || 0, turns);
+    });
+    setBattleLog(`🏺 ${char.name} déploie ${art.label} : bouclier de groupe (${turns} tour${turns > 1 ? 's' : ''}) !`);
+    addMsg(`🏺 ${art.label} : bouclier de groupe.`, 'good');
+    UX_safe.logCombat(`🏺 <b>${char.name}</b> — ${art.label} protège le groupe (${turns} t)`, 'magic');
+    updateUI();
+  }
+  advanceBattleChar();
+}
+
+// ── P2 · Positionnement Duo (combat-system-synthesis §1.1) ───
+// Bascule gratuite (1×/combat) entre Phalange (défensif) et Tenaille (offensif).
+// N'avance PAS le tour : action déclarative. Solo : ignorée.
+function toggleDuoPosture() {
+  if (partySize !== 2) { setBattleLog('La posture du Duo est sans effet en solo.'); return; }
+  if (duoPostureSwitched) {
+    setBattleLog('🔄 La posture a déjà été changée ce combat.');
+    return;
+  }
+  duoPosture = (duoPosture === 'phalange') ? 'tenaille' : 'phalange';
+  duoPostureSwitched = true;
+  const label = duoPosture === 'phalange' ? 'Phalange (défensif)' : 'Tenaille (offensif)';
+  setBattleLog(`🔄 Posture du Duo : ${label}.`);
+  addMsg(`🔄 Posture : ${label}.`, 'info');
+  UX_safe.logCombat(`🔄 Posture du Duo → <b>${label}</b>`, 'info');
+  if (typeof updateBattleCharIndicator === 'function') updateBattleCharIndicator();
+}
+// Multiplicateur de dégâts Tenaille pour un héros frappant un ennemi déjà touché
+// par l'AUTRE héros ce round (focus-fire +15 %). PUR (lecture globals). Solo /
+// Phalange → 1. Cf. .claude/plans/combat-system-synthesis.md §1.1.
+function _duoComboMult(enemyIdx, heroIdx) {
+  if (partySize !== 2 || duoPosture !== 'tenaille') return 1;
+  const marker = duoComboMarks[enemyIdx];
+  return (marker != null && marker !== heroIdx) ? 1.15 : 1;
+}
+// Marque une cible comme frappée par `heroIdx` ce round (Tenaille).
+function _duoMarkTarget(enemyIdx, heroIdx) {
+  if (partySize !== 2 || enemyIdx < 0) return;
+  if (duoComboMarks[enemyIdx] == null) duoComboMarks[enemyIdx] = heroIdx;
 }
 
 // showTargetSelection() → battle-ui.js
@@ -939,7 +1075,12 @@ function executeAttack(targetIdx) {
   // Combo : un coup physique sur une cible gelée / qui saigne est amplifié.
   const combo = (typeof comboDamageMult === 'function') ? comboDamageMult(enemy, 'physique') : { mult: 1, label: null };
   if (combo.mult !== 1) dmg = Math.max(1, Math.floor(dmg * combo.mult));
+  // P2 — Tenaille (Duo offensif) : focus-fire sur une cible déjà frappée par
+  // l'autre héros ce round (+15 %).
+  const tenaille = _duoComboMult(targetIdx, currentBattleChar);
+  if (tenaille !== 1) dmg = Math.max(1, Math.floor(dmg * tenaille));
   enemy.currentHp -= dmg;
+  _duoMarkTarget(targetIdx, currentBattleChar);
 
   AudioSystem.playHit();
   // Crit pondéré par critChance/critMultiplier (calculés par recalculateStats).
@@ -1136,6 +1277,12 @@ function advanceBattleChar() {
 function _chooseEnemyTarget(enemy, alive) {
   if (!alive || !alive.length) return null;
   if (alive.length === 1) return alive[0];
+  // P2 — Phalange (Duo défensif) : l'avant (party[0]) attire les coups (+20 %
+  // de chance d'être ciblé, l'arrière d'autant moins). Évalué AVANT l'IA.
+  if (partySize === 2 && duoPosture === 'phalange') {
+    const front = party[0];
+    if (front && front.hp > 0 && alive.includes(front) && Math.random() < 0.20) return front;
+  }
   const ai = enemy.ai || 'random';
   if (ai === 'aggressive') {
     // Concentre le feu : achève la cible la plus basse en PV.
@@ -1274,6 +1421,9 @@ function enemyTurn() {
 
   // Cooldown de regen PM de la Garde : un décompte par round écoulé.
   guardRegenCooldown = guardRegenCooldown.map(c => Math.max(0, c - 1));
+
+  // P2 — Tenaille : les marques de focus-fire expirent à la fin du round.
+  duoComboMarks = {};
 
   // Endgame §7.10 : Larme du Phénix Pure — auto-revive sur KO en combat.
   log += _tryAutoReviveKOChars();

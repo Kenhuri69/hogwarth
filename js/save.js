@@ -26,6 +26,7 @@ function _serializeState() {
     donationIntroPlayed,
     visitsClosed,
     barksEnabled,
+    duoPosture,
     outremondeEssence,
     outremondeFragments,
     outremondePendingSeals,
@@ -378,6 +379,8 @@ function _applyState(gs) {
   // Voix des héros (barks) : préférence joueur. true par défaut (saves
   // antérieurs sans le champ → barks actifs).
   barksEnabled        = (gs.barksEnabled === undefined) ? true : !!gs.barksEnabled;
+  // P2 — posture Duo persistante (défaut 'phalange' ; tolère les saves antérieures).
+  duoPosture          = (gs.duoPosture === 'tenaille') ? 'tenaille' : 'phalange';
   // Phase G — économie cross-plan + cooldown défaite astrale. 0 par défaut
   // pour les saves antérieures (visiteur n'a encore rien gagné en astral).
   outremondeEssence       = (typeof gs.outremondeEssence === 'number') ? gs.outremondeEssence : 0;
