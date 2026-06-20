@@ -1219,4 +1219,123 @@ async function scenarioSpellArtifactSynergy() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioSpellIcons, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioSpellVoiceMapping, scenarioTeleportation, scenarioHealOoc, scenarioBombardaSplash, scenarioAoeSpells, scenarioSpellCombos, scenarioSpellsP2, scenarioSpellsP3, scenarioSpellArtifactSynergy] };
+async function scenarioSpellsP4() {
+  console.log('\n── Scénario : Sorts & Magie 2.0 — Lot P4 (corrompus & Boucle) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'], house: 'Gryffondor' });
+
+  // T1 — gate Boucle : un corrompu DANGEREUX (corruptionRisk>0) est refusé hors
+  // Boucle, accepté une fois victoryAchieved. Avada... (legacy, risk 0) non gaté.
+  await startDummyFight(page, { hp: 2000 });
+  const t1 = await page.evaluate(() => {
+    party[0].spells.push('Flamme Dévorante'); party[0].sp = 200; currentBattleChar = 0;
+    victoryAchieved = false;
+    const hp0 = enemyGroup[0].currentHp;
+    castSpellInBattle('Flamme Dévorante', 0);        // refusé (hors Boucle)
+    const blocked = (enemyGroup[0].currentHp === hp0);
+    victoryAchieved = true; currentBattleChar = 0; party[0].sp = 200;
+    const hp1 = enemyGroup[0].currentHp;
+    castSpellInBattle('Flamme Dévorante', 0);        // accepté (Boucle)
+    const dealt = hp1 - enemyGroup[0].currentHp;
+    return { blocked, dealt };
+  });
+  console.log('  T1 gate:', t1);
+  assert(t1.blocked, 'Flamme Dévorante refusée hors Boucle (gate corrompu)');
+  assert(t1.dealt > 0, 'Flamme Dévorante lançable + inflige des dégâts en Boucle');
+  await page.evaluate(() => { if (inBattle) endBattle(false); });
+
+  // T2 — contrecoup : Math.random forcé bas → le backlash se déclenche.
+  // Venin du Cachot (backlash counter) monte corruptionLevel ; Savoir Interdit
+  // (backlash selfdmg) retire des PV au lanceur (planché à 1).
+  await startDummyFight(page, { hp: 2000 });
+  const t2 = await page.evaluate(() => {
+    victoryAchieved = true;
+    party[0].spells.push('Venin du Cachot', 'Savoir Interdit');
+    party[0].sp = 400; spellCorruption = 0; currentBattleChar = 0;
+    const _r = Math.random; Math.random = () => 0.0;     // force le contrecoup
+    castSpellInBattle('Venin du Cachot', 0);
+    const corrAfter = spellCorruption;                   // counter → +1
+    party[0].hp = 40; party[0].hpMax = 100; currentBattleChar = 0; party[0].sp = 400;
+    castSpellInBattle('Savoir Interdit', 0);             // selfdmg 10 % PV max
+    const hpAfter = party[0].hp;
+    Math.random = _r;
+    return { corrAfter, hpAfter };
+  });
+  console.log('  T2 contrecoup:', t2);
+  assert(t2.corrAfter >= 1, 'contrecoup counter → corruptionLevel monte');
+  assert(t2.hpAfter < 40 && t2.hpAfter >= 1, 'contrecoup selfdmg retire des PV (planché à 1)');
+  await page.evaluate(() => { if (inBattle) endBattle(false); });
+
+  // T3 — garde-fous 1×/combat : Écho Fantôme + Tempus Echo refusés au 2ᵉ lancer.
+  await startDummyFight(page, { hp: 2000 });
+  const t3 = await page.evaluate(() => {
+    victoryAchieved = true;
+    party[0].spells.push('Écho Fantôme', 'Incendio', 'Tempus Echo');
+    party[0].sp = 999; currentBattleChar = 0;
+    const fam0 = combatFamiliars.length;
+    castSpellInBattle('Écho Fantôme', 0);
+    const famAfter1 = combatFamiliars.length;
+    currentBattleChar = 0; party[0].sp = 999;
+    castSpellInBattle('Écho Fantôme', 0);               // refusé
+    const famAfter2 = combatFamiliars.length;
+    // Tempus Echo : rejoue le dernier sort offensif (Incendio lancé d'abord).
+    currentBattleChar = 0; party[0].sp = 999;
+    castSpellInBattle('Incendio', 0);
+    const hpBefore = enemyGroup[0].currentHp;
+    currentBattleChar = 0; party[0].sp = 999;
+    castSpellInBattle('Tempus Echo', 0);                // rejoue Incendio gratuitement
+    const replayed = hpBefore - enemyGroup[0].currentHp;
+    currentBattleChar = 0; party[0].sp = 999;
+    const used = timeRewindUsedThisFight;
+    castSpellInBattle('Tempus Echo', 0);                // refusé (budget temporel)
+    return { spawned: famAfter1 - fam0, blockedEcho: famAfter2 === famAfter1, replayed, used };
+  });
+  console.log('  T3 1×/combat:', t3);
+  assert(t3.spawned === 1, 'Écho Fantôme invoque 1 familier');
+  assert(t3.blockedEcho, 'Écho Fantôme refusé au 2ᵉ lancer (1×/combat)');
+  assert(t3.replayed > 0, 'Tempus Echo rejoue le dernier sort offensif (dégâts)');
+  assert(t3.used, 'Tempus Echo consomme le budget temporel (1×/combat)');
+  await page.evaluate(() => { if (inBattle) endBattle(false); });
+
+  // T4 — légendaires : Serment du Blaireau relève un allié KO à 30 % PV.
+  await startDummyFight(page, { hp: 2000 });
+  const t4 = await page.evaluate(() => {
+    victoryAchieved = true;
+    party[0].spells.push('Serment du Blaireau');
+    party[1].hp = 0; party[0].sp = 999; currentBattleChar = 0;
+    castSpellInBattle('Serment du Blaireau', 0);
+    return { revived: party[1].hp, target: Math.floor(party[1].hpMax * 0.30) };
+  });
+  console.log('  T4 légendaire:', t4);
+  assert(t4.revived >= t4.target && t4.revived > 0, 'Serment du Blaireau relève l\'allié KO (~30 % PV)');
+  await page.evaluate(() => { if (inBattle) endBattle(false); });
+
+  // T5 — reports P3 : Sanguini Vorace (corruption≥2) + Protego Diabolica (Apothéose).
+  await startDummyFight(page, { hp: 2000 });
+  const t5 = await page.evaluate(() => {
+    victoryAchieved = true;
+    party[0].spells.push('Sanguini', 'Protego');
+    spellCorruption = 2;
+    const voraceName = resolveSpellForm('Sanguini', party[0]).name;
+    houseTier = 18; chosenHouse = 'Gryffondor';
+    const diabName = resolveSpellForm('Protego', party[0]).name;
+    party[0].sp = 999; currentBattleChar = 0; _shieldReflect = [0, 0];
+    castSpellInBattle('Protego', 0);                    // résout en Protego Diabolica
+    const reflectArmed = _shieldReflect[0] > 0;
+    return { voraceName, diabName, reflectArmed };
+  });
+  console.log('  T5 reports P3:', t5);
+  assert(t5.voraceName === 'Sanguini Vorace', 'Sanguini → Sanguini Vorace (corruption≥2)');
+  assert(t5.diabName === 'Protego Diabolica', 'Protego → Protego Diabolica (Apothéose)');
+  assert(t5.reflectArmed, 'Protego Diabolica arme le renvoi (_shieldReflect)');
+  await page.evaluate(() => { if (inBattle) endBattle(false); });
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (P4)`);
+  }
+  console.log('  ✅ Sorts & Magie 2.0 Lot P4 OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioSpellIcons, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioSpellVoiceMapping, scenarioTeleportation, scenarioHealOoc, scenarioBombardaSplash, scenarioAoeSpells, scenarioSpellCombos, scenarioSpellsP2, scenarioSpellsP3, scenarioSpellArtifactSynergy, scenarioSpellsP4] };

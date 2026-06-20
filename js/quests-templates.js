@@ -380,7 +380,7 @@ const QUEST_TEMPLATES = [
     objectives: [
       { type: "kill", monsterId: "fenrir_greyback", amount: 2, progress: 0, completed: false }
     ],
-    reward: { xp: 300, gold: 250, item: "essence_tenebres" },
+    reward: { xp: 300, gold: 250, item: "essence_tenebres", spell: "Flamme Dévorante" },
     repeatable: { everyLevels: 2 },
     repeatableReward: { xp: 200, gold: 180, item: "essence_tenebres" },
     location: "Boucle Ténébreuse (étage 11+)"
@@ -393,7 +393,7 @@ const QUEST_TEMPLATES = [
     objectives: [
       { type: "kill", monsterId: "aragog", amount: 2, progress: 0, completed: false }
     ],
-    reward: { xp: 320, gold: 260, item: "page_grimoire" },
+    reward: { xp: 320, gold: 260, item: "page_grimoire", spell: "Venin du Cachot" },
     repeatable: { everyLevels: 2 },
     repeatableReward: { xp: 220, gold: 190, item: "page_grimoire" },
     location: "Boucle Ténébreuse (étage 11+)"
@@ -406,7 +406,7 @@ const QUEST_TEMPLATES = [
     objectives: [
       { type: "kill", monsterId: "antonin_dolohov", amount: 2, progress: 0, completed: false }
     ],
-    reward: { xp: 350, gold: 280, item: "essence_tenebres" },
+    reward: { xp: 350, gold: 280, item: "essence_tenebres", spell: "Savoir Interdit" },
     repeatable: { everyLevels: 2 },
     repeatableReward: { xp: 240, gold: 200, item: "essence_tenebres" },
     location: "Boucle Ténébreuse (étage 11+)"
@@ -419,7 +419,7 @@ const QUEST_TEMPLATES = [
     objectives: [
       { type: "kill", monsterId: "moremplis", amount: 2, progress: 0, completed: false }
     ],
-    reward: { xp: 330, gold: 270, item: "page_grimoire" },
+    reward: { xp: 330, gold: 270, item: "page_grimoire", spell: "Fardeau Partagé" },
     repeatable: { everyLevels: 2 },
     repeatableReward: { xp: 230, gold: 195, item: "page_grimoire" },
     location: "Boucle Ténébreuse (étage 11+)"
@@ -1023,7 +1023,7 @@ const QUEST_TEMPLATES = [
       // 3. Climax — reprendre l'Étendard au Chevalier Fantôme.
       { type: "kill",  monsterId: "chevalier_fantome", amount: 1, progress: 0, completed: false }
     ],
-    reward: { xp: 700, gold: 320, houseSetReward: "banniere_godric" },
+    reward: { xp: 700, gold: 320, houseSetReward: "banniere_godric", spell: "Cœur de Lion" },
     location: "Tour de Gryffondor (étage 5) — cible en Acte III",
     houseSignatureQuest: true,
     house: "Gryffondor"
@@ -1042,7 +1042,7 @@ const QUEST_TEMPLATES = [
       //    Le choix gris (Pacte/Défiance) se joue à la remise (turnInSlythSignature).
       { type: "kill",  monsterId: "basilic", amount: 1, progress: 0, completed: false }
     ],
-    reward: { xp: 720, gold: 300, houseSetReward: "langue_de_plomb" },
+    reward: { xp: 720, gold: 300, houseSetReward: "langue_de_plomb", spell: "Pacte du Serpent" },
     location: "Cachots de Serpentard (étage 4) — cible en Acte II/III",
     houseSignatureQuest: true,
     house: "Serpentard"
@@ -1060,7 +1060,7 @@ const QUEST_TEMPLATES = [
       // 3. Climax — le Gardien du Portail veille sur les derniers feuillets.
       { type: "kill",  monsterId: "gardien_portail", amount: 1, progress: 0, completed: false }
     ],
-    reward: { xp: 720, gold: 300, houseSetReward: "codex_rowena_eclat" },
+    reward: { xp: 720, gold: 300, houseSetReward: "codex_rowena_eclat", spell: "Verbe de Rowena" },
     location: "Salle des Aigles (étage 6) — cible en Acte III",
     houseSignatureQuest: true,
     house: "Serdaigle"
@@ -1078,7 +1078,7 @@ const QUEST_TEMPLATES = [
       // 3. Climax — repousser la vague d'Inferi qui menace le Refuge.
       { type: "kill",  monsterId: "inferius", amount: 3, progress: 0, completed: false }
     ],
-    reward: { xp: 700, gold: 320, houseSetReward: "coeur_refuge" },
+    reward: { xp: 700, gold: 320, houseSetReward: "coeur_refuge", spell: "Serment du Blaireau" },
     location: "Refuge du Blaireau (étage 3) — vague en Acte II/III",
     houseSignatureQuest: true,
     house: "Poufsouffle"

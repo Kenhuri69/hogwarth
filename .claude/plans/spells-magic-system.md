@@ -5,8 +5,68 @@
 > philosophie, mêmes garde-fous, même structure documentaire.
 >
 > **Statut : ÉTAPE 1 + ÉTAPE 2 rédigées · Lots P0 (socle data inerte),
-> P1 (étiquetage + liseré de rang), P2 (sorts par Maison & arbre) et
-> P3 (Premium & évolutifs) LIVRÉS. P4→P5 à venir.**
+> P1 (étiquetage + liseré de rang), P2 (sorts par Maison & arbre),
+> P3 (Premium & évolutifs) et P4 (Corrompus & Boucle) LIVRÉS.
+> P5 (équilibrage final & Codex sorts) à venir.**
+>
+> ### Journal — Lot P4 (livré)
+> Corrompus, corruption, contrecoup, légendaires de quête, sorts temporels +
+> réintégration des reports P3 (branche `claude/sorts-p4-corruption`). Réutilise
+> le moteur existant — règle d'or §0 (ZÉRO scaling monstre touché).
+> - **`corruptionLevel`** (int, `state.js`, **SÉRIALISÉ** `_serializeState`/
+>   `_applyState` comme `floorKillCount`) : compteur de groupe, monotone
+>   croissant. Monte UNIQUEMENT via le contrecoup `counter` (jamais auto au cast).
+> - **Helpers PURS** (`data.js`, testés `units.js`, façon `_fortuneCurve`) :
+>   - `corruptionSpellModifier(level)` : fraction saturante (0.12/niveau, cap
+>     0.40) qui **majore le power** des sorts corrompus ET **augmente le
+>     corruptionRisk** → boucle risque/récompense.
+>   - `resolveCorruptionBacklash(backlash, char)` : ❓5 — résout SANS muter le
+>     contrecoup configurable par sort (`{type:"selfdmg"|"status"|"counter"}`) →
+>     auto-dégât (% PV max), statut (burn/bleed), ou `corruptionLevel++`.
+>   - `corruptSpellGateOpen(floor, victory, effFloor)` : gate Boucle.
+> - **Combat-scoped (NON sérialisés, reset `startBattle`)** : `echoSpellUsedThisFight`
+>   (Écho Fantôme), `timeRewindUsedThisFight` (Tempus Echo + Reliquae Temporis,
+>   budget « manipulation temporelle » partagé), `_lastCastSpellByChar`,
+>   `_timeSnapshot`, `serpentPactDoubleNext`, `_shieldReflect`.
+> - **Gate corrompu** (`castSpellInBattle`, AVANT débit PM, modèle requiresEclats) :
+>   un sort `tier:"corrompu"` PORTANT un `corruptionRisk>0` est refusé hors Boucle.
+>   ÉCART : ne gate QUE les corrompus à `corruptionRisk` (les nouveaux dangereux),
+>   pas Avada.../Fiendfyre/Sectumsempra Imperius legacy (corruptionRisk 0) — sinon
+>   régression (Avada appris niv. 9, Fiendfyre acheté).
+> - **Contrecoup** (`castSpellInBattle` APRÈS l'effet) : `if random < risk`
+>   → `_applyCorruptionBacklash` (impur, mute) qui consomme `resolveCorruptionBacklash`
+>   (pur). Réversible / non-bloquant : selfdmg planché à 1 PV (jamais de game-over).
+> - **4 sorts de corruption contrôlée** (§1.4.C) : Flamme Dévorante (Gryff, `burn`+
+>   STATUS_BY_SPELL, risk 0.15), Venin du Cachot (Slyth, `venom_drain` neuf =
+>   lifesteal+poison, risk 0.15), Savoir Interdit (Serd, `curse`, risk 0.20),
+>   Fardeau Partagé (Pouf, `share_burden` neuf, risk 0.10).
+> - **Sorts temporels / échos** (§1.4.B) : Tempus Echo (`tempus_echo` — rejoue le
+>   dernier sort offensif du lanceur), Reliquae Temporis (`time_rewind` — restaure
+>   PV/PM au snapshot de début de round, `staminaCost`), Écho Fantôme (`echo_self`
+>   — familier-écho du lanceur via `combatFamiliars`). Garde-fous 1×/combat.
+>   ÉCART buildEcho : `buildEcho` produit un **ennemi** (monstre scalé), pas un
+>   allié — réemploi inadapté pour un familier joueur ; on réutilise le mécanisme
+>   `combatFamiliars`/`tickFamiliars` (P2), qui EST l'abstraction « entité alliée
+>   qui frappe N tours ». Faithful à l'effet décrit, surgical.
+> - **5 sorts légendaires** (§1.7) : Cœur de Lion (`lion_heart`), Pacte du Serpent
+>   (`serpent_pact`), Verbe de Rowena (`rowena_verb`), Serment du Blaireau
+>   (`badger_oath`), Le Mot du Dormeur (`aoe_wave` réutilisé, risk 0.5,
+>   `staminaCost`). Octroi : `reward.spell` (vecteur existant) sur les 4 quêtes
+>   Signature (légendaires de Maison) + sur les 4 quêtes répétables du Gardien de
+>   la Boucle (corrompus contrôlés) ; **stèle Ruines ét.21+** (progressif) pour les
+>   4 sorts profonds (Le Mot du Dormeur + 3 temporels). Aucun nouveau vecteur.
+> - **Reports P3 réintégrés** : Sanguini → **Sanguini Vorace** (`evolveCondition`
+>   `corruption` value 2 — désormais active) ; Protego → **Protego Diabolica**
+>   (Apothéose, `reflectFrac:0.2`, hook dans `_enemyPhysicalHit`).
+> - **`staminaCost`** (❓2) : champ réel, réservé à Reliquae Temporis (12) et Le Mot
+>   du Dormeur (15). Interprété en **toll de PV** (pas de 2ᵉ jauge), planché à 1 PV.
+> - **Étiquetage** : 14 sorts neufs dans SPELL_META ; house-affine total = **16**
+>   (4 Mythe + 4 Premium + 4 corruption + 4 légendaires de Maison).
+> - **Vérif** : `units.js` (corruptionSpellModifier, backlash, gate, evolveCondition
+>   corruption, compteurs) ; `scenarioSpellsP4` (gate Boucle / contrecoup /
+>   écho+tempus 1×/combat / légendaires / Protego Diabolica / Sanguini Vorace) ;
+>   `node tests/smoke.js` vert ; `tools/sim-difficulty.js` ladder INCHANGÉ (sorts
+>   additifs, non modélisés ; zéro scaling monstre) ; cache PWA bumpé.
 >
 > ### Journal — Lot P3 (livré)
 > Premium & évolutifs (branche `claude/sorts-p3-premium`). Réutilise le moteur
@@ -691,7 +751,7 @@ budgetSort = power×0,5 + (AoE? ×1,5) + (statut? +2) + (lifesteal? +3) + (heal?
 | ✅ **P1 — Sorts de base & étiquetage** | Étiqueter les 47 sorts existants (table `SPELL_META`), liseré de tier dans la modale Sorts. Filtre `category` enrichi **reporté** (voir écart). | smoke `spells` (T2bis liseré) ; visuel modale. |
 | ✅ **P2 — Sorts par Maison & arbre** | `houseSpellBoost` (cost-only, PUR), 8 sorts d'Éclats/familier/environnementaux, apprentissage PNJ (`teach_spell`)/Codex (`teachesSpell`). | `scenarioSpellsP2` (6 sous-tests) + units (houseSpellBoost/gates) ; smoke 234 vert ; sim baseline inchangé. |
 | ✅ **P3 — Premium & évolutifs** | 4 variantes Premium signature (octroi Apothéose), `resolveSpellForm` évolutif réel (artefact/étage/quête), synergie Bâton ancestral, FX Premium. | `scenarioSpellsP3` (3 sous-tests) + units (803) ; smoke 239 vert ; sim baseline inchangé. |
-| **P4 — Corrompus & Boucle** | Sorts `corrompu`, `corruptionLevel`, contrecoup, légendaires de quête, sorts temporels. | smoke Boucle ; **sim-difficulty obligatoire**. |
+| ✅ **P4 — Corrompus & Boucle** | Sorts `corrompu`, `corruptionLevel` (sérialisé), contrecoup configurable (❓5), légendaires de quête, sorts temporels, reports P3 (Sanguini Vorace / Protego Diabolica), `staminaCost` (❓2). | `scenarioSpellsP4` + units (corruptionSpellModifier/backlash/gate/evolveCondition) ; smoke vert ; **sim-difficulty : ladder inchangé**. |
 | **P5 — Équilibrage final** | Passe `tools/sim-difficulty.js`, ajustement coûts/power, Codex sorts complet. | sim + units + smoke complet. |
 
 ## 2.8 Suggestions d'assets

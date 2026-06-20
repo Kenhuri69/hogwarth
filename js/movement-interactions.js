@@ -540,6 +540,16 @@ function answerSteleRiddle(choiceIdx) {
     renderMinimap();
     drawDungeon();
     if (typeof checkCodexUnlocks === 'function') checkCodexUnlocks('riddle-solved');
+    // Sorts & Magie 2.0 — Lot P4 §1.7 : les stèles des Ruines profondes (ét. 21+)
+    // enseignent progressivement les sorts ultimes (Le Mot du Dormeur + temporels),
+    // un par stèle résolue. Réutilise _teachSpellToParty (aucun nouveau vecteur).
+    if ((currentFloor || 1) >= 21 && typeof _teachSpellToParty === 'function') {
+      const RUINES_SPELLS = ['Le Mot du Dormeur', 'Tempus Echo', 'Reliquae Temporis', 'Écho Fantôme'];
+      const next = RUINES_SPELLS.find(n => !party.slice(0, partySize).every(c => c.spells.includes(n)));
+      if (next && _teachSpellToParty(next) && typeof addMsg === 'function') {
+        addMsg(`🗿 La stèle des Ruines grave en toi un savoir oublié : <em>${next}</em> !`, 'magic');
+      }
+    }
   } else {
     // Mauvaise réponse : on redessine l'overlay avec un préfixe d'échec.
     _steleFeedback = "✗ Les glyphes restent sombres — ce n'est pas la "

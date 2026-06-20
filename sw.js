@@ -16,7 +16,7 @@
 //     individuel suffit pour eux.
 // =======================================================================
 
-const CACHE_VERSION = 'hogwarth-v183';
+const CACHE_VERSION = 'hogwarth-v184';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Précache minimal (~1 Mo) : shell HTML/CSS/JS + premier visuel.
@@ -55,14 +55,14 @@ const PRECACHE_URLS = [
   './js/npcs-helpers.js?v=4',
   './js/riddles.js?v=2',
   './js/codex.js?v=15',
-  './js/data.js?v=52',
+  './js/data.js?v=53',
   './js/data-icon-recipes.js?v=1',
   './js/floor-themes.js?v=2',
   './js/floor-ambiance.js?v=14',
   './js/floor-events.js?v=1',
   './js/room-flavor.js?v=1',
-  './js/item-icons.js?v=35',
-  './js/state.js?v=37',
+  './js/item-icons.js?v=36',
+  './js/state.js?v=38',
   './js/hero-barks.js?v=11',
   './js/ui.js?v=18',
   './js/modal-a11y.js?v=1',
@@ -84,19 +84,19 @@ const PRECACHE_URLS = [
   './js/renderer-minimap.js?v=8',
   './js/movement.js?v=37',
   './js/movement-floors.js?v=17',
-  './js/movement-interactions.js?v=18',
+  './js/movement-interactions.js?v=19',
   './js/swipe-canvas.js?v=4',
-  './js/battle.js?v=34',
+  './js/battle.js?v=35',
   './js/battle-rewards.js?v=11',
   './js/battle-death.js?v=3',
   './js/teleport.js?v=2',
-  './js/battle-spells.js?v=18',
+  './js/battle-spells.js?v=19',
   './js/battle-ui.js?v=8',
   './js/inventory-core.js?v=8',
   './js/inventory.js?v=21',
-  './js/inventory-spells.js?v=9',
+  './js/inventory-spells.js?v=10',
   './js/potions.js?v=6',
-  './js/quests-templates.js?v=16',
+  './js/quests-templates.js?v=17',
   './js/quests.js?v=19',
   './js/quests-riddles.js?v=3',
   './js/npc-dialog.js?v=22',
@@ -104,7 +104,7 @@ const PRECACHE_URLS = [
   './js/intro.js?v=3',
   './js/shop.js?v=18',
   './js/save-slots.js?v=3',
-  './js/save.js?v=40',
+  './js/save.js?v=41',
   './js/save-visit-snapshot.js?v=1',
   './js/profile.js?v=3',
   './js/save-ui.js?v=9',
