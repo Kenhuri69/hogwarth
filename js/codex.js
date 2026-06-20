@@ -319,6 +319,24 @@ const CODEX_ENTRIES = [
       revealed: "Le Ténébreux n'est pas un monstre neuf : c'est l'ancien, repassé par la Boucle. Les boss qui gardaient la route (étages 8-10) reviennent plus profond (18-20), nourris de la faille qu'on a rouverte. La corruption ne crée pas — elle reprend, et aggrave.",
     },
   },
+  // « Ce qui dort » personnifié (Phase 3, item 2b — arbitrage 2026-06-19).
+  // Entité nommée du fond de l'Avant-Monde (étages 21+) : le battement
+  // organique de la zone D devient une présence. Pas un boss (scope art) —
+  // une vérité de lore. Robinet 3-temps : rumeur post-victoire (veiled) →
+  // arrivée à l'Avant-Monde 21+ (revealed) → abîme profond 28+ (corrupted).
+  {
+    id: 'le_dormeur', category: 'glossaire', icon: '💤', act: 4,
+    title: 'Le Dormeur des Fondations',
+    links: ['ruines_anciennes', 'boucle_tenebreuse', 'cle_de_voute', 'maitre_detraqueur'],
+    unlockConditions: [{ type: 'victory' }],
+    revealedBy: [{ type: 'floor', value: 21 }],
+    corruptedBy: [{ type: 'floor', value: 28 }],
+    textVersions: {
+      veiled: "Plus bas que les runes, sous la roche-mère, quelque chose respire. On le nomme à voix basse, comme on nomme une chose qu'on préférerait ne pas réveiller : le Dormeur des Fondations. Ce n'est pas Voldemort, ni une bête, ni un Fondateur. C'est ce que les Quatre tinrent clos — la peur d'avant l'école, faite battement.",
+      revealed: "Tu l'as atteint, le fond de l'Avant-Monde, et le battement n'est plus un bruit : c'est une poitrine. Le Dormeur n'a pas de visage parce qu'il est antérieur aux visages — antérieur à l'écriture, à la pierre taillée, aux noms. Il ne veut rien : il dort, et son sommeil EST la magie brute qui irradie ici. La Clé de Voûte ne le scellait pas pour l'emprisonner. Elle le berçait — pour qu'il ne s'éveille jamais. Chaque pas plus bas est un pas sur ce qui rêve le monde.",
+      corrupted: "Tu ne descends plus vers le Dormeur : tu descends EN lui. Le battement a cessé d'être sous tes pieds — il est dans ta poitrine, calé sur le sien. Le lieu ne te distingue plus de ce qu'il rêve. Peut-être n'as-tu jamais exploré l'Avant-Monde ; peut-être es-tu l'un de ses songes, qui se croit en train de marcher. Le prestige t'a mené là où veiller et dormir n'ont plus de bord.",
+    },
+  },
   // Mondes Parallèles → Glossaire (décision : pas de 8ᵉ onglet « Voyageur »).
   // Robinet `floor` = proxy du sort Cheminette (niv. 8, ~étage 8).
   {

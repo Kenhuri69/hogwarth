@@ -104,6 +104,8 @@ const ZONE_AMBIANCE = {
         "Plus de runes. On est avant l'écriture.",
         "La ruine se désagrège en faveur de la magie brute : cristaux géants, racines-mères, sol de lumière froide compactée.",
         "Le chant a cessé. À sa place, un battement lent, énorme, organique — comme un cœur qui dort.",
+        "Le battement a un nom, ici : le Dormeur des Fondations. Tu marches sur ce que les Quatre tinrent clos.",
+        "Sous la lumière froide, le Dormeur respire sans s'éveiller — son sommeil EST la magie brute qui irradie.",
         "Aucune odeur. Un vide olfactif total, plus inquiétant que n'importe quelle puanteur.",
         "La température est hors de la notion même : le corps cesse de savoir où il est dans le temps.",
         "La profondeur pour la profondeur. Le prestige comme seule raison de continuer.",

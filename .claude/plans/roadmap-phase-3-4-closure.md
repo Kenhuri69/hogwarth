@@ -28,11 +28,17 @@ en 💡 proposé. → réconciliation roadmap.
 Arbitrage (2026-06-19, AskUserQuestion) : les 3 tranchées **OUI**. Livré en 3 lots/PRs.
 - **2a — barks Ténébreux supplémentaires** ✅ : couche `darkBossDown` (16 héros,
   clôture symétrique à la re-défaite d'un boss Ténébreux). `hero-barks.js` +
-  `battle-rewards.js` (endBattle). Testé `units.js §1bis`. cache-bump v163
-  (hero-barks v10, battle-rewards v11). smoke 226 ✅, units 684 ✅, pwa ✅.
-  Doc 11 §11.9.2 ✅, roadmap row (a). → branche `claude/endgame-dark-boss-down-barks`.
-- **2b — « ce qui dort » personnifié (entité nommée)** : à faire. Nom à arbitrer
-  (AskUserQuestion). Codex entry + ambiance zone D. PAS de boss combat (scope art).
+  `battle-rewards.js` (endBattle). Testé `units.js §1bis`. cache-bump v164
+  (hero-barks v11, battle-rewards v11). smoke 226 ✅, units 686 ✅, pwa ✅.
+  Doc 11 §11.9.2 ✅, roadmap row (a). **Mergé** (PR #579, 2026-06-20).
+  → branche `claude/endgame-dark-boss-down-barks`.
+- **2b — « ce qui dort » personnifié (entité nommée)** ✅ : nom arbitré
+  (AskUserQuestion 2026-06-19) = **« Le Dormeur des Fondations »**. Entrée Codex
+  `le_dormeur` (glossaire, robinet 3-temps victory → floor 21 → floor 28) +
+  2 `floorLines` nommées au palier `before` (21+) de `floor-ambiance.js`. PAS de
+  boss combat (scope art). Testé `units.js` (codex §8 + ambiance §5). cache-bump
+  v165 (codex v14, floor-ambiance v12). Doc 10 §10.3/§10.5 + doc 11 §11.10 ✅.
+  → branche `claude/endgame-dormeur-fondations` (PR #580).
 - **2c — biais léger de génération par Maison** : à faire. Équité-safe
   (redistribution, pas d'ajout net) ; validé au pass d'équilibrage (Item 3).
 

@@ -411,6 +411,11 @@ le **thermomètre ❄** de [10 §10.2](10-lieux-et-geographie.md), prolongé en 
 > *Subtil/Marqué*), et — Phase 3, 2026-06-19 — des **barks `loopEcho`** : un héros
 > présent réagit quand un écho affleure, évoquant « quelque chose qui respire, plus
 > bas » sans le nommer (`hero-barks.js`, 16 héros ; câblé `movement.js`/`seenEchoes`).
+>
+> ✅ **Surfaçage écrit (2026-06-20, item 2b)** : nom canon **« Le Dormeur des
+> Fondations »**. Entrée Codex `le_dormeur` (`js/codex.js`, robinet victory →
+> étage 21 → étage 28) + 2 lignes d'ambiance **nommées** au palier `before`
+> (21+) de la zone D (`js/floor-ambiance.js`). Toujours **ni boss ni stat-block**.
 
 > 💡 **Règle d'or de la déformation** : la modification doit toujours **partir du
 > familier** pour le **trahir** — jamais du nouveau pur. C'est la trahison du
