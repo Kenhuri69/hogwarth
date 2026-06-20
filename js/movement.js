@@ -657,6 +657,22 @@ function handleCellEntry(cell) {
     if (_enteredRoom && typeof maybeRoomFlavor === 'function') {
       maybeRoomFlavor(currentFloor);
     }
+    // Biais de génération par Maison V2 (ch.10 §10.6) : à la 1ʳᵉ entrée dans
+    // une salle « notable », une observation propre à ta Maison, attachée à la
+    // COORDONNÉE (déterministe, persistante). Power-neutral : texte pur, aucun
+    // effet de jeu. One-shot par case ; gardé par `houseGenBiasEnabled`.
+    if (_enteredRoom && typeof houseGenBiasEnabled !== 'undefined' && houseGenBiasEnabled
+        && typeof chosenHouse !== 'undefined' && chosenHouse
+        && typeof housePerceptionLine === 'function') {
+      const _poiKey = currentFloor + ',' + playerX + ',' + playerY;
+      if (typeof _housePoiSeen !== 'undefined' && _housePoiSeen && !_housePoiSeen.has(_poiKey)) {
+        const _poi = housePerceptionLine(chosenHouse, currentFloor, playerX, playerY);
+        if (_poi) {
+          _housePoiSeen.add(_poiKey);
+          if (typeof addMsg === 'function') addMsg('👁️ ' + _poi, 'narrative');
+        }
+      }
+    }
     // Inscription-indice d'un puzzle runique ordonné : la case courante
     // peut porter le vers décrivant l'ordre d'éveil des runes.
     if (runePuzzle && runePuzzle.hint

@@ -247,6 +247,69 @@ function houseAmbianceLine(chosenHouse, floor) {
   return mod.extraLine || null;
 }
 
+// ── Biais de génération par Maison — V2 (perception déterministe) ──
+// Ch.10 §10.6 (V2). « Ma Maison change ce que je VOIS » : couche de
+// perception attachée aux COORDONNÉES d'une salle (déterministe par
+// floor/x/y), donc persistante et mappable — contrairement à
+// houseAmbianceLine (V1) qui donne une ligne fixe par zone, tirée au hasard
+// à l'entrée. Ici chaque salle « notable » porte une observation propre à la
+// Maison, toujours la même à cet endroit.
+//
+// ⚠️ POWER-NEUTRAL STRICT (garde-fou cardinal Ch.13) : effet PUREMENT TEXTUEL.
+// Aucune cellule fonctionnelle, aucun butin, aucun jet de `Math.random`
+// (donc invisible au simulateur d'équilibrage `tools/sim-difficulty.js`),
+// aucune stat. Les 4 Maisons restent rigoureusement équivalentes en puissance
+// — seule la SAVEUR diffère. Gate de repli : `houseGenBiasEnabled` (state.js).
+const HOUSE_PERCEPTION = {
+  Gryffondor: [
+    "Des éraflures d'armes balafrent ce mur : ici, quelqu'un a tenu bon.",
+    "Une vieille position de combat se devine — on a refusé de fuir, à cet endroit.",
+    "Le sol porte la marque d'un brasier ; un courage s'y est consumé.",
+    "Un écusson écaillé pend de travers, mais il tient encore au mur.",
+  ],
+  Serpentard: [
+    "Une pierre descellée laisse deviner un passage que d'autres n'ont pas vu.",
+    "Un joint trop net dans la maçonnerie : quelque chose s'ouvre, pour qui sait regarder.",
+    "Une serrure ancienne affleure sous le lichen — discrète, presque oubliée.",
+    "L'ombre s'épaissit dans un angle ; un raccourci s'y cache peut-être.",
+  ],
+  Serdaigle: [
+    "Une rune à demi effacée orne le linteau — elle attend un œil qui sait lire.",
+    "Des glyphes courent le long d'une corniche, comme une phrase laissée en suspens.",
+    "Un motif gravé se répète au sol : un sens s'y dissimule, méthodique.",
+    "Une inscription pâle luit faiblement — un savoir gardé, pas tout à fait perdu.",
+  ],
+  Poufsouffle: [
+    "Un renfoncement abrité pourrait offrir un répit à qui sait s'y blottir.",
+    "Une alcôve tiède veille dans un coin : quelqu'un pourrait y reprendre souffle.",
+    "Des traces d'un campement ancien — d'autres ont tenu, ici, ensemble.",
+    "Un creux à l'écart du passage : un refuge discret, pour ne lâcher personne.",
+  ],
+};
+
+// Taux de salles « notables » (pour-cent). Calibré bas : la perception reste un
+// assaisonnement, pas un marquage de chaque pièce.
+const HOUSE_PERCEPTION_RATE = 24;
+
+// Hash entier déterministe et stable (pas de Math.random) sur (floor,x,y).
+function _housePerceptionHash(floor, x, y) {
+  let h = (((floor | 0) * 73856093) ^ ((x | 0) * 19349663) ^ ((y | 0) * 83492791)) >>> 0;
+  h ^= h >>> 13; h = (h * 0x5bd1e995) >>> 0; h ^= h >>> 15;
+  return h >>> 0;
+}
+
+// PUR : retourne l'observation de Maison pour une salle (floor,x,y), ou null
+// si la salle n'est pas « notable » / Maison absente. Déterministe : même
+// (house,floor,x,y) → même résultat. Aucun effet de bord.
+function housePerceptionLine(house, floor, x, y) {
+  if (!house) return null;
+  const pool = HOUSE_PERCEPTION[house];
+  if (!pool || !pool.length) return null;
+  const h = _housePerceptionHash(floor, x, y);
+  if ((h % 100) >= HOUSE_PERCEPTION_RATE) return null;   // salle ordinaire
+  return pool[(h >>> 8) % pool.length];
+}
+
 // ── Échos temporels & voix des Fondateurs (P-D3) ────────────
 // Fragments de passé matérialisés en zone C fin / zone D. Tout DÉRIVÉ
 // (currentFloor / victoryAchieved / chosenHouse, déjà persistés) — seul

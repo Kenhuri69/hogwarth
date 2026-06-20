@@ -789,7 +789,7 @@ au joueur l'illusion forte que « ma Maison change ce que je vois ».
 > **quêtes signature** ([07 §7.8](07-les-maisons.md)) qui, elles, posent du
 > contenu réel sans brancher l'arc.
 
-#### Biais de génération par Maison — V2 (✅ direction ouverte, 2026-06-19)
+#### Biais de génération par Maison — V2 (✅ leviers « skin » + « perception » livrés ; « pondération de salles » différée)
 
 > ✅ **Décision (2026-06-19)** : on **ouvre** un biais de génération par Maison
 > en V2 — mais **power-neutral strict** ([Ch.13](13-equilibrage-et-systemes.md),
@@ -827,6 +827,22 @@ uniquement sur des leviers **neutres en puissance** :
 > `HOUSE_SKIN_ENABLED`. **Le levier « pondération de salles » reste différé**
 > derrière le **gate sim de l'Item 3** (non livré tant que 0 écart de win-rate
 > n'est pas prouvé).
+>
+> ✅ **Livré (2026-06-20) — levier « perception »** : une **observation propre à
+> la Maison attachée à la COORDONNÉE d'une salle** (déterministe par
+> `floor/x/y`), surfacée à la 1ʳᵉ entrée d'une salle « notable » (~24 %). C'est
+> la promotion V1→V2 du « regard de Maison » : là où `houseAmbianceLine` (V1)
+> donne une ligne **fixe par zone tirée au hasard**, la perception V2 rend le
+> **layout lui-même** lisible — chaque salle remarquable porte *sa* note, **la
+> même à cet endroit** (persistante, mappable). 🦁 marques de bataille · 🐍
+> pierres descellées/raccourcis · 🦅 runes/glyphes · 🦡 recoins-refuge.
+> **Power-neutral par construction** : texte pur, **aucun** `Math.random` (donc
+> **invisible au simulateur** → 0 dérive vérifiée), aucune cellule
+> fonctionnelle/stat/butin. `housePerceptionLine` (`js/floor-ambiance.js`),
+> surfaçage `js/movement.js`, flag de repli `houseGenBiasEnabled`, testé
+> `units.js` + `scenarioHouseGenBiasV2`. Seul le levier **« pondération de
+> salles »** (qui changerait la distribution des types de salle) reste différé
+> derrière le gate sim.
 
 ### Le détail de chaque Maison — perceptions, hooks & escalade
 
