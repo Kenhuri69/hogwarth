@@ -1311,8 +1311,16 @@ const NPCS = [
     icon:  "🪄",
     portraitImg: "img/npc/kingsley.png",
     placement: { floor: 8, anchor: "any" },
-    questsGiven:    ["chasse_greyback", "garde_seuil", "herbes_lupin"],
-    questsTurnedIn: ["chasse_greyback", "garde_seuil", "herbes_lupin"],
+    questsGiven:    ["chasse_greyback", "garde_seuil", "herbes_lupin", "chasse_kingsley_boucle"],
+    questsTurnedIn: ["chasse_greyback", "garde_seuil", "herbes_lupin", "chasse_kingsley_boucle"],
+    // Prime de chasse répétable en Boucle (étage 18) — cible aléatoire.
+    dialoguesByQuest: {
+      chasse_kingsley_boucle: {
+        questOffer:  "La Boucle reforme ses bêtes sans fin, sorcier. J'ai repéré {amount}× {target} sur cet étage — disperse-les, l'Ordre tient toujours malgré tout.",
+        questActive: "La battue continue ? Ces {target} ne se compteront pas tout seuls.",
+        questReady:  "Bien. Même dans un château qui se répète, chaque purge compte. Voilà ta part."
+      }
+    },
     // Suffixe Ténébreux en Boucle (§6.12.E) — lu sur currentFloor >= 18.
     darkLoopLines: [
       "Tu m'as déjà vu, n'est-ce pas ? Plus bas, dans un autre temps. Je tiens encore ce seuil — mais le château se rejoue, et je ne sais plus quelle fois est la vraie.",
@@ -1374,6 +1382,17 @@ const NPCS = [
       { id: "potion_lune" }
     ],
     buyback: { default: 0.40 },
+    // Quête de fouille répétable en Boucle (étage 18) — gate minFloor:11, donc
+    // invisible au premier passage (étage 8), proposée seulement en récurrence.
+    questsGiven:    ["recup_marchand_boucle"],
+    questsTurnedIn: ["recup_marchand_boucle"],
+    dialoguesByQuest: {
+      recup_marchand_boucle: {
+        questOffer:  "Pssst. Tu veux te faire un peu d'or ? Fouille les recoins de cet étage — relève 5 cachettes et rapporte-moi ce que la Boucle y a oublié. Je rachète tout, sans questions.",
+        questActive: "Alors, ces fouilles ? Cinq recoins, je t'ai dit. Le château cache plus qu'on ne croit.",
+        questReady:  "Beau butin. La Boucle est généreuse pour qui sait gratter. Voilà ta part — et pas un mot."
+      }
+    },
     // Suffixe Ténébreux en Boucle (§6.12.E) — lu sur currentFloor >= 18.
     darkLoopLines: [
       "Ici-bas, dans la Boucle, mes marchandises ne viennent plus de cadavres frais. Elles viennent de moi — celui que j'étais, les fois d'avant. C'est devenu... circulaire.",
@@ -1403,8 +1422,16 @@ const NPCS = [
     icon:  "🗝️",
     portraitImg: "img/npc/bill_weasley.png",
     placement: { floor: 9, anchor: "any" },
-    questsGiven:    ["chasse_aragog", "baiser_detraqueur", "dictame_bill"],
-    questsTurnedIn: ["chasse_aragog", "baiser_detraqueur", "dictame_bill"],
+    questsGiven:    ["chasse_aragog", "baiser_detraqueur", "dictame_bill", "chasse_bill_boucle"],
+    questsTurnedIn: ["chasse_aragog", "baiser_detraqueur", "dictame_bill", "chasse_bill_boucle"],
+    // Prime de nettoyage répétable en Boucle (étage 19) — cible aléatoire.
+    dialoguesByQuest: {
+      chasse_bill_boucle: {
+        questOffer:  "Briseur de sortilèges, et me voilà à briser des meutes. {amount}× {target} grouillent dans les galeries d'à côté — réduis-les avant qu'elles n'enflent.",
+        questActive: "Ça avance, la galerie ? Ces {target} reviennent vite, dans la Boucle.",
+        questReady:  "Propre. Mes cicatrices brûlent un peu moins quand le travail est fait. Tiens, c'est pour toi."
+      }
+    },
     // Suffixe Ténébreux en Boucle (§6.12.E) — lu sur currentFloor >= 18.
     darkLoopLines: [
       "Mes cicatrices brûlent plus fort ici. La Boucle n'apaise pas la morsure de Greyback — elle la rejoue, encore et encore, à chaque tour de spirale.",
@@ -1461,6 +1488,16 @@ const NPCS = [
       { id: "essence_primordiale", price: 1200 }
     ],
     buyback: { default: 0.30 },
+    // Quête de collecte d'herbes répétable en Boucle (étage 19).
+    questsGiven:    ["collecte_apothicaire_boucle"],
+    questsTurnedIn: ["collecte_apothicaire_boucle"],
+    dialoguesByQuest: {
+      collecte_apothicaire_boucle: {
+        questOffer:  "Mes bocaux se vident plus vite que la Boucle ne tourne. Rapporte-moi 6 herbes — n'importe lesquelles de ta besace — et je te paierai en élixirs et en or.",
+        questActive: "Six herbes, te dis-je. Mes distillations n'attendent pas.",
+        questReady:  "Parfait, de la matière fraîche. Tiens, comme convenu — et reviens quand mes bocaux crieront famine."
+      }
+    },
     // Suffixe Ténébreux en Boucle (§6.12.E) — lu sur currentFloor >= 18.
     darkLoopLines: [
       "Dans la Boucle, l'Essence des Ténèbres se cueille à même les murs — le château entier est devenu l'organe. Mes prix montent ; ma marchandise aussi est plus... mûre.",
@@ -1491,8 +1528,16 @@ const NPCS = [
     icon:  "🐕",
     portraitImg: "img/npc/sirius_esprit.png",
     placement: { floor: 10, anchor: "any" },
-    questsGiven:    ["chasse_dolohov", "chasse_heraut", "purification_sirius"],
-    questsTurnedIn: ["chasse_dolohov", "chasse_heraut", "purification_sirius"],
+    questsGiven:    ["chasse_dolohov", "chasse_heraut", "purification_sirius", "chasse_sirius_boucle"],
+    questsTurnedIn: ["chasse_dolohov", "chasse_heraut", "purification_sirius", "chasse_sirius_boucle"],
+    // Prime d'apaisement répétable en Boucle (étage 20) — cible aléatoire.
+    dialoguesByQuest: {
+      chasse_sirius_boucle: {
+        questOffer:  "Le Voile attire les errants, filleul. {amount}× {target} s'attardent près du précipice — renvoie-les au silence, comme j'aimerais l'être.",
+        questActive: "Tu apaises le précipice ? Ces {target} ne connaissent pas le repos sans ton aide.",
+        questReady:  "Le Voile s'apaise un peu plus. Merci, filleul. Voilà ce qui te revient."
+      }
+    },
     // Suffixe Ténébreux en Boucle (§6.12.E) — lu sur currentFloor >= 18.
     darkLoopLines: [
       "Le Voile m'a pris une fois. La Boucle me reprend à chaque tour. Mort, je devrais être libre — et pourtant me revoici, à te guider sur le même précipice.",
@@ -1548,6 +1593,17 @@ const NPCS = [
       { id: "page_grimoire",         price: 620 }
     ],
     buyback: { default: 0.35 },
+    // Quête d'approvisionnement répétable en Boucle (étage 20) — rachat
+    // d'Essence à prix fort (liquidation du surplus de Forge).
+    questsGiven:    ["collecte_forgeron_boucle"],
+    questsTurnedIn: ["collecte_forgeron_boucle"],
+    dialoguesByQuest: {
+      collecte_forgeron_boucle: {
+        questOffer:  "Ma forge dévore l'Essence des Ténèbres plus vite que la Boucle ne la recrache. Apporte-m'en 3 et je te paierai grassement — bien plus que ce vendeur d'à côté.",
+        questActive: "Toujours pas mes 3 Essences ? Mon enclume refroidit, sorcier.",
+        questReady:  "De la belle Essence, bien mûre. Voilà ton or — un client qui ravitaille, c'est un client que je respecte."
+      }
+    },
     // Suffixe Ténébreux en Boucle (§6.12.E) — lu sur currentFloor >= 18.
     darkLoopLines: [
       "Dans la Boucle, je forge les mêmes pièces, encore et encore, pour le même client qui revient. Mon enclume ne refroidit jamais. Le marteau frappe en cadence avec la spirale.",
@@ -1670,8 +1726,17 @@ const NPCS = [
     icon:  "♾️",
     portraitImg: "img/npc/gardien_boucle.png",
     placement: { floor: 11, anchor: "first-room" },
-    questsGiven:    ["purge_loups", "purge_acromantules", "purge_mangemorts", "purge_moremplis"],
-    questsTurnedIn: ["purge_loups", "purge_acromantules", "purge_mangemorts", "purge_moremplis"],
+    questsGiven:    ["purge_loups", "purge_acromantules", "purge_mangemorts", "purge_moremplis", "prime_boss_gardien"],
+    questsTurnedIn: ["purge_loups", "purge_acromantules", "purge_mangemorts", "purge_moremplis", "prime_boss_gardien"],
+    // Prime de boss premium (cadence longue, everyLevels:3) — invoque le
+    // Magyar Ancestral via spawnOnAccept, récompense un matériau primordial.
+    dialoguesByQuest: {
+      prime_boss_gardien: {
+        questOffer:  "Au cœur de la Boucle dort un dragon que les âges ont oublié — le Magyar Ancestral. Je peux le réveiller pour toi. Peu en réchappent ; mais sa dépouille recèle une Essence Primordiale, et la Boucle paie ce qu'elle doit.",
+        questActive: "Le Magyar t'attend. Sa flamme ne s'éteint qu'avec lui.",
+        questReady:  "Le dragon est tombé. Tu as fait ce que des cycles entiers de revenants n'ont osé. Prends l'Essence Primordiale — tu l'as méritée."
+      }
+    },
     dialogues: {
       greeting: [
         "Tu reviens. Tous reviennent — c'est le sens de la Boucle. Je veille ici depuis la première récurrence.",

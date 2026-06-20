@@ -323,6 +323,11 @@ function searchRoom() {
     return;
   }
 
+  // Quête de fouille (type "search", ex. Marchand Clandestin en Boucle) :
+  // une fouille fraîche non interrompue (ni monstre ni piège) compte pour
+  // un recoin. Défensif (no-op si la fonction n'est pas chargée).
+  if (!repeat && typeof checkSearchQuests === 'function') checkSearchQuests();
+
   // D5 — Fortune (volet LCK) : seuil objet élargi de +F (borné), or majoré
   // × (1 + F×0.5), double-herbe + F. Cf. luck-fortune.md §2.4.
   const F        = (typeof partyFortune === 'function') ? partyFortune() : 0;
