@@ -57,13 +57,17 @@ function _spellFilterBarHtml(spellNames, mode, charIdx) {
   if (_spellFilter !== 'tous' && !present.has(_spellFilter)) _spellFilter = 'tous';
   const chips = SPELL_FILTERS.filter(f => f.id === 'tous' || present.has(f.id));
   if (chips.length <= 2) return '';   // 1 seule catégorie → filtre inutile
-  return `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px">` +
+  return `<div role="group" aria-label="Filtrer par catégorie de sort" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px">` +
     chips.map(f => {
       const on = _spellFilter === f.id;
-      return `<div onclick="setSpellFilter('${f.id}','${mode}',${charIdx})"
-        style="cursor:pointer;padding:3px 7px;border-radius:2px;font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;
+      // <button> (et non <div>) : focusable + activation Entrée/Espace natives,
+      // repère de focus doré via [tabindex]:focus-visible, sémantique toggle
+      // (aria-pressed). appearance:none → rendu identique à l'ancien chip.
+      return `<button type="button" tabindex="0" aria-pressed="${on}"
+        onclick="setSpellFilter('${f.id}','${mode}',${charIdx})"
+        style="appearance:none;-webkit-appearance:none;cursor:pointer;padding:3px 7px;border-radius:2px;font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;
         background:${on ? '#2a1a08' : '#0a0705'};border:1px solid ${on ? 'var(--gold-dark)' : '#2a1a08'};color:${on ? 'var(--gold-light)' : '#6a5030'}">
-        ${f.icon} ${f.label}</div>`;
+        ${f.icon} ${f.label}</button>`;
     }).join('') + `</div>`;
 }
 
