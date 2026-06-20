@@ -106,6 +106,7 @@ window.UX_safe = new Proxy({}, {
     { name: 'houseAmbianceLine',  source: 'floor-ambiance.js', kind: 'fn'  },
     { name: 'HOUSE_PERCEPTION',   source: 'floor-ambiance.js', kind: 'obj', optional: true },
     { name: 'housePerceptionLine', source: 'floor-ambiance.js', kind: 'fn', optional: true },
+    { name: 'houseRoomBias',      source: 'floor-ambiance.js', kind: 'fn', optional: true },
     { name: 'FLOOR_SCRIPTED_BEATS', source: 'floor-ambiance.js', kind: 'obj' },
     { name: 'GRANDE_SALLE_BEAT',  source: 'floor-ambiance.js', kind: 'obj' },
     { name: 'getScriptedFloorBeat', source: 'floor-ambiance.js', kind: 'fn'  },

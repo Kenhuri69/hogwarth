@@ -469,12 +469,31 @@ function generateDungeon(floor) {
   // cellules spéciales pour que les dalles RUNE ne tombent que sur des
   // cases FLOOR ordinaires. `_generateRunePuzzle` (re)met `runePuzzle` et
   // `litRunes` à leur état initial à chaque génération.
-  _generateRunePuzzle(rooms);
-  // Stèle d'énigme (dungeon-enrichment-v2 §3) — au plus UN puzzle par
-  // étage (dosage §4.3) : la stèle n'est tentée que si aucune dalle-rune
-  // n'a été posée. (re)met `runeStele` à l'état initial à chaque appel.
-  if (!runePuzzle) _generateRuneStele(rooms);
-  else runeStele = null;
+  // Biais de génération par Maison V2 — « pondération de salles »
+  // (power-neutral) : `P(puzzle présent) = 1−(1−0.20)(1−0.30) = 0.44` est
+  // SYMÉTRIQUE en (rune, stèle), donc inverser l'ordre des deux tirages
+  // change le TYPE de puzzle SANS toucher le budget de coffres (1 coffre,
+  // P=0.44 invariant). 🦅 Serdaigle (puzzlePreference 'stele') tente la stèle
+  // d'abord → davantage de stèles d'énigme ; toute autre Maison (et le repli
+  // `houseGenBiasEnabled=false`) garde l'ordre V1 byte-identique. Cf.
+  // floor-ambiance.js `houseRoomBias` + plan house-generation-bias-v2-rooms.md.
+  const _roomBias = (typeof houseGenBiasEnabled !== 'undefined' && houseGenBiasEnabled
+      && typeof houseRoomBias === 'function')
+    ? houseRoomBias(typeof chosenHouse !== 'undefined' ? chosenHouse : null)
+    : { puzzlePreference: null };
+  if (_roomBias.puzzlePreference === 'stele') {
+    // Stèle prioritaire (Serdaigle). `_generateRuneStele` réinitialise
+    // `runeStele` ; on réinitialise explicitement `runePuzzle`/`litRunes`
+    // (non appelés si la stèle est posée) pour ne pas conserver d'état rance.
+    _generateRuneStele(rooms);
+    if (!runeStele) _generateRunePuzzle(rooms);
+    else { runePuzzle = null; litRunes = new Set(); }
+  } else {
+    // Ordre V1 : rune d'abord, stèle en repli si aucune dalle-rune posée.
+    _generateRunePuzzle(rooms);
+    if (!runePuzzle) _generateRuneStele(rooms);
+    else runeStele = null;
+  }
 
   // Réinitialise les fontaines utilisées : nouvelle visite = nouvelle eau.
   usedFountains = new Set();

@@ -3486,4 +3486,98 @@ async function scenarioStairsReachable() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioCh13EndgamePivot, scenarioScriptedFloorBeats, scenarioVoixDesRuines, scenarioDungeonLife, scenarioFountain, scenarioRefuge, scenarioSoloSoftlock, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioRespawn20Percent, scenarioVictoryTrigger, scenarioStairsGated, scenarioFinalBossGuaranteed, scenarioChamberGuardians, scenarioChamberGuardianPolish, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioFloorTheming, scenarioZoneDEchoes, scenarioZoneDFx, scenarioFounderChamber, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioRoomOfRequirement, scenarioStairsReachable] };
+// Biais de génération par Maison V2 — levier « pondération de salles »
+// (power-neutral). Preuve d'ISO-RESSOURCES : sous un même seed RNG, les 4
+// Maisons génèrent EXACTEMENT le même budget de cellules fonctionnelles
+// (coffres hors-puzzle / boutiques / fontaines / refuges / autels) ; seule la
+// SAVEUR du puzzle bonus (rune vs stèle) diffère — Serdaigle voit plus de
+// stèles. Cf. floor-ambiance.js `houseRoomBias` + plan.
+async function scenarioHouseRoomBias() {
+  console.log('\n── Scénario : biais Maison V2 — pondération de salles (iso-ressources) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Serdaigle' });
+
+  const out = await page.evaluate(() => {
+    const HOUSES = ['Gryffondor', 'Serpentard', 'Serdaigle', 'Poufsouffle'];
+    // PRNG seedé (LCG) : on stub Math.random pour rejouer la MÊME séquence
+    // pour chaque Maison sur un seed donné → comparaison déterministe.
+    const orig = Math.random;
+    let _s = 0;
+    Math.random = () => { _s = (_s * 1664525 + 1013904223) >>> 0; return _s / 4294967296; };
+    const reseed = (n) => { _s = n >>> 0; };
+
+    const countCells = () => {
+      const c = {};
+      for (let y = 0; y < dungeon.length; y++)
+        for (let x = 0; x < dungeon[y].length; x++) {
+          const v = dungeon[y][x]; c[v] = (c[v] || 0) + 1;
+        }
+      // Coffre-puzzle = unique coffre dont la PRÉSENCE peut diverger entre
+      // Maisons sous le même seed (reorder en aval). On le retranche.
+      const puzzlePresent = (runePuzzle ? 1 : 0) + (runeStele ? 1 : 0);
+      return {
+        chestNonPuzzle: (c[CELL.CHEST] || 0) - puzzlePresent,
+        shop:    c[CELL.SHOP]     || 0,
+        fountain:c[CELL.FOUNTAIN] || 0,
+        refuge:  c[CELL.REFUGE]   || 0,
+        altar:   c[CELL.ALTAR]    || 0,
+        rune:    runePuzzle ? 1 : 0,
+        stele:   runeStele  ? 1 : 0,
+      };
+    };
+
+    let isoOk = true; const isoFail = [];
+    const agg = {}; HOUSES.forEach(h => agg[h] = { rune: 0, stele: 0 });
+    const SEEDS = 60;
+    try {
+      for (let s = 0; s < SEEDS; s++) {
+        const seed = 1000 + s * 7919;
+        const floor = 2 + (s % 5);            // étages 2..6
+        const ref = {};
+        for (const h of HOUSES) {
+          chosenHouse = h; currentFloor = floor; floorDungeons = {};
+          reseed(seed);
+          generateDungeon(floor);
+          const c = countCells();
+          agg[h].rune += c.rune; agg[h].stele += c.stele;
+          // Histogramme fonctionnel HORS coffre-puzzle : doit être identique
+          // entre Maisons (placé AVANT tout code house-divergent).
+          const key = `${c.chestNonPuzzle}|${c.shop}|${c.fountain}|${c.refuge}|${c.altar}`;
+          if (ref.key === undefined) ref.key = key;
+          else if (ref.key !== key) { isoOk = false; isoFail.push({ seed, h, key, ref: ref.key }); }
+        }
+      }
+    } finally { Math.random = orig; }
+
+    return { isoOk, isoFail: isoFail.slice(0, 5), agg, seeds: SEEDS };
+  });
+  console.log('  out :', JSON.stringify(out));
+
+  // 1) ISO-RESSOURCES (équité stricte) : même budget de cellules fonctionnelles
+  //    (hors coffre-puzzle) pour les 4 Maisons, seed à seed.
+  assert(out.isoOk, 'budget de cellules fonctionnelles divergent entre Maisons : ' + JSON.stringify(out.isoFail));
+  // 2) Budget de coffres-puzzle ≈ identique : total (rune+stèle) par Maison
+  //    doit rester serré (P(puzzle)=0.44 invariant ; tolérance statistique).
+  const totals = {};
+  for (const h of Object.keys(out.agg)) totals[h] = out.agg[h].rune + out.agg[h].stele;
+  const vals = Object.values(totals);
+  const spread = Math.max(...vals) - Math.min(...vals);
+  console.log('  totaux puzzle/Maison :', totals, 'spread', spread);
+  assert(spread <= out.seeds * 0.30, `budget de coffres-puzzle divergent (spread ${spread} sur ${out.seeds})`);
+  // 3) SAVEUR : Serdaigle penche stèle (≥ rune) ; les autres penchent rune.
+  assert(out.agg.Serdaigle.stele >= out.agg.Serdaigle.rune,
+    'Serdaigle devrait voir plus de stèles que de runes');
+  assert(out.agg.Gryffondor.rune > out.agg.Gryffondor.stele,
+    'Gryffondor (ordre V1) devrait voir plus de runes que de stèles');
+  assert(out.agg.Serdaigle.stele > out.agg.Gryffondor.stele,
+    'Serdaigle doit voir strictement plus de stèles que Gryffondor (saveur effective)');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS (biais Maison V2 salles)`);
+  }
+  console.log('  ✅ Biais Maison V2 « pondération de salles » iso-ressources OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioCh13EndgamePivot, scenarioScriptedFloorBeats, scenarioVoixDesRuines, scenarioDungeonLife, scenarioFountain, scenarioRefuge, scenarioSoloSoftlock, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioRespawn20Percent, scenarioVictoryTrigger, scenarioStairsGated, scenarioFinalBossGuaranteed, scenarioChamberGuardians, scenarioChamberGuardianPolish, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioFloorTheming, scenarioZoneDEchoes, scenarioZoneDFx, scenarioFounderChamber, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioRoomOfRequirement, scenarioStairsReachable, scenarioHouseRoomBias] };

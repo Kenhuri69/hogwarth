@@ -458,13 +458,13 @@ function loadModule(relPath, exportNames, globals = {}) {
     ['ZONE_AMBIANCE', 'getFloorAmbiance', 'corruptionLevel', 'HOUSE_AMBIANCE_MOD', 'houseAmbianceLine',
      'temporalEchoActive', 'temporalEchoTier', 'echoLine', 'FOUNDER_VOICES', 'TEMPORAL_ECHOES',
      'FOUNDER_CHAMBERS', 'getFounderChamberBeat', 'HOUSE_PERCEPTION', 'housePerceptionLine',
-     'HOUSE_PERCEPTION_RATE'],
+     'HOUSE_PERCEPTION_RATE', 'HOUSE_ROOM_BIAS', 'houseRoomBias'],
     { FLOOR_THEMES, getFloorTheme });
 
   const { ZONE_AMBIANCE, getFloorAmbiance, corruptionLevel, HOUSE_AMBIANCE_MOD, houseAmbianceLine,
           temporalEchoActive, temporalEchoTier, echoLine, FOUNDER_VOICES, TEMPORAL_ECHOES,
           FOUNDER_CHAMBERS, getFounderChamberBeat, HOUSE_PERCEPTION, housePerceptionLine,
-          HOUSE_PERCEPTION_RATE } = mod;
+          HOUSE_PERCEPTION_RATE, HOUSE_ROOM_BIAS, houseRoomBias } = mod;
 
   // ── getFloorAmbiance : bonne zone aux frontières ──
   // Zones sans paliers : identité d'objet préservée (back-compat).
@@ -586,6 +586,34 @@ function loadModule(relPath, exportNames, globals = {}) {
   check('housePerception : ligne issue du pool ou null',
     inPool === null || HOUSE_PERCEPTION.Gryffondor.includes(inPool));
   // Pas d'appel à Math.random (déterminisme déjà prouvé) → invisible au sim.
+
+  // ── houseRoomBias : biais de Maison V2 « pondération de salles » ──
+  // Helper pur consommé par dungeon.js pour réordonner rune↔stèle. POWER-NEUTRAL
+  // par construction : seule la SAVEUR (type de puzzle) change, jamais le budget
+  // de coffres — preuve d'iso-ressources ci-dessous.
+  check('houseRoomBias : 4 Maisons couvertes',
+    ['Gryffondor', 'Serpentard', 'Serdaigle', 'Poufsouffle'].every(
+      h => HOUSE_ROOM_BIAS[h] && typeof HOUSE_ROOM_BIAS[h].affinity === 'string'));
+  check('houseRoomBias(null) = profil neutre',  houseRoomBias(null).puzzlePreference === null);
+  check('houseRoomBias inconnu = profil neutre', houseRoomBias('Dumbledore').puzzlePreference === null);
+  check('houseRoomBias déterministe', houseRoomBias('Serdaigle').puzzlePreference
+    === houseRoomBias('Serdaigle').puzzlePreference);
+  // Seul Serdaigle a une préférence STRUCTURELLE (stèle) ; les 3 autres gardent
+  // l'ordre V1 (puzzlePreference null) → équité stricte.
+  check('houseRoomBias Serdaigle → stele', houseRoomBias('Serdaigle').puzzlePreference === 'stele');
+  check('houseRoomBias autres Maisons → null (ordre V1)',
+    ['Gryffondor', 'Serpentard', 'Poufsouffle'].every(
+      h => houseRoomBias(h).puzzlePreference === null));
+  // INVARIANT D'ÉQUITÉ (iso-ressources) : la probabilité combinée qu'UN puzzle
+  // (donc 1 coffre) soit présent est SYMÉTRIQUE en (rune, stèle) — inverser
+  // l'ordre des tirages la préserve. C'est la garantie mathématique que le
+  // reorder Serdaigle ne change PAS le budget de coffres.
+  const P_RUNE = 0.20, P_STELE = 0.30;
+  const pRuneFirst  = 1 - (1 - P_RUNE)  * (1 - P_STELE);   // V1 (rune d'abord)
+  const pSteleFirst = 1 - (1 - P_STELE) * (1 - P_RUNE);    // Serdaigle (stèle d'abord)
+  check('iso-ressources : P(puzzle) identique quel que soit l\'ordre',
+    Math.abs(pRuneFirst - pSteleFirst) < 1e-12);
+  check('iso-ressources : P(puzzle) = 0.44', Math.abs(pRuneFirst - 0.44) < 1e-12);
 
   // ── P-D2 : escalade par zone (byZone A→D) ──
   // Sans floor → fallback extraLine. Avec floor → ligne de la zone.
