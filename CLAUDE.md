@@ -90,6 +90,13 @@ js/
   ui-character-sheet.js → openCharacter() : paper-doll, Set Maison, sorts,
                       sac, allocation de points, carnet de voyage. APRÈS ui.js
   ui-settings.js   →  changeDifficulty(), toggleVisitsClosed(). APRÈS ui.js
+  keybindings.js   →  Remappage configurable des touches : KB_ACTIONS
+                      (catalogue explore/combat), résolveurs purs
+                      kbResolveExplore()/kbResolveCombat() consommés par le
+                      handler keydown de main.js, persistance localStorage
+                      `hogwarts_rpg_keybindings`, section UI de #settings-modal
+                      (kbRenderSettings + capture de touche). Défauts = touches
+                      historiques (zéro régression). APRÈS ui-settings.js
   ui-bestiary.js   →  openBestiary(), filterBestiary(), showMonsterDetail(), showBestiaryList()
   ui-codex.js      →  openCodex() — UI du journal vivant. Modale DÉDIÉE
                       #codex-modal (jamais #char-detail). APRÈS ui-bestiary.js

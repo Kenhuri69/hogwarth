@@ -439,6 +439,7 @@ function _renderBuyGrid(grid) {
         <div class="shop-desc">${item.desc}</div>
       </div>
       <div class="shop-price">${price}G</div>`;
+    div.tabIndex = 0; // parité clavier (Entrée/Espace + flèches via main.js)
     div.onclick = () => _purchase(item, price, stockEntry);
     grid.appendChild(div);
     added++;
@@ -484,6 +485,7 @@ function _renderSellGrid(grid) {
         <div class="shop-desc">${item.desc}</div>
       </div>
       <div class="shop-price" style="color:#a8d878">+${sellPrice}G</div>`;
+    div.tabIndex = 0; // parité clavier (Entrée/Espace + flèches via main.js)
     div.onclick = () => sellItem(idx, sellPrice);
     grid.appendChild(div);
     shown++;

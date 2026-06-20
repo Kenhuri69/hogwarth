@@ -202,6 +202,8 @@ window.UX_safe = new Proxy({}, {
     { name: 'moveBackward',       source: 'movement.js',     kind: 'fn'  },
     { name: 'turnLeft',           source: 'movement.js',     kind: 'fn'  },
     { name: 'turnRight',          source: 'movement.js',     kind: 'fn'  },
+    { name: 'kbResolveExplore',   source: 'keybindings.js',  kind: 'fn'  },
+    { name: 'kbResolveCombat',    source: 'keybindings.js',  kind: 'fn'  },
     { name: 'initCanvasSwipeGestures', source: 'swipe-canvas.js', kind: 'fn' },
     { name: 'handleCellEntry',    source: 'movement.js',     kind: 'fn'  },
     { name: 'searchRoom',         source: 'movement-interactions.js', kind: 'fn' },

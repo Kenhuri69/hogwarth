@@ -702,9 +702,17 @@ const ESC_CLOSEABLE_MODALS = [
 // ouverte à la fois → scope naturel). ←/→ : voisin en ordre DOM (clampé aux
 // bords). ↑/↓ : cellule la plus proche dans la direction, l'écart horizontal
 // étant pénalisé pour privilégier la même colonne. Retourne null si aucune.
+// Sélecteur partagé des cellules de grille focusables (toutes familles) —
+// source unique consommée par l'activation Entrée/Espace ET la navigation
+// flèches. `.bestiary-card` porte déjà `.spell-item` → couverte sans entrée
+// dédiée. (Phases 1/2 = sac/paper-doll/sorts ; extension = boutique/codex.)
+const GRID_CELL_SEL = '.inv-slot[tabindex],.equip-slot-floating[tabindex],.spell-item[tabindex],.shop-item[tabindex],.codex-card[tabindex]';
+
 function _gridArrowTarget(cur, key) {
   const family = cur.classList.contains('spell-item')          ? '.spell-item[tabindex]'
                : cur.classList.contains('equip-slot-floating') ? '.equip-slot-floating[tabindex]'
+               : cur.classList.contains('shop-item')           ? '.shop-item[tabindex]'
+               : cur.classList.contains('codex-card')          ? '.codex-card[tabindex]'
                :                                                  '.inv-slot[tabindex]';
   const cells = Array.from(document.querySelectorAll(family))
     .filter(el => el.offsetParent !== null); // exclut les cellules masquées (modale fermée)
@@ -739,8 +747,7 @@ document.addEventListener('keydown',e=>{
   //    cellules portent tabindex="0" ; le repère de focus doré vient de la
   //    règle [tabindex]:focus-visible (css/style.css).
   if (k === 'Enter' || k === ' ') {
-    const cell = e.target.closest &&
-      e.target.closest('.inv-slot[tabindex],.equip-slot-floating[tabindex],.spell-item[tabindex]');
+    const cell = e.target.closest && e.target.closest(GRID_CELL_SEL);
     if (cell) { cell.click(); e.preventDefault(); return; }
   }
 
@@ -750,8 +757,7 @@ document.addEventListener('keydown',e=>{
   //    proche dans la rangée adjacente. preventDefault empêche le déplacement
   //    du joueur derrière la modale ouverte. (Phase 2 — plan inventory-keyboard-nav.)
   if (k === 'ArrowUp' || k === 'ArrowDown' || k === 'ArrowLeft' || k === 'ArrowRight') {
-    const cur = e.target.closest &&
-      e.target.closest('.inv-slot[tabindex],.equip-slot-floating[tabindex],.spell-item[tabindex]');
+    const cur = e.target.closest && e.target.closest(GRID_CELL_SEL);
     if (cur) {
       const next = _gridArrowTarget(cur, k);
       if (next) next.focus();
@@ -793,27 +799,52 @@ document.addEventListener('keydown',e=>{
       return el && el.style.display !== 'none';
     });
     if (subOpen) return;
-    // A = Attaquer · S = Sortilège · G = Garde · O = Objet · F = Fuir.
-    const act = { a: 'attack', s: 'spell', g: 'guard', o: 'item', f: 'flee' }[k.toLowerCase()];
-    if (act) { battleAction(act); e.preventDefault(); }
+    // Raccourcis d'action de combat (défauts A/S/G/O/F) — touches résolues
+    // via keybindings.js. Fallback littéral si le module n'a pas chargé ;
+    // si le module EST là et la touche n'est liée à rien, on ne fait rien
+    // (un unbind volontaire est respecté).
+    if (typeof kbResolveCombat === 'function') {
+      const id = kbResolveCombat(k);
+      if (id) { battleAction(KB_COMBAT_ARG[id]); e.preventDefault(); }
+    } else {
+      const act = { a: 'attack', s: 'spell', g: 'guard', o: 'item', f: 'flee' }[k.toLowerCase()];
+      if (act) { battleAction(act); e.preventDefault(); }
+    }
     return;
   }
 
-  // ── Hors combat : déplacement relatif (↑/W avancer, ↓/S reculer, ←/A pivoter
-  //    G, →/D pivoter D ; Z/Q pour AZERTY) + raccourcis d'exploration.
-  const fwd   = (k==='ArrowUp'    || k==='w' || k==='W' || k==='z' || k==='Z');
-  const back  = (k==='ArrowDown'  || k==='s' || k==='S');
-  const left  = (k==='ArrowLeft'  || k==='a' || k==='A' || k==='q' || k==='Q');
-  const right = (k==='ArrowRight' || k==='d' || k==='D');
-  if (fwd)        { moveForward();  e.preventDefault(); }
-  else if (back)  { moveBackward(); e.preventDefault(); }
-  else if (left)  { turnLeft();     e.preventDefault(); }
-  else if (right) { turnRight();    e.preventDefault(); }
-  if(k==='i') openInventory();
-  if(k==='p') openSpells();
-  if(k==='c') openCharacter();
-  if(k==='f') searchRoom();
-  if(k==='r') rest();
+  // ── Hors combat : déplacement relatif + raccourcis d'exploration, touches
+  //    résolues via keybindings.js (défauts ↑/W/Z avancer, ↓/S reculer,
+  //    ←/A/Q pivoter G, →/D pivoter D ; i/p/c/f/r). preventDefault sur les
+  //    seules actions de déplacement (parité stricte avec l'historique).
+  if (typeof kbResolveExplore === 'function') {
+    switch (kbResolveExplore(k)) {
+      case 'moveForward':   moveForward();  e.preventDefault(); break;
+      case 'moveBackward':  moveBackward(); e.preventDefault(); break;
+      case 'turnLeft':      turnLeft();     e.preventDefault(); break;
+      case 'turnRight':     turnRight();    e.preventDefault(); break;
+      case 'openInventory': openInventory(); break;
+      case 'openSpells':    openSpells();    break;
+      case 'openCharacter': openCharacter(); break;
+      case 'search':        searchRoom();    break;
+      case 'rest':          rest();          break;
+    }
+  } else {
+    // Fallback défensif : comportement historique si le module est absent.
+    const fwd   = (k==='ArrowUp'    || k==='w' || k==='W' || k==='z' || k==='Z');
+    const back  = (k==='ArrowDown'  || k==='s' || k==='S');
+    const left  = (k==='ArrowLeft'  || k==='a' || k==='A' || k==='q' || k==='Q');
+    const right = (k==='ArrowRight' || k==='d' || k==='D');
+    if (fwd)        { moveForward();  e.preventDefault(); }
+    else if (back)  { moveBackward(); e.preventDefault(); }
+    else if (left)  { turnLeft();     e.preventDefault(); }
+    else if (right) { turnRight();    e.preventDefault(); }
+    if(k==='i') openInventory();
+    if(k==='p') openSpells();
+    if(k==='c') openCharacter();
+    if(k==='f') searchRoom();
+    if(k==='r') rest();
+  }
 });
 
 // ============================================================

@@ -952,4 +952,133 @@ async function scenarioGridArrowNav() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioMobileSelect, scenarioCombatMobile, scenarioRelativeControls, scenarioCanvasSwipe, scenarioCameraPresence, scenarioCombatKeyboard, scenarioConfirmModal, scenarioA11yFinish, scenarioModalIsolation, scenarioGridKeyboardNav, scenarioGridArrowNav] };
+async function scenarioGridKeyboardNavExtended() {
+  console.log('\n── Scénario : navigation clavier des grilles (boutique / bestiaire / codex) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // a) Boutique : les articles sont focusables ; ArrowRight déplace le focus
+  //    (voisin en ordre DOM, indépendant du layout).
+  const shop = await page.evaluate(() => {
+    openShop();
+    const cells = Array.from(document.querySelectorAll('.shop-item[tabindex="0"]'));
+    return { count: cells.length };
+  });
+  assert(shop.count >= 2, `au moins 2 articles boutique focusables (got ${shop.count})`);
+  await page.evaluate(() => document.querySelector('.shop-item[tabindex="0"]').focus());
+  await page.waitForFunction(() =>
+    document.activeElement && document.activeElement.classList.contains('shop-item'));
+  await page.keyboard.press('ArrowRight');
+  const shopMoved = await page.evaluate(() => {
+    const cells = Array.from(document.querySelectorAll('.shop-item[tabindex="0"]'));
+    return document.activeElement === cells[1];
+  });
+  assert(shopMoved, 'ArrowRight déplace le focus vers l\'article boutique suivant');
+  await page.evaluate(() => closeModal('shop-modal'));
+
+  // b) Bestiaire : les cartes de créature sont focusables.
+  const bestiary = await page.evaluate(() => {
+    openBestiary();
+    return document.querySelectorAll('.bestiary-card[tabindex="0"]').length;
+  });
+  assert(bestiary >= 1, `au moins 1 carte bestiaire focusable (got ${bestiary})`);
+  // La carte bestiaire porte la classe spell-item → couverte par l'activation
+  // Entrée/Espace existante. On vérifie que cliquer via clavier ouvre le détail.
+  await page.evaluate(() => document.querySelector('.bestiary-card[tabindex="0"]').focus());
+  await page.keyboard.press('Enter');
+  const detailOpen = await page.evaluate(() =>
+    !!document.querySelector('.bestiary-detail-header'));
+  assert(detailOpen, 'Entrée sur une carte bestiaire ouvre la fiche détaillée');
+  await page.evaluate(() => closeModal('bestiary-modal'));
+
+  // c) Codex : une entrée déverrouillée (cliquable) est focusable ; une entrée
+  //    verrouillée ne l'est pas. Invariant : tabindex présent SSI onclick présent.
+  const codex = await page.evaluate(() => {
+    openCodex();
+    const cards = Array.from(document.querySelectorAll('.codex-card'));
+    let unlockedFocusable = 0, lockedFocusable = 0, invariantOk = true;
+    for (const c of cards) {
+      const hasTab   = c.getAttribute('tabindex') === '0';
+      const hasClick = !!c.getAttribute('onclick');
+      if (hasTab !== hasClick) invariantOk = false;
+      if (hasClick && hasTab) unlockedFocusable++;
+      if (!hasClick && hasTab) lockedFocusable++;
+    }
+    return { total: cards.length, unlockedFocusable, lockedFocusable, invariantOk };
+  });
+  assert(codex.total >= 1, 'le codex doit afficher des entrées');
+  assert(codex.invariantOk, 'une carte codex est focusable SSI elle est cliquable');
+  assert(codex.unlockedFocusable >= 1,
+    `au moins 1 entrée codex déverrouillée focusable (got ${codex.unlockedFocusable})`);
+  assert(codex.lockedFocusable === 0, 'aucune entrée codex verrouillée ne doit être focusable');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (nav clavier boutique/bestiaire/codex)`);
+  }
+  console.log('  ✅ Navigation clavier boutique / bestiaire / codex OK');
+  await browser.close();
+}
+
+async function scenarioKeybindings() {
+  console.log('\n── Scénario : remappage configurable des touches ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  const dispatch = (key) => page.evaluate((key) =>
+    document.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true })), key);
+  const invOpen = () => page.evaluate(() =>
+    getComputedStyle(document.getElementById('inventory-modal')).display !== 'none');
+  const closeInv = () => page.evaluate(() => closeModal('inventory-modal'));
+
+  // Le module est-il bien chargé ?
+  const hasModule = await page.evaluate(() => typeof kbResolveExplore === 'function');
+  assert(hasModule, 'keybindings.js doit exposer kbResolveExplore');
+
+  // 1) Défaut : « i » ouvre le sac.
+  await dispatch('i');
+  assert(await invOpen(), "défaut : 'i' ouvre le sac");
+  await closeInv();
+
+  // 2) Rebind « Sac » : i → b (retire i, ajoute b).
+  await page.evaluate(() => { kbRemoveKey('openInventory', 'i'); kbAddKey('openInventory', 'b'); });
+  const resolved = await page.evaluate(() => ({
+    b: kbResolveExplore('b'), i: kbResolveExplore('i'),
+  }));
+  assert(resolved.b === 'openInventory', "après rebind : 'b' résout openInventory");
+  assert(resolved.i === null,            "après rebind : 'i' n'est plus lié");
+
+  // 3) La nouvelle touche ouvre le sac…
+  await dispatch('b');
+  assert(await invOpen(), "rebind : 'b' ouvre le sac");
+  await closeInv();
+
+  // 4) …et l'ancienne ne fait plus rien (unbind respecté, pas de fallback).
+  await dispatch('i');
+  assert(!(await invOpen()), "rebind : 'i' n'ouvre plus le sac");
+
+  // 5) Persistance : l'override est écrit dans localStorage.
+  const persisted = await page.evaluate(() => {
+    try { return JSON.parse(localStorage.getItem('hogwarts_rpg_keybindings')); }
+    catch (_) { return null; }
+  });
+  assert(persisted && Array.isArray(persisted.openInventory) && persisted.openInventory.includes('b'),
+    'le binding personnalisé est persisté dans localStorage');
+
+  // 6) Réinitialisation : « i » ré-ouvre le sac, « b » ne le fait plus.
+  await page.evaluate(() => kbResetAll());
+  await dispatch('i');
+  assert(await invOpen(), "reset : 'i' ré-ouvre le sac");
+  await closeInv();
+  await dispatch('b');
+  assert(!(await invOpen()), "reset : 'b' n'ouvre plus le sac");
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (keybindings)`);
+  }
+  console.log('  ✅ Remappage des touches (rebind / unbind / persistance / reset) OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioMobileSelect, scenarioCombatMobile, scenarioRelativeControls, scenarioCanvasSwipe, scenarioCameraPresence, scenarioCombatKeyboard, scenarioConfirmModal, scenarioA11yFinish, scenarioModalIsolation, scenarioGridKeyboardNav, scenarioGridArrowNav, scenarioGridKeyboardNavExtended, scenarioKeybindings] };
