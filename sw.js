@@ -16,7 +16,7 @@
 //     individuel suffit pour eux.
 // =======================================================================
 
-const CACHE_VERSION = 'hogwarth-v178';
+const CACHE_VERSION = 'hogwarth-v179';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Précache minimal (~1 Mo) : shell HTML/CSS/JS + premier visuel.
@@ -69,8 +69,8 @@ const PRECACHE_URLS = [
   './js/ui-character-sheet.js?v=8',
   './js/ui-settings.js?v=4',
   './js/keybindings.js?v=1',
-  './js/ui-bestiary.js?v=5',
-  './js/ui-codex.js?v=6',
+  './js/ui-bestiary.js?v=6',
+  './js/ui-codex.js?v=7',
   './js/dungeon-scaling.js?v=7',
   './js/dungeon.js?v=18',
   './js/dungeon-spawning.js?v=2',
@@ -102,7 +102,7 @@ const PRECACHE_URLS = [
   './js/npc-dialog.js?v=21',
   './js/karaoke.js?v=1',
   './js/intro.js?v=3',
-  './js/shop.js?v=17',
+  './js/shop.js?v=18',
   './js/save-slots.js?v=3',
   './js/save.js?v=40',
   './js/save-visit-snapshot.js?v=1',
@@ -113,7 +113,7 @@ const PRECACHE_URLS = [
   './js/multiplayer.js?v=9',
   './js/multiplayer-social.js?v=1',
   './js/multiplayer-visits.js?v=1',
-  './js/main.js?v=30',
+  './js/main.js?v=31',
   './js/endgame.js?v=9',
   './js/break-cycle.js?v=4',
   './js/forge.js?v=5',

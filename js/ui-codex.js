@@ -183,8 +183,11 @@ function _renderCodexCard(entry, state) {
     ? 'Continue d\'explorer pour percer ce mystère…'
     : _codexTextFor(entry, state);
   const onclick = locked ? '' : ` onclick="showCodexEntry('${entry.id}')"`;
+  // Parité clavier : une entrée révélée (cliquable) est focusable ; une entrée
+  // verrouillée (sans onclick) ne l'est pas. Entrée/Espace + flèches via main.js.
+  const tabAttr = locked ? '' : ' tabindex="0"';
   return `
-    <div class="codex-card ${meta.cls}"${onclick}>
+    <div class="codex-card ${meta.cls}"${onclick}${tabAttr}>
       <div class="codex-card-icon">${icon}</div>
       <div class="codex-card-body">
         <div class="codex-card-title">${title}
