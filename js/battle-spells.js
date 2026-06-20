@@ -746,17 +746,22 @@ function _spellTeleport(spell, char) {
 // Patronus Maxima (Gryffondor) : bouclier de groupe (2 tours) sur tous
 // les alliés vivants + dissipe peur et étourdissement. Pas de cible ennemie.
 function _spellPatronusMaxima(spell, char) {
+  // Synergie Orbe Runique de Godric (P1) : +1 tour de bouclier & dissipe aussi
+  // l'affaiblissement (weaken). Riders lus défensivement sur la forme résolue.
+  const dur = 2 + (spell.shieldTurnsBonus || 0);
+  const cleanseIds = spell.dispelWeaken ? ['stun', 'fear', 'weaken'] : ['stun', 'fear'];
   party.slice(0, partySize).forEach((c, idx) => {
     if (c.hp <= 0) return;
-    shieldTurns[idx] = Math.max(shieldTurns[idx] || 0, 2);
+    shieldTurns[idx] = Math.max(shieldTurns[idx] || 0, dur);
     if (c.statusEffects) {
-      c.statusEffects = c.statusEffects.filter(s => s.id !== 'stun' && s.id !== 'fear');
+      c.statusEffects = c.statusEffects.filter(s => !cleanseIds.includes(s.id));
     }
   });
   UX_safe.floatDmg('ally', 0, 'shield');
-  const msg = `🦌 ${char.name} : ${spell.name} — un Patronus enveloppe tout le groupe (bouclier 2 tours) !`;
+  const tag = spell._synergy ? ' 🔗' : '';
+  const msg = `🦌 ${char.name} : ${spell.name} — un Patronus enveloppe tout le groupe (bouclier ${dur} tours)${tag} !`;
   addMsg(msg, 'magic');
-  UX_safe.logCombat(`🦌 ${char.name} invoque ${spell.name} — bouclier de groupe`, 'magic');
+  UX_safe.logCombat(`🦌 ${char.name} invoque ${spell.name} — bouclier de groupe${tag}`, 'magic');
   return msg;
 }
 
@@ -768,13 +773,22 @@ function _spellImperius(spell, char, enemy, targetIdx) {
     const { dmg, suffix } = _computeSpellDamage(spell, char, enemy);
     enemy.currentHp -= dmg;
     if (enemy.currentHp > 0) {
-      const dotPower = Math.max(3, Math.floor(spell.power * 0.4));
-      applyStatus(enemy, 'bleed', dotPower, 3);
+      // Synergie Masque Rituel de Salazar (P1) : bleed +1 palier de durée.
+      const dotPower  = Math.max(3, Math.floor(spell.power * 0.4));
+      const bleedTurns = 3 + (spell.bleedTurnsBonus || 0);
+      applyStatus(enemy, 'bleed', dotPower, bleedTurns);
       applyStatus(enemy, 'imperius', 0, 2);
     }
-    msg = `🩸 ${char.name} : ${spell.name} → ${dmg} dégâts${suffix} — ${enemy.name} saigne et tombe sous l'Imperium !`;
+    // Synergie : vol de vie du coup (×1,5 de la Soif du Serpent ≈ 22,5 %).
+    let drainTxt = '';
+    if (spell.synergyLifestealFrac && dmg > 0) {
+      const heal = Math.min(char.hpMax - char.hp, Math.max(1, Math.floor(dmg * spell.synergyLifestealFrac)));
+      if (heal > 0) { char.hp += heal; UX_safe.floatDmg('ally', heal, 'heal'); drainTxt = ` 🩸 +${heal} PV drainés`; }
+    }
+    const tag = spell._synergy ? ' 🔗' : '';
+    msg = `🩸 ${char.name} : ${spell.name} → ${dmg} dégâts${suffix} — ${enemy.name} saigne et tombe sous l'Imperium${tag} !${drainTxt}`;
     UX_safe.floatDmg(`enemy:${targetIdx}`, dmg, suffix.includes('💥') ? 'crit' : 'dmg');
-    UX_safe.logCombat(`🩸 ${char.name} : ${spell.name} → <b>−${dmg}</b>${suffix} · ${enemy.name} asservi 2 tours`, 'magic');
+    UX_safe.logCombat(`🩸 ${char.name} : ${spell.name} → <b>−${dmg}</b>${suffix} · ${enemy.name} asservi 2 tours${tag}`, 'magic');
   }
   addMsg(msg, 'magic');
   return msg;
@@ -789,11 +803,18 @@ function _spellLegilimens(spell, char) {
       : 'aucune capacité spéciale';
     UX_safe.logCombat(`👁️ ${e.name} — capacités : ${abs}`, 'info');
   });
-  legilimensCancelCharges += 1;
-  legilimensCastsThisFight += 1;   // enchérit le prochain lancer ce combat
-  const msg = `👁️ ${char.name} : ${spell.name} — l'esprit ennemi est lu ; la prochaine capacité sera annulée.`;
+  // Synergie Bâton Ancestral de Rowena (P1) : annule 2 capacités au lieu d'1,
+  // sans surcoût d'incrément (ce lancer n'enchérit pas les suivants).
+  const cancels = 1 + (spell.cancelChargesBonus || 0);
+  legilimensCancelCharges += cancels;
+  if (!spell.noCostEscalation) legilimensCastsThisFight += 1;   // enchérit le prochain lancer ce combat
+  const tag = spell._synergy ? ' 🔗' : '';
+  const cancelTxt = cancels > 1
+    ? `les ${cancels} prochaines capacités seront annulées`
+    : 'la prochaine capacité sera annulée';
+  const msg = `👁️ ${char.name} : ${spell.name} — l'esprit ennemi est lu ; ${cancelTxt}.${tag}`;
   addMsg(msg, 'magic');
-  UX_safe.logCombat(`👁️ ${char.name} lance ${spell.name}`, 'magic');
+  UX_safe.logCombat(`👁️ ${char.name} lance ${spell.name}${tag}`, 'magic');
   return msg;
 }
 
@@ -816,14 +837,20 @@ function _spellReveal(spell, char, enemy, targetIdx) {
 // Récolte Magique (Poufsouffle) : restaure PV + PM de tout le groupe et
 // majore l'or de ce combat de +50 % (recolteGoldBonus, lu par endBattle).
 function _spellRecolte(spell, char) {
+  // Synergie Talisman de Helga (P1) : purge aussi les afflictions DoT du groupe.
+  const dotIds = ['burn', 'poison', 'bleed', 'gel'];
   party.slice(0, partySize).forEach(c => {
     if (c.hp <= 0) return;
     c.hp = c.hpMax;
     c.sp = c.spMax;
+    if (spell.cleanseDot && Array.isArray(c.statusEffects)) {
+      c.statusEffects = c.statusEffects.filter(s => !dotIds.includes(s.id));
+    }
   });
   recolteGoldBonus = true;
   UX_safe.floatDmg('ally', 0, 'heal');
-  const msg = `🌾 ${char.name} : ${spell.name} — le groupe est revigoré ; les Gallions du combat sont majorés (+50%) !`;
+  const tag = spell._synergy ? ' 🔗' : '';
+  const msg = `🌾 ${char.name} : ${spell.name} — le groupe est revigoré${spell.cleanseDot ? ' et purifié' : ''} ; les Gallions du combat sont majorés (+50%)${tag} !`;
   addMsg(msg, 'good');
   UX_safe.logCombat(`🌾 ${char.name} lance ${spell.name} — groupe restauré`, 'good');
   return msg;
@@ -1104,13 +1131,14 @@ window._spellForCaster = _spellForCaster;
 
 function castSpellInBattle(spellName, targetIdx, targetAllyIdx) {
   const char     = getActiveChar();
-  // P3 — forme EFFECTIVE (évolution réversible : Incendio→Incendio Majeur si le
-  // Bâton ancestral est équipé, etc.). resolveSpellForm renvoie la base si aucune
-  // condition n'est remplie. Idempotent si `spellName` est déjà une forme évoluée.
-  const resolved = (typeof resolveSpellForm === 'function') ? resolveSpellForm(spellName, char) : null;
-  const baseSpell = resolved || SPELLS.find(s => s.name === spellName);
+  const baseSpell = SPELLS.find(s => s.name === spellName);
+  // Forme EFFECTIVE (P3 évolution réversible : Incendio→Incendio Majeur si le
+  // Bâton ancestral est équipé ; P1 surcharge signature par artefact Premium).
+  // resolveSpellForm renvoie la base si aucune condition n'est remplie.
+  const formSpell = (typeof resolveSpellForm === 'function')
+    ? (resolveSpellForm(spellName, char) || baseSpell) : baseSpell;
   // Wrapping Bibliothèque : applique les upgrades du caster.
-  const spell    = _spellForCaster(baseSpell, char);
+  const spell    = _spellForCaster(formSpell, char);
   if (!spell || char.sp < _spellSpCost(spell)) { addMsg("Pas assez de magie !", 'bad'); return; }
 
   // P2 — sorts d'Éclats : refus AVANT débit PM / consommation de tour si le

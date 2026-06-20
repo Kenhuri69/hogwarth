@@ -1122,4 +1122,101 @@ async function scenarioSpellsP3() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioSpellIcons, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioSpellVoiceMapping, scenarioTeleportation, scenarioHealOoc, scenarioBombardaSplash, scenarioAoeSpells, scenarioSpellCombos, scenarioSpellsP2, scenarioSpellsP3] };
+// Combat-synthesis P1 — synergie Artefact ↔ Sort : resolveSpellForm (évolution +
+// surcharge signature), riders de handler, encart « Synergies actives » fiche.
+async function scenarioSpellArtifactSynergy() {
+  console.log('\n── Scénario : Synergie Sort ↔ Artefact (combat-synthesis P1) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Serdaigle' });
+
+  // Helper page : équipe un artefact par id dans le slot voulu (copie ITEMS).
+  await page.evaluate(() => {
+    window._equipArt = (slot, id) => {
+      const it = ITEMS.find(x => x.id === id);
+      party[0].equipped[slot] = it ? Object.assign({}, it) : null;
+    };
+    window._unequipAll = () => { party[0].equipped = {}; };
+  });
+
+  // T1 — resolveSpellForm : évolution + non-destructif (déséquiper = retour base).
+  const t1 = await page.evaluate(() => {
+    _unequipAll();
+    const baseObj = getSpellByName('Incendio');
+    const before  = resolveSpellForm('Incendio', party[0]);   // pas d'artefact → base
+    _equipArt('wand', 'baton_ancestral_premium_serd');         // pivot Incendio + signature Serd
+    const evolved = resolveSpellForm('Incendio', party[0]);
+    const legi    = resolveSpellForm('Legilimens', party[0]);
+    _unequipAll();
+    const after   = resolveSpellForm('Incendio', party[0]);    // retour immédiat
+    return {
+      baseIsBase: before === baseObj,
+      evolvedName: evolved.name, evolvedPower: evolved.power,
+      legiSynergy: !!legi._synergy, legiCancel: legi.cancelChargesBonus,
+      revertedToBase: after === baseObj
+    };
+  });
+  console.log('  T1 resolveSpellForm:', t1);
+  assert(t1.baseIsBase, 'sans artefact, Incendio = forme de base (identité)');
+  assert(t1.evolvedName === 'Incendio Majeur' && t1.evolvedPower === 24, 'Bâton équipé → Incendio Majeur (power 24)');
+  assert(t1.legiSynergy && t1.legiCancel === 1, 'le Bâton surcharge aussi Legilimens (annule 2 capacités)');
+  assert(t1.revertedToBase, 'déséquiper restaure immédiatement la forme de base (non destructif)');
+
+  // T2 — Patronus Maxima surchargé (Orbe de Godric) : bouclier +1 tour & dissipe
+  // l'affaiblissement. Handler appelé sur la forme résolue, en combat (shieldTurns).
+  await startDummyFight(page, { hp: 80 });
+  const t2 = await page.evaluate(() => {
+    party[0].spells.push('Patronus Maxima');
+    // Base (sans artefact) : bouclier 2 tours, weaken NON dissipé.
+    _unequipAll();
+    party[0].statusEffects = [{ id: 'weaken', power: 2, turns: 3 }, { id: 'stun', power: 0, turns: 1 }];
+    shieldTurns[0] = 0; currentBattleChar = 0;
+    _spellPatronusMaxima(resolveSpellForm('Patronus Maxima', party[0]), party[0]);
+    const base = { shield: shieldTurns[0], hasWeaken: party[0].statusEffects.some(s => s.id === 'weaken') };
+    // Synergie (Orbe équipé) : bouclier 3 tours, weaken dissipé.
+    _equipArt('trinket', 'orbe_runique_premium_gryff');
+    party[0].statusEffects = [{ id: 'weaken', power: 2, turns: 3 }, { id: 'stun', power: 0, turns: 1 }];
+    shieldTurns[0] = 0; currentBattleChar = 0;
+    _spellPatronusMaxima(resolveSpellForm('Patronus Maxima', party[0]), party[0]);
+    const syn = { shield: shieldTurns[0], hasWeaken: party[0].statusEffects.some(s => s.id === 'weaken') };
+    return { base, syn };
+  });
+  console.log('  T2 Patronus Maxima:', t2);
+  assert(t2.base.shield === 2 && t2.base.hasWeaken === true, 'base : bouclier 2 tours, weaken conservé');
+  assert(t2.syn.shield === 3 && t2.syn.hasWeaken === false, 'synergie Orbe : bouclier 3 tours, weaken dissipé');
+
+  // T3 — Legilimens surchargé (Bâton) : annule 2 capacités, sans surcoût d'incrément.
+  const t3 = await page.evaluate(() => {
+    party[0].spells.push('Legilimens');
+    _unequipAll(); _equipArt('wand', 'baton_ancestral_premium_serd');
+    legilimensCancelCharges = 0; legilimensCastsThisFight = 0; currentBattleChar = 0;
+    _spellLegilimens(resolveSpellForm('Legilimens', party[0]), party[0]);
+    return { charges: legilimensCancelCharges, casts: legilimensCastsThisFight };
+  });
+  console.log('  T3 Legilimens:', t3);
+  assert(t3.charges === 2, 'Legilimens synergique arme 2 charges d\'annulation');
+  assert(t3.casts === 0, 'pas de surcoût d\'incrément (legilimensCastsThisFight inchangé)');
+  await page.evaluate(() => { if (inBattle) endBattle(false); });
+
+  // T4 — spellSynergiesFor + encart « Synergies actives » de la fiche perso.
+  const t4 = await page.evaluate(() => {
+    _unequipAll(); _equipArt('wand', 'baton_ancestral_premium_serd');
+    if (!party[0].spells.includes('Incendio')) party[0].spells.push('Incendio');
+    const list = spellSynergiesFor(party[0]).map(s => s.spell + ':' + s.kind);
+    openCharacter(0);
+    const html = document.getElementById('char-detail').innerHTML;
+    return { list, hasPanel: html.includes('SYNERGIES ACTIVES'), hasMajeur: html.includes('Incendio Majeur') };
+  });
+  console.log('  T4 fiche perso:', t4);
+  assert(t4.list.includes('Incendio:evolution'), 'spellSynergiesFor liste l\'évolution Incendio');
+  assert(t4.list.includes('Legilimens:override'), 'spellSynergiesFor liste la surcharge Legilimens');
+  assert(t4.hasPanel && t4.hasMajeur, 'l\'encart « Synergies actives » affiche le couple débloqué');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (synergie P1)`);
+  }
+  console.log('  ✅ Synergie Sort ↔ Artefact (P1) OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioSpellIcons, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioSpellVoiceMapping, scenarioTeleportation, scenarioHealOoc, scenarioBombardaSplash, scenarioAoeSpells, scenarioSpellCombos, scenarioSpellsP2, scenarioSpellsP3, scenarioSpellArtifactSynergy] };
