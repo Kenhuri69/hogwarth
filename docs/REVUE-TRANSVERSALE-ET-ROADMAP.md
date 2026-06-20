@@ -224,8 +224,13 @@ narration↔gameplay, tests verts, doc fidèle au code.
 >   fallback SVG par catégorie en place — cf. Phase 3). **Prompts Nano Banana
 >   prêts** : [`.claude/plans/nano-banana-prompts-boss-gardiens.md`](../.claude/plans/nano-banana-prompts-boss-gardiens.md)
 >   (4 prompts 512² + checklist de câblage `imgSrc`/cache-bump post-génération).
-> - **Pass d'assets de fin** (illustrations victoire, SFX « froid surnaturel »,
->   fonds parchemin Codex par acte — ligne Phase 4 dédiée, encore ouverte).
+> - **Pass d'assets de fin** : **illustrations de victoire** (`ending_victory.jpg`)
+>   + **Briser le Cycle** (`ending_break_cycle.jpg`) — manquantes (repli `onerror`
+>   en place) ; **prompts Nano Banana prêts** :
+>   [`.claude/plans/nano-banana-prompts-end-assets.md`](../.claude/plans/nano-banana-prompts-end-assets.md).
+>   ✅ Les **fonds parchemin Codex** par acte **existent déjà**
+>   (`img/codex/parchment_{a,b,c,d}.png`). Restent aussi les **SFX**
+>   « froid surnaturel » (procéduraux, `audio-sfx.js` — chantier code séparé).
 > - **Biais de génération par Maison V2** : ✅ **2 leviers power-neutral livrés
 >   (2026-06-20)** — skin visuel + perception déterministe par coordonnée. Seule
 >   la **pondération de salles** (qui changerait la distribution des types de
