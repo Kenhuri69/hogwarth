@@ -936,4 +936,57 @@ async function scenarioNgPlusProfile() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioCodexOpen, scenarioCodexUnlockOnFloor, scenarioCodexCorrupted, scenarioDarkLoopV1, scenarioDarkLoopV2, scenarioDarkLoopV3, scenarioDarkLoopV4, scenarioBossPromo, scenarioLoopPassiveXp, scenarioEndingEpilogue, scenarioEndingAssets, scenarioNgPlusProfile] };
+// Sorts & Magie 2.0 — Lot P5 : onglet Codex « Sorts & Sortilèges » (❓3) +
+// révélation qui enseigne un sort (teachesSpell réutilisé de P2).
+async function scenarioCodexSorts() {
+  console.log('\n── Scénario : Codex — onglet Sorts (P5) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // T1 — l'onglet « sorts » existe (section + bouton HTML) et rend des cartes.
+  const t1 = await page.evaluate(() => {
+    const section = CODEX_SECTIONS.find(s => s.key === 'sorts');
+    const tabBtn  = document.querySelector('.codex-section-tab[data-cat="sorts"]');
+    openCodex();
+    switchCodexSection('sorts');
+    const grid = document.getElementById('codex-grid');
+    return {
+      section: !!section,
+      tabBtn:  !!tabBtn,
+      entries: CODEX_ENTRIES.filter(e => e.category === 'sorts').length,
+      rendered: grid ? grid.innerHTML.length > 0 : false,
+    };
+  });
+  console.log('  T1 onglet sorts:', t1);
+  assert(t1.section, 'CODEX_SECTIONS doit inclure la section sorts');
+  assert(t1.tabBtn, 'le bouton d\'onglet sorts doit exister dans index.html');
+  assert(t1.entries >= 5, `≥5 entrées sorts attendues, vu ${t1.entries}`);
+  assert(t1.rendered, 'la section sorts doit rendre (cartes ou placeholder)');
+
+  // T2 — révélation enseignante : sort_rituel_temporel révélé en Boucle
+  // enseigne Tempus Echo au groupe via checkCodexUnlocks (teachesSpell).
+  const t2 = await page.evaluate(() => {
+    // Retire Tempus Echo s'il était présent + purge le marqueur de révélation.
+    party.forEach(c => { c.spells = c.spells.filter(s => s !== 'Tempus Echo'); });
+    if (typeof unlockedCodexEntries !== 'undefined') {
+      unlockedCodexEntries.delete('sort_rituel_temporel');
+      unlockedCodexEntries.delete('sort_rituel_temporel#revealed');
+    }
+    const knewBefore = party[0].spells.includes('Tempus Echo');
+    currentFloor = 14; floorReached = 14; victoryAchieved = true;
+    checkCodexUnlocks('test-p5');
+    return { knewBefore, knowsAfter: party[0].spells.includes('Tempus Echo') };
+  });
+  console.log('  T2 teachesSpell:', t2);
+  assert(!t2.knewBefore, 'Tempus Echo ne doit pas être connu avant la révélation');
+  assert(t2.knowsAfter, 'la révélation de sort_rituel_temporel enseigne Tempus Echo');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS (codex sorts P5)`);
+  }
+  console.log('  ✅ Codex — onglet Sorts (P5) OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioCodexOpen, scenarioCodexUnlockOnFloor, scenarioCodexCorrupted, scenarioDarkLoopV1, scenarioDarkLoopV2, scenarioDarkLoopV3, scenarioDarkLoopV4, scenarioBossPromo, scenarioLoopPassiveXp, scenarioEndingEpilogue, scenarioEndingAssets, scenarioNgPlusProfile, scenarioCodexSorts] };

@@ -1055,7 +1055,7 @@ function loadModule(relPath, exportNames, globals = {}) {
 
   // ── Registre cohérent : champs obligatoires (§12.3) ──
   let shapeOk = true;
-  const CATS = ['glossaire', 'bestiaire', 'lieux', 'personnages', 'histoire', 'eclats', 'objets'];
+  const CATS = ['glossaire', 'bestiaire', 'lieux', 'personnages', 'histoire', 'eclats', 'objets', 'sorts'];
   for (const e of CODEX_ENTRIES) {
     if (!e.id || !e.category || !e.title) shapeOk = false;
     if (!CATS.includes(e.category)) shapeOk = false;
@@ -1275,6 +1275,27 @@ function loadModule(relPath, exportNames, globals = {}) {
   check('echo_salazar ouvert étage 4', codexEntryState(eS, { ...empty, floorReached: 4 }) === 'veiled');
   check('echo_salazar révélé par sa voix',
     codexEntryState(eS, { ...empty, floorReached: 4, echoSeen: new Set(['echo_salazar']) }) === 'revealed');
+
+  // ── Sorts & Magie 2.0 — Lot P5 : catégorie Codex 'sorts' (❓3) ──
+  const sortsEntries = CODEX_ENTRIES.filter(e => e.category === 'sorts');
+  check('P5 : catégorie sorts peuplée (≥ 5 entrées)', sortsEntries.length >= 5);
+  check('P5 : chaque entrée sorts a veiled + unlockConditions',
+    sortsEntries.every(e => typeof e.textVersions.veiled === 'string'
+      && Array.isArray(e.unlockConditions) && e.unlockConditions.length));
+  // L'entrée temporelle enseigne un sort à la révélation (teachesSpell réutilisé).
+  const temporel = getCodexEntry('sort_rituel_temporel');
+  check('P5 : sort_rituel_temporel enseigne Tempus Echo', temporel && temporel.teachesSpell === 'Tempus Echo');
+  check('P5 : sort_rituel_temporel locked pré-conditions',
+    codexEntryState(temporel, empty) === 'locked');
+  check('P5 : sort_rituel_temporel veiled (étage 14 zone D)',
+    codexEntryState(temporel, { ...empty, floorReached: 14 }) === 'veiled');
+  check('P5 : sort_rituel_temporel revealed (victoire/Boucle)',
+    codexEntryState(temporel, { ...empty, floorReached: 14, victoryAchieved: true }) === 'revealed');
+  // L'entrée corruption porte une surcouche corrupted en Ruines profondes.
+  const sc = getCodexEntry('sort_corruption');
+  check('P5 : sort_corruption locked pré-victoire', codexEntryState(sc, { ...empty, floorReached: 14 }) === 'locked');
+  check('P5 : sort_corruption corrupted (victoire + floor21)',
+    codexEntryState(sc, { ...empty, victoryAchieved: true, floorReached: 21 }) === 'corrupted');
 
   // ── Défensif : ctx incomplet ne throw jamais ──
   let noThrow = true;

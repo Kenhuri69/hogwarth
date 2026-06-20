@@ -593,6 +593,73 @@ const CODEX_ENTRIES = [
     },
   },
 
+  // ── ✨ Sorts & Sortilèges (Sorts & Magie 2.0 — Lot P5, ❓3) ──────────
+  // Entrées de LORE sur les familles de sorts majeurs (signature / rituel /
+  // légendaires / corrompus). Déverrouillage progressif via étage / Éclats /
+  // écho / quête / victoire. Une entrée réutilise `teachesSpell` (P2) : sa
+  // révélation enseigne le sort au groupe (chemin de découverte alternatif,
+  // idempotent avec l'octroi de P4). Cf. .claude/plans/spells-magic-system.md §2.5.
+  {
+    id: 'sort_signature_maison', category: 'sorts', icon: '✨', act: 3,
+    title: 'Les Sorts Signature des Maisons',
+    links: ['eclat_voute_codex'],
+    unlockConditions: [{ type: 'floor', value: 7 }],
+    revealedBy: [{ type: 'victory', value: true }],
+    textVersions: {
+      veiled: "Chaque Maison garde un sort qui lui ressemble — un geste que seuls les siens accomplissent sans trembler : le Patronus de Gryffondor, l'Imperium serpentin, la Légilimancie de Serdaigle, la Récolte de Poufsouffle. On les apprend au seuil du Mythe, quand la Maison reconnaît enfin l'un des siens.",
+      revealed: "Ces quatre sortilèges ne sont pas des récompenses : ce sont des aveux. Le courage qui tient la porte, l'orgueil qu'on asservit, le savoir qui lit l'âme, le soin qui ne laisse personne. Apprendre le sort de sa Maison, c'est accepter ce qu'elle dit de soi — et le retourner contre les ténèbres plutôt que contre les autres.",
+    },
+  },
+  {
+    id: 'sort_premium_maison', category: 'sorts', icon: '🎨', act: 4,
+    title: 'Les Variantes d\'Apothéose',
+    links: ['sort_signature_maison'],
+    unlockConditions: [{ type: 'floor', value: 10 }],
+    revealedBy: [{ type: 'victory', value: true }],
+    textVersions: {
+      veiled: "Au sommet de la faveur d'une Maison, un sort familier se recolore : Incendio devient flammes d'or, Sanguini coule en venin d'émeraude, Glacius se grave de runes bleues, Reparo réchauffe d'ambre. Même geste, autre éclat.",
+      revealed: "L'Apothéose ne donne pas un sort de plus : elle révèle celui qu'on portait déjà, sous sa vraie couleur. La Maison ne change pas ta magie — elle te rend digne de la montrer telle qu'elle est.",
+    },
+  },
+  {
+    id: 'sort_rituel_temporel', category: 'sorts', icon: '⏳', act: 4,
+    title: 'Les Sorts du Temps replié',
+    links: ['ruines_anciennes'],
+    unlockConditions: [{ type: 'echo', value: 'echo_scene_sceau' }, { type: 'floor', value: 14 }],
+    revealedBy: [{ type: 'victory', value: true }],
+    // Réutilise teachesSpell (P2) : révéler cette page enseigne Tempus Echo —
+    // chemin de découverte complémentaire de la stèle des Ruines (idempotent).
+    teachesSpell: 'Tempus Echo',
+    textVersions: {
+      veiled: "Dans les Ruines, le temps ne coule plus droit. Certains gestes le replient : rejouer un instant (Tempus Echo), rappeler les forces d'un souffle passé (Reliquae Temporis), réveiller un écho de soi qui frappe encore (Écho Fantôme). Magie grave, qui se paie de fatigue.",
+      revealed: "Ces sortilèges ne remontent pas le temps : ils le plissent, brièvement, là où le sceau l'a déjà déchiré. En les apprenant — Tempus Echo te revient —, tu acceptes que le passé n'est jamais tout à fait clos dans la Boucle. C'est sa malédiction, et ton arme.",
+    },
+  },
+  {
+    id: 'sort_corruption', category: 'sorts', icon: '🌑', act: 4,
+    title: 'La Magie Corrompue',
+    links: ['boucle_tenebreuse'],
+    unlockConditions: [{ type: 'victory', value: true }],
+    revealedBy: [{ type: 'floor', value: 14 }],
+    corruptedBy: [{ type: 'floor', value: 21 }],
+    textVersions: {
+      veiled: "Plus bas, la magie cesse d'être sûre. Flamme Dévorante, Venin du Cachot, Savoir Interdit, Fardeau Partagé — chacune frappe plus fort qu'elle ne le devrait, et chacune se retourne, parfois, contre celui qui l'a lancée.",
+      revealed: "La corruption n'est pas un châtiment aléatoire : c'est un marché que tu signes en connaissance de cause. Plus tu en uses, plus elle t'enfle la puissance — et le risque. Le contrecoup n'efface jamais ta partie ; il te rappelle seulement que tu joues avec ce que les Fondateurs ont scellé.",
+      corrupted: "J'ai compris, trop tard, que la corruption ne vient pas du sort. Elle vient de la facilité avec laquelle on s'y habitue. Chaque niveau franchi sans contrecoup ressemble à une victoire — jusqu'à ce qu'on ne distingue plus sa main de la brèche. Use-en. Mais compte tes niveaux.",
+    },
+  },
+  {
+    id: 'sort_legendaire_quete', category: 'sorts', icon: '🏆', act: 3,
+    title: 'Les Sorts Légendaires',
+    links: ['sort_signature_maison'],
+    unlockConditions: [{ type: 'floor', value: 8 }],
+    revealedBy: [{ type: 'victory', value: true }],
+    textVersions: {
+      veiled: "Au bout de la quête signature de chaque Maison se cache un sort qu'aucune boutique ne vend : Cœur de Lion, Pacte du Serpent, Verbe de Rowena, Serment du Blaireau. On ne les achète pas — on les mérite. Et tout au fond des Ruines dort le dernier : Le Mot du Dormeur.",
+      revealed: "Un sort légendaire n'est pas plus fort qu'un autre : il est plus VRAI. Il exige un sacrifice (le sang du Pacte), une fidélité (le Serment), un savoir partagé (le Verbe), un courage entier (le Cœur). Le Mot du Dormeur, lui, ne demande rien — sinon de comprendre qu'on ne réveille pas ce qui dort sans en payer le prix.",
+    },
+  },
+
 ];
 
 // ── Helpers PURS ─────────────────────────────────────────────

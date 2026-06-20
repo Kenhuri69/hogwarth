@@ -19,6 +19,7 @@ const CODEX_SECTIONS = [
   { key: 'glossaire',    emoji: '📖', label: 'Glossaire' },
   { key: 'personnages',  emoji: '👤', label: 'Personnages' },
   { key: 'objets',       emoji: '⚜️', label: 'Objets' },
+  { key: 'sorts',        emoji: '✨', label: 'Sorts & Sortilèges' },
   { key: 'bestiary',     emoji: '🐉', label: 'Bestiaire' },
 ];
 
