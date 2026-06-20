@@ -134,4 +134,44 @@ async function scenarioAmbientBarks() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioAdaptiveCombatMusic, scenarioAmbientBarks] };
+// SFX « froid surnaturel » (ch09 §9.1.2 / §VIII) : souffle glacé à l'apparition
+// d'une créature corrompue (corruption >= 2). Vérifie que le SFX existe, qu'une
+// créature des profondeurs atteint le seuil de corruption, et que l'appel est
+// défensif (ne throw pas, headless/muet).
+async function scenarioColdBreathSfx() {
+  console.log('\n── Scénario : SFX souffle glacé (créature corrompue) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  const out = await page.evaluate(() => {
+    const r = {};
+    r.sfxWired = typeof AudioSystem !== 'undefined' && typeof AudioSystem.playColdBreath === 'function';
+    r.corrFn   = typeof creatureCorruptionLevel === 'function';
+    // Un monstre des profondeurs (zone C/D) doit franchir le seuil corruption >= 2.
+    if (r.corrFn) {
+      const deep = (typeof MONSTERS !== 'undefined') ? MONSTERS.find(m => m.id === 'detraqueur') : null;
+      r.deepCorruption = deep ? creatureCorruptionLevel(deep, 14) : -1;
+      r.surfaceCorruption = deep ? creatureCorruptionLevel(deep, 1) : -1;
+    }
+    // Appel défensif : ne doit pas throw (muet en headless → no-op silencieux).
+    let threw = false;
+    try { AudioSystem.playColdBreath(); } catch (_) { threw = true; }
+    r.callSafe = !threw;
+    return r;
+  });
+  console.log('  out :', out);
+  assert(out.sfxWired,  'AudioSystem.playColdBreath doit exister');
+  assert(out.corrFn,    'creatureCorruptionLevel doit exister');
+  assert(out.deepCorruption >= 2,  `créature profonde doit atteindre corruption >= 2 (obtenu ${out.deepCorruption})`);
+  assert(out.surfaceCorruption < out.deepCorruption, 'la corruption doit croître avec la profondeur');
+  assert(out.callSafe,  'playColdBreath ne doit jamais throw');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error('Erreurs console pendant le scénario souffle glacé');
+  }
+  console.log('  ✅ SFX souffle glacé (corruption >= 2) OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioAdaptiveCombatMusic, scenarioAmbientBarks, scenarioColdBreathSfx] };

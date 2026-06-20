@@ -4,7 +4,72 @@
 > Pendant du chantier Artefacts (`artifacts-reliquary-system.md`) : même
 > philosophie, mêmes garde-fous, même structure documentaire.
 >
-> **Statut : ÉTAPE 1 (spécifications) + ÉTAPE 2 (plan) rédigées — implémentation NON commencée.**
+> **Statut : ÉTAPE 1 + ÉTAPE 2 rédigées · Lots P0 (socle data inerte) et
+> P1 (étiquetage + liseré de rang) LIVRÉS. P2→P5 à venir.**
+>
+> ### Arbitrages des points ❓ (validés par le commanditaire avant P0)
+> - ❓1 → **4 variantes Premium signature** (une par Maison), extensible.
+> - ❓2 → `staminaCost` **réel mais réservé** à 2-3 rituels lourds (pas de 2ᵉ jauge omniprésente).
+> - ❓3 → **nouvelle catégorie Codex `'sorts'`** (onglet dédié).
+> - ❓5 → contrecoup de corruption **configurable par sort** (auto-dégât / statut / compteur).
+> - ❓6 → **livrer P0→P3 d'abord**, garder P4 (corruption/Boucle) pour une 2ᵉ passe après validation sim.
+>
+> ### Journal — Lot P0 (livré)
+> Implémenté dans `js/data.js` (après `spellCategory`), miroir EXACT du socle
+> Artefacts (`ARTIFACT_FORMS`/`PREMIUM_MULT`/`premiumStat`) :
+> - **Registres** : `SPELL_PREMIUM_MULT` (rare 1.20 / epic 1.30 / legendary 1.40),
+>   `SPELL_TIERS` (4 rangs `mult`+`tint`+`rank`), `SPELL_RARITY_COST_MULT`
+>   (ajout §1.8 pour la formule de coût), `HOUSE_SPELL_FX` (4 Maisons),
+>   `HERO_PATRONUS` (16 héros, cosmétique).
+> - **Helpers PURS** : `getSpellById`, `getSpellByName`, `spellTierTint`,
+>   `resolveSpellForm` (P0 : renvoie la forme de base — point d'extension P3),
+>   `spellPmCostEstimate` (sim §1.8). Plus internes : `_slugifySpell`,
+>   `_defaultSpellCategory`, `_normalizeSpells`.
+> - **Champs ajoutés aux 47 entrées `SPELLS`** via le passe idempotent
+>   `_normalizeSpells(SPELLS)` (appelé une fois au chargement, pure data-prep) :
+>   `id` (slug stable du nom), `category` (taxonomie 2.0 dérivée de l'effet),
+>   `tier:'basique'`, `rarity:'common'`, `houseAffinity:null`.
+> - **Vérif** : `tests/units.js` (+50 assertions, section « socle data P0 ») vert ;
+>   `node tests/smoke.js` vert (229 scénarios, aucun changement de jeu) ; cache PWA
+>   bumpé (`js/data.js?v=46`, `CACHE_VERSION hogwarth-v170`), `pwa-smoke` vert.
+>
+> ### Journal — Lot P1 (livré)
+> Étiquetage + liseré de rang dans la modale Sorts (branche `claude/sorts-p1-etiquetage`).
+> - **Étiquetage** (`js/data.js`) : table curée `SPELL_META` (clé = nom) →
+>   `[category, tier, rarity, houseAffinity]` pour les **47 sorts**, appliquée par
+>   `_normalizeSpells` avec précédence **littéral > `SPELL_META` > défaut dérivé**.
+>   Distribution : 14 basiques / 11 avancés / 19 maîtres / 3 corrompus ; 4 sorts
+>   `signature` Mythe portent l'affinité de Maison canon (Patronus Maxima→Gryff,
+>   Sectumsempra Imperius→Slyth, Legilimens→Serd, Récolte Magique→Pouf), eux seuls.
+> - **Liseré** (`js/inventory-spells.js`) : `_spellTierBadgeHtml` + bordure gauche
+>   teintée (`_spellTierTintSafe` → `spellTierTint`) sur chaque `.spell-item`, dans
+>   `openSpells` ET `openBattleSpells`. Défensif (socle P0 absent → neutre).
+> - **Vérif** : `tests/units.js` (assertions P1 `SPELL_META`/affinités/rangs) ;
+>   `node tests/smoke.js` vert (231 scénarios, T2bis liseré) ; cache PWA bumpé
+>   (`data.js?v=48`, `inventory-spells.js?v=4`, `CACHE_VERSION hogwarth-v173`).
+>
+> **Écarts P1 :**
+> - **« filtre `category` enrichi » reporté.** Le commanditaire a défini P1 =
+>   « étiquetage + liseré de tier ». Le filtre actuel de la modale (axe élémentaire
+>   `feu/glace/…` + `soutien/utilitaire` via `spellCategory()`) est **conservé tel
+>   quel** — il reste découplé du nouveau champ `category` (aucun call-site ne lit
+>   `spell.category`). Basculer le filtre sur la taxonomie 2.0 (combat/exploration/
+>   defense/rituel/signature) est un arbitrage UX à trancher ; laissé à un lot ultérieur.
+> - **Étiquetage centralisé dans `SPELL_META`** plutôt qu'éparpillé sur 47 littéraux
+>   (diff lisible, idempotent). Un futur sort neuf déclarant ses champs sur son
+>   littéral garde la priorité (précédence littéral > méta).
+>
+> **Écarts / décisions P0 :**
+> - Conformément au **modèle Artefacts** (dont le socle P0 n'avait PAS touché les
+>   littéraux `ITEMS`), l'étiquetage des 47 sorts est posé par `_normalizeSpells`
+>   en valeurs **par défaut** (tier `basique`, rarity `common`, `houseAffinity`
+>   null) — donc **inerte**. Le curating fin des tiers/raretés/catégories
+>   `rituel`/`signature` du §1.3 est explicitement **reporté au P1** (« étiquetage »),
+>   pour éviter un diff massif des littéraux et garder P0 sans changement de jeu.
+> - Ajout d'un registre non listé en §2.1 : `SPELL_RARITY_COST_MULT` — requis par
+>   la formule de coût §1.8 que `spellPmCostEstimate` matérialise. Distinct de
+>   `SPELL_PREMIUM_MULT` (qui sert la génération Premium).
+> - Aucune entrée au `MANIFEST` du loader (socle inerte, comme le socle Artefacts).
 
 ---
 
@@ -510,8 +575,8 @@ budgetSort = power×0,5 + (AoE? ×1,5) + (statut? +2) + (lifesteal? +3) + (heal?
 
 | Lot | Contenu | Vérification |
 |-----|---------|--------------|
-| **P0 — Socle data** | Champs `id/category/tier/rarity/houseAffinity`, registres (`SPELL_TIERS`, `SPELL_PREMIUM_MULT`), helpers purs, `_normalizeSpells`. **Inerte.** | `tests/units.js` (helpers) + smoke vert (rien ne change en jeu). |
-| **P1 — Sorts de base & étiquetage** | Étiqueter les ~50 sorts existants, liseré de tier dans la modale Sorts, filtre `category` enrichi. | smoke `spells` ; visuel modale. |
+| ✅ **P0 — Socle data** | Champs `id/category/tier/rarity/houseAffinity`, registres (`SPELL_TIERS`, `SPELL_PREMIUM_MULT`), helpers purs, `_normalizeSpells`. **Inerte.** | `tests/units.js` (helpers) + smoke vert (rien ne change en jeu). |
+| ✅ **P1 — Sorts de base & étiquetage** | Étiqueter les 47 sorts existants (table `SPELL_META`), liseré de tier dans la modale Sorts. Filtre `category` enrichi **reporté** (voir écart). | smoke `spells` (T2bis liseré) ; visuel modale. |
 | **P2 — Sorts par Maison & arbre** | `houseSpellBoost`, sorts d'Éclats/familier/environnementaux, apprentissage PNJ/Codex. | smoke nouveaux scénarios ; sim coûts. |
 | **P3 — Premium & évolutifs** | 4 variantes Premium signature, `resolveSpellForm`, synergies artefacts, FX/sons. | smoke `spells`+`fx` ; cache-bump. |
 | **P4 — Corrompus & Boucle** | Sorts `corrompu`, `corruptionLevel`, contrecoup, légendaires de quête, sorts temporels. | smoke Boucle ; **sim-difficulty obligatoire**. |

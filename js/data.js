@@ -415,6 +415,232 @@ function spellCategory(spell) {
   return spell.element || 'utilitaire';
 }
 
+// ============================================================
+// SORTS & MAGIE AVANCÉE 2.0 — socle data (Lot P0)
+// ------------------------------------------------------------
+// Voir .claude/plans/spells-magic-system.md.
+// Miroir EXACT du socle Artefacts (ARTIFACT_FORMS / PREMIUM_MULT /
+// premiumStat) ci-dessous : registres + helpers PURS + un passe de
+// normalisation idempotent. INERTE — aucun chemin chaud (castSpellInBattle,
+// _spellSpCost, openSpells…) ne lit encore ces champs ; le seul effet est
+// d'ajouter des champs d'identité par défaut aux entrées SPELLS. Aucun
+// changement de gameplay visible. Consommé par les lots suivants (P1 liseré
+// de tier dans la modale Sorts, P2 sorts de Maison, P3 Premium/évolutifs).
+// ============================================================
+
+// Multiplicateur de power des variantes Premium d'un sort (miroir de
+// PREMIUM_MULT côté artefacts). Appliqué à la GÉNÉRATION des entrées Premium
+// (power pré-cuit dans SPELLS), JAMAIS au runtime — aucun chemin chaud touché.
+const SPELL_PREMIUM_MULT = { rare: 1.20, epic: 1.30, legendary: 1.40 };
+
+// Rangs de maîtrise (tier) = puissance + ton qui s'assombrit avec la descente.
+// `mult` : facteur de coût indicatif (formule §1.8, consommé par
+// spellPmCostEstimate). `tint` : liseré coloré de la modale Sorts (P1),
+// cohérent avec la bordure de rareté d'un item d'inventaire.
+const SPELL_TIERS = {
+  'basique':  { label: 'Basique',  rank: 0, mult: 1.0, tint: '#5fa85f' }, // 🌱 vert
+  'avancé':   { label: 'Avancé',   rank: 1, mult: 1.4, tint: '#4a7bc0' }, // 🔆 bleu
+  'maître':   { label: 'Maître',   rank: 2, mult: 2.0, tint: '#c9a227' }, // 🌟 or
+  'corrompu': { label: 'Corrompu', rank: 3, mult: 2.8, tint: '#7a2f8a' }, // 🌑 violet sombre
+};
+
+// Multiplicateur de coût PM par rareté (formule §1.8 — distinct de
+// SPELL_PREMIUM_MULT). Consommé par spellPmCostEstimate (sim/équilibrage).
+const SPELL_RARITY_COST_MULT = { common: 1.0, uncommon: 1.1, rare: 1.25, epic: 1.4, legendary: 1.6 };
+
+// Coloration FX par Maison affine (miroir de HOUSE_PREMIUM côté artefacts).
+// `fx` : clé de variante de particules (CombatFX, P3) ; `tint` : couleur hex.
+const HOUSE_SPELL_FX = {
+  Gryffondor:  { fx: 'gryff', tint: '#d3a625' }, // 🦁 flammes dorées
+  Serpentard:  { fx: 'slyth', tint: '#1a472a' }, // 🐍 venin vert
+  Serdaigle:   { fx: 'serd',  tint: '#0e1a40' }, // 🦅 givre bleu runique
+  Poufsouffle: { fx: 'pouf',  tint: '#f0c75e' }, // 🦡 ambre doré
+};
+
+// Forme canon du Patronus par héros — purement COSMÉTIQUE (texte/FX du sort
+// Patronus, P2/P3). Aucun impact mécanique. Clés = clés de CHARACTERS.
+const HERO_PATRONUS = {
+  harry:     'Cerf',          hermione:  'Loutre',
+  draco:     'Vipère',        cho:       'Cygne',
+  cedric:    'Faucon',        celeste:   'Loup Argenté',
+  iris:      'Papillon',      maxence:   'Corbeau',
+  anastasia: 'Lionne',        louis:     'Salamandre',
+  jeanne:    'Licorne',       margaux:   'Hibou',
+  agathe:    'Biche',         olivier:   'Lynx',
+  nathalie:  'Lièvre',        chatillon: 'Chauve-souris',
+};
+
+// Slug stable kebab/snake-case dérivé du nom d'affichage (PUR). Sert d'`id`
+// par défaut quand l'entrée n'en déclare pas. Déterministe et sans accent.
+//   "Incendio" → "incendio" · "Glacius Tempête" → "glacius_tempete"
+//   "Avada..." → "avada"     · "Cheminette Inter-Mondes" → "cheminette_inter_mondes"
+function _slugifySpell(name) {
+  return String(name == null ? '' : name)
+    .toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '') // retire les diacritiques
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+}
+
+// Catégorie 2.0 par DÉFAUT (taxonomie combat|exploration|defense|rituel|
+// signature), dérivée mécaniquement de l'`effect`. Le curating fin (rituel/
+// signature) est laissé au P1 — ici on ne pose qu'un défaut sûr. PUR.
+const _SPELL_CAT_DEFENSE = new Set([
+  'heal', 'heal_aoe', 'support_regen', 'support_regen_aoe', 'shield',
+  'patronus_maxima', 'recolte', 'regen_buff',
+]);
+const _SPELL_CAT_EXPLORATION = new Set([
+  'disarm', 'steal', 'reveal', 'teleport', 'legilimens', 'portal',
+  'blood_seal', 'voyager_seal', 'outremonde_memory', 'pilgrim_mark', 'astral_recall',
+]);
+function _defaultSpellCategory(spell) {
+  const e = (spell && spell.effect) || '';
+  if (_SPELL_CAT_DEFENSE.has(e)) return 'defense';
+  if (_SPELL_CAT_EXPLORATION.has(e)) return 'exploration';
+  return 'combat';
+}
+
+// ── Étiquetage curaté des sorts existants (Lot P1) ──────────────
+// Table de méta-données par NOM (clé runtime), source de vérité de
+// l'identité 2.0 des ~47 sorts du catalogue. Tuple [category, tier, rarity,
+// houseAffinity] — appliqué par _normalizeSpells SANS écraser une valeur
+// déjà déclarée sur le littéral (précédence : littéral > SPELL_META > défaut
+// dérivé). Centralisé ici plutôt qu'éparpillé sur 47 littéraux : diff lisible,
+// idempotent, testable. Curating aligné sur le plan §1.3 / §1.10. Les seules
+// affinités de Maison posées sont les 4 sorts « Mythe » (canon, §1.3 note).
+const SPELL_META = {
+  // ── Basiques (Acte I) ──
+  'Expelliarmus':       ['exploration', 'basique', 'common',    null],
+  'Stupefix':           ['combat',      'basique', 'common',    null],
+  'Episkey':            ['defense',     'basique', 'common',    null],
+  'Ferula':             ['defense',     'basique', 'common',    null],
+  'Protego':            ['defense',     'basique', 'common',    null],
+  'Incendio':           ['combat',      'basique', 'common',    null],
+  'Accio':              ['exploration', 'basique', 'common',    null],
+  'Wingardium Leviosa': ['combat',      'basique', 'common',    null],
+  'Reparo':             ['defense',     'basique', 'common',    null],
+  'Aguamenti':          ['combat',      'basique', 'common',    null],
+  'Riddikulus':         ['combat',      'basique', 'common',    null],
+  'Alohomora':          ['exploration', 'basique', 'common',    null],
+  'Revelio':            ['exploration', 'basique', 'common',    null],
+  'Tarantallegra':      ['combat',      'basique', 'common',    null],
+  // ── Avancés (Acte II) ──
+  'Ferula Maxima':      ['defense',     'avancé',  'uncommon',  null],
+  'Diffindo':           ['combat',      'avancé',  'uncommon',  null],
+  'Lumos Maxima':       ['combat',      'avancé',  'uncommon',  null],
+  'Bombarda':           ['combat',      'avancé',  'rare',      null],
+  'Glacius':            ['combat',      'avancé',  'uncommon',  null],
+  'Fulgari':            ['combat',      'avancé',  'uncommon',  null],
+  'Lumos Solem':        ['combat',      'avancé',  'rare',      null],
+  'Sanguini':           ['combat',      'avancé',  'uncommon',  null],
+  'Maledictus':         ['combat',      'avancé',  'uncommon',  null],
+  'Verrou de Sang':     ['exploration', 'avancé',  'rare',      null],
+  'Marque du Pèlerin':  ['exploration', 'avancé',  'uncommon',  null],
+  // ── Maîtres (Acte III) ──
+  'Sectumsempra':       ['combat',      'maître',  'epic',      null],
+  'Patronum':           ['combat',      'maître',  'rare',      null],
+  'Vampyrus':           ['combat',      'maître',  'rare',      null],
+  'Crucio':             ['combat',      'maître',  'rare',      null],
+  'Morsmordre':         ['combat',      'maître',  'epic',      null],
+  'Glacius Tempête':    ['combat',      'maître',  'rare',      null],
+  'Fulgur Catena':      ['combat',      'maître',  'rare',      null],
+  'Lux Aeterna':        ['combat',      'maître',  'rare',      null],
+  'Nox Vorax':          ['combat',      'maître',  'rare',      null],
+  'Diffindo Maxima':    ['combat',      'maître',  'rare',      null],
+  'Vulnera Sanentur':   ['defense',     'maître',  'rare',      null],
+  'Portus':             ['exploration', 'maître',  'rare',      null],
+  'Cheminette Inter-Mondes': ['exploration', 'maître', 'epic',  null],
+  'Sceau du Voyageur':  ['exploration', 'maître',  'rare',      null],
+  "Mémoire d'Outremonde": ['exploration', 'maître', 'rare',     null],
+  'Rappel Astral':      ['exploration', 'maître',  'rare',      null],
+  // ── Sorts « Mythe » de Maison (signature, affinité canon — §1.3) ──
+  'Patronus Maxima':       ['signature', 'maître',   'epic', 'Gryffondor'],
+  'Sectumsempra Imperius': ['signature', 'corrompu', 'epic', 'Serpentard'],
+  'Legilimens':            ['signature', 'maître',   'epic', 'Serdaigle'],
+  'Récolte Magique':       ['signature', 'maître',   'epic', 'Poufsouffle'],
+  // ── Corrompus / interdits (legendary) ──
+  'Avada...':           ['signature', 'corrompu', 'legendary', null],
+  'Fiendfyre':          ['combat',    'corrompu', 'legendary', null],
+};
+
+// Passe de normalisation IDEMPOTENTE (miroir de _migrateEquippedSlots côté
+// save) : ajoute les champs d'identité à chaque entrée SPELLS SANS écraser une
+// valeur déjà déclarée. Précédence : littéral > SPELL_META (étiquetage curaté
+// P1) > défaut dérivé. Rejouable sans effet de bord. Retourne la liste pour
+// permettre un appel testable hors `SPELLS`.
+function _normalizeSpells(list) {
+  const spells = list || (typeof SPELLS !== 'undefined' ? SPELLS : null);
+  if (!Array.isArray(spells)) return spells;
+  for (const s of spells) {
+    if (!s || typeof s !== 'object') continue;
+    const meta = (s.name != null && SPELL_META[s.name]) || null;
+    if (s.id == null)              s.id = _slugifySpell(s.name);
+    if (s.category == null)        s.category = (meta && meta[0]) || _defaultSpellCategory(s);
+    if (s.tier == null)            s.tier = (meta && meta[1]) || 'basique';
+    if (s.rarity == null)          s.rarity = (meta && meta[2]) || 'common';
+    if (s.houseAffinity === undefined) s.houseAffinity = meta ? meta[3] : null;
+  }
+  return spells;
+}
+
+// ── Helpers PURS (testés dans tests/units.js, façon _fortuneCurve) ──
+
+// Résolution par id stable (Codex / variantes / synergies). `name` reste la
+// clé runtime de char.spells — `id` est un canal parallèle (cf. plan §1.2).
+function getSpellById(id) {
+  if (id == null || typeof SPELLS === 'undefined') return null;
+  return SPELLS.find(s => s && s.id === id) || null;
+}
+// Résolution par nom d'affichage (clé runtime du moteur de combat).
+function getSpellByName(name) {
+  if (name == null || typeof SPELLS === 'undefined') return null;
+  return SPELLS.find(s => s && s.name === name) || null;
+}
+// Couleur de liseré du rang d'un sort (P1, modale Sorts). Repli sûr sur le
+// tint « basique » pour un sort sans tier (legacy non normalisé).
+function spellTierTint(spell) {
+  const t = spell && spell.tier;
+  return (SPELL_TIERS[t] && SPELL_TIERS[t].tint) || SPELL_TIERS['basique'].tint;
+}
+// Forme EFFECTIVE d'un sort pour un personnage (non destructif, runtime).
+// P0 : aucun sort ne déclare encore evolvesTo/evolveCondition → renvoie
+// toujours la forme de base. Point d'extension P3 (synergies artefacts /
+// évolution réversible). PUR : ne mute jamais char.spells.
+function resolveSpellForm(spellName, char) {
+  const base = getSpellByName(spellName);
+  if (!base) return null;
+  // (P3) : si base.evolvesTo et base.evolveCondition satisfaite par `char`
+  // (artefact équipé / corruption / quête / étage) → renvoyer la forme évoluée.
+  return base;
+}
+// Estimation du coût PM d'un sort (formule §1.8) — outil de SIMULATION /
+// équilibrage, jamais consommé par un chemin chaud. PUR.
+//   PM ≈ budget × tierMult × rarityMult
+//   budget = power×0,5 (+ heal? power×0,4) (+ statut? 2) (+ lifesteal? 3) (× AoE? 1,5)
+function spellPmCostEstimate(spell) {
+  if (!spell || typeof spell !== 'object') return 0;
+  const power = (typeof spell.power === 'number' && isFinite(spell.power)) ? Math.max(0, spell.power) : 0;
+  const e = spell.effect || '';
+  const isHeal      = (e === 'heal' || e === 'heal_aoe' || e === 'support_regen' || e === 'support_regen_aoe');
+  const isAoe       = !!(spell.splash || spell.aoe || /^aoe_/.test(e) || e === 'heal_aoe' || e === 'support_regen_aoe');
+  const hasStatus   = !!spell.statusId || !!spell.statusTurns || e === 'burn' || e === 'stun' || e === 'curse' || e === 'imperius';
+  const isLifesteal = (e === 'lifesteal' || e === 'aoe_drain');
+
+  let budget = power * 0.5;
+  if (isHeal)      budget += power * 0.4;
+  if (hasStatus)   budget += 2;
+  if (isLifesteal) budget += 3;
+  if (isAoe)       budget *= 1.5;
+
+  const tierMult   = (SPELL_TIERS[spell.tier] && SPELL_TIERS[spell.tier].mult) || 1.0;
+  const rarityMult = SPELL_RARITY_COST_MULT[spell.rarity] || 1.0;
+  return Math.round(budget * tierMult * rarityMult);
+}
+
+// Application du socle : normalise SPELLS une fois au chargement (idempotent,
+// pure data-prep ; n'ajoute que des champs d'identité inertes).
+_normalizeSpells(SPELLS);
+
 // ── Pages du grimoire de givre d'Élara (quête manon_grimoire) ──
 // Cinq feuillets dispersés et dissimulés, un par étage porteur. Le
 // joueur les dévoile avec Revelio puis les ramasse en fouillant. Une

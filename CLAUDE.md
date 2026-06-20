@@ -1558,6 +1558,19 @@ Cible volontaire des boss étage 8-10 (qui apparaissent en variant
 `Ténébreux` aux étages 18-20). C'est la boucle de farm matériaux
 Forge/Biblio principale en endgame.
 
+**Scaling des monstres en Boucle** (`ENDGAME_SCALING`, `dungeon-scaling.js`) :
+récursion `stat(n) = stat(n−1) × scal(n) + baseFix_eff` appliquée `n` fois
+(`n` = palier de 10 étages : 1 pour 11-20, 2 pour 21-30, …), lissée par
+`intraMult`. Calibration **« R1 marqué »** (2026-06) : `scalDelta` de base 0.8
+**+ croissance `scalDeltaGrowth` +0.2/palier** (`endgameScalDelta(n) = 0.8 +
+0.2×(n−1)`, escalade les boucles profondes) et `baseFix` × 1.4
+(`{hp:112, atk:14, def:7, mag:11, xp:70, gold:112}`). Relevé suite au constat
+que la Boucle était trop facile pour un joueur suréquipé. Calibré par
+`node tools/sim-difficulty.js --endgame` (miroir fidèle de `ENDGAME_SCALING`,
+flags d'override `--endgame-scaldelta[-growth]` / `--endgame-basefix-mult`) ;
+cibles validées (joueur suréquipé Solo/Duo) : ét.25 ~57/76 %, ét.30 ~48/66 %,
+ét.40 ~18/28 %. Détail : `.claude/plans/dark-loop-scaling-review.md`.
+
 ---
 
 ## IDs HTML importants

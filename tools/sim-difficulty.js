@@ -410,6 +410,12 @@ function parseArgs(argv) {
                 useQuests: true, useEquipment: true, usePotions: true,
                 kills: 0, bonusLevels: 0, artifacts: false,
                 endgame: false, maxFloor: 40, forge: 0, library: 0,
+                // Tuning de la récursion endgame (Boucle Ténébreuse). Miroir de
+                // ENDGAME_SCALING (dungeon-scaling.js). scalDelta de base + une
+                // croissance par palier (scalDelta(n) = scalDelta + growth×(n−1))
+                // pour escalader les boucles profondes (TODO historique du code),
+                // et un multiplicateur global sur les baseFix. Défauts = runtime.
+                endgameScalDelta: 0.8, endgameScalDeltaGrowth: 0.2, endgameBaseFixMult: 1.0,
                 // Ch.13 P2 — XP passive de Boucle (data.js LOOP_PASSIVE_XP_FRAC).
                 // Fraction de xpNext gagnée par étage de Boucle (11+) franchi.
                 // 0 = désactivé (modèle historique). Défaut 0 ici : le rapport
@@ -480,6 +486,9 @@ function parseArgs(argv) {
     else if (k === 'bonus-levels') out.bonusLevels = parseInt(v, 10) || 0;
     else if (k === 'loop-xp-frac')  out.loopXpFrac = parseFloat(v) || 0;
     else if (k === 'max-floor')    out.maxFloor = parseInt(v, 10) || 40;
+    else if (k === 'endgame-scaldelta')        out.endgameScalDelta = parseFloat(v);
+    else if (k === 'endgame-scaldelta-growth') out.endgameScalDeltaGrowth = parseFloat(v) || 0;
+    else if (k === 'endgame-basefix-mult')     out.endgameBaseFixMult = parseFloat(v) || 1.0;
     else if (k === 'pen-cap')      out.penCap  = parseFloat(v);
     else if (k === 'pen-half')     out.penHalf = parseFloat(v) || 20;
     else if (k === 'dot-res-div')  out.dotResDiv = parseFloat(v) || 8;
@@ -603,6 +612,13 @@ Options:
   --celerite-half=H       [D5 AGI] AGI de demi-saturation de la courbe Célérité (def 45)
   --endgame               Boucle Ténébreuse : étages 11..maxFloor, récursion ENDGAME_SCALING
   --max-floor=N           Étage max en mode --endgame (def 40)
+  --endgame-scaldelta=F   [Boucle] scalDelta de base de la récursion endgame
+                          (def 0.5). Plus haut = boucles plus raides (toutes).
+  --endgame-scaldelta-growth=F  [Boucle] croissance de scalDelta par palier :
+                          scalDelta(n) = scalDelta + F×(n−1). Escalade les
+                          boucles profondes (def 0 = constant).
+  --endgame-basefix-mult=F  [Boucle] multiplicateur global des baseFix
+                          (hp/atk/def/mag/xp/gold) de la récursion (def 1.0)
   --forge=N               Niveau de Forge (0-5) sur le bonus principal de chaque item
   --library=N             Niveau de Bibliothèque (0-3) sur chaque sort (power/cost)
   --house-set=NAME        Set de Maison 4/4 : gryffondor|serpentard|serdaigle|poufsouffle
@@ -639,9 +655,13 @@ if (ARGS.endgame) {
 // Post-victoire, floor 11+ : le pool rebase sur effectiveFloor (floor−10)
 // et une récursion `stat × scal + fixEff` est appliquée `n` fois
 // (n = palier de 10 étages). Activée par cfg.endgame.
+// Calibration « R1 marqué » (cf. dungeon-scaling.js — ENDGAME_SCALING) :
+// baseFix × 1.4, scalDelta de base 0.8, croissance +0.2/palier. Les défauts de
+// parseArgs (endgameScalDelta/Growth) reflètent le runtime ; les flags
+// --endgame-scaldelta[-growth]/--endgame-basefix-mult restent des overrides.
 const ENDGAME_SCALING = {
-  baseFix: { hp: 80, atk: 10, def: 5, mag: 8, xp: 50, gold: 80 },
-  scalDelta: 0.5,
+  baseFix: { hp: 112, atk: 14, def: 7, mag: 11, xp: 70, gold: 112 },
+  scalDelta: 0.8, scalDeltaGrowth: 0.2,
 };
 function simEffectiveFloor(floor, cfg) {
   return (cfg && cfg.endgame && floor >= 11) ? floor - 10 : floor;
@@ -652,6 +672,14 @@ function simEndgameTier(floor, cfg) {
 function _endgameRecurse(stat, n, fixEff, scal) {
   for (let i = 0; i < n; i++) stat = stat * scal + fixEff;
   return stat;
+}
+// scalDelta effectif au palier n (1 pour 11-20, 2 pour 21-30, …). Croissance
+// linéaire optionnelle (cfg.endgameScalDeltaGrowth) : scalDelta(n) =
+// scalDelta + growth×(n−1) — escalade les boucles profondes. Miroir runtime.
+function _endgameScalDeltaForTier(n, cfg) {
+  const base = (cfg && typeof cfg.endgameScalDelta === 'number') ? cfg.endgameScalDelta : ENDGAME_SCALING.scalDelta;
+  const grow = (cfg && typeof cfg.endgameScalDeltaGrowth === 'number') ? cfg.endgameScalDeltaGrowth : 0;
+  return base + grow * Math.max(0, n - 1);
 }
 // Valeur scalée d'une stat (hp/atk/def/xp/gold), récursion endgame incluse.
 // Miroir de ngPlusScaling (dungeon-scaling.js) : multiplicateurs du cran NG+.
@@ -673,8 +701,9 @@ function scaledStatValue(rawBase, scale, key, floor, cfg) {
   if (n <= 0) {
     result = stat0;
   } else {
-    const scal = 1 + ENDGAME_SCALING.scalDelta / intraMult;
-    result = _endgameRecurse(stat0, n, ENDGAME_SCALING.baseFix[key] / intraMult, scal);
+    const scal = 1 + _endgameScalDeltaForTier(n, cfg) / intraMult;
+    const fixMult = (cfg && typeof cfg.endgameBaseFixMult === 'number') ? cfg.endgameBaseFixMult : 1.0;
+    result = _endgameRecurse(stat0, n, ENDGAME_SCALING.baseFix[key] * fixMult / intraMult, scal);
   }
   // Multiplicateurs de difficulté (state.js — DIFFICULTY_SETTINGS) :
   // scalingMultiplier sur les stats de combat, xpMultiplier sur l'XP.
@@ -715,8 +744,9 @@ function scaleMonster(base, floor, cfg) {
   if (n > 0 && base.mag) {
     const ef = simEffectiveFloor(floor, cfg);
     const intraMult = 1 + (ef - 1) * scale;
-    const scal = 1 + ENDGAME_SCALING.scalDelta / intraMult;
-    magVal = _endgameRecurse(base.mag, n, ENDGAME_SCALING.baseFix.mag / intraMult, scal);
+    const scal = 1 + _endgameScalDeltaForTier(n, cfg) / intraMult;
+    const fixMult = (cfg && typeof cfg.endgameBaseFixMult === 'number') ? cfg.endgameBaseFixMult : 1.0;
+    magVal = _endgameRecurse(base.mag, n, ENDGAME_SCALING.baseFix.mag * fixMult / intraMult, scal);
   }
   out.mag = Math.floor(magVal * diffOf(cfg).scalingMultiplier
     * (cfg.ngPlus > 0 ? simNgPlusScaling(cfg.ngPlus).stat : 1));

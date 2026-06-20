@@ -1838,6 +1838,141 @@ function loadModule(relPath, exportNames, globals = {}) {
 })();
 
 // ============================================================
+// Sorts & Magie 2.0 — socle data P0 (data.js, helpers PURS + normalisation)
+// ------------------------------------------------------------
+// Miroir du socle Artefacts. On charge data.js dans le sandbox (inerte au
+// top-level hormis _normalizeSpells(SPELLS), pure data-prep) et on verrouille
+// les registres, les helpers purs et l'idempotence du passe de normalisation.
+// ============================================================
+(function testSpellSocleP0() {
+  const m = loadModule('js/data.js', [
+    'SPELLS', 'SPELL_TIERS', 'SPELL_PREMIUM_MULT', 'SPELL_RARITY_COST_MULT',
+    'HOUSE_SPELL_FX', 'HERO_PATRONUS', 'SPELL_META',
+    'getSpellById', 'getSpellByName', 'spellTierTint', 'resolveSpellForm',
+    'spellPmCostEstimate', '_slugifySpell', '_defaultSpellCategory', '_normalizeSpells',
+  ]);
+  const { SPELLS, SPELL_TIERS, SPELL_PREMIUM_MULT, SPELL_RARITY_COST_MULT,
+          HOUSE_SPELL_FX, HERO_PATRONUS, SPELL_META, getSpellById, getSpellByName, spellTierTint,
+          resolveSpellForm, spellPmCostEstimate, _slugifySpell, _defaultSpellCategory,
+          _normalizeSpells } = m;
+
+  // ── Registres ──
+  check('SPELL_PREMIUM_MULT = rare/epic/legendary',
+    SPELL_PREMIUM_MULT.rare === 1.20 && SPELL_PREMIUM_MULT.epic === 1.30 && SPELL_PREMIUM_MULT.legendary === 1.40);
+  check('SPELL_TIERS = 4 rangs', Object.keys(SPELL_TIERS).length === 4);
+  check('SPELL_TIERS rangs ordonnés 0..3',
+    ['basique', 'avancé', 'maître', 'corrompu'].every((t, i) => SPELL_TIERS[t] && SPELL_TIERS[t].rank === i));
+  check('SPELL_TIERS mult croissant',
+    SPELL_TIERS['basique'].mult < SPELL_TIERS['avancé'].mult &&
+    SPELL_TIERS['avancé'].mult < SPELL_TIERS['maître'].mult &&
+    SPELL_TIERS['maître'].mult < SPELL_TIERS['corrompu'].mult);
+  check('SPELL_TIERS chaque rang a un tint hex',
+    Object.values(SPELL_TIERS).every(t => /^#[0-9a-f]{6}$/i.test(t.tint)));
+  check('HOUSE_SPELL_FX = 4 Maisons',
+    ['Gryffondor', 'Serpentard', 'Serdaigle', 'Poufsouffle'].every(h => HOUSE_SPELL_FX[h] && HOUSE_SPELL_FX[h].fx && /^#[0-9a-f]{6}$/i.test(HOUSE_SPELL_FX[h].tint)));
+  check('HERO_PATRONUS couvre les 16 héros', Object.keys(HERO_PATRONUS).length === 16);
+  check('HERO_PATRONUS harry=Cerf / hermione=Loutre',
+    HERO_PATRONUS.harry === 'Cerf' && HERO_PATRONUS.hermione === 'Loutre');
+
+  // ── _slugifySpell : déterministe, sans accent, snake_case ──
+  check('slug Incendio', _slugifySpell('Incendio') === 'incendio');
+  check('slug accent', _slugifySpell('Glacius Tempête') === 'glacius_tempete');
+  check('slug ponctuation', _slugifySpell('Avada...') === 'avada');
+  check('slug tiret', _slugifySpell('Cheminette Inter-Mondes') === 'cheminette_inter_mondes');
+  check('slug null/undefined → ""', _slugifySpell(null) === '' && _slugifySpell(undefined) === '');
+
+  // ── _defaultSpellCategory : taxonomie 2.0 mécanique ──
+  check('cat heal → defense', _defaultSpellCategory({ effect: 'heal' }) === 'defense');
+  check('cat shield → defense', _defaultSpellCategory({ effect: 'shield' }) === 'defense');
+  check('cat steal → exploration', _defaultSpellCategory({ effect: 'steal' }) === 'exploration');
+  check('cat reveal → exploration', _defaultSpellCategory({ effect: 'reveal' }) === 'exploration');
+  check('cat burn → combat', _defaultSpellCategory({ effect: 'burn' }) === 'combat');
+  check('cat inconnu → combat (défaut sûr)', _defaultSpellCategory({ effect: 'xyz' }) === 'combat');
+  check('cat sans effect → combat', _defaultSpellCategory({}) === 'combat');
+
+  // ── _normalizeSpells : champs présents partout, idempotent, sans écrasement ──
+  check('tous les sorts ont id/category/tier/rarity',
+    SPELLS.every(s => s.id && s.category && s.tier && s.rarity && ('houseAffinity' in s)));
+  check('ids tous uniques', new Set(SPELLS.map(s => s.id)).size === SPELLS.length);
+  check('tous les tiers ∈ SPELL_TIERS', SPELLS.every(s => !!SPELL_TIERS[s.tier]));
+  check('toutes les catégories ∈ taxonomie 2.0',
+    SPELLS.every(s => ['combat', 'exploration', 'defense', 'rituel', 'signature'].includes(s.category)));
+  check('toutes les raretés valides',
+    SPELLS.every(s => ['common', 'uncommon', 'rare', 'epic', 'legendary'].includes(s.rarity)));
+  check('houseAffinity ∈ {null, 4 Maisons}',
+    SPELLS.every(s => s.houseAffinity === null || ['Gryffondor', 'Serpentard', 'Serdaigle', 'Poufsouffle'].includes(s.houseAffinity)));
+
+  // ── Étiquetage curaté P1 (SPELL_META) ──
+  check('SPELL_META couvre les 47 sorts', SPELLS.every(s => !!SPELL_META[s.name]));
+  // Précédence : la valeur curée s'applique quand le littéral n'en déclare pas.
+  check('Incendio = combat/basique/common', (() => { const s = getSpellByName('Incendio'); return s.category === 'combat' && s.tier === 'basique' && s.rarity === 'common'; })());
+  check('Sectumsempra = combat/maître/epic', (() => { const s = getSpellByName('Sectumsempra'); return s.tier === 'maître' && s.rarity === 'epic'; })());
+  check('Fiendfyre = corrompu/legendary', (() => { const s = getSpellByName('Fiendfyre'); return s.tier === 'corrompu' && s.rarity === 'legendary'; })());
+  check('Avada... = signature/corrompu/legendary', (() => { const s = getSpellByName('Avada...'); return s.category === 'signature' && s.tier === 'corrompu' && s.rarity === 'legendary'; })());
+  // Les 4 sorts « Mythe » portent l'affinité de Maison canon (et eux seuls).
+  const myth = { 'Patronus Maxima': 'Gryffondor', 'Sectumsempra Imperius': 'Serpentard', 'Legilimens': 'Serdaigle', 'Récolte Magique': 'Poufsouffle' };
+  for (const [n, h] of Object.entries(myth)) {
+    const s = getSpellByName(n);
+    check(`${n} affine ${h} + signature`, s && s.houseAffinity === h && s.category === 'signature');
+  }
+  check('exactement 4 sorts house-affine', SPELLS.filter(s => s.houseAffinity).length === 4);
+  check('au moins 1 sort par rang',
+    ['basique', 'avancé', 'maître', 'corrompu'].every(t => SPELLS.some(s => s.tier === t)));
+  // Idempotence : un 2e passe ne change rien (clone JSON identique).
+  const before = JSON.stringify(SPELLS);
+  _normalizeSpells(SPELLS);
+  check('_normalizeSpells idempotent', JSON.stringify(SPELLS) === before);
+  // Non-écrasement : une valeur déclarée est préservée.
+  const custom = [{ name: 'Test', effect: 'burn', tier: 'maître', rarity: 'epic', id: 'mon_id', houseAffinity: 'Gryffondor' }];
+  _normalizeSpells(custom);
+  check('_normalizeSpells préserve id déclaré', custom[0].id === 'mon_id');
+  check('_normalizeSpells préserve tier déclaré', custom[0].tier === 'maître');
+  check('_normalizeSpells préserve houseAffinity déclaré', custom[0].houseAffinity === 'Gryffondor');
+  // Sans argument → défaut sur SPELLS (usage de production).
+  check('_normalizeSpells() défaut sur SPELLS', _normalizeSpells() === SPELLS);
+  // Défensif : entrée non-array truthy → renvoyée telle quelle, sans exception.
+  check('_normalizeSpells(42) défensif', _normalizeSpells(42) === 42);
+  const mixed = [null, { name: 'X', effect: 'heal' }];
+  _normalizeSpells(mixed);
+  check('_normalizeSpells ignore les éléments nuls', mixed[0] === null && mixed[1].category === 'defense');
+
+  // ── getSpellById / getSpellByName : résolution + garde-fous ──
+  check('getSpellByName Incendio', getSpellByName('Incendio') && getSpellByName('Incendio').id === 'incendio');
+  check('getSpellById incendio', getSpellById('incendio') && getSpellById('incendio').name === 'Incendio');
+  check('getSpellByName inconnu → null', getSpellByName('Inexistant') === null);
+  check('getSpellById inconnu → null', getSpellById('inexistant') === null);
+  check('getSpellByName(null) → null', getSpellByName(null) === null);
+  check('getSpellById(null) → null', getSpellById(null) === null);
+
+  // ── spellTierTint : tint du rang, repli sûr ──
+  check('tint basique', spellTierTint({ tier: 'basique' }) === SPELL_TIERS['basique'].tint);
+  check('tint corrompu', spellTierTint({ tier: 'corrompu' }) === SPELL_TIERS['corrompu'].tint);
+  check('tint sans tier → repli basique', spellTierTint({}) === SPELL_TIERS['basique'].tint);
+  check('tint null → repli basique', spellTierTint(null) === SPELL_TIERS['basique'].tint);
+
+  // ── resolveSpellForm : P0 renvoie la forme de base, non destructif ──
+  check('resolveSpellForm Incendio = base', resolveSpellForm('Incendio') === getSpellByName('Incendio'));
+  check('resolveSpellForm inconnu → null', resolveSpellForm('Inexistant') === null);
+  const charStub = { spells: ['Incendio'], equipped: {} };
+  const snapBefore = JSON.stringify(charStub);
+  resolveSpellForm('Incendio', charStub);
+  check('resolveSpellForm ne mute pas le perso', JSON.stringify(charStub) === snapBefore);
+
+  // ── spellPmCostEstimate : croît avec tier ET rareté, pur ──
+  check('pmEst(null) = 0', spellPmCostEstimate(null) === 0);
+  check('pmEst power 0 défensif', spellPmCostEstimate({ effect: 'reveal', power: 0, tier: 'basique', rarity: 'common' }) === 0);
+  const basc = { effect: 'burn', power: 14, tier: 'basique', rarity: 'common' };
+  const mait = { effect: 'burn', power: 14, tier: 'maître', rarity: 'common' };
+  check('pmEst croît avec le tier', spellPmCostEstimate(mait) > spellPmCostEstimate(basc));
+  const rare = { effect: 'burn', power: 14, tier: 'basique', rarity: 'legendary' };
+  check('pmEst croît avec la rareté', spellPmCostEstimate(rare) > spellPmCostEstimate(basc));
+  // L'AoE renchérit vs single-target à power égal.
+  check('pmEst AoE > single', spellPmCostEstimate({ effect: 'aoe_field', power: 12, tier: 'basique', rarity: 'common' }) >
+    spellPmCostEstimate({ effect: 'burn', power: 12, tier: 'basique', rarity: 'common' }));
+  check('SPELL_RARITY_COST_MULT legendary = 1.6', SPELL_RARITY_COST_MULT.legendary === 1.6);
+})();
+
+// ============================================================
 // Rapport
 // ============================================================
 if (failures.length) {
