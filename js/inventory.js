@@ -186,6 +186,7 @@ function renderInventory(battleMode) {
         div.style.cursor  = 'default';
         div.title         = 'Non utilisable en combat';
       } else {
+        div.tabIndex = 0; // cellule atteignable au clavier (Tab + Entrée/Espace)
         div.onclick = () => _handleInvTap(div, () => useItem(i, battleMode));
       }
     } else {

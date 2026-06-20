@@ -40,11 +40,12 @@ function _renderPaperDollSlot(slot, c, charIdx) {
   const onclick   = (item && Number.isInteger(charIdx))
     ? `onclick="unequipFromSlot(${charIdx}, '${slot}')"`
     : '';
+  const focusAttr = onclick ? 'tabindex="0"' : ''; // atteignable au clavier si cliquable
   const tooltipHtml = item
     ? _renderItemTooltip(item, baseLabel, 'cliquer pour déséquiper')
     : '';
   return `<div class="equip-slot-floating equip-slot-${slot} ${filled ? 'filled' : 'empty'} ${rarityCls}"
-               title="${titleAttr.replace(/"/g, '&quot;')}" ${onclick}>${icon}${tooltipHtml}</div>`;
+               title="${titleAttr.replace(/"/g, '&quot;')}" ${focusAttr} ${onclick}>${icon}${tooltipHtml}</div>`;
 }
 
 // Badge pour un sort connu. Cherche l'icône PNG sous img/icons/spells/
@@ -87,10 +88,11 @@ function _renderInvSlot(item, idx, charIdx) {
   const onclick = Number.isInteger(charIdx)
     ? `onclick="useItemFromChar(${idx}, ${charIdx})"`
     : '';
+  const focusAttr = onclick ? 'tabindex="0"' : ''; // atteignable au clavier si cliquable
   const tooltipHtml = _renderItemTooltip(item, null, `cliquer pour ${actionHint}`);
   const qty = (typeof _itemQty === 'function') ? _itemQty(item) : (item.qty || 1);
   const qtyBadge = qty > 1 ? `<span class="inv-qty-badge">×${qty}</span>` : '';
-  return `<div class="inv-slot has-item ${rarityCls}" title="${titleAttr}" ${onclick}>${icon}${qtyBadge}${tooltipHtml}</div>`;
+  return `<div class="inv-slot has-item ${rarityCls}" title="${titleAttr}" ${focusAttr} ${onclick}>${icon}${qtyBadge}${tooltipHtml}</div>`;
 }
 
 // Tooltip riche affiché au hover sur un slot rempli (paper-doll OU sac).

@@ -699,6 +699,16 @@ document.addEventListener('keydown',e=>{
   if(e.target.tagName==='INPUT') return;
   const k = e.key;
 
+  // ── Activation clavier (Entrée/Espace) d'une cellule de grille focusable
+  //    (sac, paper-doll, sort lançable) — parité avec le clic souris. Les
+  //    cellules portent tabindex="0" ; le repère de focus doré vient de la
+  //    règle [tabindex]:focus-visible (css/style.css).
+  if (k === 'Enter' || k === ' ') {
+    const cell = e.target.closest &&
+      e.target.closest('.inv-slot[tabindex],.equip-slot-floating[tabindex],.spell-item[tabindex]');
+    if (cell) { cell.click(); e.preventDefault(); return; }
+  }
+
   // ── Échap : confirmation custom (résout « Annuler ») > sélection de cible
   //    en combat > toute modale ouverte.
   if (k === 'Escape') {

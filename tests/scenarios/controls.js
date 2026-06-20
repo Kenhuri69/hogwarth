@@ -832,4 +832,65 @@ async function scenarioModalIsolation() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioMobileSelect, scenarioCombatMobile, scenarioRelativeControls, scenarioCanvasSwipe, scenarioCameraPresence, scenarioCombatKeyboard, scenarioConfirmModal, scenarioA11yFinish, scenarioModalIsolation] };
+async function scenarioGridKeyboardNav() {
+  console.log('\n── Scénario : navigation clavier des grilles (sac / paper-doll / sorts) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // a) Les slots d'item du sac sont focusables ; les slots vides ne le sont pas.
+  //    On donne un équipement déterministe (robe1, slot body) à Harry.
+  await page.evaluate(() => {
+    const robe = JSON.parse(JSON.stringify(ITEMS.find(i => i.id === 'robe1')));
+    player.inventory.push(robe);
+    openInventory();
+  });
+  const grid = await page.evaluate(() => {
+    const slots = Array.from(document.querySelectorAll('#inv-grid .inv-slot'));
+    const item  = slots.find(s => s.classList.contains('has-item'));
+    const empty = slots.find(s => !s.classList.contains('has-item'));
+    return {
+      itemFocusable:  item  ? item.getAttribute('tabindex') === '0'  : false,
+      emptyFocusable: empty ? empty.getAttribute('tabindex') === '0' : false,
+    };
+  });
+  assert(grid.itemFocusable,   'un slot d\'item doit porter tabindex="0"');
+  assert(!grid.emptyFocusable, 'un slot vide ne doit pas être focusable');
+
+  // b) Focus + Entrée sur l'équipement → équipé (en solo, équipe directement
+  //    Harry et quitte l'inventaire).
+  await page.evaluate(() => {
+    const item = Array.from(document.querySelectorAll('#inv-grid .inv-slot'))
+      .find(s => s.classList.contains('has-item'));
+    item.focus();
+  });
+  await page.waitForFunction(() => {
+    const item = Array.from(document.querySelectorAll('#inv-grid .inv-slot'))
+      .find(s => s.classList.contains('has-item'));
+    return item && document.activeElement === item;
+  });
+  await page.keyboard.press('Enter');
+  const equipped = await page.evaluate(() => ({
+    bodyEquipped: !!(player.equipped && player.equipped.body && player.equipped.body.id === 'robe1'),
+    goneFromBag:  !player.inventory.some(i => i && i.id === 'robe1'),
+  }));
+  assert(equipped.bodyEquipped, 'Entrée sur l\'équipement doit l\'équiper (slot body)');
+  assert(equipped.goneFromBag,  'l\'item équipé doit quitter l\'inventaire');
+
+  // c) Paper-doll : le slot rempli (robe que l'on vient d'équiper) est focusable.
+  const paperDoll = await page.evaluate(() => {
+    closeModal('inventory-modal');
+    openCharacter(0);
+    const filled = document.querySelector('#character-modal .equip-slot-floating.filled');
+    return filled ? filled.getAttribute('tabindex') === '0' : false;
+  });
+  assert(paperDoll, 'un slot d\'équipement rempli du paper-doll doit être focusable');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (navigation clavier grilles)`);
+  }
+  console.log('  ✅ Navigation clavier des grilles (tabindex + Entrée) OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioMobileSelect, scenarioCombatMobile, scenarioRelativeControls, scenarioCanvasSwipe, scenarioCameraPresence, scenarioCombatKeyboard, scenarioConfirmModal, scenarioA11yFinish, scenarioModalIsolation, scenarioGridKeyboardNav] };

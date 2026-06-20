@@ -134,6 +134,7 @@ function openSpells(charIdx = 0) {
       <div class="spell-cost">${costLabel}</div>`;
     if (canCastOoc) {
       div.style.cursor = 'pointer';
+      div.tabIndex = 0; // sort lançable atteignable au clavier
       div.onclick = () => castSpellOutOfCombat(spell.name, charIdx);
     } else if (isOoc) {
       div.style.opacity = '0.6';
@@ -503,6 +504,7 @@ function openBattleSpells() {
       <div class="spell-cost">${effCost} PM</div>`;
 
     if (canCast) {
+      div.tabIndex = 0; // sort lançable atteignable au clavier
       div.onclick = () => {
         closeModal('spell-modal');
         // Portus gère son propre flow (overlay A/B) — court-circuite la
