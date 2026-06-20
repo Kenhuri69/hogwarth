@@ -519,6 +519,21 @@ P5 · Équilibrage & polish             — sim-difficulty (coûts, corruptionRi
 
 ## Journal du plan
 
+- **2026-06-20** — **P5 (amorce, volet Codex) LIVRÉ.** Premier volet du palier
+  polish (§2.6/§2.7 « Codex sorts/synergies ») : **3 entrées Codex** documentant
+  les systèmes de combat P2/P4, déverrouillables via les robinets existants
+  (aucun nouveau type de condition, aucune nouvelle section/onglet → surgical).
+  - `js/codex.js` (catégorie `glossaire`) : `artefacts_actifs` (robinet `item` —
+    posséder un artefact à `activeEffect` ; révélée étage 8), `postures_duo`
+    (robinet `floor` 2→6), `environnement_runique` (robinet `floor` 14 / `victory`
+    — révélée à la victoire). Voix in-world (veiled + revealed), liens vers les
+    entrées Objets/Lieux existantes.
+  - **Vérif** : `node tests/units.js` (897, +11 sur les 3 entrées) ✅ ;
+    `node tests/smoke.js` (249/249, dont `scenarioCodexCombatSystems`) ✅ ;
+    `pwa-smoke` (CACHE_VERSION v189) ✅. Aucune logique de combat touchée
+    (data-only + tests). Reste P5 : FX Premium par Maison, sons de contrecoup,
+    bandeaux UI, passe `sim-difficulty` de calibration (volets art/audio à cadrer).
+
 - **2026-06-20** — **P4 LIVRÉ (Environnement en combat).** Vérif : `node
   tests/units.js` (886, dont `computeEnvModifiers`) ✅ ; `node tests/smoke.js`
   (248/248, dont `scenarioCombatEnv`) ✅ ; `node tests/pwa-smoke.js`

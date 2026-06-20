@@ -989,4 +989,80 @@ async function scenarioCodexSorts() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioCodexOpen, scenarioCodexUnlockOnFloor, scenarioCodexCorrupted, scenarioDarkLoopV1, scenarioDarkLoopV2, scenarioDarkLoopV3, scenarioDarkLoopV4, scenarioBossPromo, scenarioLoopPassiveXp, scenarioEndingEpilogue, scenarioEndingAssets, scenarioNgPlusProfile, scenarioCodexSorts] };
+// P5 (combat-system-synthesis §2.7) — entrées « Tactique de combat » : les
+// systèmes P2/P4 (artefacts à éveil, postures Duo, charge runique) se
+// déverrouillent dans le Codex via les robinets existants (item / floor / victory).
+async function scenarioCodexCombatSystems() {
+  console.log('\n── Scénario : Codex — systèmes de combat (P2/P4) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'] });
+
+  // Les 3 entrées existent dans la catégorie glossaire.
+  const present = await page.evaluate(() => ['artefacts_actifs', 'postures_duo', 'environnement_runique']
+    .map(id => { const e = getCodexEntry(id); return !!e && e.category === 'glossaire'; }));
+  console.log('  present :', present);
+  assert(present.every(Boolean), 'une entrée de système de combat manque dans le glossaire');
+
+  // Robinet `item` : équiper un artefact actif ouvre artefacts_actifs (veiled).
+  const art = await page.evaluate(() => {
+    const orbe = ITEMS.find(i => i.id === 'orbe_runique');
+    party[0].equipped.trinket = JSON.parse(JSON.stringify(orbe));
+    checkCodexUnlocks('equip');
+    return {
+      open: unlockedCodexEntries.has('artefacts_actifs'),
+      state: codexEntryState(getCodexEntry('artefacts_actifs'), _codexContext()),
+    };
+  });
+  console.log('  art :', art);
+  assert(art.open, 'artefacts_actifs non ouverte après équipement d\'un artefact actif');
+  assert(art.state === 'veiled', `artefacts_actifs devrait être veiled (${art.state})`);
+
+  // Robinet `floor` : étage 6 ouvre+révèle postures_duo.
+  const post = await page.evaluate(() => {
+    currentFloor = 6; floorReached = 6;
+    checkCodexUnlocks('floor-down');
+    return {
+      open: unlockedCodexEntries.has('postures_duo'),
+      state: codexEntryState(getCodexEntry('postures_duo'), _codexContext()),
+    };
+  });
+  console.log('  post :', post);
+  assert(post.open, 'postures_duo non ouverte à l\'étage 6');
+  assert(post.state === 'revealed', `postures_duo devrait être révélée à l\'étage 6 (${post.state})`);
+
+  // Robinet `floor`/`victory` : zone D (étage 14) ouvre environnement_runique ;
+  // la victoire la révèle.
+  const env = await page.evaluate(() => {
+    currentFloor = 14; floorReached = 14;
+    checkCodexUnlocks('floor-down');
+    const veiled = codexEntryState(getCodexEntry('environnement_runique'), _codexContext());
+    victoryAchieved = true;
+    checkCodexUnlocks('victory');
+    return {
+      open: unlockedCodexEntries.has('environnement_runique'),
+      veiled,
+      revealed: codexEntryState(getCodexEntry('environnement_runique'), _codexContext()),
+    };
+  });
+  console.log('  env :', env);
+  assert(env.open, 'environnement_runique non ouverte en zone D');
+  assert(env.veiled === 'veiled', `environnement_runique devrait être veiled à l\'étage 14 (${env.veiled})`);
+  assert(env.revealed === 'revealed', `environnement_runique devrait être révélée après victoire (${env.revealed})`);
+
+  // La fiche détaillée se rend pour une de ces entrées.
+  const detail = await page.evaluate(() => {
+    openCodex(); switchCodexSection('glossaire'); showCodexEntry('environnement_runique');
+    const body = document.getElementById('codex-detail');
+    return body && body.textContent.includes('Charge runique');
+  });
+  assert(detail, 'fiche détaillée d\'environnement_runique non rendue');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS (codex combat systems)`);
+  }
+  console.log('  ✅ Codex — systèmes de combat P2/P4 (item/floor/victory) OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioCodexOpen, scenarioCodexUnlockOnFloor, scenarioCodexCorrupted, scenarioDarkLoopV1, scenarioDarkLoopV2, scenarioDarkLoopV3, scenarioDarkLoopV4, scenarioBossPromo, scenarioLoopPassiveXp, scenarioEndingEpilogue, scenarioEndingAssets, scenarioNgPlusProfile, scenarioCodexSorts, scenarioCodexCombatSystems] };
