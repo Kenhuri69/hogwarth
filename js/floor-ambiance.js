@@ -310,6 +310,33 @@ function housePerceptionLine(house, floor, x, y) {
   return pool[(h >>> 8) % pool.length];
 }
 
+// ── Biais de génération par Maison V2 — « pondération de salles » ────────────
+// Levier STRUCTUREL power-neutral : il réoriente la SAVEUR du puzzle bonus
+// (rune vs stèle) selon la Maison, SANS toucher le budget de coffres. Les deux
+// puzzles scellent chacun 1 coffre et `P(puzzle présent) = 1−(1−0.20)(1−0.30)
+// = 0.44` est SYMÉTRIQUE : inverser l'ordre des tirages préserve 0.44 à
+// l'identique (cf. plan house-generation-bias-v2-rooms.md). Seul 🦅 Serdaigle
+// (« +stèles d'énigme ») admet une réallocation reward-équivalente ; les autres
+// Maisons gardent l'ordre V1 (leur saveur de salle reste portée par la couche
+// perception + le refuge commun, déjà iso-ressources). PUR / déterministe /
+// défensif. Consommé par dungeon.js, gaté `houseGenBiasEnabled`.
+//
+// `affinity` documente l'intention spec des 4 Maisons (extensible) ;
+// `puzzlePreference` est la seule clé STRUCTURELLEMENT câblée (équité).
+const HOUSE_ROOM_BIAS = {
+  Gryffondor:  { affinity: 'valor',  puzzlePreference: null },     // marques de bataille (perception)
+  Serpentard:  { affinity: 'secret', puzzlePreference: null },     // passages descellés (perception + secret commun)
+  Serdaigle:   { affinity: 'lore',   puzzlePreference: 'stele' },  // +stèles d'énigme (structurel, neutre)
+  Poufsouffle: { affinity: 'refuge', puzzlePreference: null },     // recoins-refuge (refuge commun)
+};
+
+// PUR : retourne le profil de biais de salle d'une Maison, ou un profil neutre
+// (puzzlePreference null = ordre V1) si la Maison est absente/inconnue.
+function houseRoomBias(house) {
+  const b = house && HOUSE_ROOM_BIAS[house];
+  return b ? b : { affinity: null, puzzlePreference: null };
+}
+
 // ── Échos temporels & voix des Fondateurs (P-D3) ────────────
 // Fragments de passé matérialisés en zone C fin / zone D. Tout DÉRIVÉ
 // (currentFloor / victoryAchieved / chosenHouse, déjà persistés) — seul

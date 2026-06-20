@@ -789,7 +789,7 @@ au joueur l'illusion forte que « ma Maison change ce que je vois ».
 > **quêtes signature** ([07 §7.8](07-les-maisons.md)) qui, elles, posent du
 > contenu réel sans brancher l'arc.
 
-#### Biais de génération par Maison — V2 (✅ leviers « skin » + « perception » livrés ; « pondération de salles » différée)
+#### Biais de génération par Maison — V2 (✅ leviers « skin » + « perception » + « pondération de salles » livrés)
 
 > ✅ **Décision (2026-06-19)** : on **ouvre** un biais de génération par Maison
 > en V2 — mais **power-neutral strict** ([Ch.13](13-equilibrage-et-systemes.md),
@@ -824,9 +824,7 @@ uniquement sur des leviers **neutres en puissance** :
 > « se lit » selon la Maison du héros). **Power-neutral par construction**
 > (rendu seul : `houseSkinClass` dans `js/battle-ui.js` + CSS ; aucun
 > nom/stat/résistance/butin/spawn touché → **0 sim requis**). Flag de repli
-> `HOUSE_SKIN_ENABLED`. **Le levier « pondération de salles » reste différé**
-> derrière le **gate sim de l'Item 3** (non livré tant que 0 écart de win-rate
-> n'est pas prouvé).
+> `HOUSE_SKIN_ENABLED`.
 >
 > ✅ **Livré (2026-06-20) — levier « perception »** : une **observation propre à
 > la Maison attachée à la COORDONNÉE d'une salle** (déterministe par
@@ -840,9 +838,27 @@ uniquement sur des leviers **neutres en puissance** :
 > **invisible au simulateur** → 0 dérive vérifiée), aucune cellule
 > fonctionnelle/stat/butin. `housePerceptionLine` (`js/floor-ambiance.js`),
 > surfaçage `js/movement.js`, flag de repli `houseGenBiasEnabled`, testé
-> `units.js` + `scenarioHouseGenBiasV2`. Seul le levier **« pondération de
-> salles »** (qui changerait la distribution des types de salle) reste différé
-> derrière le gate sim.
+> `units.js` + `scenarioHouseGenBiasV2`.
+>
+> ✅ **Livré (2026-06-20) — levier « pondération de salles »** (le dernier) :
+> selon `chosenHouse`, le donjon réoriente la **saveur du puzzle bonus** —
+> 🦅 **Serdaigle** tente la **stèle d'énigme** d'abord, voyant donc
+> nettement plus de stèles (« +stèles d'énigme »). **Power-neutral PROUVÉ par
+> construction** : les deux puzzles bonus scellent **chacun 1 coffre**, et
+> `P(puzzle présent) = 1−(1−0.20)(1−0.30) = 0.44` est **symétrique** —
+> inverser l'ordre rune↔stèle préserve P=0.44 → **budget de coffres
+> invariant**. Le levier ne touche **aucune** stat/densité/cellule
+> fonctionnelle → invisible aux deux simulateurs. `houseRoomBias`
+> (`js/floor-ambiance.js`, helper pur), câblage `js/dungeon.js`, flag de repli
+> `houseGenBiasEnabled`. **Gate d'équité satisfait** : `check_difficulty`
+> 0 dérive · `sim-economy` or invariant · `scenarioHouseRoomBias` (smoke)
+> prouve un **histogramme de cellules fonctionnelles identique** entre les 4
+> Maisons seed à seed · `units.js` (invariant P=0.44). Détail :
+> `DIFFICULTY_REPORT.md §8`. **Périmètre (équité)** : seul 🦅 admet une
+> réallocation reward-équivalente (rune↔stèle) ; les thèmes 🐍/🦡/🦁
+> (passages/refuges/marques) ne sont pas reward-équivalents à un coffre, donc
+> leur saveur de salle reste portée par la couche **perception** (ci-dessus) +
+> le refuge commun aux 4 Maisons — sous peine de rompre l'iso-ressources.
 
 ### Le détail de chaque Maison — perceptions, hooks & escalade
 

@@ -58,7 +58,7 @@ const PRECACHE_URLS = [
   './js/data.js?v=50',
   './js/data-icon-recipes.js?v=1',
   './js/floor-themes.js?v=2',
-  './js/floor-ambiance.js?v=13',
+  './js/floor-ambiance.js?v=14',
   './js/floor-events.js?v=1',
   './js/room-flavor.js?v=1',
   './js/item-icons.js?v=33',
@@ -72,7 +72,7 @@ const PRECACHE_URLS = [
   './js/ui-bestiary.js?v=6',
   './js/ui-codex.js?v=8',
   './js/dungeon-scaling.js?v=7',
-  './js/dungeon.js?v=18',
+  './js/dungeon.js?v=19',
   './js/dungeon-spawning.js?v=2',
   './js/textures.js?v=1',
   './js/renderer.js?v=16',
@@ -119,7 +119,7 @@ const PRECACHE_URLS = [
   './js/forge.js?v=5',
   './js/library.js?v=4',
   './js/help-tour.js?v=3',
-  './js/loader.js?v=52',
+  './js/loader.js?v=53',
   './js/pwa.js?v=4',
 
   // Icônes PWA + premier écran

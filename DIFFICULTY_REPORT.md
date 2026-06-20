@@ -287,3 +287,44 @@ Enchaîne 4 salles sans reset des PV/PM, avec décision de repos (seuils PV < 65
 | 11 | Duo  | 11 | 5% | 2.4 | 0.91 | 28% | 4% | 62% |
 | 12 | Solo | 11 | 1% | 1.7 | 0.58 | 17% | 4% | 36% |
 | 12 | Duo  | 12 | 3% | 2.3 | 0.80 | 25% | 4% | 61% |
+
+---
+
+## 8. Gate d'équité — Biais de génération par Maison V2 « pondération de salles » (2026-06-20)
+
+Levier structurel power-neutral (10 §10.6) : selon `chosenHouse`, le donjon
+réoriente la **saveur** du puzzle bonus (rune vs stèle) — 🦅 Serdaigle voit
+davantage de **stèles d'énigme**. Gaté par `houseGenBiasEnabled` (repli V1).
+
+### Pourquoi 0 écart de win-rate / d'or — preuve d'iso-ressources
+
+Les deux puzzles bonus (`_generateRunePuzzle` 20 %, `_generateRuneStele` 30 %)
+scellent **chacun exactement 1 coffre**, et la probabilité combinée qu'un
+puzzle soit présent est **symétrique** :
+
+```
+P(puzzle) = 1 − (1−0.20)(1−0.30) = 0.44   (rune d'abord, V1)
+          = 1 − (1−0.30)(1−0.20) = 0.44   (stèle d'abord, Serdaigle)
+```
+
+Inverser l'ordre **préserve P=0.44 à l'identique** → le **budget de coffres**
+est invariant. Le levier ne touche **ni les stats des monstres, ni la densité
+de rencontres, ni le nombre de coffres / boutiques / fontaines / refuges /
+autels** : il est donc **hors de l'espace d'entrée** des deux simulateurs.
+
+| Garde-fou | Outil | Résultat |
+|-----------|-------|----------|
+| Win-rate combat (ladder de base) | `node tools/check_difficulty.js --base origin/master` | ✅ **0 dérive** (aucun étage > 10 pts) — le levier est invisible à la sim combat (n'injecte rien). |
+| Or / étage (drops + coffres + fouille + quêtes) | `node tools/sim-economy.js` | ✅ Invariant : l'or/étage est fonction de `chests`/`combats`/`searches` par étage, tous **inchangés** par le levier (coffres/étage identiques). |
+| Iso-ressources empirique (4 Maisons) | `node tests/smoke.js scenarioHouseRoomBias` | ✅ Sous un **même seed**, les 4 Maisons génèrent le **même histogramme** de cellules fonctionnelles (coffres hors-puzzle / boutiques / fontaines / refuges / autels), seed à seed sur 60 étages. Budget de coffres-puzzle : spread ≤ 3 / 60 (P=0.44 invariant). Seule la saveur diffère (Serdaigle 23 stèles / 5 runes vs autres 12 / 19). |
+| Invariant mathématique | `node tests/units.js` | ✅ `P(puzzle)` symétrique = 0.44 vérifié sur la formule ; helper `houseRoomBias` déterministe, 4 Maisons couvertes, seul Serdaigle structurellement câblé. |
+
+### Périmètre (honnêteté)
+
+Seul 🦅 Serdaigle admet une réallocation **reward-équivalente** (rune↔stèle,
+1 coffre chacun). Les thèmes des 3 autres Maisons ne sont **pas**
+reward-équivalents à un coffre (🦡 refuge = repos, déjà commun aux 4 Maisons ;
+🐍 passage secret = +coffre, déjà commun ; 🦁 marques = décoration sans butin),
+donc les ajouter pour UNE Maison violerait l'iso-ressources. Leur saveur de
+salle reste portée par la **couche perception** (déjà livrée, power-neutral) et
+le refuge commun. **Décision : MERGE** (neutralité prouvée par construction).
