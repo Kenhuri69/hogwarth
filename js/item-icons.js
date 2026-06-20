@@ -308,6 +308,7 @@ const ITEM_ICON_NEW_REGISTRY = {
   potion_s:             'img/icons_new/potion_s_64.png',
   felix:                'img/icons_new/felix_64.png',
   wand2:                'img/icons_new/wand2_64.png',
+  baguette_if_boucle:   'img/icons_new/baguette_if_boucle_64.png',
   anneau_runique:       'img/icons_new/anneau_runique_64.png',
   livre_sortileges:     'img/icons_new/livre_sortileges_64.png',
   potion_m:             'img/icons_new/potion_m_64.png',
