@@ -22,6 +22,23 @@ const SPELL_FILTERS = [
 ];
 let _spellFilter = 'tous';
 
+// ── Liseré + pastille de rang (tier) — Lot P1 ────────────────
+// Reflet visuel du rang d'un sort dans la modale Sorts, cohérent avec la
+// bordure de rareté d'un item d'inventaire. Consomme le socle P0
+// (spellTierTint / SPELL_TIERS de data.js). DÉFENSIF : si le socle n'a pas
+// chargé, renvoie une teinte/badge neutres — la modale fonctionne sans.
+function _spellTierTintSafe(spell) {
+  return (typeof spellTierTint === 'function') ? spellTierTint(spell) : 'var(--gold-dark)';
+}
+function _spellTierBadgeHtml(spell) {
+  if (typeof SPELL_TIERS === 'undefined') return '';
+  const def = spell && SPELL_TIERS[spell.tier];
+  if (!def) return '';
+  return `<span style="display:inline-block;vertical-align:middle;margin-left:6px;padding:0 5px;border-radius:2px;
+    font-family:'Cinzel',serif;font-size:8px;letter-spacing:1px;line-height:1.6;
+    color:${def.tint};background:#0a0705;border:1px solid ${def.tint}">${def.label.toUpperCase()}</span>`;
+}
+
 // Re-render de la modale Sorts après changement de filtre.
 function setSpellFilter(id, mode, charIdx) {
   _spellFilter = id;
@@ -74,6 +91,7 @@ function openSpells(charIdx = 0) {
     if (_spellFilter !== 'tous' && spellCategory(spell) !== _spellFilter) continue;
     const div = document.createElement('div');
     div.className = 'spell-item';
+    div.style.borderLeft = '3px solid ' + _spellTierTintSafe(spell);
     // Sorts utilisables hors combat (teleport + heal pour V1). Les autres
     // affichent un tag "Combat uniquement" pour ne pas tromper le joueur.
     const oocCost   = spell.outOfCombatCost || null;
@@ -126,7 +144,7 @@ function openSpells(charIdx = 0) {
     div.innerHTML = `
       <div class="spell-icon">${getSpellIconHtml(spell, 'ui-icon-xl')}</div>
       <div class="spell-info">
-        <div class="spell-name">${spell.name}</div>
+        <div class="spell-name">${spell.name}${_spellTierBadgeHtml(spell)}</div>
         <div class="spell-desc">${spell.desc}</div>
         ${previewHtml}
         <div style="margin-top:3px">${hint}</div>
@@ -486,6 +504,7 @@ function openBattleSpells() {
     const div      = document.createElement('div');
     div.className  = 'spell-item';
     div.style.opacity = canCast ? '1' : '0.5';
+    div.style.borderLeft = '3px solid ' + _spellTierTintSafe(spell);
     const cdHint = (spell.effect === 'teleport' && cdBlocked)
       ? `<div style="font-size:9px;color:#a04020;margin-top:2px">⏳ ${alreadyUsed ? 'déjà utilisé ce combat' : `recharge ${fightCd} combat${fightCd > 1 ? 's' : ''}`}</div>`
       : '';
@@ -496,7 +515,7 @@ function openBattleSpells() {
     div.innerHTML  = `
       <div class="spell-icon">${getSpellIconHtml(spell, 'ui-icon-xl')}</div>
       <div class="spell-info">
-        <div class="spell-name">${spell.name}</div>
+        <div class="spell-name">${spell.name}${_spellTierBadgeHtml(spell)}</div>
         <div class="spell-desc">${spell.desc}</div>
         ${previewHtml}
         ${cdHint}
