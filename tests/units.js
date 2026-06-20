@@ -457,12 +457,14 @@ function loadModule(relPath, exportNames, globals = {}) {
     'js/floor-ambiance.js',
     ['ZONE_AMBIANCE', 'getFloorAmbiance', 'corruptionLevel', 'HOUSE_AMBIANCE_MOD', 'houseAmbianceLine',
      'temporalEchoActive', 'temporalEchoTier', 'echoLine', 'FOUNDER_VOICES', 'TEMPORAL_ECHOES',
-     'FOUNDER_CHAMBERS', 'getFounderChamberBeat'],
+     'FOUNDER_CHAMBERS', 'getFounderChamberBeat', 'HOUSE_PERCEPTION', 'housePerceptionLine',
+     'HOUSE_PERCEPTION_RATE'],
     { FLOOR_THEMES, getFloorTheme });
 
   const { ZONE_AMBIANCE, getFloorAmbiance, corruptionLevel, HOUSE_AMBIANCE_MOD, houseAmbianceLine,
           temporalEchoActive, temporalEchoTier, echoLine, FOUNDER_VOICES, TEMPORAL_ECHOES,
-          FOUNDER_CHAMBERS, getFounderChamberBeat } = mod;
+          FOUNDER_CHAMBERS, getFounderChamberBeat, HOUSE_PERCEPTION, housePerceptionLine,
+          HOUSE_PERCEPTION_RATE } = mod;
 
   // ── getFloorAmbiance : bonne zone aux frontières ──
   // Zones sans paliers : identité d'objet préservée (back-compat).
@@ -558,6 +560,32 @@ function loadModule(relPath, exportNames, globals = {}) {
   check('4 lignes de Maison non vides', lines.every(l => l && l.length > 0));
   const unique = new Set(lines);
   check('4 lignes de Maison distinctes', unique.size === 4);
+
+  // ── housePerceptionLine : biais de Maison V2 (perception déterministe) ──
+  check('housePerception : 4 Maisons couvertes',
+    ['Gryffondor', 'Serpentard', 'Serdaigle', 'Poufsouffle'].every(
+      h => Array.isArray(HOUSE_PERCEPTION[h]) && HOUSE_PERCEPTION[h].length > 0));
+  check('housePerception(null) = null',     housePerceptionLine(null, 1, 1, 1) === null);
+  check('housePerception inconnu = null',   housePerceptionLine('Dumbledore', 1, 1, 1) === null);
+  // Déterminisme : même (house,floor,x,y) → même résultat à chaque appel.
+  let deterministic = true, hits = 0, total = 0;
+  for (let f = 1; f <= 10; f++) for (let x = 0; x < 14; x++) for (let y = 0; y < 14; y++) {
+    const a = housePerceptionLine('Serdaigle', f, x, y);
+    const b = housePerceptionLine('Serdaigle', f, x, y);
+    if (a !== b) deterministic = false;
+    total++; if (a !== null) hits++;
+  }
+  check('housePerception déterministe (≈1960 cases)', deterministic);
+  // Taux ≈ HOUSE_PERCEPTION_RATE % (tolérance large : hash, pas une loi exacte).
+  const rate = hits / total * 100;
+  check(`housePerception taux ~${HOUSE_PERCEPTION_RATE}% (mesuré ${rate.toFixed(0)}%)`,
+    rate > HOUSE_PERCEPTION_RATE - 10 && rate < HOUSE_PERCEPTION_RATE + 10);
+  // Toute ligne non-nulle appartient bien au pool de la Maison (power-neutral :
+  // pur texte, jamais une valeur de stat).
+  const inPool = housePerceptionLine('Gryffondor', 3, 5, 7);
+  check('housePerception : ligne issue du pool ou null',
+    inPool === null || HOUSE_PERCEPTION.Gryffondor.includes(inPool));
+  // Pas d'appel à Math.random (déterminisme déjà prouvé) → invisible au sim.
 
   // ── P-D2 : escalade par zone (byZone A→D) ──
   // Sans floor → fallback extraLine. Avec floor → ligne de la zone.

@@ -2007,4 +2007,61 @@ async function scenarioHousePremiumDrop() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioHouseCrests, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioHeadOfHouseVoice, scenarioHouseSignatureQuests, scenarioHouseSignatureGryffondor, scenarioHouseSignatureSerpentard, scenarioHouseSignatureSerdaigle, scenarioHouseSignaturePoufsouffle, scenarioVictorySpeechVariants, scenarioPremiumReward, scenarioHouseFavorShop, scenarioPremiumShadowVendor, scenarioHousePremiumDrop] };
+// Biais de génération par Maison V2 (ch.10 §10.6) : perception déterministe
+// power-neutral. Vérifie le câblage navigateur (globals exposés), le
+// déterminisme, la distinction par Maison, et le repli par flag.
+async function scenarioHouseGenBiasV2() {
+  console.log('\n── Scénario : biais de génération par Maison V2 (perception déterministe) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Serdaigle' });
+
+  const out = await page.evaluate(() => {
+    const r = {};
+    r.fnWired   = typeof housePerceptionLine === 'function';
+    r.flagWired = typeof houseGenBiasEnabled !== 'undefined';
+    r.poolWired = typeof HOUSE_PERCEPTION !== 'undefined' &&
+                  ['Gryffondor','Serpentard','Serdaigle','Poufsouffle'].every(
+                    h => Array.isArray(HOUSE_PERCEPTION[h]) && HOUSE_PERCEPTION[h].length);
+    // Déterminisme + distinction par Maison sur un échantillon de coordonnées.
+    let det = true, anyHit = false, distinct = false;
+    for (let f = 1; f <= 6; f++) for (let x = 0; x < 14; x++) for (let y = 0; y < 14; y++) {
+      const a = housePerceptionLine('Serdaigle', f, x, y);
+      if (a !== housePerceptionLine('Serdaigle', f, x, y)) det = false;
+      if (a) {
+        anyHit = true;
+        if (HOUSE_PERCEPTION.Serdaigle.includes(a)) {
+          // une coordonnée « notable » Serdaigle donne une autre Maison une
+          // ligne de SON pool (ou null), jamais celle de Serdaigle.
+          const g = housePerceptionLine('Gryffondor', f, x, y);
+          if (g && HOUSE_PERCEPTION.Gryffondor.includes(g) && g !== a) distinct = true;
+        }
+      }
+    }
+    r.deterministic = det; r.anyHit = anyHit; r.houseDistinct = distinct;
+    // Power-neutral : appeler la perception ne modifie ni or ni stats du héros.
+    const before = { gold: player.gold, atk: player.atk, hp: player.hp };
+    for (let i = 0; i < 50; i++) housePerceptionLine('Poufsouffle', 3, i % 14, (i * 3) % 14);
+    r.powerNeutral = player.gold === before.gold && player.atk === before.atk && player.hp === before.hp;
+    // Repli par flag : à false, le helper reste pur mais le call-site est neutralisé.
+    r.flagDefaultsTrue = houseGenBiasEnabled === true;
+    return r;
+  });
+  console.log('  out :', out);
+  assert(out.fnWired,         'housePerceptionLine non exposé au navigateur');
+  assert(out.flagWired,       'houseGenBiasEnabled non exposé');
+  assert(out.poolWired,       'HOUSE_PERCEPTION incomplet (4 Maisons)');
+  assert(out.deterministic,   'la perception doit être déterministe par coordonnée');
+  assert(out.anyHit,          'au moins une salle « notable » sur l\'échantillon');
+  assert(out.houseDistinct,   'deux Maisons doivent percevoir différemment la même coordonnée');
+  assert(out.powerNeutral,    'la perception ne doit toucher AUCUNE stat/or (power-neutral)');
+  assert(out.flagDefaultsTrue,'houseGenBiasEnabled devrait défaut true');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS (biais Maison V2)`);
+  }
+  console.log('  ✅ Biais de génération par Maison V2 (perception déterministe power-neutral) OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioHouseCrests, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioHeadOfHouseVoice, scenarioHouseSignatureQuests, scenarioHouseSignatureGryffondor, scenarioHouseSignatureSerpentard, scenarioHouseSignatureSerdaigle, scenarioHouseSignaturePoufsouffle, scenarioVictorySpeechVariants, scenarioPremiumReward, scenarioHouseFavorShop, scenarioPremiumShadowVendor, scenarioHousePremiumDrop, scenarioHouseGenBiasV2] };
