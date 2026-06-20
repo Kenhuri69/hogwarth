@@ -559,6 +559,14 @@ function _spellSpCost(spell, char) {
   if (typeof houseApotheosePassive === 'function' && houseApotheosePassive() === 'Serdaigle') {
     cost = Math.ceil(cost * 0.8);
   }
+  // Affinité de Maison (P2) : −coût pour un sort dont houseAffinity ==
+  // chosenHouse, croissant aux paliers Mythe/Apothéose. PUR (houseSpellBoost),
+  // power-neutre. Composé multiplicativement avec le −20 % Serdaigle ci-dessus.
+  if (typeof houseSpellBoost === 'function' && typeof chosenHouse !== 'undefined') {
+    const boost = houseSpellBoost(spell, chosenHouse,
+      (typeof houseTier === 'number') ? houseTier : 0);
+    if (boost > 0) cost = Math.ceil(cost * (1 - boost));
+  }
   cost -= _artifactSpCostReduction(char);
   return Math.max(1, cost);
 }
@@ -941,6 +949,90 @@ function _spellHealAoe(spell, char) {
   return msg;
 }
 
+// ── Sorts & Magie 2.0 — Lot P2 (combat) ──────────────────────
+// Éclat de Voûte (rituel d'Éclats) — projectile de scellement. La gate
+// `requiresEclats` (castSpellInBattle) garantit ≥ 2 Éclats AVANT le débit PM,
+// donc ici on relit eclatProgress() seulement pour la montée en puissance :
+// dégâts ×(1 + 0,25·Éclats). Les sorts ignorant déjà la DEF (cf.
+// _computeSpellDamage), le rider « ignore 30 % DEF » du plan est sans objet —
+// la signature du sort est la mise à l'échelle par les Éclats.
+function _spellEclatBolt(spell, char, enemy, targetIdx) {
+  const eclats = (typeof eclatProgress === 'function') ? Math.max(0, eclatProgress()) : 0;
+  let msg = '';
+  if (enemy) {
+    let { dmg, suffix, crit } = _computeSpellDamage(spell, char, enemy, { undead: true });
+    dmg = Math.floor(dmg * (1 + 0.25 * eclats));
+    enemy.currentHp -= dmg;
+    _updateElan(char, crit);   // Apothéose Gryffondor — Élan
+    msg = `💠 ${char.name} : ${spell.name} → ${dmg} dégâts${suffix} de scellement sur ${enemy.name} (${eclats} Éclats) !`;
+    UX_safe.floatDmg(`enemy:${targetIdx}`, dmg, suffix.includes('💥') ? 'crit' : 'dmg');
+    UX_safe.logCombat(`💠 ${char.name} : ${spell.name} → <b>−${dmg}</b>${suffix} sur ${enemy.name}`, 'magic');
+  }
+  addMsg(msg, 'magic');
+  return msg;
+}
+
+// Sceau des Quatre (rituel d'Éclats) — bouclier de groupe 2 tours + dissipe la
+// peur (immunité 1 tour). Réutilise shieldTurns et le nettoyage de statuts de
+// Patronus Maxima. Gate 3 Éclats assurée par requiresEclats (castSpellInBattle).
+function _spellSealShield(spell, char) {
+  party.slice(0, partySize).forEach((c, idx) => {
+    if (c.hp <= 0) return;
+    shieldTurns[idx] = Math.max(shieldTurns[idx] || 0, 2);
+    if (Array.isArray(c.statusEffects)) {
+      c.statusEffects = c.statusEffects.filter(s => s.id !== 'fear' && s.id !== 'stun');
+    }
+  });
+  UX_safe.floatDmg('ally', 0, 'shield');
+  const msg = `🛡️ ${char.name} : ${spell.name} — le sceau des Fondateurs enveloppe le groupe (bouclier 2 tours, peur dissipée) !`;
+  addMsg(msg, 'magic');
+  UX_safe.logCombat(`🛡️ ${char.name} dresse ${spell.name} — bouclier de groupe`, 'magic');
+  return msg;
+}
+
+// Avis Praesidium (familier) — coup immédiat + enregistrement d'un familier
+// combat-scoped (combatFamiliars) qui frappe un ennemi à chaque round suivant
+// (tickFamiliars dans battle.js), 3 tours. Pas de sérialisation (combat-scoped).
+function _spellSummonAlly(spell, char, enemy, targetIdx) {
+  const atk = Math.max(4, (spell.power || 0) + Math.floor((char.mag || 0) / 4));
+  const tgt = (enemy && enemy.currentHp > 0) ? enemy : (livingEnemies()[0] || null);
+  let msg;
+  if (tgt) {
+    const dmg = Math.max(1, mitigatedDamage(atk, tgt.def || 0));
+    tgt.currentHp -= dmg;
+    UX_safe.floatDmg(`enemy:${enemyGroup.indexOf(tgt)}`, dmg, 'dmg');
+    msg = `🦉 ${char.name} : ${spell.name} — un familier fond sur ${tgt.name} (−${dmg}) et veille 3 tours !`;
+    UX_safe.logCombat(`🦉 ${char.name} invoque un familier — ${tgt.name} <b>−${dmg}</b>`, 'magic');
+  } else {
+    msg = `🦉 ${char.name} : ${spell.name} — un familier prend son envol au-dessus du groupe.`;
+  }
+  if (typeof combatFamiliars !== 'undefined' && Array.isArray(combatFamiliars)) {
+    combatFamiliars.push({ ownerName: char.name, atk, turns: 3, icon: '🦉' });
+  }
+  addMsg(msg, 'magic');
+  return msg;
+}
+
+// Patronus Corporel (familier défensif) — pose une Garde de groupe (mitigation
+// 50 %, 2 paliers via guardTurns) + chasse la peur. Forme cosmétique du
+// Patronus par héros (HERO_PATRONUS), aucun impact mécanique.
+function _spellPatronusCorporel(spell, char) {
+  const form = (typeof HERO_PATRONUS !== 'undefined' && char && char.heroKey && HERO_PATRONUS[char.heroKey])
+    ? HERO_PATRONUS[char.heroKey] : 'Patronus';
+  party.slice(0, partySize).forEach((c, idx) => {
+    if (c.hp <= 0) return;
+    guardTurns[idx] = Math.min(3, Math.max(guardTurns[idx] || 0, 2));
+    if (Array.isArray(c.statusEffects)) {
+      c.statusEffects = c.statusEffects.filter(s => s.id !== 'fear' && s.id !== 'stun');
+    }
+  });
+  UX_safe.floatDmg('ally', 0, 'shield');
+  const msg = `🦌 ${char.name} : ${spell.name} — un ${form} corporel veille sur le groupe (mitigation 2 tours, peur chassée) !`;
+  addMsg(msg, 'magic');
+  UX_safe.logCombat(`🦌 ${char.name} invoque un ${form} corporel`, 'magic');
+  return msg;
+}
+
 const SPELL_HANDLERS = {
   heal:           _spellHeal,
   disarm:         _spellDisarm,
@@ -965,6 +1057,11 @@ const SPELL_HANDLERS = {
   aoe_drain:         _spellAoeDrain,
   aoe_cleave:        _spellAoeCleave,
   heal_aoe:          _spellHealAoe,
+  // Lot P2 — Éclats / familiers (combat).
+  eclat_bolt:        _spellEclatBolt,
+  seal_shield:       _spellSealShield,
+  summon_ally:       _spellSummonAlly,
+  patronus_corporel: _spellPatronusCorporel,
 };
 
 // Sorts à cible alliée — pas de sélection d'ennemi, mais éventuellement
@@ -1009,6 +1106,16 @@ function castSpellInBattle(spellName, targetIdx, targetAllyIdx) {
   // Wrapping Bibliothèque : applique les upgrades du caster.
   const spell    = _spellForCaster(baseSpell, char);
   if (!spell || char.sp < _spellSpCost(spell)) { addMsg("Pas assez de magie !", 'bad'); return; }
+
+  // P2 — sorts d'Éclats : refus AVANT débit PM / consommation de tour si le
+  // joueur n'a pas assez d'Éclats de la Clé de Voûte (eclatProgress réutilisé).
+  if (spell.requiresEclats) {
+    const have = (typeof eclatProgress === 'function') ? eclatProgress() : 0;
+    if (have < spell.requiresEclats) {
+      addMsg(`${spell.name} exige ${spell.requiresEclats} Éclat${spell.requiresEclats > 1 ? 's' : ''} de la Clé de Voûte (tu en as ${have}).`, 'bad');
+      return;
+    }
+  }
 
   // Phase G §6.8 — Avada Kedavra refusé contre les échos. Narratif (un
   // écho n'a pas d'âme à briser) et anti-trivialisation : un sort de mort
@@ -1092,9 +1199,9 @@ function castSpellInBattle(spellName, targetIdx, targetAllyIdx) {
   {
     const _el = spell.element || 'physique';
     const _aoe = new Set(['aoe_wave', 'aoe_field', 'aoe_chain', 'aoe_drain', 'aoe_cleave']);
-    const _single = new Set(['stun', 'burn', 'instant', 'lifesteal', 'curse', 'imperius']);
+    const _single = new Set(['stun', 'burn', 'instant', 'lifesteal', 'curse', 'imperius', 'eclat_bolt', 'summon_ally']);
     const _heal = new Set(['heal', 'support_regen', 'support_regen_aoe', 'heal_aoe']);
-    const _buff = new Set(['shield', 'patronus_maxima']);
+    const _buff = new Set(['shield', 'patronus_maxima', 'seal_shield', 'patronus_corporel']);
     // G2 — feedback côté lanceur : le sort « émane » du personnage actif
     // avant d'éclater sur la cible. Halo teinté élément à l'ancre 'ally'.
     CFX_safe.castFlash('ally', _el);

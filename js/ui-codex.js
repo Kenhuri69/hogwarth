@@ -272,6 +272,14 @@ function checkCodexUnlocks(reason) {
       if (!unlockedCodexEntries.has(mark)) {
         unlockedCodexEntries.add(mark);
         _codexNotifyQueue.push({ kind: state, title: entry.title });
+        // Sorts & Magie 2.0 Lot P2 §2.3 — Codex enseignant : une entrée
+        // RÉVÉLÉE peut transmettre un sort au groupe (rituel/légendaire).
+        if (state === 'revealed' && entry.teachesSpell
+            && typeof _teachSpellToParty === 'function') {
+          if (_teachSpellToParty(entry.teachesSpell) && typeof addMsg === 'function') {
+            addMsg(`📖 Le Codex te révèle le sort <em>${entry.teachesSpell}</em> !`, 'magic');
+          }
+        }
       }
     }
   }

@@ -911,4 +911,140 @@ async function scenarioSpellCombos() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioSpellIcons, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioSpellVoiceMapping, scenarioTeleportation, scenarioHealOoc, scenarioBombardaSplash, scenarioAoeSpells, scenarioSpellCombos] };
+// ── Lot P2 — Sorts par Maison, Éclats, familiers, environnementaux, apprentissage ──
+async function scenarioSpellsP2() {
+  console.log('\n── Scénario : Sorts & Magie 2.0 — Lot P2 ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // T1 — houseSpellBoost greffé dans _spellSpCost : un sort house-affine coûte
+  // moins cher pour sa Maison, et davantage aux paliers Mythe/Apothéose.
+  const t1 = await page.evaluate(() => {
+    const pat = SPELLS.find(s => s.name === 'Patronus Maxima'); // affine Gryffondor
+    chosenHouse = 'Serpentard'; houseTier = 18;
+    const otherHouse = _spellSpCost(pat, party[0]);             // pas d'affinité → coût plein
+    chosenHouse = 'Gryffondor'; houseTier = 0;
+    const affineBase = _spellSpCost(pat, party[0]);            // 15 %
+    houseTier = 18;
+    const affineApo = _spellSpCost(pat, party[0]);            // 25 %
+    return { full: otherHouse, base: pat.cost, affineBase, affineApo };
+  });
+  console.log('  T1 houseSpellBoost:', t1);
+  assert(t1.full === t1.base, `Patronus Maxima non-affine = coût plein (${t1.full}/${t1.base})`);
+  assert(t1.affineBase < t1.full, `affine Gryffondor moins cher (${t1.affineBase} < ${t1.full})`);
+  assert(t1.affineApo < t1.affineBase, `Apothéose réduit davantage (${t1.affineApo} < ${t1.affineBase})`);
+
+  // T2 — Éclat de Voûte : gate requiresEclats AVANT débit PM, puis dégâts ×Éclats.
+  await startDummyFight(page, { hp: 500 });
+  const t2 = await page.evaluate(() => {
+    party[0].spells.push('Éclat de Voûte');
+    party[0].sp = 99; player.inventory = [];   // 0 Éclat
+    currentBattleChar = 0;
+    const sp0 = party[0].sp, hp0 = enemyGroup[0].currentHp;
+    castSpellInBattle('Éclat de Voûte', 0);     // refusé (gate)
+    const refused = { sp: party[0].sp, hp: enemyGroup[0].currentHp };
+    // 2 Éclats → autorisé.
+    player.inventory.push({ id: 'eclat_voute', qty: 2 });
+    party[0].sp = 99; currentBattleChar = 0;
+    const hp1 = enemyGroup[0].currentHp;
+    castSpellInBattle('Éclat de Voûte', 0);
+    return { sp0, hp0, refused, eclats: eclatProgress(),
+             dealt: hp1 - enemyGroup[0].currentHp, spAfter: party[0].sp };
+  });
+  console.log('  T2 Éclat de Voûte:', t2);
+  assert(t2.refused.sp === t2.sp0 && t2.refused.hp === t2.hp0,
+    'sort d\'Éclat refusé sans Éclat : ni PM ni dégâts consommés');
+  assert(t2.eclats === 2, `eclatProgress() doit refléter 2 Éclats, got ${t2.eclats}`);
+  assert(t2.dealt > 0 && t2.spAfter < 99, 'Éclat de Voûte inflige des dégâts et coûte des PM avec 2 Éclats');
+
+  // T3 — Avis Praesidium : familier combat-scoped qui frappe à chaque round.
+  const t3 = await page.evaluate(() => {
+    enemyGroup[0].currentHp = 500; enemyGroup[0].def = 0;
+    party[0].spells.push('Avis Praesidium'); party[0].sp = 99; currentBattleChar = 0;
+    const hp0 = enemyGroup[0].currentHp;
+    castSpellInBattle('Avis Praesidium', 0);     // coup immédiat + familier
+    const afterCast = { hp: enemyGroup[0].currentHp, fam: combatFamiliars.length };
+    // Mesure le décrément/dégâts d'un tick explicite (indépendant du round déjà joué).
+    const turnsBefore = combatFamiliars[0] ? combatFamiliars[0].turns : 0;
+    const hp1 = enemyGroup[0].currentHp;
+    const tickLog = tickFamiliars();
+    const turnsAfter = combatFamiliars[0] ? combatFamiliars[0].turns : 0;
+    return { hp0, afterCast, tickDealt: hp1 - enemyGroup[0].currentHp,
+             turnsBefore, turnsAfter, hadLog: !!tickLog };
+  });
+  console.log('  T3 familier:', t3);
+  assert(t3.afterCast.hp < t3.hp0, 'Avis Praesidium frappe immédiatement');
+  assert(t3.afterCast.fam === 1, 'un familier est enregistré');
+  assert(t3.tickDealt > 0 && t3.turnsAfter === t3.turnsBefore - 1,
+    `tickFamiliars frappe et décrémente la durée (${t3.turnsBefore}→${t3.turnsAfter})`);
+
+  // T4 — Sceau des Quatre : gate 3 Éclats (refus sans débit), puis effet
+  // bouclier de groupe + anti-peur (handler testé en isolation, sans round auto).
+  const t4 = await page.evaluate(() => {
+    // (a) gate : 0 Éclat → refus avant débit PM.
+    completedQuests.delete('eclats_clef_voute'); player.inventory = [];
+    party[0].spells.push('Sceau des Quatre'); party[0].sp = 99; currentBattleChar = 0;
+    const sp0 = party[0].sp;
+    castSpellInBattle('Sceau des Quatre');        // refusé (3 Éclats requis)
+    const gateRefused = party[0].sp === sp0;
+    // (b) effet : 3 Éclats + handler direct → bouclier 2 tours, peur dissipée.
+    completedQuests.add('eclats_clef_voute');
+    party[0].statusEffects = [{ id: 'fear', power: 0, turns: 2 }];
+    shieldTurns[0] = 0;
+    _spellSealShield(SPELLS.find(s => s.name === 'Sceau des Quatre'), party[0]);
+    return { eclats: eclatProgress(), gateRefused, shield: shieldTurns[0],
+             hasFear: (party[0].statusEffects || []).some(s => s.id === 'fear') };
+  });
+  console.log('  T4 Sceau des Quatre:', t4);
+  assert(t4.gateRefused, 'Sceau des Quatre refusé sans les 3 Éclats (aucun PM consommé)');
+  assert(t4.eclats === 3, 'eclatProgress() = 3 après quête');
+  assert(t4.shield === 2 && !t4.hasFear, 'bouclier de groupe (2 tours) posé + peur dissipée');
+  await page.evaluate(() => { if (inBattle) endBattle(false); });
+
+  // T5 — environnementaux OOC : Purgo dissipe un étage hostile, Fontis recharge.
+  const t5 = await page.evaluate(() => {
+    party[0].spells.push('Purgo', 'Fontis'); party[0].sp = 99;
+    currentFloorEvent = 'hante';
+    castSpellOutOfCombat('Purgo', 0);
+    const purged = currentFloorEvent;
+    // Fontis : poser une fontaine tarie sous le joueur.
+    dungeon[playerY][playerX] = CELL.FOUNTAIN;
+    const key = playerX + ',' + playerY;
+    usedFountains.add(key);
+    party[0].sp = 99;
+    castSpellOutOfCombat('Fontis', 0);
+    return { purged, fountainStillTaried: usedFountains.has(key) };
+  });
+  console.log('  T5 environnementaux:', t5);
+  assert(t5.purged === null, 'Purgo dissipe l\'événement d\'étage hostile');
+  assert(t5.fountainStillTaried === false, 'Fontis recharge la Fontaine tarie');
+
+  // T6 — apprentissage PNJ (teach_spell) + Codex enseignant (teachesSpell).
+  const t6 = await page.evaluate(() => {
+    // PNJ : Scamander enseigne Avis Praesidium (déjà appris en T3 → on repart neuf).
+    party[0].spells = party[0].spells.filter(s => s !== 'Avis Praesidium' && s !== 'Éclat de Voûte');
+    if (typeof usedSpecialNpcs !== 'undefined') usedSpecialNpcs.delete('scamander');
+    triggerNpcSpecialAction('scamander');
+    const npcTaught = party[0].spells.includes('Avis Praesidium');
+    const npcSpent  = (typeof usedSpecialNpcs !== 'undefined') && usedSpecialNpcs.has('scamander');
+    // Codex : révéler l'entrée des Éclats (3 Éclats) enseigne Éclat de Voûte.
+    unlockedCodexEntries.delete('eclat_voute_codex#revealed');
+    player.inventory = [{ id: 'eclat_voute', qty: 3 }];
+    checkCodexUnlocks('test-p2');
+    const codexTaught = party[0].spells.includes('Éclat de Voûte');
+    return { npcTaught, npcSpent, codexTaught };
+  });
+  console.log('  T6 apprentissage:', t6);
+  assert(t6.npcTaught, 'Scamander enseigne Avis Praesidium (action teach_spell)');
+  assert(t6.npcSpent,  'l\'action teach_spell est consommée (one-shot)');
+  assert(t6.codexTaught, 'le Codex enseigne Éclat de Voûte à la révélation (teachesSpell)');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (P2)`);
+  }
+  console.log('  ✅ Sorts & Magie 2.0 Lot P2 OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioSpellIcons, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioSpellVoiceMapping, scenarioTeleportation, scenarioHealOoc, scenarioBombardaSplash, scenarioAoeSpells, scenarioSpellCombos, scenarioSpellsP2] };

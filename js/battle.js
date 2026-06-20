@@ -487,6 +487,32 @@ function applyEquipmentRegen() {
   return log;
 }
 
+// Familiers invoqués (Avis Praesidium — Lot P2). Combat-scoped (combatFamiliars,
+// state.js). Au tournant de chaque round, chaque familier frappe un ennemi
+// vivant au hasard (mitigatedDamage) puis voit sa durée décroître ; il se
+// dissipe à 0. Défensif : no-op si aucun familier. Réassigne le global (let).
+function tickFamiliars() {
+  if (typeof combatFamiliars === 'undefined' || !Array.isArray(combatFamiliars) || !combatFamiliars.length) return '';
+  let log = '';
+  const survivors = [];
+  for (const fam of combatFamiliars) {
+    if (!fam || fam.turns <= 0) continue;
+    const targets = livingEnemies();
+    if (targets.length) {
+      const tgt = targets[Math.floor(Math.random() * targets.length)];
+      const dmg = Math.max(1, mitigatedDamage(fam.atk, tgt.def || 0));
+      tgt.currentHp = Math.max(0, tgt.currentHp - dmg);
+      log += `${fam.icon || '🦉'} Le familier de ${fam.ownerName} frappe ${tgt.name} : -${dmg} PV ! `;
+      UX_safe.floatDmg(`enemy:${enemyGroup.indexOf(tgt)}`, dmg, 'dmg');
+      UX_safe.logCombat(`${fam.icon || '🦉'} Familier → ${tgt.name} : <b>−${dmg}</b>`, 'good');
+    }
+    fam.turns -= 1;
+    if (fam.turns > 0) survivors.push(fam);
+  }
+  combatFamiliars = survivors;
+  return log;
+}
+
 // Garde counter-attack : quand un coup physique est mitigé par la Garde,
 // le défenseur riposte avec une chance `counterChance` (base 30 %, plafond
 // 40 %, + bonus d'équipement). La riposte inflige atk/2 (mitigée par la DEF
@@ -566,6 +592,7 @@ function startBattle(baseEnemyData, opts) {
   elanStacks        = [0, 0];
   celeriteGauge     = [0, 0];   // D5 Célérité — accumulateur de tempo (combat-scoped)
   celeriteExtra     = [0, 0];
+  combatFamiliars   = [];       // P2 — familiers invoqués (Avis Praesidium), combat-scoped
   battleTurn        = 0;
   currentBattleChar = 0;
   pendingAction     = null;
@@ -1205,7 +1232,10 @@ function enemyTurn() {
     }
   }
 
-  // Une riposte de garde a pu achever le dernier ennemi.
+  // Familiers invoqués (P2) — frappent au tournant du round (peut achever un ennemi).
+  log += tickFamiliars();
+
+  // Une riposte de garde / un familier a pu achever le dernier ennemi.
   if (livingEnemies().length === 0) { setBattleLog(log || '...'); renderEnemyGroup(); endBattle(true); return; }
 
   // Statuts persistants : tick sur les alliés vivants en fin de round

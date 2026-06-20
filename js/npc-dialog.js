@@ -746,6 +746,22 @@ function triggerNpcSpecialAction(npcId) {
     if (typeof updateUI === 'function') updateUI();
     safeCall('autoSave', 'fumseck-used');
   }
+  // teach_spell (Sorts & Magie 2.0 Lot P2 §2.3) — action PNJ générique
+  // d'enseignant (prof de sortilèges, magizoologiste…). One-shot : marquée
+  // dépensée même si le sort était déjà connu. Réutilise _teachSpellToParty.
+  if (action.type === 'teach_spell') {
+    const spellName = action.spell;
+    const learned = (typeof _teachSpellToParty === 'function') && _teachSpellToParty(spellName);
+    if (typeof usedSpecialNpcs !== 'undefined') usedSpecialNpcs.add(npc.id);
+    if (learned) {
+      if (typeof addMsg === 'function') addMsg(`📖 ${npc.title || npc.name} vous enseigne ${spellName} !`, 'magic');
+      if (typeof AudioSystem !== 'undefined' && AudioSystem.playLevelUp) AudioSystem.playLevelUp();
+      safeCall('autoSave', 'spell-taught');
+    } else if (typeof addMsg === 'function') {
+      addMsg(`${spellName} vous est déjà familier.`, '');
+    }
+    if (typeof updateUI === 'function') updateUI();
+  }
 }
 
 // État courant du dialogue (multi-pages)

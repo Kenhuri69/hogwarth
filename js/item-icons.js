@@ -531,7 +531,18 @@ const SPELL_ICON_REGISTRY = {
   'Sceau du Voyageur':     'img/icons/spells/verrou_de_sang.png',
   "Mémoire d'Outremonde":  'img/icons/spells/cheminette_inter_mondes.png',
   'Marque du Pèlerin':     'img/icons/spells/cheminette_inter_mondes.png',
-  'Rappel Astral':         'img/icons/spells/cheminette_inter_mondes.png'
+  'Rappel Astral':         'img/icons/spells/cheminette_inter_mondes.png',
+  // ── Sorts & Magie 2.0 Lot P2 — alias temporaires sur PNG existants
+  // thématiquement proches (même approche que les sorts cross-plan ci-dessus).
+  // À régénérer en art dédié dans un lot ultérieur (plan §2.8). ──
+  'Resonare':          'img/icons/spells/revelio.png',          // révélation
+  'Éclat de Voûte':    'img/icons/spells/nox_vorax.png',        // projectile ténèbres
+  'Sceau des Quatre':  'img/icons/spells/protego.png',          // bouclier
+  'Avis Praesidium':   'img/icons/spells/patronum.png',         // familier lumineux
+  'Patronus Corporel': 'img/icons/spells/patronus_maxima.png',  // Patronus
+  'Fontis':            'img/icons/spells/aguamenti.png',        // eau
+  'Purgo':             'img/icons/spells/lumos_solem.png',      // purification
+  'Aedificium':        'img/icons/spells/reparo.png'            // édification
 };
 
 // ── Registre d'icônes SVG inline (herbes + potions) ──────────

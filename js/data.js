@@ -379,6 +379,23 @@ const SPELLS = [
   // Feu Maudit : flammes vivantes, dégâts massifs single-target,
   // brûlure persistante. Coût prohibitif → utilisation parcimonieuse.
   { name:"Fiendfyre",         icon:"🔥",  desc:"Feu Maudit : flammes vivantes (35 dégâts + brûle)",                cost:32, effect:"burn", element:"feu", power:35 },
+  // ── Sorts & Magie 2.0 — Lot P2 : Éclats, familiers, environnementaux ──
+  // Voir .claude/plans/spells-magic-system.md §1.4. Tous les `effect` neufs sont
+  // routés DÉFENSIVEMENT (handlers gardés : SPELL_HANDLERS combat, SPELL_OOC_
+  // HANDLERS exploration). Étiquetage 2.0 dans SPELL_META plus bas.
+  // A. Sorts d'Éclats de la Clé de Voûte — montent en puissance avec le nombre
+  //    d'Éclats possédés (eclatProgress() RÉUTILISÉ — pas de compteur neuf).
+  //    `requiresEclats` gate l'usage en amont (castSpellInBattle), avant débit PM.
+  { name:"Resonare",         icon:"🔹", desc:"Rituel : révèle tout l'étage et les pages cachées (coût ↓ par Éclat). Hors combat, ≥ 1 Éclat.", cost:8, effect:"reveal_floor", power:0 },
+  { name:"Éclat de Voûte",   icon:"💠", desc:"Projectile de scellement : dégâts de ténèbres ×(1 + 0,25·Éclats possédés). Nécessite ≥ 2 Éclats.", cost:14, effect:"eclat_bolt", element:"ténèbres", power:22, requiresEclats:2 },
+  { name:"Sceau des Quatre", icon:"🛡️", desc:"Bouclier de groupe (2 tours) + immunise la peur — nécessite les 3 Éclats de la Clé de Voûte.", cost:18, effect:"seal_shield", power:0, requiresEclats:3 },
+  // D. Sorts de familier (invocation côté joueur, combat).
+  { name:"Avis Praesidium",  icon:"🦉", desc:"Invoque un familier protecteur qui frappe un ennemi pendant 3 tours", cost:12, effect:"summon_ally", element:"physique", power:10 },
+  { name:"Patronus Corporel",icon:"🦌", desc:"Familier-Patronus : protège le groupe (mitigation 2 tours) et chasse la peur", cost:16, effect:"patronus_corporel", element:"lumière", power:0 },
+  // E. Sorts environnementaux (hors combat — SPELL_OOC_HANDLERS).
+  { name:"Fontis",           icon:"💧", desc:"Recharge une Fontaine tarie (hors combat, gros coût)", cost:30, effect:"recharge_fountain", power:0 },
+  { name:"Purgo",            icon:"✨", desc:"Dissipe la corruption d'une salle (retire un événement d'étage hostile)", cost:14, effect:"purge_room", power:0 },
+  { name:"Aedificium",       icon:"🏛️", desc:"Stabilise un sceau runique des Ruines pour ouvrir un passage scellé", cost:12, effect:"stabilize_rune", power:0 },
   // ── Sort de portail inter-mondes — Cheminette Inter-Mondes ────
   // Voir .claude/plans/parallel-worlds.md §4. Hors combat uniquement,
   // refusé en mode Ironman (§2.1). Apprentissage niv. 8 dans
@@ -561,6 +578,15 @@ const SPELL_META = {
   // ── Corrompus / interdits (legendary) ──
   'Avada...':           ['signature', 'corrompu', 'legendary', null],
   'Fiendfyre':          ['combat',    'corrompu', 'legendary', null],
+  // ── Lot P2 : Éclats (rituel), familiers, environnementaux (§1.4) ──
+  'Resonare':           ['rituel',      'avancé', 'rare',     null],
+  'Éclat de Voûte':     ['combat',      'maître', 'epic',     null],
+  'Sceau des Quatre':   ['defense',     'maître', 'epic',     null],
+  'Avis Praesidium':    ['combat',      'avancé', 'rare',     null],
+  'Patronus Corporel':  ['defense',     'maître', 'epic',     null],
+  'Fontis':             ['exploration', 'maître', 'rare',     null],
+  'Purgo':              ['rituel',      'avancé', 'rare',     null],
+  'Aedificium':         ['rituel',      'maître', 'rare',     null],
 };
 
 // Passe de normalisation IDEMPOTENTE (miroir de _migrateEquippedSlots côté
@@ -601,6 +627,23 @@ function getSpellByName(name) {
 function spellTierTint(spell) {
   const t = spell && spell.tier;
   return (SPELL_TIERS[t] && SPELL_TIERS[t].tint) || SPELL_TIERS['basique'].tint;
+}
+// Boost d'affinité de Maison (P2 — §2.2/§1.8) — réduction de coût PM pour les
+// sorts dont `houseAffinity` == la Maison du joueur. PUR (façon _fortuneCurve) :
+// ne lit QUE ses arguments → testable hors navigateur. POWER-NEUTRE (cf. biais
+// Maison V2) : on ne touche jamais aux dégâts/power, seul le coût baisse — pas
+// de power creep, règle d'or §0 respectée (zéro scaling monstre). Retourne une
+// FRACTION de réduction [0..0.25], composée multiplicativement avec le −20 %
+// Serdaigle de _spellSpCost. Cadence : 15 % dès que la Maison affine
+// correspond, +5 % au palier Mythe (17), +5 % au palier Apothéose (18).
+function houseSpellBoost(spell, house, tier) {
+  if (!spell || !house) return 0;
+  if (!spell.houseAffinity || spell.houseAffinity !== house) return 0;
+  let r = 0.15;
+  const t = (typeof tier === 'number') ? tier : 0;
+  if (t >= 17) r += 0.05;
+  if (t >= 18) r += 0.05;
+  return r;
 }
 // Forme EFFECTIVE d'un sort pour un personnage (non destructif, runtime).
 // P0 : aucun sort ne déclare encore evolvesTo/evolveCondition → renvoie
