@@ -1010,6 +1010,11 @@ const ITEMS = [
   { id:"anneau_resurrection",name:"Anneau de la Résurrection",icon:"💍", desc:"MAG+3 LCK+4 · Apprend Reparo", type:"acc", slot:"ring",  family:"ring_resurrection", rarity:"epic", bonusMag:3, bonusLck:4, power:3, grantsSpell:"Reparo", price:0, tint:"#1a1a1a" },
   // Amulette remise par Fumseck (quête `bouclier_phenix`). Régénère 3 PV en début de tour ennemi.
   { id:"larmes_phenix",      name:"Larmes du Phénix",         icon:"📿", desc:"DEF+2 MAG+2 · PM max +5 · Régen +3 PV/tour · Esquive +3%",type:"acc", slot:"amulet",family:"amulet_tears",      rarity:"epic", bonusDef:2, bonusMag:2, bonusSpMax:5, bonusDodgeChance:3, power:2, regenHp:3,            price:0, tint:"#e84020" },
+  // ── Récompenses des quêtes de PNJ en Boucle (suivi 3) — non vendues (price 0) ──
+  { id:"perle_mimi",            name:"Perle de Larmes de Mimi",   icon:"💧", desc:"MAG+3 · Régen +2 PM/tour",  type:"acc", slot:"amulet",  family:"amulet_mimi",    rarity:"epic", bonusMag:3, regenSp:2, power:3, price:0 },
+  { id:"cor_chasse",            name:"Cor de la Chasse Sans Tête",icon:"📯", desc:"Crit +3% (×1.7)",           type:"acc", slot:"trinket", family:"horn_hunt",      rarity:"epic", bonusCritChance:3, bonusCritDamage:0.2, power:3, price:0 },
+  { id:"cape_soie_acromantule", name:"Cape de Soie d'Acromantule",icon:"🕸️", desc:"AGI+3 · Esquive +4%",       type:"acc", slot:"cloak",   family:"cloak_silk",     rarity:"epic", bonusAgi:3, bonusDodgeChance:4, power:3, price:0 },
+  { id:"plume_lockhart",        name:"Plume à Papote Dédicacée",  icon:"🪶", desc:"LCK+3",                     type:"acc", slot:"trinket", family:"quill_lockhart", rarity:"rare", bonusLck:3, power:0, price:0 },
   // ── Phase 3 — Tranche étage 8 « Le Seuil » : équipement Auror (boutique + drop boss) ──
   { id:"casque_auror",      name:"Casque d'Auror",       icon:"⛑️", desc:"DEF+4 MAG+2 — Casque réglementaire des Aurors", type:"armor", slot:"head",  family:"helmet_auror",    rarity:"rare", bonusDef:4, bonusMag:2, power:4, price:800 },
   { id:"bottes_renforcees", name:"Bottes Renforcées",    icon:"🥾", desc:"DEF+3 AGI+2",                                   type:"armor", slot:"feet",  family:"boots_reinforced",rarity:"rare", bonusDef:3, bonusAgi:2, power:3, price:600 },

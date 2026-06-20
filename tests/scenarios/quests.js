@@ -1613,4 +1613,70 @@ async function scenarioLoopNpcQuests2() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioChainedQuest, scenarioHeadlessHunt, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioFarmingQuests, scenarioDelayedSearch, scenarioCleVoute, scenarioQuestFanfare, scenarioLoopNpcQuests, scenarioLoopNpcQuests2] };
+// Suivi 3 — derniers PNJ lore + drop matériau sur les chasses + items récompense.
+async function scenarioLoopNpcQuests3() {
+  console.log('\n── Scénario : quêtes PNJ de la Boucle (suivi 3) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // T1 : templates + items récompense + keepRewardItem sur les chasses.
+  const t1 = await page.evaluate(() => {
+    const qids = ['chasse_magizoologiste_boucle', 'mimi_esprits', 'chasse_sans_tete_boucle',
+                  'confection_guipure', 'chroniques_lockhart', 'manon_compagnie'];
+    const iids = ['perle_mimi', 'cor_chasse', 'cape_soie_acromantule', 'plume_lockhart'];
+    const king = QUEST_TEMPLATES.find(t => t.id === 'chasse_kingsley_boucle');
+    return {
+      allQuests: qids.every(id => QUEST_TEMPLATES.some(t => t.id === id)),
+      allItems:  iids.every(id => ITEMS.some(i => i.id === id)),
+      iconsNew:  iids.every(id => ITEM_ICON_NEW_REGISTRY[id]),
+      kingKeep:  !!(king && king.keepRewardItem && king.reward.item === 'essence_tenebres')
+    };
+  });
+  console.log('  T1:', t1);
+  assert(t1.allQuests, 'tous les templates suivi 3 doivent exister');
+  assert(t1.allItems,  'les 4 items récompense doivent exister');
+  assert(t1.iconsNew,  'les 4 items doivent être dans ITEM_ICON_NEW_REGISTRY');
+  assert(t1.kingKeep,  'chasse_kingsley_boucle doit porter keepRewardItem + item matériau');
+
+  // T2 : keepRewardItem — la chasse rend bien le matériau après le tirage farming.
+  const t2 = await page.evaluate(() => {
+    completedQuests.delete('chasse_kingsley_boucle');
+    availableQuests.add('chasse_kingsley_boucle');
+    activeQuests = activeQuests.filter(q => q.id !== 'chasse_kingsley_boucle');
+    currentFloor = 18;
+    const accepted = acceptQuest('chasse_kingsley_boucle');
+    const q = activeQuests.find(x => x.id === 'chasse_kingsley_boucle');
+    return { accepted, rewardItem: q ? q.reward.item : null };
+  });
+  console.log('  T2:', t2);
+  assert(t2.accepted, 'chasse_kingsley_boucle doit être acceptable en Boucle');
+  assert(t2.rewardItem === 'essence_tenebres', 'la chasse doit conserver le drop matériau (keepRewardItem)');
+
+  // T3 : Mimi — kill spectre_maudit ×2 → remise → perle_mimi en inventaire.
+  const t3 = await page.evaluate(() => {
+    completedQuests.delete('mimi_esprits');
+    availableQuests.add('mimi_esprits');
+    activeQuests = activeQuests.filter(q => q.id !== 'mimi_esprits');
+    currentFloor = 12;
+    const accepted = acceptQuest('mimi_esprits');
+    const q = activeQuests.find(x => x.id === 'mimi_esprits');
+    const need = q ? q.objectives[0].amount : -1;
+    for (let i = 0; i < need; i++) checkKillQuests('spectre_maudit');
+    const turned = turnInQuestById('mimi_esprits');
+    const hasPearl = player.inventory.some(i => i.id === 'perle_mimi');
+    return { accepted, need, turned, hasPearl };
+  });
+  console.log('  T3:', t3);
+  assert(t3.accepted, 'mimi_esprits doit être acceptable en Boucle');
+  assert(t3.turned,   'mimi_esprits doit être remettable après 2 kills');
+  assert(t3.hasPearl, 'la remise Mimi doit donner la Perle de Larmes');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (quêtes Boucle suivi 3)`);
+  }
+  console.log('  ✅ Quêtes PNJ de la Boucle (suivi 3) OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioChainedQuest, scenarioHeadlessHunt, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioFarmingQuests, scenarioDelayedSearch, scenarioCleVoute, scenarioQuestFanfare, scenarioLoopNpcQuests, scenarioLoopNpcQuests2, scenarioLoopNpcQuests3] };

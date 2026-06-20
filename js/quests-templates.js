@@ -442,7 +442,8 @@ const QUEST_TEMPLATES = [
     objectives: [
       { type: "kill", monsterId: null, amount: 0, progress: 0, completed: false }
     ],
-    reward: { xp: 420, gold: 240 },
+    reward: { xp: 420, gold: 240, item: "essence_tenebres" },
+    keepRewardItem: true,
     location: "Boucle Ténébreuse (Kingsley, étage 18)",
     minFloor: 11,
     repeatable: { everyLevels: 1 },
@@ -457,7 +458,8 @@ const QUEST_TEMPLATES = [
     objectives: [
       { type: "kill", monsterId: null, amount: 0, progress: 0, completed: false }
     ],
-    reward: { xp: 450, gold: 250 },
+    reward: { xp: 450, gold: 250, item: "page_grimoire" },
+    keepRewardItem: true,
     location: "Boucle Ténébreuse (Bill, étage 19)",
     minFloor: 11,
     repeatable: { everyLevels: 1 },
@@ -472,7 +474,8 @@ const QUEST_TEMPLATES = [
     objectives: [
       { type: "kill", monsterId: null, amount: 0, progress: 0, completed: false }
     ],
-    reward: { xp: 480, gold: 260 },
+    reward: { xp: 480, gold: 260, item: "essence_tenebres" },
+    keepRewardItem: true,
     location: "Boucle Ténébreuse (Sirius, étage 20)",
     minFloor: 11,
     repeatable: { everyLevels: 1 },
@@ -596,6 +599,104 @@ const QUEST_TEMPLATES = [
     reward: { xp: 400, gold: 300, item: "livre_lumos_solem", stats: { lck: 2 } },
     location: "Boucle Ténébreuse (Lockhart, étage 13)",
     minFloor: 11
+  },
+  // ── Boucle — derniers PNJ lore + arcs vivants (suivi 3) ──────────
+  // CHASSE — Scamander : variante Boucle de la chasse magizoologiste (la fixe
+  // est capée maxFloor:8). keepRewardItem → drop matériau à chaque cycle.
+  {
+    id: "chasse_magizoologiste_boucle",
+    title: "Recensement des Profondeurs",
+    giver: "Newton Scamander",
+    desc: "Scamander veut recenser les créatures que la Boucle ramène. Élimine celles qu'il a repérées sur cet étage.",
+    farming: true,
+    objectives: [
+      { type: "kill", monsterId: null, amount: 0, progress: 0, completed: false }
+    ],
+    reward: { xp: 400, gold: 220, item: "page_grimoire" },
+    keepRewardItem: true,
+    location: "Boucle Ténébreuse (Scamander, étage 12)",
+    minFloor: 11,
+    repeatable: { everyLevels: 1 },
+    rollOnAccept: { kind: "kill", minFloor: 11, maxFloor: 99, minAmount: 4, maxAmount: 7, spawnBonus: 1 }
+  },
+  // CHASSE — Mimi : apaiser les esprits qui hantent ses canalisations.
+  {
+    id: "mimi_esprits",
+    title: "Les esprits des canalisations",
+    giver: "Mimi Geignarde",
+    desc: "Mimi n'est plus seule à hanter ces lieux — d'autres esprits, plus méchants, remontent par les tuyaux. Détruis 2 Spectres Maudits pour qu'elle pleure en paix.",
+    objectives: [
+      { type: "kill", monsterId: "spectre_maudit", amount: 2, progress: 0, completed: false }
+    ],
+    reward: { xp: 320, gold: 180, item: "perle_mimi" },
+    repeatableReward: { xp: 240, gold: 260 },
+    location: "Boucle Ténébreuse (Mimi, étage 12)",
+    minFloor: 11,
+    repeatable: { everyLevels: 2 },
+    spawnOnAccept: { targetMonsterId: "spectre_maudit", extraRandomCount: 0 }
+  },
+  // CHASSE — Sir Patrick : chevaucher la Chasse Sans Tête (morts-vivants).
+  {
+    id: "chasse_sans_tete_boucle",
+    title: "La Chevauchée Sans Tête",
+    giver: "Sir Patrick Delaney-Podmore",
+    desc: "La Chasse Sans Tête galope encore dans la Boucle ! Sir Patrick t'invite à la chevauchée : terrasse 3 Chevaliers Fantômes et tu seras des nôtres.",
+    objectives: [
+      { type: "kill", monsterId: "chevalier_fantome", amount: 3, progress: 0, completed: false }
+    ],
+    reward: { xp: 360, gold: 200, item: "cor_chasse" },
+    repeatableReward: { xp: 260, gold: 280 },
+    location: "Boucle Ténébreuse (Sir Patrick, étage 16)",
+    minFloor: 11,
+    repeatable: { everyLevels: 2 },
+    spawnOnAccept: { targetMonsterId: "chevalier_fantome", extraRandomCount: 1 }
+  },
+  // COLLECTE — Guipure : soie d'Acromantule (kill) → confection d'une cape.
+  {
+    id: "confection_guipure",
+    title: "Soie pour une cape d'exception",
+    giver: "Madame Guipure",
+    desc: "Madame Guipure ne tisse que la meilleure soie d'Acromantule. Abats 3 Jeunes Acromantules pour qu'elle t'en confectionne une cape digne de la Boucle.",
+    objectives: [
+      { type: "kill", monsterId: "acromantula_jeune", amount: 3, progress: 0, completed: false }
+    ],
+    reward: { xp: 340, gold: 180, item: "cape_soie_acromantule" },
+    repeatableReward: { xp: 260, gold: 300 },
+    location: "Boucle Ténébreuse (Guipure, étage 15)",
+    minFloor: 11,
+    repeatable: { everyLevels: 2 },
+    spawnOnAccept: { targetMonsterId: "acromantula_jeune", extraRandomCount: 1 }
+  },
+  // RÉDEMPTION (suite) — Lockhart répétable : récolter des anecdotes (fouille).
+  {
+    id: "chroniques_lockhart",
+    title: "Chroniques de la Boucle",
+    giver: "Gilderoy Lockhart",
+    desc: "Galvanisé par sa première histoire vraie, Lockhart veut chroniquer la Boucle entière. Fouille 4 recoins pour lui dénicher de quoi remplir un nouveau chapitre.",
+    objectives: [
+      { type: "search", amount: 4, progress: 0, completed: false }
+    ],
+    reward: { xp: 320, gold: 220, item: "plume_lockhart" },
+    repeatableReward: { xp: 240, gold: 300 },
+    location: "Boucle Ténébreuse (Lockhart, étage 13)",
+    minFloor: 11,
+    repeatable: { everyLevels: 1 }
+  },
+  // Manon — visite répétable (elle redoute la solitude de la Boucle).
+  {
+    id: "manon_compagnie",
+    title: "Ne pas rester seule",
+    giver: "Manon",
+    desc: "La Boucle est longue, et Manon redoute le silence. Disperse 2 Spectres Maudits qui rôdent près de sa salle, puis reviens lui tenir compagnie.",
+    objectives: [
+      { type: "kill", monsterId: "spectre_maudit", amount: 2, progress: 0, completed: false }
+    ],
+    reward: { xp: 260, gold: 200 },
+    repeatableReward: { xp: 220, gold: 220 },
+    location: "Boucle Ténébreuse (Manon, étage 13)",
+    minFloor: 11,
+    repeatable: { everyLevels: 2 },
+    spawnOnAccept: { targetMonsterId: "spectre_maudit", extraRandomCount: 0 }
   },
   // ── Manon, fille cachée de Lupin — pseudo-quête en deux volets ──
   // Données et rendues par Manon (PNJ étage 3, cf. npcs.js). Le volet 2

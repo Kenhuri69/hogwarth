@@ -79,6 +79,12 @@ const ITEM_ICON_REGISTRY = {
   // Baguette d'If des Profondeurs (récompense Ollivander, Boucle) : rendue via
   // le système de tint `ebony` au runtime ; ce PNG sert de fallback/couverture.
   baguette_if_boucle: 'img/icons/items/wand2.png',
+  // Récompenses Boucle (suivi 3) : le rendu réel passe par les PNG painterly
+  // d'ITEM_ICON_NEW_REGISTRY (priorité 1) ; ces entrées satisfont la couverture.
+  perle_mimi:            'img/icons_new/perle_mimi_64.png',
+  cor_chasse:            'img/icons_new/cor_chasse_64.png',
+  cape_soie_acromantule: 'img/icons_new/cape_soie_acromantule_64.png',
+  plume_lockhart:        'img/icons_new/plume_lockhart_64.png',
   sword_gryff:        'img/icons/items/sword_gryff.png',
   // Armures
   robe1:              'img/icons/items/robe1.png',
@@ -268,6 +274,11 @@ const ITEM_ICON_REGISTRY = {
 
 // Mapping painterly pipeline (étape 9 — voir SVG_PLAN / tools/icon_factory.py)
 const ITEM_ICON_NEW_REGISTRY = {
+  // Récompenses des quêtes de PNJ en Boucle (suivi 3) — PNG painterly dédiés.
+  perle_mimi:            'img/icons_new/perle_mimi_64.png',
+  cor_chasse:            'img/icons_new/cor_chasse_64.png',
+  cape_soie_acromantule: 'img/icons_new/cape_soie_acromantule_64.png',
+  plume_lockhart:        'img/icons_new/plume_lockhart_64.png',
   // Artefacts & Reliquaires 2.0 — P3.3b reliques vocales (§1.4 C).
   voix_godric_relique:  'img/icons_new/voix_godric_relique_64.png',
   voix_salazar_relique: 'img/icons_new/voix_salazar_relique_64.png',
