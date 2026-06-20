@@ -16,7 +16,7 @@
 //     individuel suffit pour eux.
 // =======================================================================
 
-const CACHE_VERSION = 'hogwarth-v175';
+const CACHE_VERSION = 'hogwarth-v176';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Précache minimal (~1 Mo) : shell HTML/CSS/JS + premier visuel.
@@ -70,7 +70,7 @@ const PRECACHE_URLS = [
   './js/ui-settings.js?v=3',
   './js/ui-bestiary.js?v=5',
   './js/ui-codex.js?v=6',
-  './js/dungeon-scaling.js?v=6',
+  './js/dungeon-scaling.js?v=7',
   './js/dungeon.js?v=18',
   './js/dungeon-spawning.js?v=2',
   './js/textures.js?v=1',

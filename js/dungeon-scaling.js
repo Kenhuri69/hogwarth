@@ -15,7 +15,8 @@
 //   n           = ⌊(floor − 1) / 10⌋                                (0 pour 1-10, 1 pour 11-20, …)
 //   relFloor    = effectiveFloor(floor)                              (1-10 dans chaque palier)
 //   intraMult   = 1 + (relFloor − 1) × scale                         (scaling intra-palier)
-//   scal(n)     = 1 + scalDelta / intraMult                          (mult lissé)
+//   scalDelta(n)= scalDelta + scalDeltaGrowth × (n − 1)              (croissance par palier)
+//   scal(n)     = 1 + scalDelta(n) / intraMult                       (mult lissé)
 //   baseFix_eff = baseFix[stat] / intraMult                          (bonus lissé)
 //
 // Le lissage par `intraMult` réduit proportionnellement l'apport
@@ -23,13 +24,25 @@
 // (Voldemort relF=10, intraMult=4.6 → bonus ÷4.6) et le maximise sur
 // les monstres faibles (Chat relF=1, intraMult=1 → bonus complet).
 //
-// TODO : à l'avenir, `scalDelta` pourrait dépendre de `n` pour rendre
-//        la croissance plus agressive aux paliers profonds (palier 5+).
-//        Actuellement constant à 0.5.
+// Calibration « R1 marqué » (2026-06, sim-difficulty --endgame) : la Boucle
+// était jugée trop facile pour un joueur suréquipé (loop 1 ~100 % de victoire).
+// On raidit la pente : `scalDelta` de base 0.8 (au lieu de 0.5), une croissance
+// `scalDeltaGrowth` de +0.2 par palier `n` (le TODO historique — escalade les
+// boucles profondes), et des `baseFix` × 1.4. Cibles validées par simulation
+// (joueur suréquipé Solo/Duo) : ét.25 ~57/76 %, ét.30 ~48/66 %, ét.40 ~18/28 %.
+// Cf. .claude/plans/dark-loop-scaling-review.md.
 const ENDGAME_SCALING = {
-  baseFix: { hp: 80, atk: 10, def: 5, mag: 8, xp: 50, gold: 80 },
-  scalDelta: 0.5,
+  baseFix: { hp: 112, atk: 14, def: 7, mag: 11, xp: 70, gold: 112 },
+  scalDelta: 0.8,
+  scalDeltaGrowth: 0.2,
 };
+
+// scalDelta effectif au palier endgame `n` (1 pour 11-20, 2 pour 21-30, …).
+// Croissance linéaire : scalDelta(n) = scalDelta + scalDeltaGrowth × (n − 1).
+// n ≤ 1 → scalDelta de base. Pur. Miroir dans tools/sim-difficulty.js.
+function endgameScalDelta(n) {
+  return ENDGAME_SCALING.scalDelta + ENDGAME_SCALING.scalDeltaGrowth * Math.max(0, n - 1);
+}
 
 // ── New Game+ « vrai » (challenge empilable) ─────────────────
 // Multiplicateur GLOBAL appliqué aux monstres quand la partie courante est un
@@ -199,7 +212,8 @@ function scaleMonster(base, floor, opts) {
   const mult      = intraMult * diffMult;
 
   // Précalculs récursion (no-op si n=0 — recurse retourne stat tel quel).
-  const scal      = 1 + ENDGAME_SCALING.scalDelta / intraMult;
+  // scalDelta croît avec le palier `n` (boucles profondes plus raides).
+  const scal      = 1 + endgameScalDelta(n) / intraMult;
   function recurse(stat0, fixKey) {
     if (n <= 0) return stat0;
     const fixEff = ENDGAME_SCALING.baseFix[fixKey] / intraMult;
