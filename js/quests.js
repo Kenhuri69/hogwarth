@@ -733,7 +733,9 @@ function completeQuest(index) {
     // (remise cérémonielle au prochain dialogue, comme la pièce #4 de set).
     if (typeof HOUSE_PREMIUM !== 'undefined' && typeof pendingHouseRewards !== 'undefined') {
       const premId = HOUSE_PREMIUM[tpl.house];
-      if (premId) {
+      // Anti-doublon : ne re-queue pas un premium déjà possédé (sac ou
+      // équipé) — évite la file + le message « met de côté » trompeur.
+      if (premId && !(typeof _ownsItemId === 'function' && _ownsItemId(premId))) {
         pendingHouseRewards.add(premId);
         const pit = ITEMS.find(i => i.id === premId);
         if (pit) addMsg(`${getItemIconHtml(pit, 'ui-icon-md')} Le Chef de votre Maison met de côté une relique de prestige : ${pit.name}. Allez la réclamer.`, 'magic');

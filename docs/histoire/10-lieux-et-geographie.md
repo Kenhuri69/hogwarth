@@ -817,6 +817,16 @@ uniquement sur des leviers **neutres en puissance** :
 > `dungeon.js` / `dungeon-spawning.js`) est un **chantier suivant** tracé en
 > [ROADMAP Phase 3](../REVUE-TRANSVERSALE-ET-ROADMAP.md). Tant qu'il n'est pas
 > livré + simulé, **V1 cosmétique reste le comportement réel**.
+>
+> ✅ **Livré partiel (2026-06-20, item 2c)** — **levier « skin »** seul : une
+> **livrée de Maison** purement visuelle sur les cartes d'ennemi en combat
+> (fine aura de la palette de Maison, pilotée par `chosenHouse` — le donjon
+> « se lit » selon la Maison du héros). **Power-neutral par construction**
+> (rendu seul : `houseSkinClass` dans `js/battle-ui.js` + CSS ; aucun
+> nom/stat/résistance/butin/spawn touché → **0 sim requis**). Flag de repli
+> `HOUSE_SKIN_ENABLED`. **Le levier « pondération de salles » reste différé**
+> derrière le **gate sim de l'Item 3** (non livré tant que 0 écart de win-rate
+> n'est pas prouvé).
 
 ### Le détail de chaque Maison — perceptions, hooks & escalade
 

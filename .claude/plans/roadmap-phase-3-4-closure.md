@@ -39,17 +39,57 @@ Arbitrage (2026-06-19, AskUserQuestion) : les 3 tranchées **OUI**. Livré en 3 
   boss combat (scope art). Testé `units.js` (codex §8 + ambiance §5). cache-bump
   v165 (codex v14, floor-ambiance v12). Doc 10 §10.3/§10.5 + doc 11 §11.10 ✅.
   → branche `claude/endgame-dormeur-fondations` (PR #580).
-- **2c — biais léger de génération par Maison** : à faire. Équité-safe
-  (redistribution, pas d'ajout net) ; validé au pass d'équilibrage (Item 3).
+- **2c — biais léger de génération par Maison** ✅ (levier cosmétique) : arbitrage
+  user (2026-06-20) = **skin visuel de Maison**. Livrée cosmétique sur les cartes
+  d'ennemi en combat (`houseSkinClass` + flag `HOUSE_SKIN_ENABLED`, `battle-ui.js` ;
+  aura CSS palette de Maison, `style.css`), pilotée par `chosenHouse`.
+  **Power-neutral par construction** (rendu seul → 0 stat/butin/spawn, 0 sim
+  requis). Testé `units.js` (4 Maisons + flag off + inconnu). cache-bump v166
+  (battle-ui v8, style v44). Doc 10 §10.6 ✅. **Pondération de salles différée**
+  derrière le gate sim de l'Item 3. → branche `claude/endgame-house-gen-bias`.
+  Plan détaillé : `.claude/plans/house-gen-bias-2c.md`.
 
-## Item 3 — Pass d'équilibrage de release (Phase 4)
-`tools/sim-difficulty.js` + `check_difficulty.js` en CI.
+## Item 3 — Pass d'équilibrage de release (Phase 4) ✅
+**Audit (2026-06-20)** : DÉJÀ LIVRÉ. `tools/sim-difficulty.js` (sim Monte-Carlo
+pur) + `tools/check_difficulty.js` (garde-fou baseline vs `DIFFICULTY_REPORT.md`
+§3) existent **et tournent en CI** (`.github/workflows/test.yml`, mode strict
+`--base` en PR). **Balance verte sur master** : `node tools/check_difficulty.js`
+→ « aucun étage ne dérive de plus de 10 pts vs la baseline » (0 dérive).
+→ Pass de release satisfait ; aucune recalibration nécessaire.
+> NB : la sim **par Maison** (gate du levier « pondération de salles » différé de
+> l'item 2c, doc 10 §10.6) reste un chantier futur — la fonctionnalité de
+> génération biaisée n'existe pas encore, donc rien à simuler tant qu'elle n'est
+> pas écrite. Correctement gardé.
 
-## Item 4 — QA parcours complet (Phase 4)
-Scénario smoke bout-en-bout si lacune.
+## Item 4 — QA parcours complet (Phase 4) ✅
+**Audit (2026-06-20)** : DÉJÀ LIVRÉ (2026-06-19). Lacune comblée par
+`scenarioFullJourneyDuo` (`tests/scenarios/misc.js`) — chaîne contiguë en DUO
+dans une seule instance : intro → groupe duo → entrée Boucle → discours de
+victoire des 4 Maisons → Briser le Cycle → persistance save/load, avec
+garde-fou anti-fuite d'état entre phases. Roadmap Phase 4 row ✅. Plan :
+`.claude/plans/qa-parcours-complet.md`.
 
-## Item 5 — Garde-fous release (Phase 4)
-cache-bump / smoke / units / pwa-smoke verts.
+## Item 5 — Garde-fous release (Phase 4) ✅
+**Audit (2026-06-20)** : DÉJÀ LIVRÉ (2026-06-19, sign-off PR #581) et
+**re-vérifié vert sur master ce jour** après les 3 lots de l'item 2 :
+- `node tools/check_cache_versions.js --base origin/master` ✅
+- `node tools/check_doc_modules.js` ✅ (86 modules)
+- `node tests/units.js` ✅ **703** (était 684 ; +19 : darkBossDown, le_dormeur, houseSkin)
+- `node tests/pwa-smoke.js` ✅
+- `node tools/check_difficulty.js` ✅ (0 dérive)
+- `node tests/smoke.js` ✅ **227 scénarios**
+Les 6 garde-fous tournent en CI à chaque PR. Plan :
+`.claude/plans/release-guardrails-signoff.md`.
+
+---
+
+## 🏁 Clôture Phases 3 & 4 (2026-06-20)
+Tous les items du plan sont **livrés et mergés** :
+- Item 1 (Héritage / NG+) ✅ · Item 2 (décisions ❓ endgame) ✅ — lots 2a (#579),
+  2b (#580), 2c (#583) · Item 3 (équilibrage) ✅ · Item 4 (QA e2e) ✅ ·
+  Item 5 (garde-fous) ✅.
+- **Seul reste différé** : le levier « pondération de salles » de l'item 2c
+  (gate sim par Maison) + le **hors-scope art** ci-dessous (session dédiée).
 
 ### Hors-scope (art, session dédiée)
 - Art PNG des 4 boss-gardiens.
