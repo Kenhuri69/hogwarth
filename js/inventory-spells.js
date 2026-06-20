@@ -8,19 +8,26 @@
 // ============================================================
 
 // ── Filtre par catégorie de la modale Sorts ──────────────────
-// Axe unique = élément (cf. .claude/plans/spell-ux-improvements.md §2).
+// Axe = taxonomie 2.0 (Sorts & Magie 2.0 §1.1.C — P5.3) : combat / exploration /
+// defense / rituel / signature, lue sur le champ `spell.category` (posé par
+// _normalizeSpells). Repli défensif sur spellCategory() pour un sort legacy non
+// normalisé. Cf. .claude/plans/spells-magic-system.md.
 const SPELL_FILTERS = [
-  { id: 'tous',       label: 'Tous',        icon: '' },
-  { id: 'feu',        label: 'Feu',         icon: '🔥' },
-  { id: 'glace',      label: 'Glace',       icon: '❄️' },
-  { id: 'foudre',     label: 'Foudre',      icon: '⚡' },
-  { id: 'lumière',    label: 'Lumière',     icon: '✨' },
-  { id: 'ténèbres',   label: 'Ténèbres',    icon: '🌑' },
-  { id: 'physique',   label: 'Physique',    icon: '⚔️' },
-  { id: 'soutien',    label: 'Soutien',     icon: '💚' },
-  { id: 'utilitaire', label: 'Utilitaires', icon: '🔧' },
+  { id: 'tous',        label: 'Tous',        icon: '' },
+  { id: 'combat',      label: 'Combat',      icon: '⚔️' },
+  { id: 'exploration', label: 'Exploration', icon: '🧭' },
+  { id: 'defense',     label: 'Défense',     icon: '🛡️' },
+  { id: 'rituel',      label: 'Rituel',      icon: '📜' },
+  { id: 'signature',   label: 'Signature',   icon: '✨' },
 ];
 let _spellFilter = 'tous';
+
+// Catégorie 2.0 effective d'un sort pour le filtre : champ `category`
+// (taxonomie 2.0) avec repli sur le dérivé legacy spellCategory().
+function _spellFilterCat(spell) {
+  if (spell && spell.category) return spell.category;
+  return (typeof spellCategory === 'function') ? spellCategory(spell) : 'combat';
+}
 
 // ── Liseré + pastille de rang (tier) — Lot P1 ────────────────
 // Reflet visuel du rang d'un sort dans la modale Sorts, cohérent avec la
@@ -52,7 +59,7 @@ function _spellFilterBarHtml(spellNames, mode, charIdx) {
   const present = new Set();
   spellNames.forEach(n => {
     const sp = SPELLS.find(s => s.name === n);
-    if (sp) present.add(spellCategory(sp));
+    if (sp) present.add(_spellFilterCat(sp));
   });
   if (_spellFilter !== 'tous' && !present.has(_spellFilter)) _spellFilter = 'tous';
   const chips = SPELL_FILTERS.filter(f => f.id === 'tous' || present.has(f.id));
@@ -95,7 +102,7 @@ function openSpells(charIdx = 0) {
     const spell  = (typeof resolveSpellForm === 'function' && resolveSpellForm(sName, c))
                    || baseSp;
     if (!spell) continue;
-    if (_spellFilter !== 'tous' && spellCategory(spell) !== _spellFilter) continue;
+    if (_spellFilter !== 'tous' && _spellFilterCat(spell) !== _spellFilter) continue;
     // Synergie P1 active si la forme résolue diffère de la base (badge 🔗).
     const synActive = spell !== baseSp;
     const div = document.createElement('div');
@@ -604,7 +611,7 @@ function openBattleSpells() {
     const spell  = (typeof resolveSpellForm === 'function' && resolveSpellForm(sName, c))
                    || baseSp;
     if (!spell) continue;
-    if (_spellFilter !== 'tous' && spellCategory(spell) !== _spellFilter) continue;
+    if (_spellFilter !== 'tous' && _spellFilterCat(spell) !== _spellFilter) continue;
     // Synergie P1 active si la forme résolue diffère de la base (badge 🔗).
     const synActive = spell !== baseSp;
     // Portus en combat : bloqué si déjà utilisé ce combat OU si cooldown actif.
