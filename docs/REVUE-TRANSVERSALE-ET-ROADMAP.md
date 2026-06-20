@@ -210,10 +210,23 @@ ressentie** (Chambres, échos, variantes) au-delà du seul ★ N.
 | **Pass d'assets de fin** (illustrations victoire, SFX, fonds parchemin Codex par acte) | 🟠 Moyenne | 12, 14, `cinematics.js`, pipelines `tools/` | Moyenne | P2/P3 |
 | ~~**Pass d'équilibrage de release** (`tools/sim-difficulty.js`, `check_difficulty.js` en CI)~~ ✅ **Fait (2026-06-19)** : `check_difficulty.js` était **déjà branché en CI** mais **flaky** — baseline §3 de `DIFFICULTY_REPORT.md` périmée (code actuel ~+6-9 pts aux ét. 9-12 Duo ; l'ét. 9-Duo franchissait ±10 pts à N=800, cf. flake PR #576). Baseline régénérée à **N=4000** (reflète le code, bandes saines : solo plancher 52 %, duo 72 %, aucun mur < 40 % ≤ ét. 12), §4 + exec-summary réalignés, **gate vérifié 0 dérive sur 6 runs**. Pas une régression (la doc avait pris du retard). Plan : `.claude/plans/release-balance-pass.md`. | ✅ | 13, `DIFFICULTY_REPORT.md` | Moyenne | Fait |
 | ~~**QA parcours complet** : intro → tutoriel → Acte I-III → victoire → Boucle → Briser le Cycle, solo & duo, 4 Maisons~~ ✅ **Fait (2026-06-19)** : audit de couverture smoke → chaque beat du parcours était **déjà couvert** (intro `scenarioCleVouteIntro`/`scenarioHelpTour`, victoire `scenarioVictoryTrigger`/`scenarioVictorySpeechVariants` ×4 Maisons, Boucle `scenarioDarkLoopV1-4`/`scenarioCh13EndgamePivot`, Briser le Cycle `scenarioDarkLoopV3`, Maisons `scenarioHouseSignature*` ×4) **mais tout en solo et morcelé**. Lacune comblée : **`scenarioFullJourneyDuo`** (`tests/scenarios/misc.js`) — chaîne **contiguë en DUO** dans une seule instance (intro → groupe duo → entrée Boucle → discours de victoire des 4 Maisons → Briser le Cycle → persistance save/load), garde-fou anti-fuite d'état entre phases. Plan : `.claude/plans/qa-parcours-complet.md`. | ✅ | Tous, `tests/scenarios/misc.js` | Élevée | Fait |
-| **Garde-fous release** : `cache-bump`, `smoke.js`, `units.js`, `pwa-smoke.js` verts | 🔴 Haute | PWA, tests | Faible | Tout |
+| ~~**Garde-fous release** : `cache-bump`, `smoke.js`, `units.js`, `pwa-smoke.js` verts~~ ✅ **Fait (2026-06-19)** : suite complète **verte sur master** après les items Phase 3/4 (le 6 garde-fous tournent en CI à chaque PR via `.github/workflows`) — `node tools/check_cache_versions.js --base origin/master` ✅ · `node tools/check_doc_modules.js` ✅ (86 modules) · `node tests/units.js` ✅ **684** · `node tests/pwa-smoke.js` ✅ · `node tools/check_difficulty.js --base origin/master` ✅ (0 dérive) · `node tests/smoke.js` ✅ **227 scénarios**. Aucune dérive à corriger. Plan : `.claude/plans/release-guardrails-signoff.md`. | ✅ | PWA, tests | Faible | Fait |
 
 **Critère de sortie Phase 4** : un parcours démo complet, cohérent
 narration↔gameplay, tests verts, doc fidèle au code.
+
+> 🏁 **Sign-off release (2026-06-19/20)** — Phases 3 & 4 **closes**. Tous les
+> items de fonctionnalité/QA sont livrés et mergés ; les 6 garde-fous tournent
+> verts sur master (cf. ligne « Garde-fous release » ci-dessus). **Restent
+> uniquement des tâches d'ART séparées** (session dédiée, ne bloquent pas la
+> démo jouable) :
+> - **Art PNG des 4 boss-gardiens** des Chambres des Fondateurs (code complet,
+>   fallback SVG par catégorie en place — cf. Phase 3).
+> - **Pass d'assets de fin** (illustrations victoire, SFX « froid surnaturel »,
+>   fonds parchemin Codex par acte — ligne Phase 4 dédiée, encore ouverte).
+> - **Biais de génération par Maison V2** (direction ratifiée 2026-06-19,
+>   power-neutral strict) : *implémentation* = chantier suivant gaté par un sim
+>   d'équilibrage neutre (ligne dédiée en Phase 3). N'affecte pas la démo.
 
 ---
 
