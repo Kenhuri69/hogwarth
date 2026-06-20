@@ -1527,4 +1527,90 @@ async function scenarioLoopNpcQuests() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioChainedQuest, scenarioHeadlessHunt, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioFarmingQuests, scenarioDelayedSearch, scenarioCleVoute, scenarioQuestFanfare, scenarioLoopNpcQuests] };
+// Suivi 2 — quêtes des PNJ lore en Boucle : Pomfresh (fabrication),
+// Ollivander (fouille → baguette épique), chaîne Manon → Lockhart (rédemption).
+async function scenarioLoopNpcQuests2() {
+  console.log('\n── Scénario : quêtes PNJ lore de la Boucle (suivi 2) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // T1 : templates + nouveaux items présents.
+  const t1 = await page.evaluate(() => {
+    const ids = ['fabrique_pomfresh', 'bois_ollivander_boucle', 'manon_confier', 'memoire_lockhart'];
+    return {
+      allQuests: ids.every(id => QUEST_TEMPLATES.some(t => t.id === id)),
+      wand: !!ITEMS.find(i => i.id === 'baguette_if_boucle' && i.slot === 'wand' && i.rarity === 'epic'),
+      recit: !!ITEMS.find(i => i.id === 'recit_manon'),
+      lockhartPrereq: getQuestTemplate('memoire_lockhart').prereq === 'manon_confier'
+    };
+  });
+  console.log('  T1:', t1);
+  assert(t1.allQuests,     'tous les templates suivi 2 doivent exister');
+  assert(t1.wand,          'baguette_if_boucle doit exister (wand epic)');
+  assert(t1.recit,         'recit_manon doit exister');
+  assert(t1.lockhartPrereq,'memoire_lockhart doit avoir prereq manon_confier');
+
+  // T2 : Ollivander — fouille ×4 → baguette épique remise.
+  const t2 = await page.evaluate(() => {
+    completedQuests.delete('bois_ollivander_boucle');
+    availableQuests.add('bois_ollivander_boucle');
+    activeQuests = activeQuests.filter(q => q.id !== 'bois_ollivander_boucle');
+    currentFloor = 13;
+    const accepted = acceptQuest('bois_ollivander_boucle');
+    const q = activeQuests.find(x => x.id === 'bois_ollivander_boucle');
+    const amount = q ? q.objectives[0].amount : -1;
+    for (let i = 0; i < amount; i++) checkSearchQuests();
+    const turned = turnInQuestById('bois_ollivander_boucle');
+    const hasWand = player.inventory.some(i => i.id === 'baguette_if_boucle');
+    return { accepted, amount, turned, hasWand };
+  });
+  console.log('  T2:', t2);
+  assert(t2.accepted, 'bois_ollivander_boucle doit être acceptable en Boucle');
+  assert(t2.turned,   'la quête de fouille doit être remettable après 4 fouilles');
+  assert(t2.hasWand,  'la remise doit donner la baguette d\'If des Profondeurs');
+
+  // T3 : chaîne Manon → Lockhart (rédemption) avec prereq + consommation.
+  const t3 = await page.evaluate(() => {
+    ['manon_confier', 'memoire_lockhart'].forEach(id => {
+      completedQuests.delete(id);
+      activeQuests = activeQuests.filter(q => q.id !== id);
+    });
+    availableQuests.add('manon_confier');
+    currentFloor = 13;
+    // Lockhart bloqué tant que manon_confier non rendue (prereq).
+    const lockhartGatedBefore = isQuestOfferable('memoire_lockhart');   // false attendu
+    // Manon : fouille ×3 → reçoit le récit.
+    acceptQuest('manon_confier');
+    const mq = activeQuests.find(x => x.id === 'manon_confier');
+    for (let i = 0; i < mq.objectives[0].amount; i++) checkSearchQuests();
+    turnInQuestById('manon_confier');
+    const hasRecit = player.inventory.some(i => i.id === 'recit_manon');
+    const lockhartOfferAfter = isQuestOfferable('memoire_lockhart');    // true attendu
+    // Lockhart : remet le récit → reçoit le livre, récit consommé.
+    acceptQuest('memoire_lockhart');
+    if (typeof _refreshObjectives === 'function') _refreshObjectives();
+    const lq = activeQuests.find(x => x.id === 'memoire_lockhart');
+    const ready = lq && lq.objectives.every(o => o.completed);
+    const turned = turnInQuestById('memoire_lockhart');
+    const recitLeft = player.inventory.some(i => i.id === 'recit_manon');
+    const hasBook = player.inventory.some(i => i.id === 'livre_lumos_solem');
+    return { lockhartGatedBefore, hasRecit, lockhartOfferAfter, ready, turned, recitLeft, hasBook };
+  });
+  console.log('  T3:', t3);
+  assert(t3.lockhartGatedBefore === false, 'memoire_lockhart ne doit PAS être offrable avant manon_confier');
+  assert(t3.hasRecit,            'manon_confier doit donner le récit de Manon');
+  assert(t3.lockhartOfferAfter,  'memoire_lockhart doit être offrable après manon_confier');
+  assert(t3.ready,               'memoire_lockhart doit être prête avec le récit en poche');
+  assert(t3.turned,              'memoire_lockhart doit être remettable');
+  assert(!t3.recitLeft,          'la remise doit consommer le récit de Manon');
+  assert(t3.hasBook,             'la remise doit donner le livre (Lumos Solem)');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (quêtes Boucle suivi 2)`);
+  }
+  console.log('  ✅ Quêtes PNJ lore de la Boucle (suivi 2) OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioChainedQuest, scenarioHeadlessHunt, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioFarmingQuests, scenarioDelayedSearch, scenarioCleVoute, scenarioQuestFanfare, scenarioLoopNpcQuests, scenarioLoopNpcQuests2] };

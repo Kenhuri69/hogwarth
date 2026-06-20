@@ -538,6 +538,65 @@ const QUEST_TEMPLATES = [
     repeatable: { everyLevels: 3 },
     spawnOnAccept: { targetMonsterId: "magyar_ancestral", extraRandomCount: 0 }
   },
+  // ── Boucle Ténébreuse — PNJ lore recyclés (suivi 2) ──────────────
+  // Rallume Pomfresh (f12), Ollivander (f13), Manon+Lockhart (f13) en Boucle.
+  // FABRICATION — Pomfresh demande des potions concoctées (craft-only).
+  {
+    id: "fabrique_pomfresh",
+    title: "Réserves de l'infirmerie",
+    giver: "Madame Pomfresh",
+    desc: "L'infirmerie de la Boucle ne désemplit pas. Concocte 3 Potions de Soin Mineure au chaudron et rapporte-les à Madame Pomfresh.",
+    objectives: [
+      { type: "item", itemId: "potion_soin_mineure", amount: 3, progress: 0, completed: false }
+    ],
+    reward: { xp: 280, gold: 200, item: "eclat_vitalite" },
+    repeatableReward: { xp: 220, gold: 240 },
+    location: "Boucle Ténébreuse (Pomfresh, étage 12)",
+    minFloor: 11,
+    repeatable: { everyLevels: 1 }
+  },
+  // FOUILLE — Ollivander cherche un bois rare ; récompense une baguette épique.
+  {
+    id: "bois_ollivander_boucle",
+    title: "Le bois qui chuchote",
+    giver: "Mr Ollivander",
+    desc: "Ollivander a senti, quelque part dans la Boucle, un if des Profondeurs qui n'attend qu'un sorcier. Fouille 4 recoins pour en retrouver une branche — il t'en taillera une baguette.",
+    objectives: [
+      { type: "search", amount: 4, progress: 0, completed: false }
+    ],
+    reward: { xp: 360, gold: 200, item: "baguette_if_boucle" },
+    repeatableReward: { xp: 240, gold: 280 },
+    location: "Boucle Ténébreuse (Ollivander, étage 13)",
+    minFloor: 11,
+    repeatable: { everyLevels: 2 }
+  },
+  // RÉDEMPTION Lockhart×Manon — chaîne one-shot : Manon confie son histoire,
+  // Lockhart en fait un mémoire véridique (cf. AskUserQuestion « rédemption »).
+  {
+    id: "manon_confier",
+    title: "Les souvenirs d'Élara",
+    giver: "Manon",
+    desc: "Dans la Boucle, Manon veut enfin que l'histoire de sa mère soit dite — vraiment. Retrouve 3 souvenirs épars d'Élara en fouillant les recoins, et elle les mettra en mots pour toi.",
+    objectives: [
+      { type: "search", amount: 3, progress: 0, completed: false }
+    ],
+    reward: { xp: 300, gold: 120, item: "recit_manon" },
+    location: "Boucle Ténébreuse (Manon, étage 13)",
+    minFloor: 11
+  },
+  {
+    id: "memoire_lockhart",
+    title: "Un mémoire, pour une fois, véridique",
+    giver: "Gilderoy Lockhart",
+    desc: "Lockhart, lassé de ses fables, veut écrire une histoire vraie : celle de Manon. Apporte-lui le récit qu'elle t'a confié — il y mettra son nom, mais, pour une fois, pas ses mensonges.",
+    prereq: "manon_confier",
+    objectives: [
+      { type: "item", itemId: "recit_manon", amount: 1, progress: 0, completed: false }
+    ],
+    reward: { xp: 400, gold: 300, item: "livre_lumos_solem", stats: { lck: 2 } },
+    location: "Boucle Ténébreuse (Lockhart, étage 13)",
+    minFloor: 11
+  },
   // ── Manon, fille cachée de Lupin — pseudo-quête en deux volets ──
   // Données et rendues par Manon (PNJ étage 3, cf. npcs.js). Le volet 2
   // (`prereq`) ne s'ouvre qu'après remise du volet 1 — chaîne classique.
