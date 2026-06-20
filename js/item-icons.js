@@ -542,7 +542,14 @@ const SPELL_ICON_REGISTRY = {
   'Patronus Corporel': 'img/icons/spells/patronus_maxima.png',  // Patronus
   'Fontis':            'img/icons/spells/aguamenti.png',        // eau
   'Purgo':             'img/icons/spells/lumos_solem.png',      // purification
-  'Aedificium':        'img/icons/spells/reparo.png'            // édification
+  'Aedificium':        'img/icons/spells/reparo.png',           // édification
+  // ── Lot P3 — formes évoluées + Premium (alias temporaires sur la base). ──
+  'Incendio Majeur':    'img/icons/spells/incendio.png',
+  'Glacius Profond':    'img/icons/spells/glacius.png',
+  'Incendio Royal':     'img/icons/spells/incendio.png',
+  "Morsure d'Émeraude": 'img/icons/spells/sanguini.png',
+  'Givre de Rowena':    'img/icons/spells/glacius.png',
+  'Soin du Blaireau':   'img/icons/spells/reparo.png'
 };
 
 // ── Registre d'icônes SVG inline (herbes + potions) ──────────

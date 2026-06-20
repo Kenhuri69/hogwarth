@@ -5,8 +5,56 @@
 > philosophie, mêmes garde-fous, même structure documentaire.
 >
 > **Statut : ÉTAPE 1 + ÉTAPE 2 rédigées · Lots P0 (socle data inerte),
-> P1 (étiquetage + liseré de rang) et P2 (sorts par Maison & arbre) LIVRÉS.
-> P3→P5 à venir.**
+> P1 (étiquetage + liseré de rang), P2 (sorts par Maison & arbre) et
+> P3 (Premium & évolutifs) LIVRÉS. P4→P5 à venir.**
+>
+> ### Journal — Lot P3 (livré)
+> Premium & évolutifs (branche `claude/sorts-p3-premium`). Réutilise le moteur
+> existant — règle d'or §0 (zéro scaling monstre).
+> - **`resolveSpellForm(spellName, char)` RÉEL** (`data.js`, §1.6) : renvoie la
+>   forme évoluée si `base.evolvesTo` + `base.evolveCondition` est satisfaite,
+>   sinon la base. **Réversible / non destructif** (recalculé à chaque appel,
+>   ne mute jamais `char.spells`). Helper `_spellEvolveConditionMet(cond, char)` :
+>   `artifact` (lit `char.equipped`, PUR), `floor`/`quest`/`apotheose`/`corruption`
+>   (globals lus défensivement via `typeof` → testable hors navigateur en
+>   injectant les globals). `corruption` (Sanguini Vorace) reste **inerte → P4**.
+> - **Wiring** : `castSpellInBattle` résout la forme avant lancement (idempotent
+>   si déjà évoluée) ; `openSpells`/`openBattleSpells` affichent la forme évoluée.
+> - **Évolutions livrées** : Incendio → **Incendio Majeur** (artefact
+>   `baton_ancestral`, `synergyArtifacts`), Lumos Solem → **Lux Aeterna**
+>   (étage ≥ 9, réemploi du sort existant), Glacius → **Glacius Profond** (quête
+>   `manon_grimoire`). Protego Diabolica (renvoi de dégâts) et Sanguini Vorace
+>   (corruption) **reportés** (hooks combat / P4).
+> - **4 variantes Premium signature** (§1.5, ❓1) : **Incendio Royal** (Gryff),
+>   **Morsure d'Émeraude** (Slyth), **Givre de Rowena** (Serd), **Soin du
+>   Blaireau** (Pouf). `premium`/`premiumOf`/`premiumFx`/`tint`/`houseAffinity`
+>   = miroir EXACT des artefacts Premium. Power = base ×1,20 (pré-cuit).
+>   **Octroi** au palier **Apothéose** (tier 18) via `grantsSpell` ajouté au
+>   bonus de chaque Maison (`state.js`, réutilise `checkHouseLevelUp`). Profitent
+>   du `houseSpellBoost` (coût réduit pour leur Maison).
+> - **FX Premium** : fioriture `CFX_safe.buffAura` + halo teinté côté lanceur
+>   (défensif) dans `castSpellInBattle`.
+> - **Vérif** : `tests/units.js` (**803 assertions** : Premium, resolveSpellForm
+>   artefact/étage/quête/apothéose, corruption inerte) ; `scenarioSpellsP3`
+>   (3 sous-tests : évolution réversible+cast, octroi+houseSpellBoost Premium,
+>   cast Premium lifesteal) ; `node tests/smoke.js` **239 scénarios** verts ;
+>   `tools/sim-difficulty.js` baseline inchangé (formes évoluées/Premium
+>   endgame-gated, hors kit sim) ; cache PWA bumpé.
+>
+> **Écarts P3 :**
+> - **Protego Diabolica (Apothéose, renvoi 20 % dégâts) reporté** : le renvoi
+>   exige un hook dans `_enemyPhysicalHit` ; hors-scope chirurgical de ce lot.
+>   L'evolveCondition `apotheose` est néanmoins câblée et testée.
+> - **Sanguini Vorace (corruption ≥ palier 2) reporté au P4** : dépend de
+>   `corruptionLevel` (non encore introduit). La branche `corruption` existe,
+>   inerte.
+> - **Icônes Premium/évoluées** : alias temporaires sur le PNG de la base
+>   (`item-icons.js`). Le `tint` par Maison est porté en donnée mais le rendu
+>   teinté dédié (art) reste un lot ultérieur (§2.8).
+> - **Synergies artefacts** : matérialisées via l'évolution (`evolveCondition`
+>   type `artifact` + `synergyArtifacts` sur Incendio). Les bonus passifs
+>   d'artefact (`bonusElemDmg`) restent gérés par le moteur existant
+>   (`_artifactElemBonus`) — pas de double mécanique (§2.5 respecté).
 >
 > ### Arbitrages des points ❓ (validés par le commanditaire avant P0)
 > - ❓1 → **4 variantes Premium signature** (une par Maison), extensible.
@@ -642,7 +690,7 @@ budgetSort = power×0,5 + (AoE? ×1,5) + (statut? +2) + (lifesteal? +3) + (heal?
 | ✅ **P0 — Socle data** | Champs `id/category/tier/rarity/houseAffinity`, registres (`SPELL_TIERS`, `SPELL_PREMIUM_MULT`), helpers purs, `_normalizeSpells`. **Inerte.** | `tests/units.js` (helpers) + smoke vert (rien ne change en jeu). |
 | ✅ **P1 — Sorts de base & étiquetage** | Étiqueter les 47 sorts existants (table `SPELL_META`), liseré de tier dans la modale Sorts. Filtre `category` enrichi **reporté** (voir écart). | smoke `spells` (T2bis liseré) ; visuel modale. |
 | ✅ **P2 — Sorts par Maison & arbre** | `houseSpellBoost` (cost-only, PUR), 8 sorts d'Éclats/familier/environnementaux, apprentissage PNJ (`teach_spell`)/Codex (`teachesSpell`). | `scenarioSpellsP2` (6 sous-tests) + units (houseSpellBoost/gates) ; smoke 234 vert ; sim baseline inchangé. |
-| **P3 — Premium & évolutifs** | 4 variantes Premium signature, `resolveSpellForm`, synergies artefacts, FX/sons. | smoke `spells`+`fx` ; cache-bump. |
+| ✅ **P3 — Premium & évolutifs** | 4 variantes Premium signature (octroi Apothéose), `resolveSpellForm` évolutif réel (artefact/étage/quête), synergie Bâton ancestral, FX Premium. | `scenarioSpellsP3` (3 sous-tests) + units (803) ; smoke 239 vert ; sim baseline inchangé. |
 | **P4 — Corrompus & Boucle** | Sorts `corrompu`, `corruptionLevel`, contrecoup, légendaires de quête, sorts temporels. | smoke Boucle ; **sim-difficulty obligatoire**. |
 | **P5 — Équilibrage final** | Passe `tools/sim-difficulty.js`, ajustement coûts/power, Codex sorts complet. | sim + units + smoke complet. |
 
