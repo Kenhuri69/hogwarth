@@ -503,6 +503,10 @@ let celeriteExtra   = [0, 0]; // actions supplémentaires en réserve ce round
 // Combat-scoped, NON sérialisé (comme celeriteGauge) : reset par startBattle,
 // tické par tickFamiliars (battle.js). Chaque entrée { ownerName, atk, turns, icon }.
 let combatFamiliars = [];
+// Lot P4b (pleine fidélité) — état combat-scoped des sorts corrompus de Maison.
+// Non sérialisés (reset par startBattle, comme combatFamiliars).
+let flammeStacks     = 0;    // Flamme Dévorante : chaque kill nourrit la flamme (× dégâts)
+let lastEnemyAbility = null; // Savoir Interdit : dernière capacité ennemie subie (mimétisme)
 let battleTurn      = 0;
 // Palier 17 « Mythe » — état transient de combat (réinitialisé par startBattle).
 // Non sérialisés : un combat ne peut pas être sauvegardé (inBattle bloque autoSave/writeSlot).

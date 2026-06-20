@@ -415,10 +415,10 @@ const SPELLS = [
   // teach_corrupt_spell, résout chosenHouse → HOUSE_CORRUPT_SPELL). Effets
   // câblés sur les handlers EXISTANTS (burn/lifesteal/curse/heal_aoe) ; riders
   // exotiques (kill-streak, mimétisme, redistribution) reportés — voir plan.
-  { name:"Flamme Dévorante",  icon:"🔥",  desc:"Brasier corrompu (28 dégâts + brûlure) — risque de contrecoup",     cost:22, effect:"burn",     element:"feu",      power:28, houseAffinity:"Gryffondor", boucleOnly:true, corruptionRisk:0.15, backlash:"selfburn" },
-  { name:"Venin du Cachot",   icon:"🐍",  desc:"Morsure empoisonnée qui draine la vie (22 dégâts, +PV, poison)",     cost:18, effect:"lifesteal", element:"ténèbres", power:22, houseAffinity:"Serpentard", boucleOnly:true, corruptionRisk:0.15, backlash:"selfdmg" },
-  { name:"Savoir Interdit",   icon:"🦅",  desc:"Savoir retourné contre l'ennemi (22 dégâts, −ATK/DEF)",             cost:18, effect:"curse",    element:"ténèbres", power:22, houseAffinity:"Serdaigle",  boucleOnly:true, corruptionRisk:0.20, backlash:"selfdmg" },
-  { name:"Fardeau Partagé",   icon:"🦡",  desc:"Solidarité corrompue : soigne tout le groupe (24 PV)",              cost:20, effect:"heal_aoe",  power:24, houseAffinity:"Poufsouffle", boucleOnly:true, corruptionRisk:0.10, backlash:"corruption" },
+  { name:"Flamme Dévorante",  icon:"🔥",  desc:"Brasier corrompu (28 dégâts + brûlure massive) — chaque kill nourrit la flamme",  cost:22, effect:"flamme_devorante", element:"feu",      power:28, houseAffinity:"Gryffondor", boucleOnly:true, corruptionRisk:0.15, backlash:"selfburn" },
+  { name:"Venin du Cachot",   icon:"🐍",  desc:"Morsure : 22 dégâts, drain de vie renforcé + poison empilable",       cost:18, effect:"venin_cachot",     element:"ténèbres", power:22, houseAffinity:"Serpentard", boucleOnly:true, corruptionRisk:0.15, backlash:"selfdmg" },
+  { name:"Savoir Interdit",   icon:"🦅",  desc:"22 dégâts + renvoie la dernière capacité ennemie subie (mimétisme)",  cost:18, effect:"mimic",            element:"ténèbres", power:22, houseAffinity:"Serdaigle",  boucleOnly:true, corruptionRisk:0.20, backlash:"selfdmg" },
+  { name:"Fardeau Partagé",   icon:"🦡",  desc:"Solidarité corrompue : redistribue les PV du groupe puis soigne (24 PV)", cost:20, effect:"corrupt_share",   power:24, houseAffinity:"Poufsouffle", boucleOnly:true, corruptionRisk:0.10, backlash:"corruption" },
   // Variantes Premium signature (1/Maison, §1.5) — sort de base recoloré +
   // boosté (power = base × SPELL_PREMIUM_MULT['rare'] = ×1,20, pré-cuit), offert
   // EN PLUS au palier Apothéose de la Maison affine. `premium`/`premiumOf`/
@@ -457,7 +457,7 @@ function spellCategory(spell) {
   if (!spell) return 'utilitaire';
   const e = spell.effect;
   if (e === 'heal' || e === 'support_regen' || e === 'support_regen_aoe' || e === 'shield'
-      || e === 'patronus_maxima' || e === 'recolte' || e === 'heal_aoe') return 'soutien';
+      || e === 'patronus_maxima' || e === 'recolte' || e === 'heal_aoe' || e === 'corrupt_share') return 'soutien';
   if (e === 'disarm' || e === 'steal' || e === 'teleport' || e === 'legilimens'
       || e === 'reveal') return 'utilitaire';
   return spell.element || 'utilitaire';

@@ -1239,17 +1239,26 @@ async function scenarioSpellsP4b() {
   assert(t2.outside === false, 'corrompu de Maison caché hors Boucle');
   assert(t2.inside === true, 'corrompu de Maison visible en Boucle');
 
-  // T3 — cast en Boucle : Venin du Cachot inflige des dégâts ET draine des PV.
+  // T3 — cast en Boucle : Venin du Cachot inflige des dégâts, draine des PV,
+  // et applique un poison EMPILABLE (renforcé au 2ᵉ cast).
   const t3 = await page.evaluate(() => {
     victoryAchieved = true; currentFloor = 12;
-    party[0].sp = 99; party[0].hp = 1; currentBattleChar = 0;
-    enemyGroup[0].currentHp = 800;
+    party[0].sp = 300; party[0].hp = 1; currentBattleChar = 0;
+    enemyGroup[0].currentHp = 4000; enemyGroup[0].statusEffects = [];
     const hp0 = enemyGroup[0].currentHp, pv0 = party[0].hp;
     castSpellInBattle('Venin du Cachot', 0);
-    return { dealt: hp0 - enemyGroup[0].currentHp, healed: party[0].hp - pv0 };
+    const dealt = hp0 - enemyGroup[0].currentHp, healed = party[0].hp - pv0;
+    const poison1 = (enemyGroup[0].statusEffects.find(s => s.id === 'poison') || {}).power || 0;
+    party[0].sp = 300; party[0].hp = party[0].hpMax; currentBattleChar = 0;
+    enemyGroup[0].currentHp = 4000;
+    castSpellInBattle('Venin du Cachot', 0);
+    const poison2 = (enemyGroup[0].statusEffects.find(s => s.id === 'poison') || {}).power || 0;
+    return { dealt, healed, poison1, poison2 };
   });
   console.log('  T3 cast:', t3);
   assert(t3.dealt > 0 && t3.healed > 0, 'Venin du Cachot inflige des dégâts et draine');
+  assert(t3.poison1 > 0, 'Venin applique un poison');
+  assert(t3.poison2 > t3.poison1, 'poison empilable (renforcé au 2ᵉ cast)');
 
   // T4 — contrecoups offensifs (corruptionRisk forcé à 1, en Boucle) :
   // selfburn (Flamme Dévorante) pose un statut burn sur le lanceur ; selfdmg
@@ -1279,6 +1288,52 @@ async function scenarioSpellsP4b() {
   console.log('  T4 contrecoups:', t4);
   assert(t4.hasBurn, 'selfburn : Flamme Dévorante embrase le lanceur (statut burn)');
   assert(t4.selfDmg > 0, 'selfdmg : Savoir Interdit inflige des PV au lanceur');
+  await page.evaluate(() => { if (inBattle) endBattle(false); });
+
+  // T5 — Flamme Dévorante (pleine fidélité) : chaque kill nourrit la flamme
+  // (flammeStacks ↑). Hors corruptionRisk (remis à sa valeur) pour isoler.
+  await startDummyFight(page, { hp: 5 });
+  const t5 = await page.evaluate(() => {
+    victoryAchieved = true; currentFloor = 12; currentBattleChar = 0;
+    flammeStacks = 0; party[0].sp = 300;
+    enemyGroup[0].currentHp = 5;   // mourra → nourrit la flamme
+    castSpellInBattle('Flamme Dévorante', 0);
+    return { stacks: flammeStacks, dead: enemyGroup[0].currentHp <= 0 };
+  });
+  console.log('  T5 flamme:', t5);
+  assert(t5.dead && t5.stacks === 1, 'un kill par Flamme Dévorante nourrit la flamme (×1)');
+
+  // T6 — Savoir Interdit (mimétisme) : renvoie la dernière capacité ennemie
+  // subie. On injecte lastEnemyAbility = status:stun → l'ennemi est étourdi.
+  await page.evaluate(() => { if (inBattle) endBattle(false); });
+  await startDummyFight(page, { hp: 1500 });
+  const t6 = await page.evaluate(() => {
+    victoryAchieved = true; currentFloor = 12; currentBattleChar = 0;
+    party[0].sp = 300; enemyGroup[0].currentHp = 1500; enemyGroup[0].statusEffects = [];
+    lastEnemyAbility = { name: 'Sortilège Test', effect: 'status', statusId: 'stun', statusTurns: 2, power: 0 };
+    castSpellInBattle('Savoir Interdit', 0);
+    const stunned = (enemyGroup[0].statusEffects || []).some(s => s.id === 'stun');
+    return { stunned };
+  });
+  console.log('  T6 mimétisme:', t6);
+  assert(t6.stunned, 'Savoir Interdit renvoie la capacité subie (stun réfléchi)');
+
+  // T7 — Fardeau Partagé (redistribution duo) : un allié mourant est relevé.
+  await page.evaluate(() => { if (inBattle) endBattle(false); });
+  await startDummyFight(page, { hp: 1500 });
+  const t7 = await page.evaluate(() => {
+    victoryAchieved = true; currentFloor = 12; currentBattleChar = 0;
+    const savedSize = partySize; partySize = 2;
+    party[0].hpMax = 40; party[0].hp = 40;
+    party[1].hpMax = 40; party[1].hp = 2;   // allié mourant
+    party[0].sp = 300;
+    castSpellInBattle('Fardeau Partagé', 0);
+    const lifted = party[1].hp;
+    partySize = savedSize;
+    return { lifted };
+  });
+  console.log('  T7 fardeau:', t7);
+  assert(t7.lifted > 2, 'Fardeau Partagé relève l\'allié mourant (redistribution)');
 
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));

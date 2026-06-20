@@ -593,6 +593,8 @@ function startBattle(baseEnemyData, opts) {
   celeriteGauge     = [0, 0];   // D5 Célérité — accumulateur de tempo (combat-scoped)
   celeriteExtra     = [0, 0];
   combatFamiliars   = [];       // P2 — familiers invoqués (Avis Praesidium), combat-scoped
+  flammeStacks      = 0;        // P4b — Flamme Dévorante (frénésie de kills)
+  lastEnemyAbility  = null;     // P4b — Savoir Interdit (mimétisme)
   battleTurn        = 0;
   currentBattleChar = 0;
   pendingAction     = null;

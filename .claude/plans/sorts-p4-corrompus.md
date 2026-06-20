@@ -82,31 +82,33 @@ Rendre **réelle** la branche `corruption` déjà câblée dans
 par `_isBoucleOnlySpellLocked` dans openSpells/openBattleSpells), `corruptionRisk`
 + `backlash` (contrecoup offensif `selfdmg`/`selfburn`, live grâce au moteur P4a).
 
-| Sort | Maison | effect (réutilisé) | risk / backlash |
-|------|--------|--------------------|-----------------|
-| Flamme Dévorante | Gryffondor | `burn` (+ STATUS burn) | 0.15 / selfburn |
-| Venin du Cachot  | Serpentard | `lifesteal` (+ STATUS poison) | 0.15 / selfdmg |
-| Savoir Interdit  | Serdaigle  | `curse` (dmg + −ATK/DEF) | 0.20 / selfdmg |
-| Fardeau Partagé  | Poufsouffle| `heal_aoe` (soin de groupe) | 0.10 / corruption |
+**Pleine fidélité** (arbitrage commanditaire 2026-06-20) : handlers dédiés,
+riders exotiques implémentés.
+
+| Sort | Maison | effect (handler dédié) | rider de pleine fidélité | risk / backlash |
+|------|--------|------------------------|--------------------------|-----------------|
+| Flamme Dévorante | Gryffondor | `flamme_devorante` | **kill-streak** : `flammeStacks` (combat-scoped) +1/kill, +20 %/stack (cap 5) ; brûlure massive déterministe | 0.15 / selfburn |
+| Venin du Cachot  | Serpentard | `venin_cachot` | **drain 75 %** + **poison empilable** (stack manuel sur la cible, cap ×4 ; ne touche pas le poison ennemi global) | 0.15 / selfdmg |
+| Savoir Interdit  | Serdaigle  | `mimic` | **mimétisme** : renvoie `lastEnemyAbility` (damage/maxhp/drain/status/weaken réfléchis ; repli −ATK/DEF si rien de mémorisé) | 0.20 / selfdmg |
+| Fardeau Partagé  | Poufsouffle| `corrupt_share` | **redistribution** : PV courants du groupe → moyenne (le mourant relevé), puis soin de groupe | 0.10 / corruption |
 
 - **Acquisition** : Gardien de la Boucle (`gardien_boucle`, étage 11) —
   `specialAction` neuve `teach_corrupt_spell` (npc-dialog.js) qui résout
   `chosenHouse → HOUSE_CORRUPT_SPELL` (data.js) et appelle `_teachSpellToParty`.
-  One-shot par visite.
-- **`_spellLifesteal` étendu** : consulte désormais `STATUS_BY_SPELL` (comme
-  `_spellElementalDamage`) → Venin du Cachot applique `poison`. Sûr pour les
-  autres lifesteal (non mappés).
-- **Écarts (riders exotiques reportés)** : kill-streak de Flamme Dévorante,
-  mimétisme de Savoir Interdit (« copie la capacité ennemie »), redistribution
-  de PV de Fardeau Partagé — non implémentés (réutilisation des handlers
-  existants, conforme §3 chirurgical). Identités simplifiées documentées dans
-  les `desc`. À ré-enrichir en P5 si souhaité.
+  One-shot par visite. (Arbitrage commanditaire : « Gardien de la Boucle ».)
+- **État combat-scoped neuf** (state.js, reset `startBattle`, non sérialisé) :
+  `flammeStacks`, `lastEnemyAbility` (snapshot posé dans `tryEnemyAbility` après
+  le filet Legilimens).
+- **Wiring** : 4 handlers dédiés enregistrés dans `SPELL_HANDLERS` ; effets
+  ajoutés aux sets FX (`_single`/`_heal`) + `needsTarget` (sélection de cible) +
+  `spellCategory` (`corrupt_share` → soutien).
 - **Sim** : sorts NON auto-appris + Boucle-gated + house-affine → hors kit de
   `tools/sim-difficulty.js` → ladder baseline **inchangé** (vérifié).
 - **Vérif** : `tests/units.js` (P4b : présence/étiquetage/boucleOnly/backlash/
   HOUSE_CORRUPT_SPELL ; compte house-affine 8→12) ; `scenarioSpellsP4b`
-  (acquisition Gardien, gate boucleOnly, cast drain+poison, contrecoups
-  selfburn/selfdmg) ; smoke complet ; cache PWA bumpé (v184).
+  (7 sous-tests : acquisition Gardien, gate boucleOnly, drain+poison empilable,
+  contrecoups selfburn/selfdmg, kill-streak flamme, mimétisme stun, redistribution
+  duo) ; smoke complet ; cache PWA bumpé (v185).
 
 ## Journal
 - 2026-06-20 : plan P4a rédigé après audit du code (stub `corruption`

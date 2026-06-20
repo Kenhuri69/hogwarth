@@ -77,6 +77,15 @@ function tryEnemyAbility(enemy, target, charIdx, appendLog) {
     return true;
   }
 
+  // Lot P4b — mémorise la capacité réellement subie (snapshot) pour le
+  // mimétisme de Savoir Interdit. Posé après le filet Legilimens (qui annule
+  // avant le switch) → on ne mémorise que ce qui frappe vraiment le groupe.
+  if (typeof lastEnemyAbility !== 'undefined') {
+    lastEnemyAbility = { name: ability.name, icon: ability.icon, effect: ability.effect,
+      power: ability.power || 0, statusId: ability.statusId || null,
+      statusTurns: ability.statusTurns || ability.turns || 2, srcMag: enemy.mag || 0 };
+  }
+
   switch (ability.effect) {
     case 'damage': {
       // La DEF de la cible atténue désormais les capacités spéciales
@@ -323,10 +332,9 @@ function _buildSummonedAdd(ability, summoner) {
 
 const STATUS_BY_SPELL = { 'Incendio': 'burn', 'Diffindo': 'bleed', 'Sectumsempra': 'bleed', 'Glacius': 'gel',
   // Lot P3 — formes évoluées / Premium héritent du DoT de leur base.
-  'Incendio Majeur': 'burn', 'Incendio Royal': 'burn', 'Glacius Profond': 'gel', 'Givre de Rowena': 'gel',
-  // Lot P4b — sorts corrompus de Maison (burn appliqué par _spellElementalDamage,
-  // poison par _spellLifesteal qui consulte aussi STATUS_BY_SPELL).
-  'Flamme Dévorante': 'burn', 'Venin du Cachot': 'poison' };
+  'Incendio Majeur': 'burn', 'Incendio Royal': 'burn', 'Glacius Profond': 'gel', 'Givre de Rowena': 'gel' };
+  // (Lot P4b : Flamme Dévorante / Venin du Cachot appliquent leur DoT dans
+  //  leurs handlers dédiés — pas via STATUS_BY_SPELL.)
 
 // Morts-vivants : cible du bonus `spell.bonusVsUndead` (Lumos Solem).
 // Tous les fantômes + une liste d'ids non-fantômes mais sans vie.
@@ -705,20 +713,6 @@ function _spellLifesteal(spell, char, enemy, targetIdx) {
     UX_safe.floatDmg(`enemy:${targetIdx}`, dmg, 'dmg');
     UX_safe.floatDmg('ally', heal, 'heal');
     UX_safe.logCombat(`🩸 ${char.name} : ${spell.name} → <b>−${dmg}</b>${suffix}, <b>+${heal} PV</b>`, 'magic');
-    // Lot P4b — un sort de drain mappé dans STATUS_BY_SPELL applique aussi son
-    // DoT (Venin du Cachot → poison). Même proba que _spellElementalDamage.
-    const statusId = STATUS_BY_SPELL[spell.name];
-    if (statusId && enemy.currentHp > 0) {
-      const chance = Math.min(0.50, 0.10 + (char.int || 0) * 0.0075 + (char.lck || 0) * 0.0075);
-      if (Math.random() < chance) {
-        const dotPower = Math.max(1, Math.floor(spell.power * 0.25));
-        const dotTurns = Math.min(5, 2 + Math.floor((char.int || 0) / 24) + Math.floor((char.lck || 0) / 24));
-        applyStatus(enemy, statusId, dotPower, dotTurns);
-        const def = STATUS_DEFS[statusId];
-        msg += ` ${def.icon} ${def.label} appliqué !`;
-        UX_safe.logCombat(`${def.icon} ${enemy.name} : ${def.label} (${dotPower}/tour, ${dotTurns} tours)`, 'magic');
-      }
-    }
   }
   addMsg(msg, 'magic');
   return msg;
@@ -1094,6 +1088,151 @@ function _spellPatronusCorporel(spell, char) {
   return msg;
 }
 
+// ── Lot P4b (pleine fidélité) — handlers des 4 sorts corrompus de Maison ──
+
+// Flamme Dévorante (Gryffondor) — brûlure massive ; chaque kill nourrit la
+// flamme (flammeStacks, combat-scoped) qui amplifie les dégâts suivants.
+const FLAMME_STACK_BONUS = 0.20, FLAMME_STACK_CAP = 5;
+function _spellFlammeDevorante(spell, char, enemy, targetIdx) {
+  let msg = '';
+  if (enemy) {
+    let { dmg, suffix, crit } = _computeSpellDamage(spell, char, enemy, { undead: true });
+    const stacks = (typeof flammeStacks === 'number') ? Math.min(FLAMME_STACK_CAP, flammeStacks) : 0;
+    if (stacks > 0) { dmg = Math.floor(dmg * (1 + FLAMME_STACK_BONUS * stacks)); suffix += ` 🔥×${stacks}`; }
+    const elemBonus = _artifactElemBonus(char, spell.element);
+    if (elemBonus > 0) dmg = Math.floor(dmg * (1 + elemBonus));
+    enemy.currentHp -= dmg;
+    _updateElan(char, crit);
+    // Brûlure massive : déterministe (signature du sort), pas de jet de proba.
+    if (enemy.currentHp > 0) applyStatus(enemy, 'burn', Math.max(2, Math.floor(spell.power * 0.30)), 3);
+    msg = `🔥 ${char.name} : ${spell.name} → ${dmg} dégâts${suffix} sur ${enemy.name} !`;
+    UX_safe.floatDmg(`enemy:${targetIdx}`, dmg, suffix.includes('💥') ? 'crit' : 'dmg');
+    UX_safe.logCombat(`🔥 ${char.name} : ${spell.name} → <b>−${dmg}</b>${suffix}`, 'magic');
+    // Chaque kill nourrit/prolonge la flamme.
+    if (enemy.currentHp <= 0 && typeof flammeStacks === 'number') {
+      flammeStacks = Math.min(FLAMME_STACK_CAP, flammeStacks + 1);
+      msg += ` 🔥 La flamme dévore et croît (×${flammeStacks}) !`;
+    }
+  }
+  addMsg(msg, 'magic');
+  return msg;
+}
+
+// Venin du Cachot (Serpentard) — drain renforcé (75 % au lieu de 50 %) + poison
+// EMPILABLE (stack manuel sur la cible, sans rebalancer le poison ennemi global).
+const VENIN_LIFESTEAL = 0.75, VENIN_POISON_CAP = 4;
+function _spellVeninCachot(spell, char, enemy, targetIdx) {
+  let msg = '';
+  if (enemy) {
+    const { dmg, suffix, crit } = _computeSpellDamage(spell, char, enemy);
+    enemy.currentHp -= dmg;
+    _updateElan(char, crit);
+    const heal = Math.floor(dmg * VENIN_LIFESTEAL);
+    char.hp = Math.min(char.hpMax, char.hp + heal);
+    let poisonMsg = '';
+    if (enemy.currentHp > 0) {
+      if (!enemy.statusEffects) enemy.statusEffects = [];
+      const dotPower = Math.max(2, Math.floor(spell.power * 0.22));
+      const existing = enemy.statusEffects.find(s => s.id === 'poison');
+      if (existing) {
+        existing.power = Math.min(existing.power + dotPower, dotPower * VENIN_POISON_CAP);
+        existing.turns = Math.max(existing.turns, 3);
+        poisonMsg = ` ☠️ Poison renforcé (${existing.power}/tour)`;
+      } else {
+        applyStatus(enemy, 'poison', dotPower, 3);
+        poisonMsg = ` ☠️ Poison (${dotPower}/tour)`;
+      }
+    }
+    msg = `🐍 ${char.name} : ${spell.name} → ${dmg} dégâts${suffix}, +${heal} PV drainés !${poisonMsg}`;
+    UX_safe.floatDmg(`enemy:${targetIdx}`, dmg, crit ? 'crit' : 'dmg');
+    UX_safe.floatDmg('ally', heal, 'heal');
+    UX_safe.logCombat(`🐍 ${char.name} : ${spell.name} → <b>−${dmg}</b>, <b>+${heal} PV</b>${poisonMsg}`, 'magic');
+  }
+  addMsg(msg, 'magic');
+  return msg;
+}
+
+// Renvoie au `enemy` une version retournée de la capacité `ab` subie (mimétisme
+// de Savoir Interdit). Retourne un libellé court (ou '' si rien).
+function _reflectEnemyAbility(ab, char, enemy) {
+  if (!ab || !enemy) return '';
+  switch (ab.effect) {
+    case 'damage': case 'maxhpdamage': case 'drain': {
+      const extra = Math.max(1, (ab.power || 0) + Math.floor((char.mag || 0) / 2));
+      enemy.currentHp -= extra;
+      if (ab.effect === 'drain') {
+        const h = Math.min(char.hpMax - char.hp, Math.floor(extra / 2));
+        if (h > 0) { char.hp += h; UX_safe.floatDmg('ally', h, 'heal'); }
+      }
+      UX_safe.floatDmg(`enemy:${enemyGroup.indexOf(enemy)}`, extra, 'dmg');
+      return `${extra} dégâts`;
+    }
+    case 'status':
+      if (ab.statusId) {
+        applyStatus(enemy, ab.statusId, Math.max(1, Math.floor((char.mag || 4) * 0.4)), ab.statusTurns || 2);
+        const def = STATUS_DEFS[ab.statusId];
+        return def ? def.label : 'statut';
+      }
+      return '';
+    case 'weaken':
+      enemy.atk = Math.max(0, (enemy.atk || 0) - 4); enemy.def = Math.max(0, (enemy.def || 0) - 4);
+      return '−4 ATK/DEF';
+    default: {
+      // heal/dispel/consumable/enrage non offensifs → dégâts de repli corrompu.
+      const fb = Math.max(1, Math.floor((char.mag || 0) / 2) + 6);
+      enemy.currentHp -= fb;
+      UX_safe.floatDmg(`enemy:${enemyGroup.indexOf(enemy)}`, fb, 'dmg');
+      return `${fb} dégâts`;
+    }
+  }
+}
+
+// Savoir Interdit (Serdaigle) — dégâts de ténèbres + renvoie la dernière
+// capacité ennemie subie (lastEnemyAbility). Sans capacité mémorisée : faille
+// exploitée (−ATK/DEF) par défaut.
+function _spellSavoirInterdit(spell, char, enemy, targetIdx) {
+  let msg = '';
+  if (enemy) {
+    const { dmg, suffix, crit } = _computeSpellDamage(spell, char, enemy);
+    enemy.currentHp -= dmg;
+    _updateElan(char, crit);
+    msg = `🦅 ${char.name} : ${spell.name} → ${dmg} dégâts${suffix} sur ${enemy.name}`;
+    const ab = (typeof lastEnemyAbility !== 'undefined') ? lastEnemyAbility : null;
+    if (ab && enemy.currentHp > 0) {
+      const rider = _reflectEnemyAbility(ab, char, enemy);
+      if (rider) msg += ` — 🔁 ${ab.name || 'capacité'} retournée (${rider})`;
+    } else if (enemy.currentHp > 0) {
+      enemy.atk = Math.max(0, (enemy.atk || 0) - 3); enemy.def = Math.max(0, (enemy.def || 0) - 3);
+      msg += ` — 👁️ faille exploitée (−3 ATK/DEF)`;
+    }
+    const drain = _applySerpentLifesteal(char, dmg);
+    if (drain > 0) msg += ` 🐍 +${drain} PV`;
+    UX_safe.floatDmg(`enemy:${targetIdx}`, dmg, crit ? 'crit' : 'dmg');
+    UX_safe.logCombat(`🦅 ${char.name} : ${spell.name} → <b>−${dmg}</b> + mimétisme`, 'magic');
+  }
+  addMsg(msg, 'magic');
+  return msg;
+}
+
+// Fardeau Partagé (Poufsouffle) — redistribue les PV courants du groupe (le
+// mourant est relevé par les plus valides : tend vers la moyenne, borné par
+// hpMax), puis applique un soin de groupe (spell.power). En solo : soin simple.
+function _spellFardeauPartage(spell, char) {
+  const living = party.slice(0, partySize).filter(c => c && c.hp > 0);
+  if (living.length > 1) {
+    const total = living.reduce((a, c) => a + c.hp, 0);
+    const avg = Math.floor(total / living.length);
+    living.forEach(c => { c.hp = Math.min(c.hpMax, avg); });
+  }
+  let healed = 0;
+  living.forEach(c => { const h = Math.min(c.hpMax - c.hp, spell.power || 0); c.hp += h; healed += h; });
+  const msg = `🦡 ${char.name} : ${spell.name} — le fardeau est partagé (+${healed} PV répartis) !`;
+  addMsg(msg, 'magic');
+  UX_safe.floatDmg('ally', spell.power || 0, 'heal');
+  UX_safe.logCombat(`🦡 ${char.name} : ${spell.name} — redistribution + <b>+${healed} PV</b>`, 'magic');
+  return msg;
+}
+
 const SPELL_HANDLERS = {
   heal:           _spellHeal,
   disarm:         _spellDisarm,
@@ -1123,6 +1262,11 @@ const SPELL_HANDLERS = {
   seal_shield:       _spellSealShield,
   summon_ally:       _spellSummonAlly,
   patronus_corporel: _spellPatronusCorporel,
+  // Lot P4b — sorts corrompus de Maison (pleine fidélité).
+  flamme_devorante:  _spellFlammeDevorante,
+  venin_cachot:      _spellVeninCachot,
+  mimic:             _spellSavoirInterdit,
+  corrupt_share:     _spellFardeauPartage,
 };
 
 // Sorts à cible alliée — pas de sélection d'ennemi, mais éventuellement
@@ -1269,8 +1413,8 @@ function castSpellInBattle(spellName, targetIdx, targetAllyIdx) {
   {
     const _el = spell.element || 'physique';
     const _aoe = new Set(['aoe_wave', 'aoe_field', 'aoe_chain', 'aoe_drain', 'aoe_cleave']);
-    const _single = new Set(['stun', 'burn', 'instant', 'lifesteal', 'curse', 'imperius', 'eclat_bolt', 'summon_ally']);
-    const _heal = new Set(['heal', 'support_regen', 'support_regen_aoe', 'heal_aoe']);
+    const _single = new Set(['stun', 'burn', 'instant', 'lifesteal', 'curse', 'imperius', 'eclat_bolt', 'summon_ally', 'flamme_devorante', 'venin_cachot', 'mimic']);
+    const _heal = new Set(['heal', 'support_regen', 'support_regen_aoe', 'heal_aoe', 'corrupt_share']);
     const _buff = new Set(['shield', 'patronus_maxima', 'seal_shield', 'patronus_corporel']);
     // G2 — feedback côté lanceur : le sort « émane » du personnage actif
     // avant d'éclater sur la cible. Halo teinté élément à l'ancre 'ally'.

@@ -651,7 +651,7 @@ function openBattleSpells() {
           castSpellInBattle(spell.name, -1);
           return;
         }
-        const needsTarget = ['stun','burn','instant','disarm','imperius','aoe_cleave','reveal','eclat_bolt','summon_ally'].includes(spell.effect);
+        const needsTarget = ['stun','burn','instant','disarm','imperius','aoe_cleave','reveal','eclat_bolt','summon_ally','flamme_devorante','venin_cachot','mimic'].includes(spell.effect);
         if (needsTarget && livingEnemies().length > 1) {
           pendingSpell = spell.name;
           showTargetSelection('spell_dmg');
