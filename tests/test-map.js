@@ -128,7 +128,9 @@ const TEST_MAP = {
   'js/hall-of-fame.js':   ['ironman'],
 
   // ── PNJ / dialogues ──
-  'js/npcs.js':         ['npc', 'vendors', 'lore', 'headofhouse', 'chain'],
+  'js/npcs.js':         ['npc', 'vendors', 'lore', 'headofhouse', 'chain'], // socle (Lot C P3.3)
+  'js/npcs-a.js':       ['npc', 'vendors', 'lore', 'headofhouse', 'chain'], // registre 1/2
+  'js/npcs-b.js':       ['npc', 'vendors', 'lore', 'headofhouse', 'chain'], // registre 2/2
   'js/npcs-helpers.js': ['npc', 'vendors', 'lore', 'chain', 'repeatablequestspawn'],
   'js/npc-dialog.js': ['npc', 'vendors', 'dumbledorelux'],
 
@@ -147,7 +149,10 @@ const TEST_MAP = {
   'js/karaoke.js':     ['karaoke'],
 
   // ── Données de contenu ──
-  'js/monsters.js': ['monster', 'combat', 'darkvariant'],
+  'js/monsters.js':      ['monster', 'combat', 'darkvariant'], // socle (Lot B P3.3)
+  'js/monsters-low.js':  ['monster', 'combat', 'darkvariant'], // ét. 1-7
+  'js/monsters-mid.js':  ['monster', 'combat', 'darkvariant'], // ét. 4-10
+  'js/monsters-high.js': ['monster', 'combat', 'darkvariant'], // ét. 10+ / boss / Boucle
 
   // ── UI / chrome / aide ──
   // ui.js est central (updateUI partout) ; on cible un sous-ensemble

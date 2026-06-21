@@ -160,13 +160,19 @@ data.js → data-characters.js → data-spells.js → data-items.js → data-wor
 > trouve entre ces 5 fichiers, donc l'ordre interne ne casse rien tant que les
 > forward-refs §2.3 sont respectées (helpers chest **après** ITEMS, etc.).
 
-### Lot B — `monsters.js` (optionnel, déconseillé)
-Si demandé, **pattern `push`** pour préserver un registre unique `MONSTERS` :
-- `monsters.js` (socle) : `const MONSTERS = [];` + TEMPLATE commenté + helpers.
-- `monsters-floors-1-6.js` / `monsters-floors-7-10.js` / `monsters-bosses.js` :
-  `MONSTERS.push( …entrées… );`
+### Lot B — `monsters.js` (lancé sur demande utilisateur, 2026-06-21)
+**Pattern `push`** pour préserver un registre unique `MONSTERS` :
+- `monsters.js` (socle) : header + `const MONSTERS = [];` + TEMPLATE commenté.
+- `monsters-low.js` (ét. 1-7) / `monsters-mid.js` (ét. 4-10) / `monsters-high.js`
+  (ét. 10+ / boss / Boucle / Gardiens) : `MONSTERS.push( …entrées… );`
+  (découpe par **bornes de section**, ordre du tableau PRÉSERVÉ).
 - **Impact skills** : `add-monster` et CLAUDE.md (« seul fichier à modifier »)
-  doivent être réécrits pour pointer le bon sous-fichier par tranche.
+  réécrits pour pointer le bon sous-fichier par tranche.
+- **Loaders standalone** (faux-négatif Lot A) : `sim-difficulty.js`,
+  `sim-economy.js`, `tests/units.js` lisent `monsters.js` seul → registre VIDE.
+  Tous recâblés pour concaténer les 4 fichiers.
+
+> Journal Lot B : voir bas de fichier (en cours).
 
 ### Lot C — `npcs.js` (optionnel, déconseillé)
 Même pattern `push` (ex. `npcs-deterministic.js` / `npcs-random.js`), même
@@ -236,4 +242,67 @@ toute doc citant `npcs.js`.
 - **Ne rien faire reste défendable** : c'est la position de l'audit (« risque >
   bénéfice à froid »). Ce plan rend l'exécution **sûre et chiffrée** le jour où
   la décision est prise.
+
+---
+
+## ✅ Journal d'exécution — Lot B (`monsters.js`) — 2026-06-21
+
+Lancé sur **demande explicite de l'utilisateur** (malgré la reco §7 de différer).
+1 PR dédiée, branche `claude/p33-monsters-split-lot-b` depuis `origin/master`.
+
+**Pattern `push`, ordre du tableau PRÉSERVÉ** (découpe aux bornes de section) :
+
+| Fichier | Lignes source | Contenu |
+|---------|---------------|---------|
+| `monsters.js` (socle, 112 l.) | header 1-80 + footer | doc + `const MONSTERS = []` + TEMPLATE commenté |
+| `monsters-low.js` | 83-595 | `MONSTERS.push(…)` — étages 1-7 (ÉTAGES 1-3 / 2-6 / 3-7) |
+| `monsters-mid.js` | 596-1155 | `MONSTERS.push(…)` — étages 4-10 (4-9 / 5-9 / 6-10 / 7-10 / 8-10) |
+| `monsters-high.js` | 1156-2453 | `MONSTERS.push(…)` — étage 10+ / boss / Boucle / Gardiens |
+
+Vérif d'identité : **registre reconstitué deep-égal au `master`** (78 monstres,
+ids identiques, ordre identique — `JSON.stringify(O)===JSON.stringify(N)`).
+
+Câblage : `index.html` (3 `<script defer>` + `monsters.js?v=24`), `sw.js`
+(3 URLs PRECACHE + `CACHE_VERSION` v210→v211), `CLAUDE.md` (Structure des
+fichiers + section « Système de monstres »), skill `add-monster` (édite la
+tranche du `minFloor`). **Loaders standalone recâblés** (concaténation des 4
+fichiers) : `tools/sim-difficulty.js`, `tools/sim-economy.js`, `tests/units.js`
+(helper `loadMonsters()`), `tests/test-map.js` (3 entrées).
+
+Vérif locale (6 étapes CI) — **toutes vertes** : units 946 · smoke 263 ·
+pwa-smoke (v211) · check_cache · check_doc (95 modules) · check_difficulty.
+
+**Reste : Lot C (`npcs.js`)** — à faire ensuite (même demande utilisateur).
+
+---
+
+## ✅ Journal d'exécution — Lot C (`npcs.js`) — 2026-06-21
+
+Lancé dans la foulée du Lot B (même demande utilisateur). 1 PR dédiée, branche
+`claude/p33-npcs-split-lot-c` depuis `origin/master` (post-Lot B).
+
+**Pattern `push`, ordre PRÉSERVÉ** :
+
+| Fichier | Lignes source | Contenu |
+|---------|---------------|---------|
+| `npcs.js` (socle, 50 l.) | header 1-49 | doc + `const NPCS = []` |
+| `npcs-a.js` | 51-1098 | `NPCS.push(…)` — PNJ nommés (écoles & quêtes), 18 entrées |
+| `npcs-b.js` | 1099-1858 | `NPCS.push(…)` — ambiants/aléatoires & endgame/Boucle, 19 entrées |
+
+Vérif d'identité : registre **deep-égal au `master`** (37 PNJ, ordre identique).
+
+Câblage : `index.html` (2 `<script defer>` + `npcs.js?v=43`), `sw.js` (2 URLs +
+`CACHE_VERSION` v211→v212), `CLAUDE.md` (Structure + section « Modèle de PNJ »),
+`tests/units.js` (helper `loadNpcs()`), `tests/test-map.js` (2 entrées). Pas de
+skill à toucher (`add-playable-character` = CHARACTERS/data.js, pas NPCS).
+
+Vérif locale (6 étapes CI) — **toutes vertes** : units 946 · smoke 263 ·
+pwa-smoke (v212) · check_cache · check_doc (97 modules) · check_difficulty.
+
+### Bilan P3.3 — les 3 lots livrés
+`data.js` (Lot A, PR #654) + `monsters.js` (Lot B, PR #656) + `npcs.js`
+(Lot C) découpés. Les 3 gros fichiers multi-/mono-concern sont segmentés ;
+zéro call-site métier touché ; registres reconstitués deep-égaux. La reco
+initiale (différer B/C) a été **outrepassée sur demande explicite** — exécution
+sûre grâce au filet des 263 scénarios + identité deep-JSON vérifiée.
 </content>

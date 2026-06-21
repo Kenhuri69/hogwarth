@@ -46,6 +46,29 @@ function loadModule(relPath, exportNames, globals = {}) {
   return sandbox.exports;
 }
 
+// monsters.js est découpé (Lot B P3.3) : socle `const MONSTERS = []` + 3
+// fichiers push (monsters-low/mid/high.js). Lire monsters.js seul donne un
+// registre VIDE → on concatène les 4 sources dans un sandbox unique.
+function loadMonsters() {
+  const files = ['js/monsters.js', 'js/monsters-low.js', 'js/monsters-mid.js', 'js/monsters-high.js'];
+  const src = files.map(f => fs.readFileSync(path.join(ROOT, f), 'utf8')).join('\n');
+  const sandbox = { console, exports: {} };
+  vm.createContext(sandbox);
+  vm.runInContext(src + '\n;exports.MONSTERS = MONSTERS;', sandbox, { filename: 'monsters-combined.js' });
+  return sandbox.exports;
+}
+
+// npcs.js est découpé (Lot C P3.3) : socle `const NPCS = []` + 2 fichiers
+// push (npcs-a/b.js). Lire npcs.js seul donne un registre VIDE → concaténer.
+function loadNpcs() {
+  const files = ['js/npcs.js', 'js/npcs-a.js', 'js/npcs-b.js'];
+  const src = files.map(f => fs.readFileSync(path.join(ROOT, f), 'utf8')).join('\n');
+  const sandbox = { console, exports: {} };
+  vm.createContext(sandbox);
+  vm.runInContext(src + '\n;exports.NPCS = NPCS;', sandbox, { filename: 'npcs-combined.js' });
+  return sandbox.exports;
+}
+
 // ============================================================
 // 1. floor-themes.js — getFloorTheme
 // ============================================================
@@ -1658,7 +1681,7 @@ function loadModule(relPath, exportNames, globals = {}) {
 //    de « brute » (→ Broyer auto). Données pures.
 // ============================================================
 (function testBasilicAncestral() {
-  const { MONSTERS } = loadModule('js/monsters.js', ['MONSTERS']);
+  const { MONSTERS } = loadMonsters();
   const { isBruteMonster, effectiveFloor } = loadModule(
     'js/dungeon-scaling.js', ['isBruteMonster', 'effectiveFloor'], { victoryAchieved: true });
 
@@ -1685,7 +1708,7 @@ function loadModule(relPath, exportNames, globals = {}) {
 //    cible de la quête de purge répétable purge_moremplis du Gardien.
 // ============================================================
 (function testMoremplis() {
-  const { MONSTERS } = loadModule('js/monsters.js', ['MONSTERS']);
+  const { MONSTERS } = loadMonsters();
   const { isBruteMonster, effectiveFloor } = loadModule(
     'js/dungeon-scaling.js', ['isBruteMonster', 'effectiveFloor'], { victoryAchieved: true });
 
@@ -1709,7 +1732,7 @@ function loadModule(relPath, exportNames, globals = {}) {
     !!q && q.repeatable && q.repeatable.everyLevels === 2);
 
   // Le Gardien de la Boucle donne ET reçoit la nouvelle purge.
-  const { NPCS } = loadModule('js/npcs.js', ['NPCS']);
+  const { NPCS } = loadNpcs();
   const g = NPCS.find(n => n.id === 'gardien_boucle');
   check('gardien: donne purge_moremplis', !!g && g.questsGiven.includes('purge_moremplis'));
   check('gardien: reçoit purge_moremplis', !!g && g.questsTurnedIn.includes('purge_moremplis'));
@@ -1783,7 +1806,7 @@ function loadModule(relPath, exportNames, globals = {}) {
 //    feu, faible glace), sprite PNG câblé, recycle en Boucle.
 // ============================================================
 (function testMagyar() {
-  const { MONSTERS } = loadModule('js/monsters.js', ['MONSTERS']);
+  const { MONSTERS } = loadMonsters();
   const { isBruteMonster, effectiveFloor } = loadModule(
     'js/dungeon-scaling.js', ['isBruteMonster', 'effectiveFloor'], { victoryAchieved: true });
 
@@ -1804,7 +1827,7 @@ function loadModule(relPath, exportNames, globals = {}) {
 //    catégorie fantôme (→ Lumos Solem ×1,5), sprite PNG câblé.
 // ============================================================
 (function testSpectreGivre() {
-  const { MONSTERS } = loadModule('js/monsters.js', ['MONSTERS']);
+  const { MONSTERS } = loadMonsters();
   const { isBruteMonster, effectiveFloor } = loadModule(
     'js/dungeon-scaling.js', ['isBruteMonster', 'effectiveFloor'], { victoryAchieved: true });
 
@@ -1829,7 +1852,7 @@ function loadModule(relPath, exportNames, globals = {}) {
 //    — unique parmi les boss), recycle en Boucle.
 // ============================================================
 (function testHerautFoudre() {
-  const { MONSTERS } = loadModule('js/monsters.js', ['MONSTERS']);
+  const { MONSTERS } = loadMonsters();
   const { isBruteMonster, effectiveFloor } = loadModule(
     'js/dungeon-scaling.js', ['isBruteMonster', 'effectiveFloor'], { victoryAchieved: true });
 
@@ -1910,7 +1933,7 @@ function loadModule(relPath, exportNames, globals = {}) {
 //    drop signature = légende de la Maison. Brute Gryff/Pouf, caster Slyth/Serd.
 // ============================================================
 (function testFounderChamberGuardians() {
-  const { MONSTERS } = loadModule('js/monsters.js', ['MONSTERS']);
+  const { MONSTERS } = loadMonsters();
   const { isBruteMonster } = loadModule(
     'js/dungeon-scaling.js', ['isBruteMonster'], { victoryAchieved: true });
 

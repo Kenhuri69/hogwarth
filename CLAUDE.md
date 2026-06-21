@@ -44,9 +44,18 @@ js/
   icons.js         →  SVG inline pour chaque monstre majeur — getMonsterIconHtml()
   scene-icons.js   →  SCENE_ICONS{} — SVG inline pour objets de scène (coffre,
                       boutique, escaliers, fontaine) consommés par _showExploreOverlay()
-  monsters.js      →  ⭐ FICHIER ENRICHISSABLE : registre complet des créatures (MONSTERS[])
-  npcs.js          →  NPCS[] — registre de données des PNJ (donneurs de quêtes,
-                      vendeurs, PNJ lore)
+  monsters.js      →  ⭐ SOCLE du registre des créatures : header + `const
+                      MONSTERS = []` + TEMPLATE commenté (Lot B P3.3 — découpé).
+                      Les ENTRÉES vivent dans monsters-low/mid/high.js (push).
+  monsters-low.js  →  MONSTERS.push(…) — créatures étages 1-7. APRÈS monsters.js
+  monsters-mid.js  →  MONSTERS.push(…) — créatures étages 4-10. APRÈS monsters-low.js
+  monsters-high.js →  MONSTERS.push(…) — étage 10+ / boss / Boucle / Gardiens des
+                      Fondateurs. APRÈS monsters-mid.js
+  npcs.js          →  SOCLE du registre des PNJ : header + `const NPCS = []`
+                      (Lot C P3.3 — découpé). Les ENTRÉES vivent dans npcs-a/b.js.
+  npcs-a.js        →  NPCS.push(…) — PNJ nommés (écoles & quêtes). APRÈS npcs.js
+  npcs-b.js        →  NPCS.push(…) — PNJ ambiants/aléatoires & endgame/Boucle.
+                      APRÈS npcs-a.js
   npcs-helpers.js  →  Helpers de requête : getNpcById(), getNpcsForFloor(),
                       getRandom{Vendors,Lore,Encounters,QuestGivers,Ambient}ForFloor().
                       Chargé APRÈS npcs.js
@@ -354,7 +363,12 @@ ou `[data-item-id]` dans les modales.
 
 ## Système PNJ (`js/npcs.js` + `js/npc-dialog.js`)
 
-### Modèle de PNJ (`NPCS[]` dans `npcs.js`)
+### Modèle de PNJ (`NPCS[]` — socle `npcs.js`, entrées dans `npcs-a/b.js`)
+
+> Lot C P3.3 : `NPCS` est découpé en socle `npcs.js` (`const NPCS = []`) +
+> `npcs-a.js`/`npcs-b.js` (`NPCS.push(…)`). Pour ajouter un PNJ, insérer
+> l'objet dans le `NPCS.push(…)` de `npcs-a.js` (PNJ nommés) ou `npcs-b.js`
+> (ambiants/endgame). L'ordre du tableau = socle → a → b.
 
 ```js
 {
@@ -1542,10 +1556,21 @@ danger:    7   // 1-11, code couleur : vert(1-3) → jaune(4-5) → orange(6-7) 
 
 ---
 
-## Système de monstres (monsters.js)
+## Système de monstres (monsters.js + monsters-low/mid/high.js)
 
-**Ce fichier est le seul à modifier pour ajouter ou modifier des ennemis.**
-Le moteur s'adapte automatiquement sans toucher au reste du code.
+**Pour ajouter ou modifier un ennemi, éditer le fichier de tranche adéquat**
+(Lot B P3.3 — le registre `MONSTERS` est découpé en 4 fichiers chargés en
+séquence) :
+- `monsters.js` (socle) : header de doc + `const MONSTERS = []` + TEMPLATE
+  commenté. **Ne contient plus d'entrées.**
+- `monsters-low.js` : `MONSTERS.push(…)` — créatures étages 1-7.
+- `monsters-mid.js` : `MONSTERS.push(…)` — créatures étages 4-10.
+- `monsters-high.js` : `MONSTERS.push(…)` — étage 10+, boss, Boucle Ténébreuse,
+  Gardiens des Fondateurs. (Ajouter un nouveau monstre = un objet dans le
+  `MONSTERS.push(…)` de la tranche correspondant à son `minFloor`.)
+
+Le moteur s'adapte automatiquement sans toucher au reste du code (l'ordre du
+tableau `MONSTERS` est la concaténation socle → low → mid → high).
 
 ### Propriétés complètes d'un monstre
 
