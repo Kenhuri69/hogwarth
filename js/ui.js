@@ -345,6 +345,14 @@ function openHouseDetail() {
 }
 
 function _updateHouseBadge() {
+  // Thème de Maison (C1) : pose un `data-house` sur <html> pour que le CSS
+  // teinte les surfaces partagées (liserés/halos de modales) à la couleur de
+  // la Maison choisie. Sans Maison (écrans de démarrage), on retire l'attribut
+  // → retour au thème or neutre. Lecture pure de chosenHouse.
+  const root = document.documentElement;
+  if (chosenHouse) root.dataset.house = String(chosenHouse).toLowerCase();
+  else delete root.dataset.house;
+
   // Depuis P4, le détail Maison vit dans la popup #house-detail-modal
   // (ouverte via le blason du header). Cette fonction ne pilote plus
   // qu'un seul affichage : le blason vivant du header.
