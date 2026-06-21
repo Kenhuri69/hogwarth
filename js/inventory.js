@@ -588,6 +588,58 @@ function _applyConsumableEffect(item, target) {
   // arriver ici, mais no-op par sécurité.
 }
 
+// ── Risques & effets secondaires (Potions 2.0 — Lot P10, §1.8) ───────────
+// La puissance profonde se paie : `corruptionRisk` (montée de spellCorruption)
+// + `sideEffect` (contrecoup borné) en Tranche D / Boucle. Une charge d'Immunité
+// (`wardCharges`, posée en P7) absorbe le paquet entier d'un usage — contre-jeu
+// explicite. Garde-fou §3.3 : sideEffect ≤ 15 % d'une stat, ≤ 2 tours, JAMAIS
+// sur PV, toujours télégraphié ⚠️.
+
+// Le contrecoup `sideEffect` n'est armé qu'en Tranche D (étage 14+) ou en
+// Boucle Ténébreuse (post-victoire, étage 11+). A/B/C restent « sûrs ».
+function _sideEffectActiveHere() {
+  const f  = (typeof currentFloor === 'number') ? currentFloor : 1;
+  const va = (typeof victoryAchieved !== 'undefined' && victoryAchieved);
+  return f >= 14 || (va && f >= 11);
+}
+
+// Applique un contrecoup borné : malus de DEF temporaire (réutilise le statut
+// `weaken`, auto-restauré par tickStatuses). Jamais sur PV. Plafonné 15 % / 2 t.
+function _applyPotionSideEffect(target, se) {
+  if (!target || !se) return;
+  const turns = Math.min(2, se.turns || 1);
+  const mag   = Math.min(0.15, se.magnitude || 0.10);
+  const lost  = Math.max(1, Math.round((target.def || 0) * mag));
+  if (typeof applyStatus !== 'function') return;
+  const applied = applyStatus(target, 'weaken', lost, turns);
+  if (applied && lost > 0) {
+    target.def = Math.max(0, (target.def || 0) - lost);
+    addMsg(`⚠️ Contrecoup de ${target.name} : −${lost} DEF pendant ${turns} tour${turns > 1 ? 's' : ''}.`, 'bad');
+  }
+}
+
+// Résout le risque d'une consommation : corruption + contrecoup. Renvoie true si
+// une charge d'Immunité a tout absorbé. Appelé APRÈS l'effet (et son recalc).
+function _applyConsumptionRisk(item, target) {
+  if (!item) return false;
+  const riskCorr = item.corruptionRisk > 0;
+  const riskSide = item.sideEffect && _sideEffectActiveHere()
+                   && Math.random() < (typeof item.sideEffect.chance === 'number' ? item.sideEffect.chance : 0.5);
+  if (!riskCorr && !riskSide) return false;
+  // Immunité : une charge absorbe le paquet de risque entier de cet usage.
+  if (typeof wardCharges === 'number' && wardCharges > 0) {
+    wardCharges = Math.max(0, wardCharges - 1);
+    addMsg(`🔰 La garde mystique absorbe le contrecoup de ${item.name}. (${wardCharges} charge${wardCharges > 1 ? 's' : ''} restante${wardCharges > 1 ? 's' : ''})`, 'magic');
+    return true;
+  }
+  if (riskCorr && typeof spellCorruption === 'number') {
+    spellCorruption += item.corruptionRisk;
+    addMsg(`🌑 ${item.name} épaissit la corruption (+${item.corruptionRisk} → niveau ${spellCorruption}).`, 'bad');
+  }
+  if (riskSide) _applyPotionSideEffect(target, item.sideEffect);
+  return false;
+}
+
 // Enseigne un sort à un seul personnage. Retourne false si verrouillé,
 // inconnu, ou déjà connu par ce perso.
 function _teachSpellToOne(spellName, charIdx) {
@@ -917,6 +969,9 @@ function useItem(idx, battleMode) {
     if (typeof AudioSystem !== 'undefined' && AudioSystem.playChestOpen) AudioSystem.playChestOpen();
     if (typeof _premiumEquipFlash === 'function') _premiumEquipFlash(item.premiumFx);
   }
+  // P10 — risque consenti : corruption + contrecoup borné, absorbés par une
+  // charge d'Immunité si disponible. Après l'effet (et son recalc).
+  _applyConsumptionRisk(item, target);
   _consumeAt(idx, 1);
 
   updateUI();

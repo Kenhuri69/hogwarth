@@ -636,6 +636,8 @@ const ITEM_ICON_SVG_REGISTRY = {
   venin_serpent:      _potionSvg('cl_serp', 30, '#1a5a2a', '#5ad06a', '#aaaaaa', true),
   sagesse_aigle:      _potionSvg('cl_aigl', 27, '#1a3a8a', '#5a8ae8', '#946d2d', true),
   vigueur_blaireau:   _potionSvg('cl_blai', 30, '#c89028', '#f0c75e', '#5a4020', true),
+  // Corruption Contrôlée (Potions 2.0 — Lot P10) : violet ténébreux corrompu.
+  potion_corruption_ctrl: _potionSvg('cl_corrc', 27, '#3a1a56', '#7a3a9d', '#1a0a2a', true),
   // Éclat de Lumière (objet de quête — dumbledore_lumiere) : étoile de
   // clarté à 4 branches, halo doux. SVG inline (pas de PNG dédié).
   eclat_lumiere: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="21" fill="#fff3b0" opacity="0.28"/><path d="M32 5 L38 26 L59 32 L38 38 L32 59 L26 38 L5 32 L26 26 Z" fill="#ffe98a"/><path d="M32 15 L36 28 L49 32 L36 36 L32 49 L28 36 L15 32 L28 28 Z" fill="#fff7d8"/><circle cx="32" cy="32" r="3.6" fill="#ffffff"/></svg>`,

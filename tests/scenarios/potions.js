@@ -18,7 +18,7 @@ async function scenarioBrewing() {
     const added  = tryAddItem('herbe_armoise', { silent: true });
     return {
       herbCount,
-      recipesDefined: typeof POTION_RECIPES !== 'undefined' && POTION_RECIPES.length === 31,
+      recipesDefined: typeof POTION_RECIPES !== 'undefined' && POTION_RECIPES.length === 32,
       added,
       herbInBesace: getHerbCount('herbe_armoise'),
       inventoryUnchanged: player.inventory.length === before,
@@ -27,7 +27,7 @@ async function scenarioBrewing() {
   });
   console.log('  T1 données →', t1);
   assert(t1.herbCount === 7,          '7 items herbe attendus (6 + l\'herbe rare endgame)');
-  assert(t1.recipesDefined,           'POTION_RECIPES doit définir 31 recettes');
+  assert(t1.recipesDefined,           'POTION_RECIPES doit définir 32 recettes');
   assert(t1.added,                    'tryAddItem(herbe) doit réussir');
   assert(t1.herbInBesace === 1,       'la herbe doit aller dans la besace');
   assert(t1.inventoryUnchanged,       'la herbe ne doit pas occuper le sac');
@@ -338,7 +338,7 @@ async function scenarioRareHerb() {
     };
   });
   console.log('  T2 recettes prestige →', t2);
-  assert(t2.count === 31, `POTION_RECIPES doit compter 31 recettes (obtenu ${t2.count})`);
+  assert(t2.count === 32, `POTION_RECIPES doit compter 32 recettes (obtenu ${t2.count})`);
   assert(t2.xlResult === 'potion_xl',      'brew_xl_tenebres doit produire potion_xl (item existant)');
   assert(t2.xlspResult === 'potion_xl_sp', 'brew_xl_sp_tenebres doit produire potion_xl_sp (item existant)');
   assert(t2.match2 === 'brew_xl_tenebres',     '2 asphodèles noires → brew_xl_tenebres');
@@ -732,7 +732,7 @@ async function scenarioThrowablePotions() {
     };
   });
   console.log('  T4 recettes:', t4);
-  assert(t4.count === 31, `POTION_RECIPES doit compter 31 recettes (obtenu ${t4.count})`);
+  assert(t4.count === 32, `POTION_RECIPES doit compter 32 recettes (obtenu ${t4.count})`);
   assert(t4.present, 'les 3 recettes de flacons doivent exister');
   assert(t4.feu === 'brew_flacon_feu' && t4.givre === 'brew_flacon_givre' && t4.venin === 'brew_flacon_venin', 'chaque combo matche sa recette (multisets inédits)');
 
@@ -780,7 +780,7 @@ async function scenarioPotionUpgradeCraft() {
   assert(t1.heals[0] === 15 && t1.heals[1] === 30 && t1.heals[2] === 55, 'paliers de soin 15/30/55');
   assert(t1.recipesOk, 'les 7 recettes P4 doivent exister');
   assert(t1.iconsOk, 'les 4 nouveaux items doivent avoir une icône PNG');
-  assert(t1.count === 31, `POTION_RECIPES doit compter 31 recettes (obtenu ${t1.count})`);
+  assert(t1.count === 32, `POTION_RECIPES doit compter 32 recettes (obtenu ${t1.count})`);
 
   // T2 — pas de collision d'ingrédients (chaque set est unique).
   const t2 = await page.evaluate(() => {
@@ -1486,7 +1486,7 @@ async function scenarioPotionEvolve() {
   assert(t1.evolveSource === 'artifactForm', 'Philtre : evolves source artifactForm');
   assert(t1.helper, 'potionEvolveMult doit être exposé (potions.js)');
   assert(t1.recipeOk, 'recette brew_philtre_mage présente et matchable');
-  assert(t1.total === 31, `POTION_RECIPES doit compter 31 recettes (obtenu ${t1.total})`);
+  assert(t1.total === 32, `POTION_RECIPES doit compter 32 recettes (obtenu ${t1.total})`);
 
   // T2 — helper pur : multiplicateur ∈ [1, cap] selon le contexte du buveur.
   const t2 = await page.evaluate(() => {
@@ -1569,7 +1569,7 @@ async function scenarioHouseResilience() {
   assert(t1.exists && t1.effect === 'house_buff' && t1.category === 'buff', 'Résilience = house_buff / buff');
   assert(t1.recipeOk, 'recette brew_resilience_maison présente et matchable');
   assert(t1.plansDefined, 'HOUSE_BUFF_PLANS doit être défini');
-  assert(t1.total === 31, `POTION_RECIPES doit compter 31 recettes (obtenu ${t1.total})`);
+  assert(t1.total === 32, `POTION_RECIPES doit compter 32 recettes (obtenu ${t1.total})`);
 
   // T2 — buff aligné Gryffondor : +ATK (primaire) + LCK (rider crit).
   const t2 = await page.evaluate(() => {
@@ -1689,4 +1689,97 @@ async function scenarioPremiumPotions() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioBrewing, scenarioRecipeCodex, scenarioRareHerb, scenarioSlugClub, scenarioPotionBuff, scenarioPotionResistance, scenarioThrowablePotions, scenarioPotionUpgradeCraft, scenarioHerbGarden, scenarioGardenQuest, scenarioHerbEconomy, scenarioPotionAoeAndEnemyUse, scenarioAntiCorruption, scenarioPotionEvolve, scenarioHouseResilience, scenarioPremiumPotions] };
+// ============================================================
+// Potions 2.0 — Lot P10 : risques & effets secondaires (corruptionRisk /
+// sideEffect / wardCharges) + Corruption Contrôlée
+// ============================================================
+async function scenarioPotionSideEffects() {
+  console.log('\n── Scénario : risques & effets secondaires (Potions 2.0 — Lot P10) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Serpentard' });
+
+  // T1 — données : Corruption Contrôlée (risk + evolves + sideEffect) + recette.
+  const t1 = await page.evaluate(() => {
+    const it = ITEMS.find(i => i.id === 'potion_corruption_ctrl');
+    const rec = POTION_RECIPES.find(r => r.id === 'brew_potion_corruption_ctrl');
+    const m = _matchRecipe({ herbe_asphodele_noire: 2, herbe_aconit: 1 });
+    return {
+      exists: !!it, corruptionRisk: it && it.corruptionRisk,
+      evolveSource: it && it.evolves && it.evolves.source,
+      hasSideEffect: !!(it && it.sideEffect),
+      recipeOk: !!rec && m && m.id === 'brew_potion_corruption_ctrl' && rec.workshop === 'ruines',
+      total: POTION_RECIPES.length,
+    };
+  });
+  console.log('  T1 données →', t1);
+  assert(t1.exists && t1.corruptionRisk === 2, 'Corruption Contrôlée : corruptionRisk 2');
+  assert(t1.evolveSource === 'corruption', 'evolves source corruption');
+  assert(t1.hasSideEffect, 'sideEffect défini');
+  assert(t1.recipeOk, 'recette brew_potion_corruption_ctrl (workshop ruines) matchable');
+  assert(t1.total === 32, `POTION_RECIPES doit compter 32 recettes (obtenu ${t1.total})`);
+
+  // T2 — corruptionRisk : la conso monte spellCorruption (hors Boucle = pas de
+  // contrecoup). currentFloor bas + pas de victoire → sideEffect inactif.
+  const t2 = await page.evaluate(() => {
+    inBattle = false; victoryAchieved = false; currentFloor = 5;
+    spellCorruption = 0; wardCharges = 0;
+    party[0].statusEffects = [];
+    player.inventory = [{ ...ITEMS.find(i => i.id === 'potion_corruption_ctrl') }];
+    useItem(0, false);
+    return { corruption: spellCorruption, weakened: (party[0].statusEffects || []).some(s => s.id === 'weaken') };
+  });
+  console.log('  T2 risque →', t2);
+  assert(t2.corruption === 2, 'la conso doit ajouter corruptionRisk (0 → 2)');
+  assert(!t2.weakened, 'hors Tranche D/Boucle : aucun contrecoup');
+
+  // T3 — wardCharges absorbe le paquet de risque entier (corruption incluse).
+  const t3 = await page.evaluate(() => {
+    victoryAchieved = false; currentFloor = 5;
+    spellCorruption = 0; wardCharges = 1;
+    party[0].statusEffects = [];
+    player.inventory = [{ ...ITEMS.find(i => i.id === 'potion_corruption_ctrl') }];
+    useItem(0, false);
+    return { corruption: spellCorruption, charges: wardCharges };
+  });
+  console.log('  T3 immunité →', t3);
+  assert(t3.corruption === 0, 'une charge d\'Immunité absorbe la corruption (reste 0)');
+  assert(t3.charges === 0, 'la charge wardCharges est consommée');
+
+  // T4 — sideEffect armé en Tranche D (étage 14+) : contrecoup DEF borné.
+  const t4 = await page.evaluate(() => {
+    victoryAchieved = false; currentFloor = 14;
+    spellCorruption = 0; wardCharges = 0;
+    const c = party[0]; c.statusEffects = [];
+    const orig = Math.random; Math.random = () => 0; // force le roll < chance
+    player.inventory = [{ ...ITEMS.find(i => i.id === 'potion_corruption_ctrl') }];
+    const defBefore = c.def;
+    useItem(0, false);
+    Math.random = orig;
+    return {
+      corruption: spellCorruption,
+      weakened: (c.statusEffects || []).some(s => s.id === 'weaken'),
+      defDrop: defBefore - c.def,
+    };
+  });
+  console.log('  T4 contrecoup →', t4);
+  assert(t4.corruption === 2, 'corruptionRisk s\'applique aussi en Boucle');
+  assert(t4.weakened, 'en Tranche D : le contrecoup pose un malus weaken');
+  assert(t4.defDrop >= 1, 'le contrecoup réduit la DEF (jamais les PV)');
+
+  // T5 — télégraphe du risque dans le tooltip (⚠️).
+  const t5 = await page.evaluate(() => {
+    const tt = _renderItemTooltip(ITEMS.find(i => i.id === 'potion_corruption_ctrl'), null, 'utiliser');
+    return { corr: /Corruption \+2/.test(tt), side: /Contrecoup/.test(tt) };
+  });
+  console.log('  T5 tooltip →', t5);
+  assert(t5.corr && t5.side, 'le tooltip télégraphie corruption + contrecoup (⚠️)');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (risques P10)`);
+  }
+  console.log('  ✅ Risques & effets secondaires OK (corruptionRisk, ward, sideEffect Boucle, télégraphe)');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioBrewing, scenarioRecipeCodex, scenarioRareHerb, scenarioSlugClub, scenarioPotionBuff, scenarioPotionResistance, scenarioThrowablePotions, scenarioPotionUpgradeCraft, scenarioHerbGarden, scenarioGardenQuest, scenarioHerbEconomy, scenarioPotionAoeAndEnemyUse, scenarioAntiCorruption, scenarioPotionEvolve, scenarioHouseResilience, scenarioPremiumPotions, scenarioPotionSideEffects] };
