@@ -2887,4 +2887,97 @@ async function scenarioCombatEnv() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBuffBadgesPng, scenarioBruteCrush, scenarioStatRework, scenarioFortuneStat, scenarioAgiCelerite, scenarioCeleriteGuardCounting, scenarioDuoStatuses, scenarioCritDodge, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioGuardAndFerula, scenarioCombatBuffs, scenarioLegilimensEscalation, scenarioStun, scenarioStatusComboNoFreeze, scenarioCombatExtV2, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioDeathPetrify, scenarioIronmanDeath, scenarioLargeEnemyGroup, scenarioMonsterDiscovery, scenarioArtifactForms, scenarioActiveArtifact, scenarioDuoPosture, scenarioBossPhase, scenarioCombatEnv] };
+// ── Scénario P5 : feedback/UI (bandeaux de combat + FX/son Premium) ──
+// Vérifie la surcouche additive du palier P5 : la fonction de bandeau callout
+// (UX.combatBanner), le FX Premium par Maison (CombatFX.premiumCast), les sons
+// procéduraux, et le câblage end-to-end aux call-sites (cast Premium, synergie,
+// rune). Tout est PUR/cosmétique — aucune mécanique de combat n'est testée ici.
+async function scenarioP5Feedback() {
+  console.log('\n── Scénario P5 : feedback/UI (bandeaux + FX/son Premium) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+  await startDummyFight(page, { hp: 80 });
+
+  // T1 — les surfaces publiques additives existent.
+  const t1 = await page.evaluate(() => ({
+    banner:       typeof (window.UX && window.UX.combatBanner) === 'function',
+    premiumCast:  typeof (window.CombatFX && window.CombatFX.premiumCast) === 'function',
+    playPremium:  typeof (typeof AudioSystem !== 'undefined' && AudioSystem.playPremiumCast) === 'function',
+    playBacklash: typeof (typeof AudioSystem !== 'undefined' && AudioSystem.playBacklash) === 'function',
+  }));
+  console.log('  T1 APIs  :', t1);
+  assert(t1.banner, 'UX.combatBanner devrait être exposé');
+  assert(t1.premiumCast, 'CombatFX.premiumCast devrait être exposé');
+  assert(t1.playPremium, 'AudioSystem.playPremiumCast devrait être exposé');
+  assert(t1.playBacklash, 'AudioSystem.playBacklash devrait être exposé');
+
+  // T2 — combatBanner monte un bandeau teinté par kind (les 5 kinds).
+  const t2 = await page.evaluate(() => {
+    const l0 = document.getElementById('combat-banner-layer'); if (l0) l0.innerHTML = '';
+    const kinds = ['synergy', 'artifact', 'tenaille', 'rune', 'backlash'];
+    kinds.forEach(k => UX.combatBanner('test ' + k, k));
+    const layer = document.getElementById('combat-banner-layer');
+    const els = layer ? Array.from(layer.querySelectorAll('.combat-banner')) : [];
+    return { count: els.length, classesOk: kinds.every(k => els.some(e => e.classList.contains('cb-' + k))) };
+  });
+  console.log('  T2 bann. :', t2);
+  assert(t2.count === 5, 'les 5 bandeaux devraient être montés');
+  assert(t2.classesOk, 'chaque bandeau devrait porter sa classe cb-<kind>');
+
+  // T3 — premiumCast monte anneau + glyphe par clé de Maison ; clé inconnue no-op.
+  const t3 = await page.evaluate(() => {
+    ['gryff', 'slyth', 'serd', 'pouf'].forEach(fx => CombatFX.premiumCast('ally', fx));
+    const layer = document.getElementById('combat-fx-layer');
+    const glyphs = layer ? layer.querySelectorAll('.cfx-premium-glyph').length : 0;
+    const rings  = layer ? layer.querySelectorAll('.cfx-premium-ring').length : 0;
+    CombatFX.premiumCast('ally', 'cle_inconnue');   // no-op silencieux
+    const after = layer ? layer.querySelectorAll('.cfx-premium-glyph').length : 0;
+    return { glyphs, rings, after };
+  });
+  console.log('  T3 FX    :', t3);
+  assert(t3.glyphs >= 4 && t3.rings >= 4, 'premiumCast devrait monter 1 anneau + 1 glyphe par Maison');
+  assert(t3.after === t3.glyphs, 'une clé Premium inconnue ne doit rien monter');
+
+  // T4 — intégration : un sort Premium signature déclenche le FX Premium au cast.
+  // Soin du Blaireau (Premium Poufsouffle, heal → pas de cible ennemie).
+  const t4 = await page.evaluate(() => {
+    const h = party[0];
+    if (!h.spells.includes('Soin du Blaireau')) h.spells.push('Soin du Blaireau');
+    h.sp = h.spMax; currentBattleChar = 0;
+    const before = document.querySelectorAll('#combat-fx-layer .cfx-premium-glyph').length;
+    castSpellInBattle('Soin du Blaireau', -1, 0);
+    const after = document.querySelectorAll('#combat-fx-layer .cfx-premium-glyph').length;
+    return { before, after };
+  });
+  console.log('  T4 cast  :', t4);
+  assert(t4.after > t4.before, 'le cast d\'un sort Premium devrait monter le FX Premium');
+
+  // T5 — intégration : un sort signature surchargé (artefact Premium équipé)
+  // affiche le bandeau « 🔗 Synergie ». Orbe de Godric + Patronus Maxima.
+  const t5 = await page.evaluate(() => {
+    const h = party[0];
+    if (!h.spells.includes('Patronus Maxima')) h.spells.push('Patronus Maxima');
+    const orbe = ITEMS.find(i => i.id === 'orbe_runique_premium_gryff');
+    h.equipped = h.equipped || {};
+    h.equipped.trinket = Object.assign({}, orbe);
+    if (typeof recalculateStats === 'function') recalculateStats();
+    h.sp = h.spMax; currentBattleChar = 0;
+    const form = (typeof resolveSpellForm === 'function') ? resolveSpellForm('Patronus Maxima', h) : null;
+    const l0 = document.getElementById('combat-banner-layer'); if (l0) l0.innerHTML = '';
+    castSpellInBattle('Patronus Maxima', -1, 0);
+    const layer = document.getElementById('combat-banner-layer');
+    return { synergyResolved: !!(form && form._synergy), hasSynergyBanner: !!(layer && layer.querySelector('.cb-synergy')) };
+  });
+  console.log('  T5 syner.:', t5);
+  assert(t5.synergyResolved, 'resolveSpellForm devrait renvoyer la forme synergie (_synergy)');
+  assert(t5.hasSynergyBanner, 'le cast signature surchargé devrait afficher le bandeau 🔗 Synergie');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ P5 feedback OK (bandeaux 5 kinds + FX/son Premium + câblage cast/synergie)');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBuffBadgesPng, scenarioBruteCrush, scenarioStatRework, scenarioFortuneStat, scenarioAgiCelerite, scenarioCeleriteGuardCounting, scenarioDuoStatuses, scenarioCritDodge, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioGuardAndFerula, scenarioCombatBuffs, scenarioLegilimensEscalation, scenarioStun, scenarioStatusComboNoFreeze, scenarioCombatExtV2, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioDeathPetrify, scenarioIronmanDeath, scenarioLargeEnemyGroup, scenarioMonsterDiscovery, scenarioArtifactForms, scenarioActiveArtifact, scenarioDuoPosture, scenarioBossPhase, scenarioCombatEnv, scenarioP5Feedback] };

@@ -519,6 +519,36 @@
     setTimeout(() => el.remove(), 2600);
   }
 
+  // Public: combatBanner(label, kind) — P5 (combat-system-synthesis §2.4/§2.7)
+  // Bandeau de callout transitoire centré en haut de l'arène, dans le même
+  // esprit que le message « ⚡ Célérité ! » : signale à l'écran le déclenchement
+  // d'un système récent (synergie de sort, artefact actif, focus-fire Tenaille,
+  // rune d'environnement, contrecoup de corruption). `kind` pilote la teinte et
+  // l'animation via la classe CSS .cb-<kind> (synergy|artifact|tenaille|rune|
+  // backlash ; défaut info). Empilé dans une couche dédiée (#combat-banner-layer)
+  // pour gérer plusieurs déclenchements rapprochés. Défensif : no-op hors arène.
+  function ensureBannerLayer() {
+    const overlay = document.getElementById('encounter-overlay');
+    if (!overlay) return null;
+    let layer = document.getElementById('combat-banner-layer');
+    if (layer) return layer;
+    layer = document.createElement('div');
+    layer.id = 'combat-banner-layer';
+    layer.className = 'combat-banner-layer';
+    overlay.appendChild(layer);
+    return layer;
+  }
+  function combatBanner(label, kind) {
+    if (!label) return;
+    const layer = ensureBannerLayer();
+    if (!layer) return;
+    const el = document.createElement('div');
+    el.className = 'combat-banner cb-' + (kind || 'info');
+    el.textContent = label;
+    layer.appendChild(el);
+    setTimeout(() => el.remove(), 1500);
+  }
+
   // Public: tickNumber(el, from, to, ms, render) — K4
   // Interpole l'affichage d'un compteur (or/XP) de `from` à `to` sur `ms`
   // (easeOutCubic). `render(v)` écrit la valeur `v` (défaut : textContent) —
@@ -556,6 +586,7 @@
     floatDmg,
     cardReact,
     questFanfare,
+    combatBanner,
     tickNumber
   };
 

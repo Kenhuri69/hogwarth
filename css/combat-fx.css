@@ -131,6 +131,53 @@ body.cfx-danger::after {
   100% { transform: translate(var(--cfx-dx, 0), var(--cfx-dy, 0)) scale(0.2); opacity: 0; }
 }
 
+/* ── Cast Premium par Maison (P5) ───────────────────────────── */
+/* Anneau teinté (--cfx-prem-tint) qui s'évase + glyphe de Maison + particules
+   colorées. Émane du lanceur ('ally'). Lecture « sort de prestige ». */
+.cfx-premium-ring {
+  position: absolute;
+  width: 58px; height: 58px;
+  margin: -29px 0 0 -29px;
+  border-radius: 50%;
+  border: 2.5px solid var(--cfx-prem-tint, #d9a521);
+  box-shadow: 0 0 16px var(--cfx-prem-tint, #d9a521), inset 0 0 12px var(--cfx-prem-tint, #d9a521);
+  mix-blend-mode: screen;
+  animation: cfxPremiumRing .7s ease-out forwards;
+}
+@keyframes cfxPremiumRing {
+  0%   { transform: scale(0.25); opacity: 0; }
+  35%  { opacity: 1; }
+  100% { transform: scale(1.7); opacity: 0; }
+}
+.cfx-premium-glyph {
+  position: absolute;
+  font-size: 30px;
+  margin: -22px 0 0 -16px;
+  text-shadow: 0 0 12px currentColor;
+  animation: cfxPremiumGlyph .76s ease-out forwards;
+}
+.cfx-premium-glyph.cfx-premium-gryff { color: #ffd23f; }
+.cfx-premium-glyph.cfx-premium-slyth { color: #6fe09a; }
+.cfx-premium-glyph.cfx-premium-serd  { color: #9fdcff; }
+.cfx-premium-glyph.cfx-premium-pouf  { color: #ffe27a; }
+@keyframes cfxPremiumGlyph {
+  0%   { transform: scale(0.4) rotate(-10deg); opacity: 0; }
+  30%  { transform: scale(1.3) rotate(5deg);  opacity: 1; }
+  100% { transform: scale(1.65) rotate(0deg); opacity: 0; }
+}
+.cfx-premium-particle {
+  position: absolute;
+  width: 7px; height: 7px;
+  margin: -3.5px 0 0 -3.5px;
+  border-radius: 50%;
+  box-shadow: 0 0 7px currentColor;
+  animation: cfxPremiumParticle .76s ease-out forwards;
+}
+@keyframes cfxPremiumParticle {
+  0%   { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--cfx-dx, 0), var(--cfx-dy, 0)) scale(0.2); opacity: 0; }
+}
+
 /* ── Pop de butin (J1) ──────────────────────────────────────── */
 /* Couche fixée au body : endBattle masque l'overlay de combat AVANT de
    traiter les drops, donc le pop ne peut pas vivre dans l'arène. */
@@ -434,7 +481,9 @@ body.cfx-danger::after {
   /* Vignette de danger : halo statique, sans pulsation. */
   body.cfx-danger::after { animation: none; }
   .cfx-shake-light, .cfx-shake-heavy { animation: none; }
-  .cfx-particle, .cfx-heal-particle, .cfx-dissolve-ash, .cfx-cast-spark { display: none; }
+  .cfx-particle, .cfx-heal-particle, .cfx-dissolve-ash, .cfx-cast-spark, .cfx-premium-particle { display: none; }
+  /* Cast Premium (P5) : anneau/glyphe fadent sans dilatation prononcée. */
+  .cfx-premium-ring, .cfx-premium-glyph { animation-duration: .4s; }
   /* Désintégration (G1) : nuage bref, fade plus court. */
   .cfx-dissolve-puff { animation-duration: .4s; }
   .cfx-heal-halo, .cfx-heal-glyph,
