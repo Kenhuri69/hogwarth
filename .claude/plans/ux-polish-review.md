@@ -313,6 +313,22 @@ Chaque lot est **livrable indépendamment** : la qualité perçue monte dès C1
 
 ---
 
+## Journal d'implémentation
+
+- **2026-06-21 — C1 (Thème de Maison UI) : ✅ livré.**
+  - `css/style.css` : variables `--house-accent` / `--house-glow` neutres au
+    `:root`, surchargées par `:root[data-house="<maison>"]` (4 Maisons).
+    Repeinte parcimonieuse des surfaces partagées : `.modal-box` (liseré
+    supérieur 3 px + halo teinté) et `.modal-title` (soulignement). L'or
+    `--gold` reste la couleur du monde (bordures, focus, action primaire).
+  - `js/ui.js` : `_updateHouseBadge()` pose/retire `data-house` sur `<html>`
+    (hook déjà appelé par chaque `updateUI()` → couvre choix de Maison, load
+    de save, reset). Réversible : sans Maison, attribut retiré = thème or.
+  - Vérif : `node tests/smoke.js` vert + cache-bump (CSS/JS bumpés). Aucune
+    régression ; effet nul tant qu'aucune Maison n'est choisie.
+
+---
+
 ## Recommandation de démarrage
 
 Commencer par **C1 (thème de Maison)** : c'est l'amélioration au plus fort

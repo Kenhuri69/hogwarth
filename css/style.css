@@ -21,7 +21,20 @@
      #0a0705/#1a0f05). À NE PAS confondre avec #6a5030 réservé aux états
      désactivés (exemptés WCAG). */
   --label-muted: #b09464;
+  /* ── Thème de Maison (C1, polish UX) — identité visuelle persistante ──────
+     `data-house` est posé sur <html> par _updateHouseBadge (ui.js). Sans
+     attribut (avant choix de Maison, écrans de démarrage), ces valeurs
+     neutres reproduisent le thème or historique → zéro changement visuel.
+     `--house-accent` colore les liserés ; `--house-glow` teinte les halos.
+     L'or `--gold` reste la couleur « du monde » (interactions, focus). */
+  --house-accent: var(--gold);
+  --house-glow: rgba(201,168,76,0.22);
 }
+
+:root[data-house="gryffondor"]  { --house-accent: #D3A625; --house-glow: rgba(180,30,30,0.35); }
+:root[data-house="serpentard"]  { --house-accent: #cfd3d6; --house-glow: rgba(46,140,86,0.32); }
+:root[data-house="serdaigle"]   { --house-accent: #7fb2e8; --house-glow: rgba(74,144,217,0.32); }
+:root[data-house="poufsouffle"] { --house-accent: #f0c75e; --house-glow: rgba(240,199,94,0.34); }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -1835,12 +1848,15 @@ body {
 .modal-box {
   background: linear-gradient(180deg, #1a0f05 0%, #120a03 100%);
   border: 2px solid var(--gold);
+  /* Liseré supérieur teinté par la Maison (signature persistante sur toutes
+     les modales). Sans `data-house`, --house-accent vaut --gold → inchangé. */
+  border-top: 3px solid var(--house-accent);
   border-radius: 6px;
   padding: 20px;
   max-width: 500px; width: 100%;
   max-height: 80vh; overflow-y: auto;
   position: relative;
-  box-shadow: 0 0 40px rgba(201,168,76,0.2);
+  box-shadow: 0 0 40px var(--house-glow);
 }
 
 /* N1 — transitions d'ouverture des modales d'info : fondu du voile + léger
@@ -1884,7 +1900,7 @@ body {
   font-size: 18px;
   color: var(--gold);
   text-align: center;
-  border-bottom: 1px solid var(--gold-dark);
+  border-bottom: 1px solid var(--house-accent);
   /* 48px : laisse passer la croix de fermeture 44px sans chevauchement. */
   padding: 0 48px 10px;
   margin-bottom: 14px;
