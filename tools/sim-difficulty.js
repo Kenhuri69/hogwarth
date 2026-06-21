@@ -419,6 +419,13 @@ function parseArgs(argv) {
                 useQuests: true, useEquipment: true, usePotions: true,
                 kills: 0, bonusLevels: 0, artifacts: false,
                 endgame: false, maxFloor: 40, forge: 0, library: 0,
+                // Mutations graduées de Boucle (ch.11 P0). Miroir de
+                // _loopVariantAbilities (dungeon-scaling.js) : capacités
+                // bornées ajoutées par palier `n` (Spectral weaken n≥2,
+                // Abyssal fear n≥3, Cauchemardesque stun n≥4, Funeste
+                // weaken+ n≥5). 1 = actif (mirroir runtime), 0 = désactivé
+                // (mesure du delta). Sans incidence hors --endgame.
+                loopMuts: 1,
                 // Tuning de la récursion endgame (Boucle Ténébreuse). Miroir de
                 // ENDGAME_SCALING (dungeon-scaling.js). scalDelta de base + une
                 // croissance par palier (scalDelta(n) = scalDelta + growth×(n−1))
@@ -495,6 +502,7 @@ function parseArgs(argv) {
     else if (k === 'bonus-levels') out.bonusLevels = parseInt(v, 10) || 0;
     else if (k === 'loop-xp-frac')  out.loopXpFrac = parseFloat(v) || 0;
     else if (k === 'max-floor')    out.maxFloor = parseInt(v, 10) || 40;
+    else if (k === 'loop-muts')    out.loopMuts = parseInt(v, 10);
     else if (k === 'endgame-scaldelta')        out.endgameScalDelta = parseFloat(v);
     else if (k === 'endgame-scaldelta-growth') out.endgameScalDeltaGrowth = parseFloat(v) || 0;
     else if (k === 'endgame-basefix-mult')     out.endgameBaseFixMult = parseFloat(v) || 1.0;
@@ -728,6 +736,20 @@ function scaledStatValue(rawBase, scale, key, floor, cfg) {
   return result;
 }
 
+// Miroir de _loopVariantAbilities (dungeon-scaling.js) — capacités graduées
+// ajoutées par palier de Boucle `n`. Le power des DoT dérive de l'atk SCALÉ
+// (ignore la DEF → anti-tank, scale avec l'étage). Cumulatives, chances basses,
+// effets EXISTANTS (bleed/fear/stun/poison) modélisés par enemyAct. [] pour n<2.
+function simLoopVariantAbilities(n, atk) {
+  if (typeof n !== 'number' || !isFinite(n) || n < 2) return [];
+  const a = (typeof atk === 'number' && atk > 0) ? atk : 10;
+  const out = [{ effect: 'status', statusId: 'bleed', power: Math.max(4, Math.round(0.35 * a)), turns: 3, chance: 0.30 }]; // n≥2 Spectral
+  if (n >= 3) out.push({ effect: 'status', statusId: 'fear', turns: 2, chance: 0.16 });  // n≥3 Abyssal
+  if (n >= 4) out.push({ effect: 'status', statusId: 'stun', turns: 1, chance: 0.14 });  // n≥4 Cauchemardesque
+  if (n >= 5) out.push({ effect: 'status', statusId: 'poison', power: Math.max(4, Math.round(0.30 * a)), turns: 4, chance: 0.30 }); // n≥5 Funeste
+  return out;
+}
+
 // dungeon.js — scaleMonster (Normal = diffMult 1.0, on ignore shiny pour la sim)
 // `cfg` injecte les multiplicateurs HP/XP testés (cf. Phase 2 du plan).
 function scaleMonster(base, floor, cfg) {
@@ -787,6 +809,12 @@ function scaleMonster(base, floor, cfg) {
     out.abilities = [...(out.abilities || []),
       { effect: 'maxhpdamage', power: cfg.maxhpDmg, chance: cfg.maxhpChance,
         cap: cfg.maxhpCap || 0, capRef: cfg.maxhpCapRef || 'atk' }];
+  }
+  // Mutations graduées de Boucle (ch.11 P0) — miroir de applyLoopVariant.
+  // Appliquées aux créatures Ténébreuses (endgame, n≥1) ; abilities effectives
+  // dès n≥2. Toujours actives par défaut (cfg.loopMuts=1), opt-out --loop-muts=0.
+  if (cfg.loopMuts !== 0 && n >= 2) {
+    out.abilities = [...(out.abilities || []), ...simLoopVariantAbilities(n, out.atk)];
   }
   return out;
 }

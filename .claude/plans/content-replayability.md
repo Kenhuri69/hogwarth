@@ -420,6 +420,19 @@ Nouveaux (tous **sérialisés** dans `_serializeState`/`_applyState`, save.js) :
 - **Prochaine étape** : valider les ❓ avec l'utilisateur, puis implémenter la tranche **P0**
   (données-only) dans un commit, test smoke, cache-bump.
 
+- **2026-06-21 (SIMS mises à jour + correctif mutations + P1 events)** —
+  - **Sim** : `tools/sim-difficulty.js` mire désormais `_loopVariantAbilities`
+    (`simLoopVariantAbilities`, flag opt-out `--loop-muts=0`). Le sim a **révélé une erreur
+    de conception** : la mutation `weaken` initiale rendait la Boucle *plus facile* (+8pp win)
+    car une capacité `weaken` *remplace* l'attaque du tour (gros coup troqué contre −1 DEF).
+  - **Correctif mutations** : remplacées par des **DoT dont le `power` dérive de l'`atk` scalé**
+    (bleed n≥2, poison n≥5 — ignorent la DEF → anti-tank, scalent) + contrôle (fear n≥3, stun n≥4).
+    Re-sim `--n=3000` : ét.21 Solo 21%→13%, Duo 28%→25% ; ét.25 Solo 20%→15%, Duo 28%→22%
+    (∆ ~5-8pp, borné, bon sens). `units.js` 946 ✅.
+  - **P1 — Événements Zone D** : 4 nouveaux `FLOOR_EVENTS` gatés par étage
+    (`echo_temporel` 12+, `givre_ancien` 14+, `sceau_fissure` 14+, `chambre_scellee` 11+) via
+    `rollFloorEvent(floor)` + effets dans `generateDungeon`.
+
 ### Points ouverts (❓) à trancher avant code
 1. Pondération des events en Zone D (rééquilibrer vs garder le pool global) ?
 2. Héritage visible : veut-on H4 (aura cosmétique sprite, asset) et H5 (badge HUD Éclats), ou se contente-t-on d'imiter `OUTREMONDE_SOUVENIRS` (souvenirs de Boucle débloqués par paliers d'Éclats) ?

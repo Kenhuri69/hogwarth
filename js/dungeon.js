@@ -169,7 +169,7 @@ function _generateRunePuzzle(rooms) {
   litRunes   = new Set();
   // L'événement d'étage « Étage runique » force la génération (Phase 4.2).
   const forced = (typeof currentFloorEvent !== 'undefined'
-    && currentFloorEvent === 'runique');
+    && (currentFloorEvent === 'runique' || currentFloorEvent === 'sceau_fissure'));
   if (!forced && Math.random() >= 0.20) return;
   const pocket = _findWallPocket();
   if (!pocket) return;
@@ -216,7 +216,7 @@ function _generateRuneStele(rooms) {
   // L'événement « Étage runique » force la stèle si aucune dalle-rune
   // n'a pu être posée (cf. generateDungeon — Phase 4.2/4.3).
   const forced = (typeof currentFloorEvent !== 'undefined'
-    && currentFloorEvent === 'runique');
+    && (currentFloorEvent === 'runique' || currentFloorEvent === 'sceau_fissure'));
   if (!forced && Math.random() >= 0.30) return;
   const pocket = _findWallPocket();
   if (!pocket) return;
@@ -256,7 +256,7 @@ function generateDungeon(floor) {
 
   // Événement d'étage (Phase 4) : tiré une fois ici ; pilote la densité
   // d'ennemis, le nombre de coffres/pièges et la boutique ci-dessous.
-  currentFloorEvent = (typeof rollFloorEvent === 'function') ? rollFloorEvent() : null;
+  currentFloorEvent = (typeof rollFloorEvent === 'function') ? rollFloorEvent(floor) : null;
 
   // ── Génération des salles : 7 salles sans chevauchement ───────
   // Map 16×16 (14×14 utile) → 7 salles, majoritairement 3×3, séparées
@@ -330,7 +330,7 @@ function generateDungeon(floor) {
   dungeon[spine[SPINE_LEN - 1].cy][spine[SPINE_LEN - 1].cx] = CELL.STAIRS_D;
   // Événement « Veine de trésors » : double la probabilité de coffre en
   // épine ; « Marché ambulant » : force la boutique sur la salle d'épine.
-  const chestP = (currentFloorEvent === 'tresor') ? 0.60 : 0.30;
+  const chestP = (currentFloorEvent === 'tresor' || currentFloorEvent === 'chambre_scellee') ? 0.60 : 0.30;
   for (const r of rooms) {
     if (r.kind === 'spine') {
       if (currentFloorEvent === 'marche') { dungeon[r.cy][r.cx] = CELL.SHOP; continue; }
@@ -593,7 +593,7 @@ function generateDungeon(floor) {
 
   // Densité d'ennemis pilotée par l'événement d'étage : « Étage hanté »
   // sature les salles, « Quiétude » les vide en partie.
-  const enemyChance = currentFloorEvent === 'hante' ? 0.85
+  const enemyChance = (currentFloorEvent === 'hante' || currentFloorEvent === 'givre_ancien') ? 0.85
                     : currentFloorEvent === 'calme' ? 0.30 : 0.60;
   for(let r of rooms.slice(1)) {
     if(Math.random()<enemyChance) {
