@@ -1,9 +1,53 @@
 # Plan — P3.3 : découpage propre de `data.js` / `monsters.js` / `npcs.js`
 
 > RC polish 2026-06 · suite de [`rc-polish-remaining.md`](./rc-polish-remaining.md) §P3.3.
-> **Statut : PLAN seul** (demandé par l'utilisateur) — *aucune implémentation*.
-> Plan vivant (guidelines §5) : cocher/amender si/quand l'exécution est lancée.
+> **Statut : Lot A LIVRÉ (2026-06-21)** — `data.js` découpé. Lots B/C différés.
+> Plan vivant (guidelines §5).
 > Date : 2026-06-21.
+
+---
+
+## ✅ Journal d'exécution — Lot A (`data.js`)
+
+Exécuté le 2026-06-21 sur branche `claude/p33-data-split-lot-a-zhz1f4` (depuis
+`origin/master`). **Pur couper-coller**, zéro réécriture de logique, zéro
+call-site métier touché.
+
+Bornes réelles reconfirmées dans le code (les n° du §3 avaient légèrement
+bougé) :
+
+| Fichier | Lignes source coupées | Globals |
+|---------|-----------------------|---------|
+| `data.js` (socle, conservé) | 1–177 | `MAP_W/H`, `CELL`, `DIRECTIONS`, `RUNE_LABELS`, XP/stats, D1–D5 (Fortune/Célérité), `REQUIREMENT_*`, `SEARCH_*`/`REST_*`, `RESIST/WEAK_MULTIPLIER` |
+| `data-characters.js` | 178–315 | `CHARACTERS` |
+| `data-spells.js` | 316–1029 | `SPELLS`, `SPELL_META`, helpers sorts, `GRIMOIRE_PAGES`/`PAGE_FLOORS`/`ACT3_PAGES`/`ACT3_FLOORS`, `RIDDLES_LUMIERE`, `ARTIFACT_FORMS`, helpers corruption |
+| `data-items.js` | 1030–1739 | `PREMIUM_MULT`, `premiumStat`, `ITEMS`, `POTION_RECIPES`, `SHOP_ITEMS`, `TENEBRES_SET`, `CHEST_RARITY_*`, `pickChestEquipment` |
+| `data-world.js` | 1740–1828 | `LOCATIONS`, `NARRATIVES`, `OUTREMONDE_SOUVENIRS/COSMETICS` |
+
+> Note vs §3 : `ARTIFACT_FORMS` (forward-ref des formes de sorts) reste **dans
+> `data-spells.js`** ; le bloc Premium (`PREMIUM_MULT`/`premiumStat`) ouvre
+> `data-items.js` juste avant `ITEMS` (forward-ref §2.3 respectée : helper
+> `pickChestEquipment` **après** `ITEMS` + `CHEST_RARITY_*`).
+
+Étapes (toutes cochées) :
+- [x] 4 sous-fichiers créés par couper-coller ; `grep -c` = 1 par identifiant.
+- [x] `index.html` : 4 `<script defer ?v=1>` insérés au bon rang, `data.js?v=63→64`.
+- [x] `sw.js` : 4 URLs ajoutées à `PRECACHE_URLS`, `data.js?v=64`, `CACHE_VERSION` v209→v210.
+- [x] `loader.js` MANIFEST : `source` corrigé (SPELLS/ITEMS/CHARACTERS/LOCATIONS/
+      GRIMOIRE_PAGES/ACT3_PAGES/_activePageSet/RIDDLES_LUMIERE/POTION_RECIPES/
+      TENEBRES_SET/OUTREMONDE_*).
+- [x] `CLAUDE.md` « Structure des fichiers » : 4 entrées `data-*.js` ajoutées.
+- [x] `tests/units.js` : chemins de chargement des fixtures recalés sur les
+      nouveaux fichiers (assertions inchangées).
+
+Vérif (les 6 étapes de `test.yml`, localement) — **toutes vertes** :
+- `node tests/units.js` → 946 assertions ✅
+- `node tests/smoke.js` → 263 scénarios ✅ (1ʳᵉ passe, aucun flaky)
+- `node tests/pwa-smoke.js` → cache v210, 102 entrées, loader OK offline ✅
+- `node tools/check_cache_versions.js --base origin/master` ✅
+- `node tools/check_doc_modules.js` → 92 modules alignés ✅
+
+**Lots B/C (`monsters.js`/`npcs.js`) : non lancés** (différés comme recommandé).
 
 ---
 

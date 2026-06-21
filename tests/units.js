@@ -375,10 +375,10 @@ function loadModule(relPath, exportNames, globals = {}) {
     approx(evolve(itemCorrupt, { ...baseG, spellCorruption: 100 }), 1.5, 1e-9));
 
   // Verrou anti-dérive doc ↔ data.js : les caps calibrés P13 figurent en source.
-  const dSrc = fs.readFileSync(path.join(ROOT, 'js/data.js'), 'utf8');
-  check('data.js philtre_mage cap 1.5 (P13)',
+  const dSrc = fs.readFileSync(path.join(ROOT, 'js/data-items.js'), 'utf8');
+  check('data-items.js philtre_mage cap 1.5 (P13)',
     /key:\["baton","grimoire"\],\s*perStep:0\.18,\s*cap:1\.5/.test(dSrc));
-  check('data.js corruption_ctrl cap 1.5 (P13)',
+  check('data-items.js corruption_ctrl cap 1.5 (P13)',
     /source:"corruption",\s*perStep:0\.05,\s*cap:1\.5/.test(dSrc));
 })();
 
@@ -1724,8 +1724,9 @@ function loadModule(relPath, exportNames, globals = {}) {
 // la règle de boost Premium (+20/35/50 %) AVANT que tout artefact ne s'en serve.
 // ============================================================
 (function testArtifactSocle() {
-  const { ARTIFACT_FORMS, PREMIUM_MULT, premiumStat } = loadModule(
-    'js/data.js', ['ARTIFACT_FORMS', 'PREMIUM_MULT', 'premiumStat']);
+  const { ARTIFACT_FORMS } = loadModule('js/data-spells.js', ['ARTIFACT_FORMS']);
+  const { PREMIUM_MULT, premiumStat } = loadModule(
+    'js/data-items.js', ['PREMIUM_MULT', 'premiumStat']);
 
   // ── ARTIFACT_FORMS : chaque forme mappe un slot d'équipement VALIDE ──
   // (orthogonalité forme↔slot : aucune forme n'invente de slot — plan §0/§1.3).
@@ -1770,8 +1771,8 @@ function loadModule(relPath, exportNames, globals = {}) {
   check('premiumStat(NaN, epic) = NaN (passthrough)', Number.isNaN(premiumStat(NaN, 'epic')));
 
   // ── Cohérence doc ↔ code (verrou anti-dérive avec le plan §1.6) ──
-  const dataSrc = fs.readFileSync(path.join(ROOT, 'js/data.js'), 'utf8');
-  check('data.js déclare PREMIUM_MULT rare 1.20/epic 1.35/legendary 1.50',
+  const dataSrc = fs.readFileSync(path.join(ROOT, 'js/data-items.js'), 'utf8');
+  check('data-items.js déclare PREMIUM_MULT rare 1.20/epic 1.35/legendary 1.50',
     /PREMIUM_MULT\s*=\s*\{\s*rare:\s*1\.20,\s*epic:\s*1\.35,\s*legendary:\s*1\.50\s*\}/.test(dataSrc));
 })();
 
@@ -1888,7 +1889,7 @@ function loadModule(relPath, exportNames, globals = {}) {
 // id) faisait que `ITEMS.find(i=>i.id===…)` shadowait l'epic. Tout id dupliqué
 // rend une entrée inatteignable par lookup → assertion d'unicité globale.
 (function testItemsUniqueIds() {
-  const { ITEMS } = loadModule('js/data.js', ['ITEMS']);
+  const { ITEMS } = loadModule('js/data-items.js', ['ITEMS']);
   const seen = new Set();
   const dupes = [];
   for (const it of ITEMS) {
@@ -1957,7 +1958,7 @@ function loadModule(relPath, exportNames, globals = {}) {
 // les registres, les helpers purs et l'idempotence du passe de normalisation.
 // ============================================================
 (function testSpellSocleP0() {
-  const m = loadModule('js/data.js', [
+  const m = loadModule('js/data-spells.js', [
     'SPELLS', 'SPELL_TIERS', 'SPELL_PREMIUM_MULT', 'SPELL_RARITY_COST_MULT',
     'HOUSE_SPELL_FX', 'HERO_PATRONUS', 'SPELL_META',
     'getSpellById', 'getSpellByName', 'spellTierTint', 'resolveSpellForm',
@@ -2179,7 +2180,7 @@ function loadModule(relPath, exportNames, globals = {}) {
     console, exports: {}, Math,
     currentFloor: 1, completedQuests: new Set(), houseTier: 0, chosenHouse: null,
   };
-  const src = fs.readFileSync(path.join(ROOT, 'js/data.js'), 'utf8');
+  const src = fs.readFileSync(path.join(ROOT, 'js/data-spells.js'), 'utf8');
   vm.createContext(sandbox);
   vm.runInContext(src +
     '\n;exports.resolveSpellForm = resolveSpellForm;' +
@@ -2268,7 +2269,7 @@ function loadModule(relPath, exportNames, globals = {}) {
     currentFloor: 1, completedQuests: new Set(), houseTier: 0, chosenHouse: null,
     spellCorruption: 0,
   };
-  const src = fs.readFileSync(path.join(ROOT, 'js/data.js'), 'utf8');
+  const src = fs.readFileSync(path.join(ROOT, 'js/data-spells.js'), 'utf8');
   vm.createContext(sandbox);
   vm.runInContext(src +
     '\n;exports.corruptionSpellModifier = corruptionSpellModifier;' +

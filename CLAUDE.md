@@ -55,7 +55,21 @@ js/
   codex.js         →  CODEX_ENTRIES + évaluateur pur — journal vivant
                       déverrouillable (entrées non-créature : lieux, lore,
                       systèmes). Données + logique d'éligibilité.
-  data.js          →  Constantes : MAP_W/H, CELL, CHARACTERS, ITEMS, SPELLS, LOCATIONS
+  data.js          →  Socle de constantes monde/équilibrage : MAP_W/H, CELL,
+                      DIRECTIONS, RUNE_LABELS, XP/stats, rework D1–D5
+                      (Fortune/Célérité), REQUIREMENT_*, SEARCH_*/REST_*,
+                      RESIST/WEAK_MULTIPLIER. Socle du Lot A P3.3 (data.js
+                      découpé en 4 sous-fichiers, purs couper-coller).
+  data-characters.js → CHARACTERS — registre des personnages jouables. APRÈS data.js
+  data-spells.js   →  SPELLS + helpers sorts (spellCategory, getSpellById,
+                      resolveSpellForm…) + SPELL_META + GRIMOIRE_PAGES/ACT3_PAGES
+                      + RIDDLES_LUMIERE + ARTIFACT_FORMS + helpers corruption.
+                      APRÈS data-characters.js
+  data-items.js    →  premium helpers (premiumStat) + ITEMS + POTION_RECIPES +
+                      SHOP_ITEMS + TENEBRES_SET + CHEST_RARITY_* +
+                      pickChestEquipment. APRÈS data-spells.js
+  data-world.js    →  LOCATIONS + NARRATIVES + OUTREMONDE_SOUVENIRS/COSMETICS.
+                      APRÈS data-items.js
   data-icon-recipes.js → ICON_RECIPES : schéma du pipeline d'icônes (mirror du
                       dict Python). Inerte au runtime navigateur. APRÈS data.js
   floor-themes.js  →  FLOOR_THEMES{} + getFloorTheme() — source unique de
