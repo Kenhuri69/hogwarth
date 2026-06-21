@@ -28,7 +28,15 @@ renvoie → je l'intègre.
    (index.html + sw PRECACHE). `check_cache_versions.js` → exit 0.
 6. [x] Tests : `node tests/pwa-smoke.js` (cache v198, 98 entrées, offline OK) +
    `node tests/smoke.js title hub start visual` (loader + hub verts).
-7. [ ] Commit + push sur `claude/game-splash-icon-d7lqz3`.
+7. [x] Commit + push, PR #635 rebasée + mergée (squash, `9af38a8`).
+
+## Suivi — retrait du cadre doré de l'icône (2026-06-21)
+La nouvelle source carrée se suffisant à elle-même, le cadre doré + studs
+n'apportaient rien : retirés de `gen_pwa_icons.py` (helpers `draw_gold_frame`
+/ `add_corner_studs` et constantes `GOLD_*` supprimés). Icône `any` désormais
+bord-à-bord ; maskable conserve la safe-zone 80 % + fond étendu. 5 PNG
+regénérés. Bump : icônes `?v=3`→`?v=4`, `CACHE_VERSION` v200→v201, cascade
+`sw.js?v=6` + `pwa.js?v=6`. Branche `claude/icon-remove-frame`.
 
 ## Notes
 - Image de garde affichée jusqu'à 600px de large, height auto, border-radius 10px.
