@@ -147,7 +147,10 @@ const TEST_MAP = {
   'js/karaoke.js':     ['karaoke'],
 
   // ── Données de contenu ──
-  'js/monsters.js': ['monster', 'combat', 'darkvariant'],
+  'js/monsters.js':      ['monster', 'combat', 'darkvariant'], // socle (Lot B P3.3)
+  'js/monsters-low.js':  ['monster', 'combat', 'darkvariant'], // ét. 1-7
+  'js/monsters-mid.js':  ['monster', 'combat', 'darkvariant'], // ét. 4-10
+  'js/monsters-high.js': ['monster', 'combat', 'darkvariant'], // ét. 10+ / boss / Boucle
 
   // ── UI / chrome / aide ──
   // ui.js est central (updateUI partout) ; on cible un sous-ensemble

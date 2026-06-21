@@ -5,15 +5,23 @@ description: Ajouter ou modifier un monstre/ennemi/boss du jeu Poudlard & Magie 
 
 # Ajouter un monstre
 
-`js/monsters.js` est **le seul fichier à modifier** pour la donnée du
-monstre : le moteur (scaling, combat, drops, spawn, bestiaire) s'adapte
-automatiquement. Un `TEMPLATE` commenté se trouve en bas de `monsters.js`.
+Le registre `MONSTERS` est découpé (Lot B P3.3) en **4 fichiers chargés en
+séquence** ; le moteur (scaling, combat, drops, spawn, bestiaire) s'adapte
+automatiquement :
+- `js/monsters.js` (socle) : header de doc + `const MONSTERS = []` + `TEMPLATE`
+  commenté. **Aucune entrée ici.**
+- `js/monsters-low.js` : `MONSTERS.push(…)` — étages 1-7.
+- `js/monsters-mid.js` : `MONSTERS.push(…)` — étages 4-10.
+- `js/monsters-high.js` : `MONSTERS.push(…)` — étage 10+, boss, Boucle, Gardiens.
+
+**Éditer le fichier de tranche qui correspond au `minFloor` du monstre.**
 
 ## Étapes
 
-### 1. Définir l'entrée dans `js/monsters.js`
-Copier le TEMPLATE en bas du fichier et l'insérer dans le tableau `MONSTERS[]`
-(avant le `];` final). Champs :
+### 1. Définir l'entrée dans le bon `js/monsters-{low,mid,high}.js`
+Copier le `TEMPLATE` (en bas de `js/monsters.js`) et l'insérer dans le
+`MONSTERS.push( … )` du fichier de tranche correspondant au `minFloor`
+(low = 1-7, mid = 4-10, high = 10+/boss/Boucle). Champs :
 
 ```js
 {
@@ -91,7 +99,9 @@ Si tu ajoutes un comportement combat nouveau non couvert, ajoute un scénario
 dans `tests/smoke.js` **dans le même commit**.
 
 ## Pièges
-- Ne pas oublier la virgule entre l'entrée et le `];` de fin de tableau.
+- Insérer l'entrée DANS le `MONSTERS.push( … )` du bon fichier de tranche
+  (pas dans le socle `monsters.js`). Séparer les entrées par une virgule ;
+  une virgule traînante avant le `)` final est tolérée.
 - `id` doit être unique — sinon collision de spawn/quête/bestiaire.
 - Un nouveau global critique exporté ailleurs devrait être ajouté au MANIFEST
   de `loader.js` ; pour un simple monstre, rien à faire (donnée dans MONSTERS).
