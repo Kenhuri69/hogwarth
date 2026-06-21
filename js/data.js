@@ -1222,6 +1222,42 @@ const ITEMS = [
     type:"consumable", category:"mana", rarity:"rare", effect:"restore_sp", power:20, price:110,
     evolves:{ source:"artifactForm", key:["baton","grimoire"], perStep:0.18, cap:1.8 },
     synergy:{ artifacts:["baton","grimoire"], note:"+PM par focaliseur de caster équipé (bâton / grimoire)." } },
+  // ── Résilience Maison (Potions 2.0 — Lot P9, §1.5) ───────────────────────
+  // Un seul item, 4 comportements selon `chosenHouse` (effet `house_buff`,
+  // inventory.js — HOUSE_BUFF_PLANS). S'aligne sur la stat de la Maison.
+  { id:"potion_resilience_maison", name:"Potion de Résilience Maison", icon:"🛡️",
+    desc:"Galvanise le buveur selon sa Maison (ATK·crit / MAG·sort / MAG·PM / DEF·régén) pendant 3 tours.",
+    type:"consumable", category:"buff", rarity:"epic", effect:"house_buff", power:8, turns:3,
+    houseAffinity:null, price:200,
+    synergy:{ note:"S'aligne sur le passif d'Apothéose de ta Maison." } },
+  // ── Variantes Premium par Maison (Potions 2.0 — Lot P9, §1.6) ────────────
+  // Premium ≠ nouvelle rareté : variante COLORIÉE + BOOSTÉE d'une base, gatée
+  // par CONTENU (quête signature de `chosenHouse` = la seule « facile » ;
+  // les autres via Marchand d'Ombre / Boucle, décision §3.4). `premium:true`
+  // + `premiumOf` (base) + `premiumTint` (couleur Maison) + `premiumFx` (clé
+  // Maison du flash de consommation). Effet = celui de la base, boosté.
+  { id:"elixir_lion_ardent", name:"Élixir du Lion Ardent", icon:"🦁",
+    desc:"+13 ATK et +6 LCK (crit) pendant 4 tours — Premium Gryffondor.",
+    type:"consumable", category:"buff", rarity:"epic", effect:"house_buff", power:13, turns:4,
+    premium:true, premiumOf:"potion_force", houseAffinity:"Gryffondor", premiumFx:"gryff", premiumTint:"#d3a625", price:0,
+    synergy:{ note:"Reliques de Gryffondor — l'audace au crit." } },
+  { id:"venin_serpent", name:"Venin du Serpent", icon:"🐍",
+    desc:"Lancé : 18 dégâts + poison renforcé (8/tour, 5 tours) — Premium Serpentard.",
+    type:"consumable", category:"debuff", rarity:"epic", effect:"throw", power:18,
+    statusId:"poison", statusPower:8, statusTurns:5,
+    premium:true, premiumOf:"flacon_venin", houseAffinity:"Serpentard", premiumFx:"slyth", premiumTint:"#1a472a", price:0,
+    synergy:{ note:"Set des Ténèbres — le venin s'attarde." } },
+  { id:"sagesse_aigle", name:"Sagesse de l'Aigle", icon:"🦅",
+    desc:"+13 LCK (crit) et restaure 40 PM — Premium Serdaigle.",
+    type:"consumable", category:"mana", rarity:"epic", effect:"temp_buff", buffStat:"lck", power:13, turns:4,
+    restoreSpBonus:40,
+    premium:true, premiumOf:"potion_precision", houseAffinity:"Serdaigle", premiumFx:"serd", premiumTint:"#0e1a40", price:0,
+    synergy:{ artifacts:["baton","grimoire"], note:"Focaliseurs de caster — la clarté de l'esprit." } },
+  { id:"vigueur_blaireau", name:"Vigueur du Blaireau", icon:"🦡",
+    desc:"Régénère 10 PV/tour pendant 5 tours — Premium Poufsouffle.",
+    type:"consumable", category:"soin", rarity:"epic", effect:"regen_buff", power:10, turns:5,
+    premium:true, premiumOf:"elixir_regen", houseAffinity:"Poufsouffle", premiumFx:"pouf", premiumTint:"#f0c75e", price:0,
+    synergy:{ note:"Loyauté du Blaireau — la vigueur qui tient." } },
   { id:"cape_invis",   name:"Cape d'Invisibilité",   icon:"🌫️", desc:"AGI+5 LCK+5 · Esquive +5%", type:"acc",   slot:"cloak", family:"cloak_invis",  rarity:"epic",     bonusAgi:5, bonusLck:5, bonusDodgeChance:5, power:5, price:550 },
   { id:"chapeau_pointu",name:"Chapeau de Serdaigle", icon:"🎓", desc:"MAG+3 INT+3",            type:"armor", slot:"head",  family:"hat_serd",     rarity:"rare",     bonusDef:2, bonusMag:3, power:3, price:300 },
   // Easter egg « Salle sur Demande » — objet unique offert à la 1ʳᵉ Salle de
@@ -1532,6 +1568,12 @@ const POTION_RECIPES = [
   { id:"brew_philtre_mage", name:"Philtre du Mage", resultItemId:"philtre_mage",
     ingredients:{ herbe_dictame:1, eclat_vitalite:1 },                  difficulty:15,
     lore:"Le dictame infusé sur un Éclat de Vitalité s'accorde aux focaliseurs du mage." },
+  // ── Résilience Maison (Potions 2.0 — Lot P9) ─────────────────────────────
+  // Herbe T2 ×2 + Éclat de Vitalité (« ingrédient Maison »). Multiset inédit.
+  // Pré-enseignée par la quête signature de Maison (reward.recipes).
+  { id:"brew_resilience_maison", name:"Potion de Résilience Maison", resultItemId:"potion_resilience_maison",
+    ingredients:{ herbe_asphodele:1, herbe_branchiflore:1, eclat_vitalite:1 }, difficulty:16,
+    lore:"Deux herbes nobles liées par un Éclat de Vitalité épousent la vertu de ta Maison." },
 ];
 
 const SHOP_ITEMS = ["potion_s","potion_m","felix","choco_sorcier","wand1","robe1","amulette","broom","mandragore","livre_sortileges","livre_soin","livre_bombarda"];

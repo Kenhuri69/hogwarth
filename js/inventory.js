@@ -429,6 +429,31 @@ function _teachSpellToParty(spellName) {
   return learned;
 }
 
+// Potions 2.0 — Lot P9 : Résilience Maison (`house_buff`). Un seul item, 4
+// comportements selon `chosenHouse`. Le `primary` est la stat de la Maison
+// (ATK/MAG/MAG/DEF, miroir de HOUSE_BONUSES[h].starGenerator.primaryLabel) ;
+// le rider reprend une mécanique EXISTANTE (buff de stat secondaire, statut
+// `regen`, ou restitution de PM) — zéro nouveau sous-système de combat. Les
+// flavors « spell-lifesteal / −coût PM » du design sont approximés par des
+// buffs de stat (calibration P13). Cf. .claude/plans/...craft-2.0.md §1.5/§2.5.
+const HOUSE_BUFF_PLANS = {
+  Gryffondor:  { primary: 'atk', secondary: 'lck' },  // +ATK / crit (LCK)
+  Serpentard:  { primary: 'mag', secondary: 'agi' },  // +MAG / crit de sort (AGI)
+  Serdaigle:   { primary: 'mag', restoreSp: true   }, // +MAG / +PM
+  Poufsouffle: { primary: 'def', regen: true       }, // +DEF / régén
+};
+
+// Pose un buff temporaire de stat (réutilise le statut `buff_<stat>` du moteur
+// existant — cf. branche `temp_buff`). NE recalcule PAS : l'appelant groupe les
+// poses puis appelle recalculateStats() une seule fois.
+function _applyTempStatBuff(target, stat, amount, turns) {
+  const statusId = 'buff_' + stat;
+  const known = (typeof BUFF_STAT_BY_ID !== 'undefined') && BUFF_STAT_BY_ID[statusId];
+  if (typeof applyStatus !== 'function' || !known || amount <= 0) return;
+  const applied = applyStatus(target, statusId, amount, turns);
+  if (applied) target[stat] = (target[stat] || 0) + amount;
+}
+
 // Applique l'effet d'un consommable sur la cible (hp/sp). No-op si
 // l'effet n'est pas un effet de restauration reconnu.
 function _applyConsumableEffect(item, target) {
@@ -485,6 +510,11 @@ function _applyConsumableEffect(item, target) {
         if (typeof recalculateStats === 'function') recalculateStats();
       }
     }
+    // Rider PM (P9 — Sagesse de l'Aigle Premium) : restitution de PM en plus
+    // du buff. `restoreSpBonus` optionnel ; back-compat (absent = no-op).
+    if (item.restoreSpBonus) {
+      target.sp = Math.min(target.spMax, target.sp + item.restoreSpBonus);
+    }
   }
   // Résistance : pose le statut non-DoT `resist_buff` (réduction générale des
   // dégâts subis de `power` % pendant `turns` tours). Lu par _resistMult()
@@ -492,6 +522,22 @@ function _applyConsumableEffect(item, target) {
   else if (item.effect === 'resist_buff') {
     if (typeof applyStatus === 'function') {
       applyStatus(target, 'resist_buff', item.power || 40, item.turns || 3);
+    }
+  }
+  // Résilience Maison (P9) : buff aligné sur `chosenHouse`. Primaire = stat de
+  // la Maison ; rider = mécanique existante (buff secondaire / regen / +PM).
+  else if (item.effect === 'house_buff') {
+    const plan  = (typeof HOUSE_BUFF_PLANS !== 'undefined' && chosenHouse) ? HOUSE_BUFF_PLANS[chosenHouse] : null;
+    const turns = item.turns || 3;
+    const amount = Math.round((item.power || 8) * brewMult * evolveMult);
+    if (plan) {
+      _applyTempStatBuff(target, plan.primary, amount, turns);
+      if (plan.secondary) _applyTempStatBuff(target, plan.secondary, Math.max(1, Math.round(amount / 2)), turns);
+      if (plan.regen && typeof applyStatus === 'function') {
+        applyStatus(target, 'regen', Math.max(3, Math.round(amount / 2)), turns);
+      }
+      if (plan.restoreSp) target.sp = Math.min(target.spMax, target.sp + Math.round(amount * 1.5));
+      if (typeof recalculateStats === 'function') recalculateStats();
     }
   }
   // ── Sinks endgame (consommables permanents) ────────────────
@@ -862,6 +908,14 @@ function useItem(idx, battleMode) {
     addMsg(`🔰 ${item.name} — une garde mystique t'enveloppe (${wardCharges} charge${wardCharges > 1 ? 's' : ''}).`, 'magic');
   } else {
     addMsg(`${target.name} utilise : ${item.name}`, 'good');
+  }
+  // P9 — FX de consommation Premium : flash teinté par la Maison (premiumFx) +
+  // stinger sonore, défensif. Réutilise _premiumEquipFlash (P2). No-op silencieux
+  // hors-DOM (smoke file://).
+  if (item.premium) {
+    addMsg(`✨ <b>Élixir de prestige</b> — ${item.name}`, 'magic');
+    if (typeof AudioSystem !== 'undefined' && AudioSystem.playChestOpen) AudioSystem.playChestOpen();
+    if (typeof _premiumEquipFlash === 'function') _premiumEquipFlash(item.premiumFx);
   }
   _consumeAt(idx, 1);
 

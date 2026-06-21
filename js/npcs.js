@@ -1571,6 +1571,14 @@ const NPCS = [
       { id: "herbe_dictame",    price: 35 },
       { id: "herbe_asphodele_noire", price: 40 },
       { id: "elixir_lucidite",  price: 240 },
+      { id: "potion_resilience_maison", price: 320 },
+      // Marchand d'Ombre (Potions 2.0 P9) : les 4 Premium hors-Maison se
+      // monnaient ici, cher (la Premium de chosenHouse reste « facile » via
+      // la quête signature — décision §3.4).
+      { id: "elixir_lion_ardent", price: 1500 },
+      { id: "venin_serpent",      price: 1500 },
+      { id: "sagesse_aigle",      price: 1500 },
+      { id: "vigueur_blaireau",   price: 1500 },
       { id: "essence_tenebres", price: 380 },
       { id: "page_grimoire",    price: 460 },
       { id: "essence_primordiale", price: 1200 }

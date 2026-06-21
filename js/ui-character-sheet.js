@@ -146,7 +146,13 @@ function _renderItemTooltip(item, slotLabel, action) {
     ? `<span class="tt-bonus" style="color:var(--gold-light)">✨ Enchantement : ${item.enchant.disp || ''} ${item.enchant.label}</span>`
     : '';
 
-  const bonusLines = bonuses.map(b => `<span class="tt-bonus">${b}</span>`).join('') + enchLine;
+  // P9 — cartouche Premium (variante de prestige par Maison). Cran d'affichage
+  // au-dessus de la rareté, teinté `premiumTint`. Zéro nouvelle rareté.
+  const premiumLine = item.premium
+    ? `<span class="tt-bonus" style="color:${item.premiumTint || 'var(--gold)'};font-weight:bold">✦ Premium${item.houseAffinity ? ' · ' + item.houseAffinity : ''}</span>`
+    : '';
+
+  const bonusLines = premiumLine + bonuses.map(b => `<span class="tt-bonus">${b}</span>`).join('') + enchLine;
   const desc = item.desc ? `<span class="tt-desc">${item.desc}</span>` : '';
   const actionLine = action ? `<span class="tt-action">→ ${action}</span>` : '';
 
