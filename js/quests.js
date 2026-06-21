@@ -295,6 +295,21 @@ function getQuestTemplate(id) {
   return QUEST_TEMPLATES.find(t => t.id === id) || null;
 }
 
+// Quête signature de Maison (charge narrative distincte des kill/item
+// génériques) — détectée via le flag `houseSignatureQuest` du template.
+function _isSignatureQuest(id) {
+  const t = getQuestTemplate(id);
+  return !!(t && t.houseSignatureQuest);
+}
+
+// Chip « signature » affiché dans le journal pour signaler le poids narratif.
+const _SIGNATURE_QUEST_BADGE =
+  '<span style="display:inline-block;margin-left:6px;padding:1px 6px;' +
+  'font-family:\'Cinzel\',serif;font-size:9px;letter-spacing:1px;color:#1a1208;' +
+  'background:linear-gradient(135deg,#caa23a,#f3e0a0);border-radius:8px;' +
+  'vertical-align:middle;box-shadow:0 0 6px rgba(226,194,96,.55)" ' +
+  'title="Quête signature de ta Maison — charge narrative">✦ SIGNATURE</span>';
+
 // Une quête est offrable si elle est dans availableQuests (jamais
 // faite) OU si elle est répétable et que le cooldown est écoulé
 // depuis la dernière complétion (lastQuestCompletion[id]).
@@ -538,7 +553,7 @@ function _renderActiveQuestCard(q) {
 
   return `
     <div style="display:flex;justify-content:space-between;width:100%;align-items:center">
-      <div style="font-family:'Cinzel',serif;font-size:13px;color:var(--gold-light)">${q.title}</div>
+      <div style="font-family:'Cinzel',serif;font-size:13px;color:var(--gold-light)">${q.title}${_isSignatureQuest(q.id) ? _SIGNATURE_QUEST_BADGE : ''}</div>
       <div style="font-size:10px;color:#8a7050;text-align:right">${q.giver}<br>${q.location}</div>
     </div>
     <div style="font-size:12px;color:var(--parchment-dark);line-height:1.5">${q.desc}</div>
@@ -634,7 +649,7 @@ function _appendCompletedSection(container, completed) {
   completed.forEach(q => {
     const card = document.createElement('div');
     card.style.cssText = 'padding:8px 12px;opacity:.5;border:1px solid #2a1a08;border-radius:3px;font-size:12px;color:#6a5030';
-    card.innerHTML = `✅ <strong>${q.title}</strong> — ${q.giver}`;
+    card.innerHTML = `✅ <strong>${q.title}</strong>${_isSignatureQuest(q.id) ? _SIGNATURE_QUEST_BADGE : ''} — ${q.giver}`;
     container.appendChild(card);
   });
 }
