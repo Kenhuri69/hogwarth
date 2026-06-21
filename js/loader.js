@@ -314,6 +314,7 @@ window.UX_safe = new Proxy({}, {
     { name: 'openForge',            source: 'forge.js',      kind: 'fn'  },
     { name: 'upgradeItemAtForge',   source: 'forge.js',      kind: 'fn'  },
     { name: 'dissolveItemAtForge',  source: 'forge.js',      kind: 'fn'  },
+    { name: 'enchantItemAtForge',   source: 'forge.js',      kind: 'fn'  },
     { name: 'openLibrary',          source: 'library.js',    kind: 'fn'  },
     { name: 'upgradeSpellAtLibrary',source: 'library.js',    kind: 'fn'  },
     { name: 'TENEBRES_SET',         source: 'data.js',       kind: 'obj' },
