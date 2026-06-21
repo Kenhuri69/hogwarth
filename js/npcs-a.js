@@ -102,14 +102,19 @@ NPCS.push(
     icon:  "🩺",
     portraitImg: "img/npc/pomfresh.png",
     placement: { floor: 2, anchor: "any" },
-    questsGiven:    ["mandragore_pomfresh", "fabrique_pomfresh"],
-    questsTurnedIn: ["mandragore_pomfresh", "fabrique_pomfresh"],
-    // Quête de fabrication répétable en Boucle (étage 12) — gate minFloor:11.
+    questsGiven:    ["mandragore_pomfresh", "fabrique_pomfresh", "givre_pomfresh"],
+    questsTurnedIn: ["mandragore_pomfresh", "fabrique_pomfresh", "givre_pomfresh"],
+    // Quêtes répétables en Boucle (étage 12) — gate minFloor:11.
     dialoguesByQuest: {
       fabrique_pomfresh: {
         questOffer:  "La Boucle me ramène les mêmes blessés, encore et encore. Si tu sais manier un chaudron, concocte-moi 3 Potions de Soin Mineure — l'infirmerie ne tient plus que par tes mains.",
         questActive: "Mes réserves ? Trois Potions de Soin Mineure, jeune sorcier. Le chaudron de Slughorn n'est pas loin.",
         questReady:  "Béni sois-tu. Voilà de quoi te remercier — et reviens vite, la Boucle ne cicatrise jamais."
+      },
+      givre_pomfresh: {
+        questOffer:  "Ce froid… il ne vient pas de l'hiver. Mes patients gèlent de l'intérieur, et la Boucle en ramène toujours plus. Rapporte-moi 3 Cristaux de Givre arrachés aux spectres des Ruines — j'en tirerai une Essence de Chaleur qui réchauffe jusqu'à l'âme.",
+        questActive: "Trois Cristaux de Givre, jeune sorcier — les spectres des Ruines en sont pétris. Garde un sortilège de feu prêt pour les défaire.",
+        questReady:  "Parfait. Le froid reculera, pour cette fois. Tiens — une Essence de Chaleur, bois-la quand la Boucle te glacera à ton tour."
       }
     },
     dialogues: {

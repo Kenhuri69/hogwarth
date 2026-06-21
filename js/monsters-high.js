@@ -979,6 +979,7 @@ MONSTERS.push(
     drops: [
       { itemId: "essence_tenebres",      chance: 0.75 },
       { itemId: "page_grimoire",         chance: 0.50 },
+      { itemId: "cristal_givre",         chance: 0.35 },
       { itemId: "herbe_asphodele_noire", chance: 0.30 },
       { itemId: "larme_phenix_mineure",  chance: 0.12 }
     ]

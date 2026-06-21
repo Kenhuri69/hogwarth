@@ -80,6 +80,14 @@ const ITEMS = [
     type:"material", price:0 },
   { id:"page_grimoire",    name:"Page de Grimoire",     icon:"📜", desc:"Matériau · Bibliothèque interdite",
     type:"material", price:0 },
+  // Cristal de Givre (ch.11 P1) — matériau de quête arraché aux spectres des
+  // Ruines (drop Zone D). Cible de givre_pomfresh. Drop à chance basse
+  // (anti-inflation éco — c'est un collectible, pas de l'or).
+  { id:"cristal_givre",    name:"Cristal de Givre",     icon:"🧊", desc:"Matériau · Éclat de froid surnaturel arraché aux spectres des Ruines",
+    type:"material", price:0 },
+  // Essence de Chaleur (ch.11 P1) — potion de soin premium, récompense de
+  // givre_pomfresh ; une chaleur vive qui dissipe le froid surnaturel.
+  { id:"essence_chaleur",  name:"Essence de Chaleur",   icon:"♨️", desc:"+60 PV · Une chaleur vive qui dissipe le froid surnaturel des Ruines", type:"consumable", effect:"heal", power:60, price:0 },
   // Matériau premium T5 (endgame) — requis pour forger un item au-delà de +5
   // (niveaux 6-8). Vendu par l'Apothicaire des Ténèbres (Boucle). Cf.
   // .claude/plans/forge-t5.md.

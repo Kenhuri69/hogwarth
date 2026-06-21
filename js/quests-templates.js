@@ -466,6 +466,23 @@ const QUEST_TEMPLATES = [
     repeatableReward: { xp: 360, gold: 340, item: "essence_tenebres" },
     location: "Ruines Anciennes (Boucle, étage 22+)"
   },
+  // Q2 (ch.11 P1) — Pomfresh en Boucle : soigner le froid surnaturel.
+  // Collecte de Cristaux de Givre (drop Zone D, Spectre de Givre) contre une
+  // Essence de Chaleur. Repeatable everyLevels:2 → boucle de farm de soin.
+  {
+    id: "givre_pomfresh",
+    title: "Le froid qui ronge",
+    giver: "Madame Pomfresh",
+    desc: "La Boucle me ramène des blessés gelés jusqu'à l'os par un froid qui n'est pas de ce monde. Rapporte-moi 3 Cristaux de Givre arrachés aux spectres des Ruines — j'en distillerai une Essence de Chaleur pour les réchauffer, toi compris.",
+    objectives: [
+      { type: "item", itemId: "cristal_givre", amount: 3, progress: 0, completed: false }
+    ],
+    reward: { xp: 280, gold: 120, item: "essence_chaleur" },
+    repeatable: { everyLevels: 2 },
+    repeatableReward: { xp: 200, gold: 90, item: "essence_chaleur" },
+    location: "Infirmerie (Boucle, étage 12+)",
+    minFloor: 11
+  },
   // ── Boucle Ténébreuse — quêtes des PNJ recyclés (étages 11+) ──────
   // Rallume les PNJ recyclés en Boucle (Kingsley 18, Bill 19, Sirius 20,
   // Marchand 18, Apothicaire 19, Forgeron 20) qui n'avaient plus rien à
