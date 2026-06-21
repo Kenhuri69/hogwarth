@@ -313,6 +313,27 @@ async function scenarioAutoSave() {
   assert(t5.first === true && t5.second === true,
          'deux raisons distinctes doivent passer le throttle');
 
+  // T6 : indicateur visuel (C2) — l'autosave réussi affiche le micro-toast
+  const t6 = await page.evaluate(() => {
+    if (typeof _autoSaveLastByReason !== 'undefined') {
+      Object.keys(_autoSaveLastByReason).forEach(k => delete _autoSaveLastByReason[k]);
+    }
+    if (typeof _autoSaveLastAt !== 'undefined') _autoSaveLastAt = 0;
+    autoSave('toast-check');
+    const el = document.getElementById('autosave-toast');
+    return {
+      exists:    !!el,
+      shown:     !!el && el.classList.contains('show'),
+      live:      !!el && el.getAttribute('aria-live') === 'polite',
+      noPointer: !!el && getComputedStyle(el).pointerEvents === 'none'
+    };
+  });
+  console.log('  T6 toast   :', t6);
+  assert(t6.exists,    'le toast d\'autosave doit être créé');
+  assert(t6.shown,     'le toast doit être affiché (classe show) après un autosave');
+  assert(t6.live,      'le toast doit être aria-live=polite');
+  assert(t6.noPointer, 'le toast ne doit jamais capter les clics (pointer-events:none)');
+
   // Cleanup
   await page.evaluate(() => {
     localStorage.removeItem('hogwarts_rpg_save');
@@ -323,7 +344,7 @@ async function scenarioAutoSave() {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées`);
   }
-  console.log('  ✅ auto-save : direct, garde-fou combat/maison, throttle');
+  console.log('  ✅ auto-save : direct, garde-fou combat/maison, throttle, toast');
   await browser.close();
 }
 
