@@ -18,7 +18,7 @@ async function scenarioBrewing() {
     const added  = tryAddItem('herbe_armoise', { silent: true });
     return {
       herbCount,
-      recipesDefined: typeof POTION_RECIPES !== 'undefined' && POTION_RECIPES.length === 30,
+      recipesDefined: typeof POTION_RECIPES !== 'undefined' && POTION_RECIPES.length === 31,
       added,
       herbInBesace: getHerbCount('herbe_armoise'),
       inventoryUnchanged: player.inventory.length === before,
@@ -27,7 +27,7 @@ async function scenarioBrewing() {
   });
   console.log('  T1 données →', t1);
   assert(t1.herbCount === 7,          '7 items herbe attendus (6 + l\'herbe rare endgame)');
-  assert(t1.recipesDefined,           'POTION_RECIPES doit définir 30 recettes');
+  assert(t1.recipesDefined,           'POTION_RECIPES doit définir 31 recettes');
   assert(t1.added,                    'tryAddItem(herbe) doit réussir');
   assert(t1.herbInBesace === 1,       'la herbe doit aller dans la besace');
   assert(t1.inventoryUnchanged,       'la herbe ne doit pas occuper le sac');
@@ -338,7 +338,7 @@ async function scenarioRareHerb() {
     };
   });
   console.log('  T2 recettes prestige →', t2);
-  assert(t2.count === 30, `POTION_RECIPES doit compter 30 recettes (obtenu ${t2.count})`);
+  assert(t2.count === 31, `POTION_RECIPES doit compter 31 recettes (obtenu ${t2.count})`);
   assert(t2.xlResult === 'potion_xl',      'brew_xl_tenebres doit produire potion_xl (item existant)');
   assert(t2.xlspResult === 'potion_xl_sp', 'brew_xl_sp_tenebres doit produire potion_xl_sp (item existant)');
   assert(t2.match2 === 'brew_xl_tenebres',     '2 asphodèles noires → brew_xl_tenebres');
@@ -732,7 +732,7 @@ async function scenarioThrowablePotions() {
     };
   });
   console.log('  T4 recettes:', t4);
-  assert(t4.count === 30, `POTION_RECIPES doit compter 30 recettes (obtenu ${t4.count})`);
+  assert(t4.count === 31, `POTION_RECIPES doit compter 31 recettes (obtenu ${t4.count})`);
   assert(t4.present, 'les 3 recettes de flacons doivent exister');
   assert(t4.feu === 'brew_flacon_feu' && t4.givre === 'brew_flacon_givre' && t4.venin === 'brew_flacon_venin', 'chaque combo matche sa recette (multisets inédits)');
 
@@ -780,7 +780,7 @@ async function scenarioPotionUpgradeCraft() {
   assert(t1.heals[0] === 15 && t1.heals[1] === 30 && t1.heals[2] === 55, 'paliers de soin 15/30/55');
   assert(t1.recipesOk, 'les 7 recettes P4 doivent exister');
   assert(t1.iconsOk, 'les 4 nouveaux items doivent avoir une icône PNG');
-  assert(t1.count === 30, `POTION_RECIPES doit compter 30 recettes (obtenu ${t1.count})`);
+  assert(t1.count === 31, `POTION_RECIPES doit compter 31 recettes (obtenu ${t1.count})`);
 
   // T2 — pas de collision d'ingrédients (chaque set est unique).
   const t2 = await page.evaluate(() => {
@@ -1486,7 +1486,7 @@ async function scenarioPotionEvolve() {
   assert(t1.evolveSource === 'artifactForm', 'Philtre : evolves source artifactForm');
   assert(t1.helper, 'potionEvolveMult doit être exposé (potions.js)');
   assert(t1.recipeOk, 'recette brew_philtre_mage présente et matchable');
-  assert(t1.total === 30, `POTION_RECIPES doit compter 30 recettes (obtenu ${t1.total})`);
+  assert(t1.total === 31, `POTION_RECIPES doit compter 31 recettes (obtenu ${t1.total})`);
 
   // T2 — helper pur : multiplicateur ∈ [1, cap] selon le contexte du buveur.
   const t2 = await page.evaluate(() => {
@@ -1545,4 +1545,148 @@ async function scenarioPotionEvolve() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioBrewing, scenarioRecipeCodex, scenarioRareHerb, scenarioSlugClub, scenarioPotionBuff, scenarioPotionResistance, scenarioThrowablePotions, scenarioPotionUpgradeCraft, scenarioHerbGarden, scenarioGardenQuest, scenarioHerbEconomy, scenarioPotionAoeAndEnemyUse, scenarioAntiCorruption, scenarioPotionEvolve] };
+// ============================================================
+// Potions 2.0 — Lot P9 : Résilience Maison (house_buff)
+// ============================================================
+async function scenarioHouseResilience() {
+  console.log('\n── Scénario : Potion de Résilience Maison (Potions 2.0 — Lot P9) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // T1 — données : item house_buff + recette + helper de plan exposé.
+  const t1 = await page.evaluate(() => {
+    const it = ITEMS.find(i => i.id === 'potion_resilience_maison');
+    const rec = POTION_RECIPES.find(r => r.id === 'brew_resilience_maison');
+    const m = _matchRecipe({ herbe_asphodele: 1, herbe_branchiflore: 1, eclat_vitalite: 1 });
+    return {
+      exists: !!it, effect: it && it.effect, category: it && it.category,
+      recipeOk: !!rec && m && m.id === 'brew_resilience_maison',
+      plansDefined: typeof HOUSE_BUFF_PLANS !== 'undefined',
+      total: POTION_RECIPES.length,
+    };
+  });
+  console.log('  T1 données →', t1);
+  assert(t1.exists && t1.effect === 'house_buff' && t1.category === 'buff', 'Résilience = house_buff / buff');
+  assert(t1.recipeOk, 'recette brew_resilience_maison présente et matchable');
+  assert(t1.plansDefined, 'HOUSE_BUFF_PLANS doit être défini');
+  assert(t1.total === 31, `POTION_RECIPES doit compter 31 recettes (obtenu ${t1.total})`);
+
+  // T2 — buff aligné Gryffondor : +ATK (primaire) + LCK (rider crit).
+  const t2 = await page.evaluate(() => {
+    chosenHouse = 'Gryffondor';
+    const c = party[0];
+    c.statusEffects = [];
+    const atk0 = c.atk;
+    player.inventory = [{ ...ITEMS.find(i => i.id === 'potion_resilience_maison') }];
+    useItem(0, false);
+    const ids = (c.statusEffects || []).map(s => s.id);
+    return { ids, atkUp: c.atk > atk0 };
+  });
+  console.log('  T2 Gryffondor →', t2);
+  assert(t2.ids.includes('buff_atk') && t2.ids.includes('buff_lck'), 'Gryffondor : buff_atk + buff_lck');
+  assert(t2.atkUp, 'l\'ATK effective doit monter');
+
+  // T3 — Poufsouffle : +DEF (primaire) + régén (rider) ; Serdaigle : +MAG + PM.
+  const t3 = await page.evaluate(() => {
+    const c = party[0];
+    // Poufsouffle
+    chosenHouse = 'Poufsouffle'; c.statusEffects = [];
+    player.inventory = [{ ...ITEMS.find(i => i.id === 'potion_resilience_maison') }];
+    useItem(0, false);
+    const pouf = (c.statusEffects || []).map(s => s.id);
+    // Serdaigle (restitution de PM)
+    chosenHouse = 'Serdaigle'; c.statusEffects = []; c.spMax = 200; c.sp = 0;
+    player.inventory = [{ ...ITEMS.find(i => i.id === 'potion_resilience_maison') }];
+    useItem(0, false);
+    const serd = (c.statusEffects || []).map(s => s.id);
+    return { pouf, serd, spRestored: c.sp };
+  });
+  console.log('  T3 Pouf/Serd →', t3);
+  assert(t3.pouf.includes('buff_def') && t3.pouf.includes('regen'), 'Poufsouffle : buff_def + regen');
+  assert(t3.serd.includes('buff_mag'), 'Serdaigle : buff_mag');
+  assert(t3.spRestored > 0, 'Serdaigle : la potion restitue des PM');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (Résilience Maison)`);
+  }
+  console.log('  ✅ Résilience Maison OK (house_buff aligné sur chosenHouse)');
+  await browser.close();
+}
+
+// ============================================================
+// Potions 2.0 — Lot P9 : variantes Premium par Maison
+// ============================================================
+async function scenarioPremiumPotions() {
+  console.log('\n── Scénario : variantes Premium par Maison (Potions 2.0 — Lot P9) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // T1 — données : 4 Premium (premium/premiumOf/premiumFx/Tint) + sources.
+  const t1 = await page.evaluate(() => {
+    const ids = ['elixir_lion_ardent', 'venin_serpent', 'sagesse_aigle', 'vigueur_blaireau'];
+    const items = ids.map(id => ITEMS.find(i => i.id === id));
+    const allPremium = items.every(it => it && it.premium === true && it.premiumOf && it.premiumFx && it.premiumTint);
+    const apo = NPCS.find(n => n.id === 'apothicaire_tenebreux');
+    const onMarchand = ids.every(id => (apo.wares || []).some(w => w.id === id));
+    const qg = QUEST_TEMPLATES.find(q => q.id === 'quest_signature_gryff');
+    const qs = QUEST_TEMPLATES.find(q => q.id === 'quest_signature_slyth');
+    const qr = QUEST_TEMPLATES.find(q => q.id === 'quest_signature_raven');
+    const qp = QUEST_TEMPLATES.find(q => q.id === 'quest_signature_pouf');
+    return {
+      allPremium,
+      onMarchand,
+      premiumOf: items.map(it => it.premiumOf),
+      questItems: [qg.reward.item, qs.reward.item, qr.reward.item, qp.reward.item],
+      resilienceTaught: [qg, qs, qr, qp].every(q => (q.reward.recipes || []).includes('brew_resilience_maison')),
+    };
+  });
+  console.log('  T1 données →', t1);
+  assert(t1.allPremium, 'les 4 Premium portent premium/premiumOf/premiumFx/premiumTint');
+  assert(t1.onMarchand, 'le Marchand d\'Ombre (Apothicaire) vend les 4 Premium');
+  assert(JSON.stringify(t1.questItems) === JSON.stringify(['elixir_lion_ardent', 'venin_serpent', 'sagesse_aigle', 'vigueur_blaireau']), 'chaque quête signature récompense la Premium de sa Maison');
+  assert(t1.resilienceTaught, 'les 4 quêtes signature enseignent brew_resilience_maison');
+
+  // T2 — effet : Élixir du Lion Ardent (house_buff Gryff, premium) buffe l'ATK.
+  const t2 = await page.evaluate(() => {
+    chosenHouse = 'Gryffondor';
+    const c = party[0]; c.statusEffects = []; const atk0 = c.atk;
+    player.inventory = [{ ...ITEMS.find(i => i.id === 'elixir_lion_ardent') }];
+    useItem(0, false);
+    return { ids: (c.statusEffects || []).map(s => s.id), atkUp: c.atk - atk0 };
+  });
+  console.log('  T2 Lion Ardent →', t2);
+  assert(t2.ids.includes('buff_atk'), 'Lion Ardent : buff_atk');
+  assert(t2.atkUp >= 13, 'Lion Ardent : +13 ATK (boost Premium)');
+
+  // T3 — Sagesse de l'Aigle (temp_buff lck + rider restoreSpBonus 40 PM).
+  // NB : recalculateStats() rétablit le spMax réel du perso → la restitution
+  // est plafonnée à spMax (40 > spMax de Harry → fait le plein).
+  const t3 = await page.evaluate(() => {
+    const c = party[0]; c.statusEffects = []; c.sp = 0;
+    player.inventory = [{ ...ITEMS.find(i => i.id === 'sagesse_aigle') }];
+    useItem(0, false);
+    return { ids: (c.statusEffects || []).map(s => s.id), sp: c.sp, spMax: c.spMax };
+  });
+  console.log('  T3 Sagesse →', t3);
+  assert(t3.ids.includes('buff_lck'), 'Sagesse : buff_lck');
+  assert(t3.sp > 0 && t3.sp === Math.min(40, t3.spMax), 'Sagesse : restitue jusqu\'à 40 PM (rider restoreSpBonus, plafonné spMax)');
+
+  // T4 — tooltip : cartouche Premium présent.
+  const t4 = await page.evaluate(() => {
+    const it = ITEMS.find(i => i.id === 'venin_serpent');
+    const tt = _renderItemTooltip(it, null, 'utiliser');
+    return { hasPremium: /Premium/.test(tt), hasHouse: /Serpentard/.test(tt) };
+  });
+  console.log('  T4 tooltip →', t4);
+  assert(t4.hasPremium && t4.hasHouse, 'le tooltip Premium affiche le cartouche + la Maison');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (Premium)`);
+  }
+  console.log('  ✅ Premium par Maison OK (données, sources, effets boostés, tooltip)');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioBrewing, scenarioRecipeCodex, scenarioRareHerb, scenarioSlugClub, scenarioPotionBuff, scenarioPotionResistance, scenarioThrowablePotions, scenarioPotionUpgradeCraft, scenarioHerbGarden, scenarioGardenQuest, scenarioHerbEconomy, scenarioPotionAoeAndEnemyUse, scenarioAntiCorruption, scenarioPotionEvolve, scenarioHouseResilience, scenarioPremiumPotions] };

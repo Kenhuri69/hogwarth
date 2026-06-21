@@ -1023,7 +1023,7 @@ const QUEST_TEMPLATES = [
       // 3. Climax — reprendre l'Étendard au Chevalier Fantôme.
       { type: "kill",  monsterId: "chevalier_fantome", amount: 1, progress: 0, completed: false }
     ],
-    reward: { xp: 700, gold: 320, houseSetReward: "banniere_godric", spell: "Cœur de Lion" },
+    reward: { xp: 700, gold: 320, houseSetReward: "banniere_godric", spell: "Cœur de Lion", item: "elixir_lion_ardent", recipes: ["brew_resilience_maison"] },
     location: "Tour de Gryffondor (étage 5) — cible en Acte III",
     houseSignatureQuest: true,
     house: "Gryffondor"
@@ -1042,7 +1042,7 @@ const QUEST_TEMPLATES = [
       //    Le choix gris (Pacte/Défiance) se joue à la remise (turnInSlythSignature).
       { type: "kill",  monsterId: "basilic", amount: 1, progress: 0, completed: false }
     ],
-    reward: { xp: 720, gold: 300, houseSetReward: "langue_de_plomb", spell: "Pacte du Serpent" },
+    reward: { xp: 720, gold: 300, houseSetReward: "langue_de_plomb", spell: "Pacte du Serpent", item: "venin_serpent", recipes: ["brew_resilience_maison"] },
     location: "Cachots de Serpentard (étage 4) — cible en Acte II/III",
     houseSignatureQuest: true,
     house: "Serpentard"
@@ -1060,7 +1060,7 @@ const QUEST_TEMPLATES = [
       // 3. Climax — le Gardien du Portail veille sur les derniers feuillets.
       { type: "kill",  monsterId: "gardien_portail", amount: 1, progress: 0, completed: false }
     ],
-    reward: { xp: 720, gold: 300, houseSetReward: "codex_rowena_eclat", spell: "Verbe de Rowena", recipes: ["brew_elixir_immunite"] },
+    reward: { xp: 720, gold: 300, houseSetReward: "codex_rowena_eclat", spell: "Verbe de Rowena", item: "sagesse_aigle", recipes: ["brew_elixir_immunite", "brew_resilience_maison"] },
     location: "Salle des Aigles (étage 6) — cible en Acte III",
     houseSignatureQuest: true,
     house: "Serdaigle"
@@ -1078,7 +1078,7 @@ const QUEST_TEMPLATES = [
       // 3. Climax — repousser la vague d'Inferi qui menace le Refuge.
       { type: "kill",  monsterId: "inferius", amount: 3, progress: 0, completed: false }
     ],
-    reward: { xp: 700, gold: 320, houseSetReward: "coeur_refuge", spell: "Serment du Blaireau", recipes: ["brew_baume_patronus"] },
+    reward: { xp: 700, gold: 320, houseSetReward: "coeur_refuge", spell: "Serment du Blaireau", item: "vigueur_blaireau", recipes: ["brew_baume_patronus", "brew_resilience_maison"] },
     location: "Refuge du Blaireau (étage 3) — vague en Acte II/III",
     houseSignatureQuest: true,
     house: "Poufsouffle"
