@@ -544,13 +544,13 @@ const SPELL_ICON_REGISTRY = {
   'Fontis':            'img/icons/spells/aguamenti.png',        // eau
   'Purgo':             'img/icons/spells/lumos_solem.png',      // purification
   'Aedificium':        'img/icons/spells/reparo.png',           // édification
-  // ── Lot P3 — formes évoluées + Premium (alias temporaires sur la base). ──
-  'Incendio Majeur':    'img/icons/spells/incendio.png',
-  'Glacius Profond':    'img/icons/spells/glacius.png',
-  'Incendio Royal':     'img/icons/spells/incendio.png',
-  "Morsure d'Émeraude": 'img/icons/spells/sanguini.png',
-  'Givre de Rowena':    'img/icons/spells/glacius.png',
-  'Soin du Blaireau':   'img/icons/spells/reparo.png',
+  // ── Lot P3 — formes évoluées + Premium (icônes dédiées). ──
+  'Incendio Majeur':    'img/icons/spells/incendio_majeur.png',    // icône dédiée (brasier amplifié)
+  'Glacius Profond':    'img/icons/spells/glacius_profond.png',    // icône dédiée (cristaux glaciaux)
+  'Incendio Royal':     'img/icons/spells/incendio_royal.png',     // icône dédiée (couronne de feu)
+  "Morsure d'Émeraude": 'img/icons/spells/morsure_emeraude.png',   // icône dédiée (crocs émeraude)
+  'Givre de Rowena':    'img/icons/spells/givre_rowena.png',       // icône dédiée (diadème de givre)
+  'Soin du Blaireau':   'img/icons/spells/soin_blaireau.png',      // icône dédiée (cœur ambré, Pouf)
   // ── Lot P4 — alias temporaires sur des PNG existants (art dédié reporté §2.8) ──
   'Flamme Dévorante':    'img/icons/spells/flamme_devorante.png',   // icône dédiée (lion de feu corrompu)
   'Venin du Cachot':     'img/icons/spells/venin_du_cachot.png',    // icône dédiée (cobra/venin, Serpentard)
@@ -564,8 +564,8 @@ const SPELL_ICON_REGISTRY = {
   'Verbe de Rowena':     'img/icons/spells/verbe_de_rowena.png',   // icône dédiée (chœur runique, Serdaigle)
   'Serment du Blaireau': 'img/icons/spells/serment_du_blaireau.png', // icône dédiée (blaireau ailé, Poufsouffle)
   'Le Mot du Dormeur':   'img/icons/spells/le_mot_du_dormeur.png',  // icône dédiée (rune-stèle des Ruines)
-  'Sanguini Vorace':     'img/icons/spells/sanguini.png',
-  'Protego Diabolica':   'img/icons/spells/protego.png'
+  'Sanguini Vorace':     'img/icons/spells/sanguini_vorace.png',   // icône dédiée (vortex de sang)
+  'Protego Diabolica':   'img/icons/spells/protego_diabolica.png'  // icône dédiée (anneau de feu noir)
 };
 
 // ── Registre de SPLASHES de sorts (key-art d'effet en combat) ────
@@ -584,7 +584,16 @@ const SPELL_SPLASH_REGISTRY = {
   'Fardeau Partagé':  'img/fx/spells/fardeau_partage.png',   // arc d'or redistributeur
   'Tempus Echo':      'img/fx/spells/tempus_echo.png',       // anneaux d'horloge or/cyan
   'Reliquae Temporis':'img/fx/spells/reliquae_temporis.png', // éclat d'horlogerie corrompu
-  'Écho Fantôme':     'img/fx/spells/echo_fantome.png'       // silhouette spectrale scindée
+  'Écho Fantôme':     'img/fx/spells/echo_fantome.png',      // silhouette spectrale scindée
+  // ── P3 — variantes Premium & formes évoluées ──
+  'Incendio Royal':   'img/fx/spells/incendio_royal.png',    // pilier de feu royal
+  "Morsure d'Émeraude":'img/fx/spells/morsure_emeraude.png', // éclat de venin émeraude
+  'Givre de Rowena':  'img/fx/spells/givre_rowena.png',      // étoile de givre saphir
+  'Soin du Blaireau': 'img/fx/spells/soin_blaireau.png',     // lumière ambrée montante
+  'Incendio Majeur':  'img/fx/spells/incendio_majeur.png',   // explosion de feu en anneau
+  'Glacius Profond':  'img/fx/spells/glacius_profond.png',   // éclat de glace dense
+  'Sanguini Vorace':  'img/fx/spells/sanguini_vorace.png',   // spirale de sang dévorante
+  'Protego Diabolica':'img/fx/spells/protego_diabolica.png'  // brasier d'anneau noir/violet
 };
 
 // Résout le PNG de splash d'un sort (par nom), ou null si aucun.
