@@ -481,8 +481,8 @@ P3 · Corruption                       — corruptionLevel + sorts corrompus + c
      (gate Boucle, sim obligatoire)     HUD/teinte/barks, gate effectiveFloor>=11
 P4 · Environnement en combat          — environmentalModifiers (1 modif. V1 : rune zone D),
                                         action 🌿
-P5 · Équilibrage & polish             — sim-difficulty (coûts, corruptionRisk, postures),
-                                        FX Premium, sons, Codex sorts/synergies
+P5 · Équilibrage & polish (✅ LIVRÉ)  — Codex sorts/synergies (amorce), bandeaux de
+                                        combat, FX Premium par Maison, sons procéduraux
 ```
 
 > Chaque palier est **livrable seul** (additif). On ne touche **jamais** à
@@ -518,6 +518,38 @@ P5 · Équilibrage & polish             — sim-difficulty (coûts, corruptionRi
 ---
 
 ## Journal du plan
+
+- **2026-06-21** — **P5 (feedback/UI) LIVRÉ — clôture du palier.** Suite des
+  volets §2.4 « UI/UX du combat » et §2.7 « Suggestions d'assets », 100 %
+  additif/défensif, `dungeon-scaling.js` jamais touché, aucune logique de combat
+  P0-P4 modifiée (surcouche pure UX/FX/son).
+  - **Bandeaux de combat** (`js/ux-improvements.js` + `css/ux-improvements.css`) :
+    nouvelle fonction `UX.combatBanner(label, kind)` — callout transitoire centré
+    en haut de l'arène (couche `#combat-banner-layer`, esprit « ⚡ Célérité ! »),
+    teinté par `kind` ∈ `synergy|artifact|tenaille|rune|backlash`. Câblé aux
+    call-sites EXISTANTS (1 ligne chacun, rien re-câblé) : 🔗 Synergie
+    (`castSpellInBattle` quand `spell._synergy`), 🏺 Artefact (`useActiveArtifact`),
+    🤝 Tenaille (`executeAttack` + `_computeSpellDamage` quand le focus-fire
+    s'applique), 🌿 Rune (`triggerRuneEnv`), 🩸 Contrecoup (`_applyCorruptionBacklash`).
+  - **FX Premium par Maison** (`js/combat-fx.js` + `css/combat-fx.css`) :
+    `CombatFX.premiumCast(casterKey, fxKey)` — anneau teinté + glyphe de Maison +
+    particules colorées émanant du lanceur, palette auto-suffisante par `premiumFx`
+    (gryff/slyth/serd/pouf, miroir de `HOUSE_SPELL_FX`). Câblage central dans
+    `castSpellInBattle` (`if (spell.premium && spell.premiumFx) CFX_safe.premiumCast(…)`).
+    Respecte `prefers-reduced-motion`.
+  - **Sons procéduraux** (`js/audio-sfx.js`, défensifs/repli silencieux) :
+    `playPremiumCast(fxKey)` (timbre par Maison : fanfare/sifflement/carillon/cor) +
+    `playBacklash()` (impact grave descendant + sub) — câblés aux mêmes points.
+  - **Vérif** : `node tests/units.js` (inchangé, vert) ✅ ; `node tests/smoke.js`
+    (250/250, dont nouveau `scenarioP5Feedback` : APIs présentes, 5 bandeaux rendus,
+    4 FX Premium, câblage cast Premium + synergie) ✅ ; `node tests/pwa-smoke.js`
+    (CACHE_VERSION v190) ✅. Cache PWA bumpé (7 assets : ux-improvements.js/css,
+    combat-fx.js/css, audio-sfx.js, battle.js, battle-spells.js). Aucun nouveau
+    global (méthodes ajoutées à UX/CombatFX/AudioSystem) → MANIFEST loader inchangé.
+  - **Reste cadré hors-scope P5** (volets nécessitant une passe de calibration ou
+    des assets non procéduraux) : passe `sim-difficulty` de réglage fin
+    (coûts/corruptionRisk/postures) — non requise ici car ce volet est 100 %
+    cosmétique. Le palier P5 du plan est désormais **clos**.
 
 - **2026-06-20** — **P5 (amorce, volet Codex) LIVRÉ.** Premier volet du palier
   polish (§2.6/§2.7 « Codex sorts/synergies ») : **3 entrées Codex** documentant

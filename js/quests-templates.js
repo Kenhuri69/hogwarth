@@ -1060,7 +1060,7 @@ const QUEST_TEMPLATES = [
       // 3. Climax — le Gardien du Portail veille sur les derniers feuillets.
       { type: "kill",  monsterId: "gardien_portail", amount: 1, progress: 0, completed: false }
     ],
-    reward: { xp: 720, gold: 300, houseSetReward: "codex_rowena_eclat", spell: "Verbe de Rowena" },
+    reward: { xp: 720, gold: 300, houseSetReward: "codex_rowena_eclat", spell: "Verbe de Rowena", recipes: ["brew_elixir_immunite"] },
     location: "Salle des Aigles (étage 6) — cible en Acte III",
     houseSignatureQuest: true,
     house: "Serdaigle"
@@ -1078,7 +1078,7 @@ const QUEST_TEMPLATES = [
       // 3. Climax — repousser la vague d'Inferi qui menace le Refuge.
       { type: "kill",  monsterId: "inferius", amount: 3, progress: 0, completed: false }
     ],
-    reward: { xp: 700, gold: 320, houseSetReward: "coeur_refuge", spell: "Serment du Blaireau" },
+    reward: { xp: 700, gold: 320, houseSetReward: "coeur_refuge", spell: "Serment du Blaireau", recipes: ["brew_baume_patronus"] },
     location: "Refuge du Blaireau (étage 3) — vague en Acte II/III",
     houseSignatureQuest: true,
     house: "Poufsouffle"

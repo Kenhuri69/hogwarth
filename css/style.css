@@ -2752,6 +2752,19 @@ body {
 .forge-upgrade-btn.disabled, .library-upgrade-btn.disabled {
   background: #3a2a1a; color: #6a5030; cursor: not-allowed; filter: none;
 }
+/* Piste D — enchantement rerollable (gold-sink). */
+.forge-item-actions { display: flex; flex-direction: column; gap: 5px; align-items: stretch; }
+.forge-enchant-cur { color: var(--gold-light); font-size: 10px; font-style: italic; margin-top: 2px; }
+.forge-enchant-btn {
+  background: linear-gradient(180deg, #7a4fb0, #4a2d78);
+  color: #f3e9ff; border: none; border-radius: 3px;
+  padding: 5px 12px; font-family: 'Cinzel', serif; font-size: 10px;
+  letter-spacing: 1px; cursor: pointer; transition: filter 0.15s, transform 0.05s;
+}
+.forge-enchant-btn:hover { filter: brightness(1.15); }
+.forge-enchant-btn.disabled {
+  background: #2e2440; color: #6a5a80; cursor: not-allowed; filter: none;
+}
 /* C3a — choix entre les deux voies de forge (1er upgrade). */
 .forge-path-choice, .library-path-choice { display: flex; flex-direction: column; gap: 5px; }
 .forge-path-choice .forge-upgrade-btn,

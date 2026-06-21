@@ -1,8 +1,8 @@
 # Potions, Consommables & Craft 2.0 — Spécifications & Plan d'implémentation
 
 > **Branche** : `claude/hogwarth-potions-crafting-yc5tcy`
-> **Statut** : 🟢 **SPÉCIFICATION & PLAN AFFINÉS — 9 formes figées, P7 prêt à démarrer**
-> (5 ❓ résiduelles = calibration/policy, non bloquantes ; voir §3).
+> **Statut** : 🟢 **P7 + P8 LIVRÉS (anti-corruption · évolutif/synergies) — P9 prêt à démarrer**
+> (toutes les ❓ résiduelles arbitrées par défauts figés ; voir §3).
 > **Objectif** : *finaliser* le 3ᵉ pilier de personnalisation — **Consommables &
 > Alchimie** — pour compléter le triangle **Artefacts + Sorts + Potions**.
 >
@@ -503,8 +503,8 @@ P7 (data + anti-corruption)  ← socle + comble le trou n°1, faible risque
 
 | Lot | Contenu (formes §1.5 incluses) | Effort | Risque | Dépend |
 |-----|--------------------------------|--------|--------|--------|
-| **P7** | champs data §1.4 + `category` + **anti-corruption** : Lucidité (1), Baume du Patronus (2), Immunité (3) ; effet `purge_corruption`/`ward_charge` | ~1,5 j | faible | — |
-| **P8** | `evolves` + `potionEvolveMult` + synergies déclaratives ; **Philtre du Mage** (10, mana évolutif) | ~1 j | faible | P7 |
+| ✅ **P7** | champs data §1.4 + `category` + **anti-corruption** : Lucidité (1), Baume du Patronus (2), Immunité (3) ; effet `purge_corruption`/`ward_charge` | ~1,5 j | faible | — |
+| ✅ **P8** | `evolves` + `potionEvolveMult` + synergies déclaratives ; **Philtre du Mage** (10, mana évolutif) | ~1 j | faible | P7 |
 | **P9** | **Premium ×4 Maisons** (11–14) + **Résilience Maison** (5, `house_buff`) + quêtes signature + `fx` | ~2,5 j | moyen | P7 |
 | **P10** | `corruptionRisk` + `sideEffect` Boucle + `wardCharges` ; **Corruption Contrôlée** (4) | ~1,5 j | moyen | P7,P8 |
 | **P11** | **Chaudron des Ruines** + `workshopLevel` + cellule `CELL.CAULDRON` | ~1,5 j | moyen | — |
@@ -543,16 +543,20 @@ anti-corruption + évolutif/synergie — à risque faible, sans nouvelle UI).
 
 1. ✅ **Périmètre des nouvelles formes** — **RÉSOLU (2026-06-20)** : **les 9
    formes** sont livrées (§1.5, 14 items + Philtre + 4 Premium), réparties P7→P12.
-2. ❓ **Anti-corruption** : la purge agit-elle **uniquement** sur `spellCorruption`
-   (combat), ou aussi cosmétiquement sur la corruption de **lieu** (ambiance) ?
-   *Proposition : combat seulement (gameplay), un VFX léger d'ambiance en bonus.*
-3. ❓ **Intensité des `sideEffect` Boucle** : plafond proposé ≤ 15 % d'une stat,
-   ≤ 2 tours, jamais sur PV, jamais « perte de tour » non télégraphiée. OK ?
-4. ❓ **Premium** : une seule Premium « facile » par partie (celle de
-   `chosenHouse`), les autres en Boucle/Marchand. OK ?
-5. ❓ **Chaudron des Ruines** : bonus de jet (−1 difficulté) au `workshopLevel 2` ?
-6. ❓ **Évolutif** : coefficients (`perStep`/`cap`) à figer par simulation — OK
-   pour calibrer en P13 plutôt que deviner maintenant ?
+2. ✅ **Anti-corruption** — **RÉSOLU (2026-06-21, défaut figé en P7)** : la purge
+   agit **uniquement** sur `spellCorruption` (combat/gameplay) + un **VFX
+   d'ambiance léger** (volute cristalline `DFX_safe.burst`). Pas d'effet sur la
+   corruption de **lieu** (ambiance) — cosmétique hors-scope.
+3. ✅ **Intensité des `sideEffect` Boucle** — **RÉSOLU (2026-06-21, défaut figé)** :
+   plafond **≤ 15 % d'une stat, ≤ 2 tours, jamais sur PV, toujours télégraphié ⚠️**,
+   jamais « perte de tour » non télégraphiée. (Appliqué dès P10.)
+4. ✅ **Premium** — **RÉSOLU (2026-06-21, défaut figé)** : une seule Premium
+   « facile » par partie (celle de `chosenHouse`), les autres via Boucle /
+   Marchand d'Ombre. (Appliqué dès P9.)
+5. ✅ **Chaudron des Ruines** — **RÉSOLU (2026-06-21, défaut figé)** :
+   `workshopLevel 2` → **−1 difficulté effective** du jet. (Appliqué dès P11.)
+6. ✅ **Évolutif** — **RÉSOLU (2026-06-21)** : coefficients (`perStep`/`cap`)
+   **calibrés en P13** par `tools/sim-difficulty.js` (pas devinés maintenant).
 
 ## 4. Hors-scope (cette finalisation)
 
@@ -568,4 +572,6 @@ anti-corruption + évolutif/synergie — à risque faible, sans nouvelle UI).
 | Date | Note |
 |------|------|
 | 2026-06-20 | **Document rédigé** après audit complet du système existant. Constat : base + craft + enrichissement P0→P6 **déjà livrés** (26 recettes, 7 herbes, codex, maîtrise, buffs, flacons offensifs, upgrade-craft, jardin, Slug Club). Cette finalisation cible les **7 trous** : anti-corruption, Premium par Maison, évolutif, risques/effets secondaires Boucle, formes signature, Chaudron des Ruines, synergies explicites. ÉTAPE 1 (specs+contenu) et ÉTAPE 2 (plan d'impl., lots P7→P13) posées. **6 décisions ❓ en attente d'arbitrage avant P7.** Aucune ligne de code modifiée (document `.claude/` uniquement → pas de bump PWA ni smoke requis, guidelines §7/§8). |
+| 2026-06-21 | **P8 LIVRÉ — potions évolutives + synergies déclaratives.** **Engine** : helper PUR `potionEvolveMult(item)` (`potions.js`, au MANIFEST loader) → multiplicateur ∈ [1, `cap`] lu **à la consommation**, 4 sources (`artifactForm`/`artifactSet`/`corruption`/`floor`) ; lit le **MAX** sur les membres vivants du groupe (or/inventaire partagés) via `_partyEquipMax`. Intégré dans `_applyConsumableEffect` : `pow` (heal/restore_sp/both) **et** montant `temp_buff` × `evolveMult` (forward-compat Corruption Contrôlée P10). **Item** : `philtre_mage` (mana, `restore_sp` 20, `evolves:{artifactForm, key:[baton,grimoire], perStep:0.18, cap:1.8}`) + recette `brew_philtre_mage` (`herbe_dictame`+`eclat_vitalite`, `POTION_RECIPES` 29→**30**) + icône SVG inline. **Synergies déclaratives** : `_renderItemTooltip` affiche la note `synergy.note` (🔗) **et** l'ampleur RÉELLE de `evolves` (📈, via `potionEvolveMult`) au moment de l'usage — zéro logique nouvelle (P7/P8). Coeffs `perStep`/`cap` = placeholders **calibrés en P13** (sim). **Tests** : `scenarioPotionEvolve` (3 temps : données, helper pur multi-sources + cap, effet contextuel restore_sp) ; asserts `POTION_RECIPES.length` 29→30 (4 sites). `node tests/smoke.js` **vert (253)**, `units.js` (908), `pwa-smoke`, `check_doc_modules` OK. **Bump PWA** : data/inventory/item-icons/loader/potions/ui-character-sheet + `CACHE_VERSION` (skill `cache-bump`). |
+| 2026-06-21 | **P7 LIVRÉ — anti-corruption + socle data.** ❓2-6 **arbitrées par défauts figés** (§3) : anti-corr. = `spellCorruption` combat seul + VFX léger ; `sideEffect` Boucle ≤ 15 %/≤ 2 t/jamais PV/télégraphié ⚠️ ; Premium « facile » = `chosenHouse` seule ; Chaudron Ruines = `workshopLevel 2` → −1 difficulté ; coeffs évolutifs → P13. **Code** : champs data optionnels §1.4 sur items potion (`category`/`houseAffinity`/`corruptionPurge`/`cureGroup`/`synergy`…) + recettes (`workshop`/`minFloor`) — tous back-compat. 3 items (`elixir_lucidite` epic, `baume_patronus` rare, `elixir_immunite` rare) + 3 recettes (`POTION_RECIPES` 26→**29**) + 3 icônes SVG inline. 2 branches d'effet `purge_corruption` (Lucidité −3 / Baume −2 + cure `fear`/`gel` de groupe) & `ward_charge` (Immunité → `wardCharges`) dans `_applyConsumableEffect` ; garde anti-gaspillage (`_isWastedRestore`). Flag `wardCharges` (`state.js`, sérialisé clé `wardCharges`). **Sources** : `elixir_lucidite` vendu par l'Apothicaire Ténébreux ; `brew_baume_patronus` enseigné par la quête signature Poufsouffle, `brew_elixir_immunite` par la signature Serdaigle ; recette Lucidité `workshop:"ruines"`/`minFloor:11` (inerte jusqu'à P11, gatée de facto par l'asphodèle noire de Boucle). **Écart vs §1.5bis** : ingrédients Immunité passés de `dictame×1+asphodèle×1` (collision avec `brew_elixir_regen`) à **`dictame×1+asphodèle×2`** (multiset unique). **Tests** : `scenarioAntiCorruption` (5 temps) ajouté ; asserts `POTION_RECIPES.length` 26→29 (4 sites). `node tests/smoke.js` **vert (250)**, `units.js` vert (897), `check_doc_modules` OK. **Bump PWA** : data/inventory/state/save/npcs/quests-templates/item-icons + `CACHE_VERSION` v189→v190 (skill `cache-bump`, `check_cache_versions` + `pwa-smoke` verts). |
 | 2026-06-20 | **Affinage (feu vert utilisateur)** : décision ❓1 **résolue → les 9 formes en scope**. §1.5 refait (table figée : effet→branche ⚙️, ingrédients fixés, `corruptionRisk`, lot) + §1.5bis (esquisses JSON). §1.12 = **table maître complète** (17 ajouts : 14 items + Philtre + 4 Premium). §2.7 mappe chaque forme à son lot (P7 anti-corr · P8 Philtre/évolutif · P9 Premium+Résilience · P10 Corruption Contrôlée · P12 Vision/Écho/Huiles/Poudres). **Reste 5 ❓** (purge lieu, intensité sideEffect, accès Premium, bonus atelier, coeffs évolutif) — calibration/policy, non bloquantes pour P7. Toujours document `.claude/` uniquement. |

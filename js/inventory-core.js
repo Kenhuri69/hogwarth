@@ -254,6 +254,11 @@ function recalculateStats() {
     c.agi = c._baseAgi;
     c.end = c._baseEnd;
 
+    // Enchantement rerollable (Piste D) — agrège les affixes équipés une fois,
+    // versé dans les accumulateurs ci-dessous (hook gardé : no-op si forge.js
+    // absent). Cf. .claude/plans/endgame-enchant-reroll.md.
+    const _ench = (typeof _enchantTotals === 'function') ? _enchantTotals(c.equipped) : null;
+
     // C3a — voie Forge 'crit' : accumulée ici, versée dans critBonus plus bas.
     let forgeCritBonus = 0;
     if (c.equipped) {
@@ -294,6 +299,12 @@ function recalculateStats() {
       }
     }
 
+    // Enchant — affixes primaires (avant D1/D2 & fortune/célérité qui lisent lck).
+    if (_ench) {
+      c.atk += _ench.bonusAtk; c.def += _ench.bonusDef;
+      c.mag += _ench.bonusMag; c.lck += _ench.bonusLck;
+    }
+
     // P0/P2 — buffs temporaires de stat (potions de buff) : réappliqués ici
     // (source unique de vérité) pour survivre à un recalc déclenché en combat
     // (consommation, équipement…). La base a déjà été remise (c.<stat> =
@@ -327,6 +338,13 @@ function recalculateStats() {
         if (item.bonusSpMax)           spMaxBonus        += item.bonusSpMax;
         if (item.bonusCounterChance)   counterBonus      += item.bonusCounterChance;
       }
+    }
+    // Enchant — affixes dérivés (crit / esquive / crit-sort / dégâts crit).
+    if (_ench) {
+      critBonus      += _ench.bonusCritChance;
+      dodgeBonus     += _ench.bonusDodgeChance;
+      critDmgBonus   += _ench.bonusCritDamage;
+      spellCritBonus += _ench.bonusSpellCritChance;
     }
 
     // Set bonus Ténèbres (endgame Tranche 2 — cf. ENDGAME_PLAN.md §7.8).
@@ -439,7 +457,7 @@ function recalculateStats() {
     // est mémorisé pour que partyFortune() ré-applique la courbe avec Félix.
     // Cf. .claude/plans/luck-fortune.md §2.1.
     {
-      let fortuneBonus = 0;
+      let fortuneBonus = _ench ? _ench.bonusFortune : 0;
       if (c.equipped) {
         for (const item of Object.values(c.equipped)) {
           if (item && item.bonusFortune) fortuneBonus += item.bonusFortune;
@@ -456,7 +474,7 @@ function recalculateStats() {
     // Cf. .claude/plans/agi-derived.md §2.2. La jauge (celeriteGauge) est
     // combat-scoped (reset startBattle), pas ici.
     {
-      let celeriteBonus = 0;
+      let celeriteBonus = _ench ? _ench.bonusCelerite : 0;
       if (c.equipped) {
         for (const item of Object.values(c.equipped)) {
           if (item && item.bonusCelerite) celeriteBonus += item.bonusCelerite;

@@ -121,6 +121,69 @@ Object.assign(AudioSystem, {
     }, 50);
   },
 
+  // ── Cast Premium par Maison (P5) ──────────────────────────────
+  // Timbre court surimposé au playSpellCast d'un sort Premium signature, un par
+  // Maison (cf. combat-system-synthesis §2.7) : fanfare montante (Gryffondor),
+  // sifflement descendant (Serpentard), carillon cristallin (Serdaigle), cor
+  // chaud (Poufsouffle). Procédural, défensif : repli silencieux si muet/contexte
+  // absent ou clé inconnue.
+  playPremiumCast(fxKey) {
+    if (this.isMuted) return;
+    this.init();
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    // [type, fréquences (Hz, jouées en arpège), pas (s)]
+    const PROFILE = {
+      gryff: { type: 'triangle', notes: [523, 659, 784, 1047], step: 0.07, peak: 0.26 }, // fanfare montante
+      slyth: { type: 'sawtooth', notes: [880, 740, 620, 466],  step: 0.06, peak: 0.18 }, // sifflement descendant
+      serd:  { type: 'sine',     notes: [988, 1319, 1568],      step: 0.05, peak: 0.22 }, // carillon cristallin
+      pouf:  { type: 'triangle', notes: [392, 494, 587],        step: 0.08, peak: 0.24 }, // cor chaud
+    };
+    const prof = PROFILE[fxKey];
+    if (!prof) return;
+    prof.notes.forEach((f, i) => {
+      const start = now + i * prof.step;
+      this._playTone({
+        freq: f, type: prof.type, start, peak: prof.peak,
+        attack: 0.01, decayAt: start + prof.step + 0.18, stop: start + prof.step + 0.22
+      });
+    });
+  },
+
+  // ── Contrecoup de corruption (P5) ─────────────────────────────
+  // Impact grave et sourd quand un sort corrompu retourne sa puissance contre
+  // le lanceur : balayage descendant + sub bref. Procédural, défensif.
+  playBacklash() {
+    if (this.isMuted) return;
+    this.init();
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+
+    // Balayage grave descendant (sawtooth filtré).
+    const osc  = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    const lpf  = this.ctx.createBiquadFilter();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(180, now);
+    osc.frequency.exponentialRampToValueAtTime(48, now + 0.5);
+    lpf.type = 'lowpass'; lpf.frequency.value = 700;
+    gain.gain.setValueAtTime(0.34, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+    osc.connect(lpf).connect(gain).connect(this.sfxGain);
+    osc.start(now); osc.stop(now + 0.6);
+
+    // Sub bref qui ancre l'impact.
+    const sub = this.ctx.createOscillator();
+    const sg  = this.ctx.createGain();
+    sub.type = 'sine';
+    sub.frequency.setValueAtTime(70, now);
+    sub.frequency.exponentialRampToValueAtTime(38, now + 0.3);
+    sg.gain.setValueAtTime(0.3, now);
+    sg.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
+    sub.connect(sg).connect(this.sfxGain);
+    sub.start(now); sub.stop(now + 0.35);
+  },
+
   // ── Impact physique ───────────────────────────────────────────
   playHit() {
     if (this.isMuted) return;

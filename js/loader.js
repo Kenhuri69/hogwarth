@@ -251,6 +251,7 @@ window.UX_safe = new Proxy({}, {
     { name: 'ITEM_ICON_SVG_REGISTRY', source: 'item-icons.js', kind: 'obj' },
     { name: 'openBrewingModal',   source: 'potions.js',      kind: 'fn'  },
     { name: 'attemptBrew',        source: 'potions.js',      kind: 'fn'  },
+    { name: 'potionEvolveMult',   source: 'potions.js',      kind: 'fn'  },
     { name: 'addHerb',            source: 'potions.js',      kind: 'fn'  },
 
     // ── Boutique ──
@@ -314,6 +315,7 @@ window.UX_safe = new Proxy({}, {
     { name: 'openForge',            source: 'forge.js',      kind: 'fn'  },
     { name: 'upgradeItemAtForge',   source: 'forge.js',      kind: 'fn'  },
     { name: 'dissolveItemAtForge',  source: 'forge.js',      kind: 'fn'  },
+    { name: 'enchantItemAtForge',   source: 'forge.js',      kind: 'fn'  },
     { name: 'openLibrary',          source: 'library.js',    kind: 'fn'  },
     { name: 'upgradeSpellAtLibrary',source: 'library.js',    kind: 'fn'  },
     { name: 'TENEBRES_SET',         source: 'data.js',       kind: 'obj' },
