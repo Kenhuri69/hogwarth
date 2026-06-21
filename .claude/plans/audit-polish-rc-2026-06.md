@@ -201,14 +201,20 @@ Avant l'audit, il faut poser le décor honnêtement, sinon le plan sonne faux :
 
 **💡 Suggestions**
 - 💡 **Ajouter `defer`** à tous les `<script>` (l'ordre est préservé avec
-  `defer`, le scope global reste intact). Gain net sur le *time-to-interactive*
-  de première visite, **sans changer l'architecture**. ⚠️ À valider finement :
-  le loader et l'ordre de dépendances doivent rester corrects (defer garantit
-  l'ordre du document → sûr). Bumper le cache.
-- 💡 **Sortir les 3 HTML de dev** de la racine (les déplacer sous `tools/` ou
-  `.dev/`, non servi). Coût ~0, gain « pro » immédiat.
-- 💡 **Ajouter `.nojekyll`** à la racine (fichier vide) — neutralise Jekyll,
-  sert tout tel quel, pérennise.
+  `defer`, le scope global reste intact). ⚠️ **Révisé (2026-06-21)** : les
+  scripts sont **en fin de `<body>`** → le DOM est déjà parsé avant eux, donc
+  le gain réel est **marginal** (parallélisation des téléchargements + 1ᵉʳ paint
+  légèrement plus tôt), pas le « TTI » initialement annoncé. À valider en smoke
+  complet ; reporté en session dédiée.
+- ❌ ~~Sortir les 3 HTML de dev de la racine~~ **Inexact (2026-06-21)** : la
+  lecture de `.github/workflows/deploy.yml` montre un **bundle `_site` curaté**
+  qui n'y copie que le runtime (`index.html`, `robot.html`, `manifest.json`,
+  `sw.js`, `css`/`js`/`img`/`audio`). `Audit Icones.html` / `Compare Icones.html`
+  ne sont **pas servis** sur Pages (seulement présents dans le dépôt), et
+  `robot.html` est **déployé exprès** (robot de playtest). Aucune action requise.
+- ❌ ~~Ajouter `.nojekyll`~~ **Sans objet (2026-06-21)** : Pages déploie via
+  **GitHub Actions** (`actions/deploy-pages`), pas via le build Jekyll legacy
+  → aucun fichier `_`-préfixé n'est filtré.
 - 💡 (long terme) Audit Lighthouse de la page publique pour chiffrer LCP/TTI
   réels et prioriser.
 
@@ -259,17 +265,19 @@ Avant l'audit, il faut poser le décor honnêtement, sinon le plan sonne faux :
 
 ## Priorité 1 — Court terme (1-2 semaines) : packaging & première impression
 
-| # | Axe | Tâche | Difficulté | Impact | Dépendances |
-|---|-----|-------|-----------|--------|-------------|
-| P1.1 | Technique | **Créer un `README.md` racine** (le dépôt n'en a aucun) : pitch, screenshots, lien jouable, stack, statut RC, comment lancer les tests. | Faible | **Élevé** (vitrine GitHub) | — |
-| P1.2 | Technique | **Nettoyer la racine servie** : déplacer `Audit Icones.html`, `Compare Icones.html`, `robot.html` (3 031 l) hors de la racine Pages. | Faible | Moyen (pro) | — |
-| P1.3 | Technique | **Ajouter `.nojekyll`** (fichier vide) pour neutraliser Jekyll et pérenniser le service des assets. | Faible | Faible (préventif) | — |
-| P1.4 | UX | **Métadonnées sociales** : `<meta name="description">` + Open Graph (`og:title`/`og:description`/`og:image`=`img/scenes/title.jpg`) + Twitter card. | Faible | Moyen (partage) | cache-bump |
-| P1.5 | Performance | **`defer` sur les 88 `<script>`** (ordre préservé). Valider loader + smoke + pwa-smoke. | Moyenne | **Élevé** (TTI 1ʳᵉ visite) | cache-bump, tests |
-| P1.6 | Équilibrage | **Passe sim N=4000 par difficulté** (Facile/Difficile/Expert), figer les tables dans `DIFFICULTY_REPORT.md` comme baseline RC. | Moyenne | Moyen (confiance) | — |
+| # | Axe | Tâche | Difficulté | Impact | Statut |
+|---|-----|-------|-----------|--------|--------|
+| P1.1 | Technique | **`README.md` racine** (le dépôt n'en avait aucun) : pitch, lien jouable, stack, tests, statut RC. | Faible | **Élevé** (vitrine) | ✅ **Fait (2026-06-21)** |
+| P1.2 | Technique | ~~Nettoyer la racine servie (dev HTML).~~ | Faible | — | ❌ **Abandonné** : bundle `_site` curaté (`deploy.yml`) → non servis ; `robot.html` déployé exprès. Audit initial inexact. |
+| P1.3 | Technique | ~~Ajouter `.nojekyll`.~~ | Faible | — | ❌ **Abandonné** : Pages via GitHub Actions, pas Jekyll → sans objet. |
+| P1.4 | UX | **Métadonnées sociales** : `<meta description>` + Open Graph + Twitter card (image `title.jpg`). | Faible | Moyen (partage) | ✅ **Fait (2026-06-21)** (cache-bump) |
+| P1.5 | Performance | **`defer` sur les `<script>`**. | Moyenne | **Révisé : Faible** | ⏸️ **Reporté** : scripts en fin de `<body>` → gain marginal ; risque 88 balises à valider en smoke complet. |
+| P1.6 | Équilibrage | **Sim N=4000 par difficulté** → figer `DIFFICULTY_REPORT.md`. | Moyenne | Moyen | ⏸️ **Reporté** : Monte-Carlo lourd, session dédiée. |
 
-**Critère de sortie P1** : le dépôt a une vitrine (README + page propre), la
-première visite est plus rapide, l'équilibre est figé pour la RC, tests verts.
+**Critère de sortie P1** : vitrine (README + métadonnées de partage), tests
+verts. ✅ **Atteint (2026-06-21)** pour le périmètre retenu (P1.1 + P1.4).
+P1.5/P1.6 portés à la session suivante ; P1.2/P1.3 abandonnés après lecture
+de `deploy.yml`.
 
 ## Priorité 2 — Moyen terme : frustration & feedback
 
