@@ -558,6 +558,7 @@ async function startGame(count = 2) {
   floorReached         = 1;
   // Boucle Ténébreuse — Porteur d'Éclats (ch.11 V1) : compteur neuf par partie.
   if (typeof accumulatedEclats !== 'undefined') accumulatedEclats = 0;
+  if (typeof eclatMilestones !== 'undefined') eclatMilestones = new Set();   // paliers d'Éclats célébrés (héritage P0)
   // « Briser le Cycle » (ch.11 V3) : fin non débloquée en début de partie.
   if (typeof cycleBroken !== 'undefined') cycleBroken = false;
   combatTutorialSeen = false;   // tuto premier combat rejoué à chaque partie (LOT D2)

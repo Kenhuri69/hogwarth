@@ -194,7 +194,47 @@ function applyLoopVariant(monster, n) {
   if (!weak.includes('lumière')   && !resist.includes('lumière'))  weak.push('lumière');
   monster.resist = resist;
   monster.weak   = weak;
+
+  // Mutations graduées par palier (ch.11 §11.11 — extension P0). Au-delà du
+  // simple sidegrade « résiste ténèbres / faible lumière », chaque palier de
+  // Boucle profonde dote la créature d'une capacité supplémentaire BORNÉE
+  // (faible `chance`, statuts/effets EXISTANTS uniquement) — la spirale qui
+  // s'enfonce devient qualitativement plus retorse, pas seulement plus grosse.
+  // Additif : le scaling de puissance reste géré par la récursion endgame.
+  // Idempotent par construction (`monster` est un clone frais à chaque scale ;
+  // garde anti-doublon `_loopMut` par sécurité). Re-sim : tools/sim-difficulty.js.
+  const muts = _loopVariantAbilities(n);
+  if (muts.length) {
+    if (!Array.isArray(monster.abilities)) monster.abilities = [];
+    for (const ab of muts) {
+      if (!monster.abilities.some(a => a && a._loopMut === ab._loopMut)) {
+        monster.abilities.push({ ...ab });
+      }
+    }
+  }
   return monster;
+}
+
+// Capacités graduées ajoutées par palier de Boucle `n` (pur). Cumulatives :
+// un monstre Abyssal (n=3) porte la mutation Spectral ET Abyssal. Chances
+// volontairement basses pour rester sous le radar d'équilibrage. Statuts/effets
+// EXISTANTS (weaken / fear / stun) — aucun nouveau vecteur moteur.
+function _loopVariantAbilities(n) {
+  if (typeof n !== 'number' || !isFinite(n) || n < 2) return [];
+  const out = [];
+  // n≥2 Spectral — affaiblit la défense (étreinte qui ronge l'armure).
+  out.push({ name: "Étreinte Spectrale", icon: "👻", desc: "Le froid spectral ronge la défense de la cible.",
+             effect: "weaken", power: 1, chance: 0.20, _loopMut: 'spectral_weaken' });
+  // n≥3 Abyssal — instille la peur (50 % de figer la cible, cf. STATUS fear).
+  if (n >= 3) out.push({ name: "Murmure Abyssal", icon: "😱", desc: "Un murmure d'avant les mots instille l'effroi.",
+             effect: "status", statusId: "fear", turns: 2, chance: 0.18, _loopMut: 'abyssal_fear' });
+  // n≥4 Cauchemardesque — étourdit (saute le prochain tour, cf. STATUS stun).
+  if (n >= 4) out.push({ name: "Vertige Cauchemardesque", icon: "💫", desc: "La réalité se gondole ; la cible perd pied.",
+             effect: "status", statusId: "stun", turns: 1, chance: 0.15, _loopMut: 'cauchemar_stun' });
+  // n≥5 Funeste — affaiblissement aggravé (le verdict de la spirale).
+  if (n >= 5) out.push({ name: "Verdict Funeste", icon: "⚰️", desc: "La spirale rend son verdict : l'armure cède.",
+             effect: "weaken", power: 2, chance: 0.22, _loopMut: 'funeste_weaken' });
+  return out;
 }
 
 // Applique la mise à l'échelle d'un monstre de base pour un étage donné.

@@ -21,7 +21,7 @@
 <meta name="twitter:title" content="Poudlard & Magie : Les Secrets de Poudlard">
 <meta name="twitter:description" content="RPG dungeon-crawler en tour par tour dans l'univers de Poudlard, jouable dans le navigateur.">
 <meta name="twitter:image" content="https://kenhuri69.github.io/hogwarth/img/scenes/title.jpg">
-<link rel="stylesheet" href="css/style.css?v=49">
+<link rel="stylesheet" href="css/style.css?v=50">
 <link rel="stylesheet" href="css/ux-improvements.css?v=5">
 <link rel="stylesheet" href="css/save-ui.css?v=5">
 <link rel="stylesheet" href="css/ornaments.css?v=1">
@@ -495,6 +495,8 @@
     <div class="panel-title">Groupe</div>
     <!-- Ch.14 P5 — Titre New Game+ (cosmétique, rempli par updateUI si ngPlusRun) -->
     <div id="ngplus-hud-title" class="ngplus-hud-title" style="display:none"></div>
+    <!-- Ch.11 P0 — Badge Porteur d'Éclats (cosmétique, rempli par updateUI en Boucle) -->
+    <div id="eclat-hud-badge" class="eclat-hud-badge eclat-aura-0" style="display:none"></div>
 
     <!-- Harry -->
     <div class="party-card" id="char-card-0">
@@ -1324,10 +1326,10 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="js/icons.js?v=1"></script>
 <script defer src="js/scene-icons.js?v=8"></script>
 <script defer src="js/monsters.js?v=23"></script>
-<script defer src="js/npcs.js?v=42"></script>
+<script defer src="js/npcs.js?v=43"></script>
 <script defer src="js/npcs-helpers.js?v=4"></script>
-<script defer src="js/riddles.js?v=2"></script>
-<script defer src="js/codex.js?v=18"></script>
+<script defer src="js/riddles.js?v=3"></script>
+<script defer src="js/codex.js?v=19"></script>
 <script defer src="js/data.js?v=64"></script>
 <script defer src="js/data-characters.js?v=1"></script>
 <script defer src="js/data-spells.js?v=1"></script>
@@ -1335,20 +1337,20 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="js/data-world.js?v=1"></script>
 <script defer src="js/data-icon-recipes.js?v=1"></script>
 <script defer src="js/floor-themes.js?v=2"></script>
-<script defer src="js/floor-ambiance.js?v=16"></script>
+<script defer src="js/floor-ambiance.js?v=17"></script>
 <script defer src="js/floor-events.js?v=1"></script>
 <script defer src="js/room-flavor.js?v=1"></script>
 <script defer src="js/item-icons.js?v=46"></script>
-<script defer src="js/state.js?v=43"></script>
+<script defer src="js/state.js?v=44"></script>
 <script defer src="js/hero-barks.js?v=12"></script>
-<script defer src="js/ui.js?v=20"></script>
+<script defer src="js/ui.js?v=21"></script>
 <script defer src="js/modal-a11y.js?v=2"></script>
 <script defer src="js/ui-character-sheet.js?v=14"></script>
 <script defer src="js/ui-settings.js?v=4"></script>
 <script defer src="js/keybindings.js?v=1"></script>
 <script defer src="js/ui-bestiary.js?v=6"></script>
 <script defer src="js/ui-codex.js?v=10"></script>
-<script defer src="js/dungeon-scaling.js?v=7"></script>
+<script defer src="js/dungeon-scaling.js?v=8"></script>
 <script defer src="js/dungeon.js?v=20"></script>
 <script defer src="js/dungeon-spawning.js?v=2"></script>
 <script defer src="js/textures.js?v=1"></script>
@@ -1360,7 +1362,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="js/renderer-entities.js?v=8"></script>
 <script defer src="js/renderer-minimap.js?v=9"></script>
 <script defer src="js/movement.js?v=39"></script>
-<script defer src="js/movement-floors.js?v=18"></script>
+<script defer src="js/movement-floors.js?v=19"></script>
 <script defer src="js/movement-interactions.js?v=20"></script>
 <script defer src="js/swipe-canvas.js?v=4"></script>
 <script defer src="js/battle.js?v=39"></script>
@@ -1373,7 +1375,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="js/inventory.js?v=26"></script>
 <script defer src="js/inventory-spells.js?v=11"></script>
 <script defer src="js/potions.js?v=8"></script>
-<script defer src="js/quests-templates.js?v=19"></script>
+<script defer src="js/quests-templates.js?v=20"></script>
 <script defer src="js/quests.js?v=20"></script>
 <script defer src="js/quests-riddles.js?v=3"></script>
 <script defer src="js/npc-dialog.js?v=22"></script>
@@ -1382,7 +1384,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="js/intro.js?v=3"></script>
 <script defer src="js/shop.js?v=19"></script>
 <script defer src="js/save-slots.js?v=3"></script>
-<script defer src="js/save.js?v=45"></script>
+<script defer src="js/save.js?v=46"></script>
 <script defer src="js/save-visit-snapshot.js?v=2"></script>
 <script defer src="js/profile.js?v=3"></script>
 <script defer src="js/save-ui.js?v=9"></script>
@@ -1397,7 +1399,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="js/visit-hud.js?v=6"></script>
 <script defer src="js/pvp-duel.js?v=1"></script>
 <script defer src="js/atelier-voyageur.js?v=5"></script>
-<script defer src="js/main.js?v=34"></script>
+<script defer src="js/main.js?v=35"></script>
 <script defer src="js/endgame.js?v=10"></script>
 <script defer src="js/break-cycle.js?v=4"></script>
 <script defer src="js/forge.js?v=7"></script>

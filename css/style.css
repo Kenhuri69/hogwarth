@@ -317,6 +317,53 @@ body {
   .ngplus-hud-title { font-size: 9px; letter-spacing: 0.5px; padding: 2px 6px; }
 }
 
+/* ── Porteur d'Éclats (ch.11 P0) — badge HUD + aura escaladée ──────── */
+.eclat-hud-badge {
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-align: center;
+  color: #d9c7ff;
+  background: linear-gradient(180deg, rgba(120,90,200,0.22), rgba(120,90,200,0.10));
+  border: 1px solid #8a6fd0;
+  border-radius: 10px;
+  padding: 3px 8px;
+  margin: 4px auto 0;
+  max-width: 92%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: 0 0 6px rgba(138,111,208,0.30);
+}
+/* L'intensité de l'aura croît avec les paliers franchis (0→3). */
+.eclat-hud-badge.eclat-aura-1 { box-shadow: 0 0 9px rgba(138,111,208,0.45); }
+.eclat-hud-badge.eclat-aura-2 { box-shadow: 0 0 13px rgba(160,111,216,0.60); color: #e6d8ff; }
+.eclat-hud-badge.eclat-aura-3 {
+  box-shadow: 0 0 18px rgba(180,120,240,0.80); color: #f0e6ff;
+  border-color: #b48cff; animation: eclatAuraPulse 2.4s ease-in-out infinite;
+}
+@keyframes eclatAuraPulse {
+  0%, 100% { box-shadow: 0 0 14px rgba(180,120,240,0.65); }
+  50%      { box-shadow: 0 0 22px rgba(200,140,255,0.95); }
+}
+/* Aura cosmétique sur le blason vivant du header (toujours visible en Boucle). */
+.crest-wrap.eclat-aura-1 { box-shadow: 0 0 10px rgba(138,111,208,0.45); }
+.crest-wrap.eclat-aura-2 { box-shadow: 0 0 16px rgba(160,111,216,0.60); }
+.crest-wrap.eclat-aura-3 {
+  box-shadow: 0 0 22px rgba(180,120,240,0.80);
+  animation: eclatAuraPulse 2.4s ease-in-out infinite;
+}
+/* Liseré « Cycle brisé » — teinte argent-lune par-dessus l'aura violette. */
+.crest-wrap.eclat-cycle-broken {
+  box-shadow: 0 0 20px rgba(210,225,255,0.75), 0 0 6px rgba(180,120,240,0.6);
+}
+@media (prefers-reduced-motion: reduce) {
+  .eclat-hud-badge.eclat-aura-3, .crest-wrap.eclat-aura-3 { animation: none; }
+}
+@media (max-width: 700px) {
+  .eclat-hud-badge { font-size: 9px; letter-spacing: 0.5px; padding: 2px 6px; }
+}
+
 .char-name {
   font-family: 'Cinzel', serif;
   font-size: 13px;

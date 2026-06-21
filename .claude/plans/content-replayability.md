@@ -399,6 +399,24 @@ Nouveaux (tous **sérialisés** dans `_serializeState`/`_applyState`, save.js) :
   `LOOP_VARIANT_TIERS`/`applyLoopVariant`, `slythPactChoice`/`computeEndingType` (suppression du
   flag `salazarPactChoice` dupliqué), `darkLoopLines` forme objet par palier, `OUTREMONDE_SOUVENIRS`
   comme modèle d'héritage visible. Le contenu reste données-only en P0.
+- **2026-06-21 (P0 IMPLÉMENTÉ)** — Décisions utilisateur : P0 + héritage complet (aura + HUD) +
+  mutations graduées. Livré :
+  - ✅ **Étages** : 2 set-pieces de Ruines (`FLOOR_SCRIPTED_BEATS` 15 « Vestige des Mégalithes »
+    + 21 « Le Battement ») — réutilise `seenScriptedBeat` (zéro nouvelle infra). + 3 devinettes
+    (`r_voute_corruption`, `r_quatre_unis`, `r_dormeur`).
+  - ✅ **Quêtes** : `purge_givre`, `purge_spectres`, `chasse_basilic_ancestral` (gardien_boucle,
+    `questsGiven`/`questsTurnedIn` + `dialoguesByQuest`). + `eclatLines` du Gardien.
+  - ✅ **Variantes Boucle** : (1) héritage Éclats visible — toasts paliers 5/10/15 (`eclatMilestones`,
+    sérialisé), badge HUD `#eclat-hud-badge` + aura CSS escaladée sur le blason (`_updateEclatBadge`),
+    Codex « Mémoire des Boucles » ; (2) mutations graduées `_loopVariantAbilities(n)` (Spectral
+    weaken → Abyssal fear → Cauchemardesque stun → Funeste weaken+) bornées, effets EXISTANTS.
+  - ✅ **Codex** : `dormeur_fondations` (floor 21), `memoire_boucles` (eclatLoop 5→15).
+  - ✅ **Tests** : `units.js` 946 ✅ (assertion FLOOR_SCRIPTED_BEATS mise à jour), `smoke.js` 263 ✅,
+    `pwa-smoke.js` ✅. Cache PWA bumpé (v210→v211, 12 assets).
+  - ⚠️ **Reste à faire (suivi)** : re-sim difficulté Boucle profonde (`tools/sim-difficulty.js
+    --endgame`) pour calibrer l'impact des mutations graduées — les chances sont volontairement
+    basses (0.15-0.22) mais une boucle 5+ cumule 4 capacités. Items neufs P1 (`cristal_givre`,
+    `etendard_godric`) non inclus (icônes requises).
 - **Prochaine étape** : valider les ❓ avec l'utilisateur, puis implémenter la tranche **P0**
   (données-only) dans un commit, test smoke, cache-bump.
 

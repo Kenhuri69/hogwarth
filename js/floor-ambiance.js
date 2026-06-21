@@ -523,6 +523,19 @@ const FLOOR_SCRIPTED_BEATS = {
     narrative: "Sur la roche brute affleurent les premières runes — un alphabet qu'aucun cours n'a enseigné. Quelque chose monte la garde au seuil de ce qui dort plus bas. Tu touches la graine des Ruines Anciennes.",
     toast: "Le Seuil du Veilleur — la pierre se souvient d'avant l'école.",
   },
+  // ── Ruines Anciennes (Zone D, atteignable en Boucle) ─────────────
+  // 15 : seuil des Mégalithes — la Stèle de Rowena nomme la corruption.
+  15: {
+    id: 'vestige_megalithes',
+    narrative: "Les murs cèdent à des monolithes trop grands pour une main humaine. Au centre d'une salle sans angle droit, une stèle d'aigle te fixe : Rowena y grava, avant les maisons, le nom de ce que les Quatre vinrent enfouir. « Comprends, et la faille apparaît. » Sous la corruption qui suinte des dolmens, tu sens que l'école ne fut pas bâtie ICI — elle fut bâtie PAR-DESSUS, pour oublier.",
+    toast: "🦅 Le Vestige des Mégalithes — Rowena nomme ce que l'on a enfoui.",
+  },
+  // 21 : seuil de l'Avant-Monde — le battement du Dormeur.
+  21: {
+    id: 'battement_dormeur',
+    narrative: "Plus de runes. Plus de chant. À leur place, un battement lent, énorme, organique, qui monte du sol comme d'une poitrine. Ici commence l'Avant-Monde — avant l'écriture, avant la pierre taillée. Le battement a un nom que nul Fondateur n'osa écrire : le Dormeur des Fondations. Tu marches sur ce que les Quatre tinrent clos. Ne descends pas pour le réveiller — descends pour savoir que tu l'as effleuré, et remonte.",
+    toast: "🫀 Le Battement — le Dormeur des Fondations rêve sous tes pas.",
+  },
 };
 
 // Beat « Grande Salle » (Ch.14 §14.3.2) — variante POST-VICTOIRE de l'étage 1.

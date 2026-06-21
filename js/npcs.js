@@ -1827,8 +1827,8 @@ const NPCS = [
     icon:  "♾️",
     portraitImg: "img/npc/gardien_boucle.png",
     placement: { floor: 11, anchor: "first-room" },
-    questsGiven:    ["purge_loups", "purge_acromantules", "purge_mangemorts", "purge_moremplis", "prime_boss_gardien"],
-    questsTurnedIn: ["purge_loups", "purge_acromantules", "purge_mangemorts", "purge_moremplis", "prime_boss_gardien"],
+    questsGiven:    ["purge_loups", "purge_acromantules", "purge_mangemorts", "purge_moremplis", "purge_givre", "purge_spectres", "chasse_basilic_ancestral", "prime_boss_gardien"],
+    questsTurnedIn: ["purge_loups", "purge_acromantules", "purge_mangemorts", "purge_moremplis", "purge_givre", "purge_spectres", "chasse_basilic_ancestral", "prime_boss_gardien"],
     // Prime de boss premium (cadence longue, everyLevels:3) — invoque le
     // Magyar Ancestral via spawnOnAccept, récompense un matériau primordial.
     dialoguesByQuest: {
@@ -1836,7 +1836,30 @@ const NPCS = [
         questOffer:  "Au cœur de la Boucle dort un dragon que les âges ont oublié — le Magyar Ancestral. Je peux le réveiller pour toi. Peu en réchappent ; mais sa dépouille recèle une Essence Primordiale, et la Boucle paie ce qu'elle doit.",
         questActive: "Le Magyar t'attend. Sa flamme ne s'éteint qu'avec lui.",
         questReady:  "Le dragon est tombé. Tu as fait ce que des cycles entiers de revenants n'ont osé. Prends l'Essence Primordiale — tu l'as méritée."
+      },
+      purge_givre: {
+        questOffer:  "Le froid des Ruines n'est pas une saison : il se condense en spectres. Disperses-en deux — le gel reculera d'un pas, et la Boucle te paiera.",
+        questActive: "Le givre s'épaissit encore. Continue de le disperser.",
+        questReady:  "Le froid recule, pour cette fois. Prends ta part."
+      },
+      purge_spectres: {
+        questOffer:  "Les Spectres Renforcés se retissent plus denses à chaque cycle. La lumière les délie — abats-en deux et reviens.",
+        questActive: "Deux spectres à délier. La lumière est ton meilleur fil.",
+        questReady:  "Bien tranché. La trame des Ruines s'allège d'autant."
+      },
+      chasse_basilic_ancestral: {
+        questOffer:  "Tout au fond mue un Basilic plus vieux que la Chambre des Secrets. Le réveiller est un défi de cycles entiers — mais sa dépouille concentre une Essence des Ténèbres comme nulle autre. Oseras-tu ?",
+        questActive: "Le Basilic Ancestral t'attend, là où la pierre se souvient d'avant l'école. Garde son regard hors du tien.",
+        questReady:  "Le serpent des âges est tombé. Peu de revenants peuvent en dire autant. L'Essence est à toi."
       }
+    },
+    // Fil rouge des Éclats (ch.06 §6.9.3) — le Gardien commente le prestige
+    // du porteur. Suffixe muet appendu par _eclatSuffixPages (npc-dialog.js),
+    // lu par paliers d'Éclats portés (eclatProgress).
+    eclatLines: {
+      1: "Tu portes déjà des Éclats de réalité. Chaque spirale t'en laisse un. Garde-les — ils pèsent plus qu'ils n'en ont l'air.",
+      2: "Tant d'Éclats… Tu descends plus loin que la plupart des revenants. La Boucle te reconnaît, désormais.",
+      3: "Tu portes la mémoire de cycles entiers. Ceux qui en portent autant finissent par voir la faille — et par devoir choisir quoi en faire."
     },
     dialogues: {
       greeting: [

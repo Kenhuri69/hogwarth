@@ -424,6 +424,48 @@ const QUEST_TEMPLATES = [
     repeatableReward: { xp: 230, gold: 195, item: "page_grimoire" },
     location: "Boucle Ténébreuse (étage 11+)"
   },
+  // ── Ruines Anciennes — purges & chasse (Gardien de la Boucle) ────
+  // Cibles propres à la Zone D (Spectre de Givre, Spectre Renforcé,
+  // Basilic Ancestral). Modèle identique aux purge_* (kill, repeatable).
+  {
+    id: "purge_givre",
+    title: "Purge du givre ancien",
+    giver: "Gardien de la Boucle",
+    desc: "Disperse 2 Spectres de Givre. Le froid surnaturel des Ruines se condense en eux ; chaque purge recule le gel d'un pas.",
+    objectives: [
+      { type: "kill", monsterId: "spectre_givre", amount: 2, progress: 0, completed: false }
+    ],
+    reward: { xp: 340, gold: 270, item: "essence_tenebres" },
+    repeatable: { everyLevels: 2 },
+    repeatableReward: { xp: 230, gold: 200, item: "essence_tenebres" },
+    location: "Ruines Anciennes (Boucle)"
+  },
+  {
+    id: "purge_spectres",
+    title: "Purge des spectres renforcés",
+    giver: "Gardien de la Boucle",
+    desc: "Abats 2 Spectres Renforcés. La Boucle les retisse plus denses à chaque récurrence — la lumière les délie le mieux.",
+    objectives: [
+      { type: "kill", monsterId: "spectre_renforce", amount: 2, progress: 0, completed: false }
+    ],
+    reward: { xp: 360, gold: 285, item: "page_grimoire" },
+    repeatable: { everyLevels: 2 },
+    repeatableReward: { xp: 245, gold: 205, item: "page_grimoire" },
+    location: "Ruines Anciennes (Boucle)"
+  },
+  {
+    id: "chasse_basilic_ancestral",
+    title: "Chasse — le Basilic Ancestral",
+    giver: "Gardien de la Boucle",
+    desc: "Au plus profond des Ruines mue un Basilic plus vieux que la Chambre des Secrets. L'affronter est un défi de cycles entiers — sa dépouille recèle une Essence des Ténèbres concentrée.",
+    objectives: [
+      { type: "kill", monsterId: "basilic_ancestral", amount: 1, progress: 0, completed: false }
+    ],
+    reward: { xp: 520, gold: 500, item: "essence_tenebres" },
+    repeatable: { everyLevels: 3 },
+    repeatableReward: { xp: 360, gold: 340, item: "essence_tenebres" },
+    location: "Ruines Anciennes (Boucle, étage 22+)"
+  },
   // ── Boucle Ténébreuse — quêtes des PNJ recyclés (étages 11+) ──────
   // Rallume les PNJ recyclés en Boucle (Kingsley 18, Bill 19, Sirius 20,
   // Marchand 18, Apothicaire 19, Forgeron 20) qui n'avaient plus rien à

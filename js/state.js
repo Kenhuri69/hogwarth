@@ -885,6 +885,12 @@ let ngPlusTitle = '';
 // floorReached — non persisté. Sérialisé via _serializeState / _applyState.
 let accumulatedEclats = 0;
 
+// Paliers d'Éclats déjà célébrés (héritage visible — ch.11 P0). Anti-doublon
+// pour les toasts/cosmétiques de palier (5/10/15) déclenchés dans
+// _maybeAdvanceDarkLoop. Pilote aussi l'aura d'Éclats du HUD (eclatAuraTier).
+// Sérialisé via _serializeState / _applyState (Array.from), réinit par startGame.
+let eclatMilestones = new Set();
+
 // Tuto contextuel du premier combat (LOT D2) — true une fois la bulle
 // affichée. Réinitialisé par startGame, persisté via _serializeState /
 // _applyState pour ne s'afficher qu'une fois par partie.

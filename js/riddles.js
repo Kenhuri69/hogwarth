@@ -90,6 +90,34 @@ const RIDDLES = [
               'Le professeur McGonagall', 'La Grosse Dame'],
     answer: 0,
     rewardHint: 'Le Choixpeau approuve votre sagacité.'
+  },
+  // ── Devinettes des Ruines Anciennes (Zone D / Boucle) ───────────
+  {
+    id: 'r_voute_corruption',
+    question: "La Clé de Voûte ne scellait pas une chose, mais deux. L'une "
+            + "vint après les Fondateurs. Quelle était l'AUTRE ?",
+    choices: ['Voldemort', 'Une corruption antérieure à Poudlard',
+              'Le Basilic', 'Les Reliques de la Mort'],
+    answer: 1,
+    rewardHint: "La pierre frémit : tu as nommé ce que l'école fut bâtie pour oublier."
+  },
+  {
+    id: 'r_quatre_unis',
+    question: "Avant de se diviser en quatre maisons, les Fondateurs firent une "
+            + "seule chose ensemble, sous l'école. Laquelle ?",
+    choices: ['Ils bâtirent la Grande Salle', 'Ils posèrent un sceau',
+              'Ils plantèrent le Saule', 'Ils créèrent le Choixpeau'],
+    answer: 1,
+    rewardHint: "Les quatre vitraux s'illuminent à l'unisson, le temps d'un battement."
+  },
+  {
+    id: 'r_dormeur',
+    question: "Sous l'Avant-Monde repose une présence antérieure à l'écriture, "
+            + "donc aux runes. On ne l'affronte jamais. Comment l'appelle-t-on ?",
+    choices: ['Le Veilleur du Seuil', 'Le Dormeur des Fondations',
+              'Le Seigneur des Ténèbres', 'Le Basilic Ancestral'],
+    answer: 1,
+    rewardHint: "Un battement lent répond. Mieux vaut ne pas réveiller ce qui rêve."
   }
 ];
 
