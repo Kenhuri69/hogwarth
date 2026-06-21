@@ -36,7 +36,10 @@ function loadGameData() {
     window: {}, document: { getElementById: () => null },
     setTimeout: () => 0, clearTimeout: () => {} };
   vm.createContext(sandbox);
-  vm.runInContext(read('js/monsters.js') + '\n;exports.MONSTERS = MONSTERS;', sandbox, { filename: 'monsters.js' });
+  // Lot B P3.3 : monsters.js découpé (socle + 3 push) → concaténer les 4.
+  vm.runInContext(
+    ['js/monsters.js', 'js/monsters-low.js', 'js/monsters-mid.js', 'js/monsters-high.js'].map(read).join('\n') +
+    '\n;exports.MONSTERS = MONSTERS;', sandbox, { filename: 'monsters.js' });
   vm.runInContext(read('js/data.js') +
     '\n;exports.LEVEL_UP_XP_MULTIPLIER = LEVEL_UP_XP_MULTIPLIER;', sandbox, { filename: 'data.js' });
   // Lot A P3.3 : ITEMS extrait de data.js vers data-items.js.

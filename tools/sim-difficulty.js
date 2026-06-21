@@ -27,7 +27,10 @@ const vm = require('vm');
 // suffixe `module.exports.X = X` pour chaque constante voulue.
 function loadGameData() {
   const root = path.join(__dirname, '..');
-  const monstersSrc = fs.readFileSync(path.join(root, 'js/monsters.js'), 'utf8');
+  // Lot B P3.3 : monsters.js (socle MONSTERS=[]) + 3 fichiers push. On
+  // concatène les 4 pour reconstituer le registre complet dans le sandbox.
+  const monstersSrc = ['js/monsters.js', 'js/monsters-low.js', 'js/monsters-mid.js', 'js/monsters-high.js']
+    .map(f => fs.readFileSync(path.join(root, f), 'utf8')).join('\n');
   const dataSrc     = fs.readFileSync(path.join(root, 'js/data.js'),     'utf8');
   // Lot A P3.3 : SPELLS/CHARACTERS/ITEMS extraits de data.js vers data-*.js.
   const charactersSrc = fs.readFileSync(path.join(root, 'js/data-characters.js'), 'utf8');
