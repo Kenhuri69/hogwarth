@@ -2133,9 +2133,23 @@ async function scenarioFloorEvents() {
     state:  typeof currentFloorEvent !== 'undefined',
   }));
   console.log('  T1:', t1);
-  assert(t1.events === 6,  'FLOOR_EVENTS doit compter 6 événements');
+  assert(t1.events === 10, 'FLOOR_EVENTS doit compter 10 événements (6 base + 4 Zone D)');
   assert(t1.roll && t1.get, 'rollFloorEvent / getFloorEvent non exposées');
   assert(t1.state,          'currentFloorEvent non exposé');
+
+  // T1b : gating par étage — les events Zone D (minFloor) n'apparaissent
+  // jamais à l'étage 1, mais sont éligibles en profondeur.
+  const t1b = await page.evaluate(() => {
+    const seenLow = new Set(), seenDeep = new Set();
+    for (let i = 0; i < 2000; i++) { const e = rollFloorEvent(1);  if (e) seenLow.add(e); }
+    for (let i = 0; i < 2000; i++) { const e = rollFloorEvent(16); if (e) seenDeep.add(e); }
+    return { low: [...seenLow], deep: [...seenDeep] };
+  });
+  console.log('  T1b gating:', t1b);
+  assert(!t1b.low.includes('givre_ancien') && !t1b.low.includes('sceau_fissure'),
+    'events Zone D (minFloor 14) ne doivent pas apparaître à l\'étage 1');
+  assert(t1b.deep.includes('givre_ancien') || t1b.deep.includes('sceau_fissure'),
+    'events Zone D doivent être éligibles à l\'étage 16');
 
   // T2 : rollFloorEvent — null si random élevé, id valide sinon
   const t2 = await page.evaluate(() => {

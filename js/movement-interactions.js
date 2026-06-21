@@ -64,7 +64,7 @@ function openChest() {
   if (typeof DFX_safe !== 'undefined') DFX_safe.burst('explore-overlay', 'gold'); // VFX d'ouverture (E3)
   if (typeof HAPTICS_safe !== 'undefined') HAPTICS_safe.chest(); // N2
   if (puzzleReward) {
-    _openPuzzleChest(currentFloorEvent === 'runique');
+    _openPuzzleChest(currentFloorEvent === 'runique' || currentFloorEvent === 'sceau_fissure');
     return;
   }
 

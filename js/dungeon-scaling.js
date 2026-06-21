@@ -203,7 +203,7 @@ function applyLoopVariant(monster, n) {
   // Additif : le scaling de puissance reste géré par la récursion endgame.
   // Idempotent par construction (`monster` est un clone frais à chaque scale ;
   // garde anti-doublon `_loopMut` par sécurité). Re-sim : tools/sim-difficulty.js.
-  const muts = _loopVariantAbilities(n);
+  const muts = _loopVariantAbilities(n, monster.atk);
   if (muts.length) {
     if (!Array.isArray(monster.abilities)) monster.abilities = [];
     for (const ab of muts) {
@@ -216,24 +216,34 @@ function applyLoopVariant(monster, n) {
 }
 
 // Capacités graduées ajoutées par palier de Boucle `n` (pur). Cumulatives :
-// un monstre Abyssal (n=3) porte la mutation Spectral ET Abyssal. Chances
-// volontairement basses pour rester sous le radar d'équilibrage. Statuts/effets
-// EXISTANTS (weaken / fear / stun) — aucun nouveau vecteur moteur.
-function _loopVariantAbilities(n) {
+// un monstre Abyssal (n=3) porte la mutation Spectral ET Abyssal.
+//
+// CALIBRATION (validée par sim, cf. .claude/plans/content-replayability.md) :
+// le `power` des DoT est dérivé de l'`atk` DÉJÀ scalé du monstre. C'est
+// volontaire — un DoT à power fixe deviendrait dérisoire en Boucle profonde
+// (l'attaque qu'il « remplace » ce tour-là, elle, scale). En dérivant le DoT
+// de l'atk, l'ennemi qui pose un saignement échange un coup atténué par la DEF
+// contre des ticks qui IGNORENT la DEF : pression nette POSITIVE, et anti-tank
+// (le turtle ne mitige plus). Les contrôles (fear/stun) pressent en groupe.
+// Effets/statuts EXISTANTS (bleed / fear / stun / poison) — zéro vecteur neuf.
+function _loopVariantAbilities(n, atk) {
   if (typeof n !== 'number' || !isFinite(n) || n < 2) return [];
+  const a = (typeof atk === 'number' && atk > 0) ? atk : 10;
   const out = [];
-  // n≥2 Spectral — affaiblit la défense (étreinte qui ronge l'armure).
-  out.push({ name: "Étreinte Spectrale", icon: "👻", desc: "Le froid spectral ronge la défense de la cible.",
-             effect: "weaken", power: 1, chance: 0.20, _loopMut: 'spectral_weaken' });
-  // n≥3 Abyssal — instille la peur (50 % de figer la cible, cf. STATUS fear).
+  // n≥2 Spectral — saignement perçant (DoT qui ignore la DEF, scale avec l'atk).
+  out.push({ name: "Saignée Spectrale", icon: "🩸", desc: "Une entaille spectrale qui ne cesse de saigner.",
+             effect: "status", statusId: "bleed", power: Math.max(4, Math.round(0.35 * a)),
+             turns: 3, chance: 0.30, _loopMut: 'spectral_bleed' });
+  // n≥3 Abyssal — instille la peur (50 % de figer la cible/tour, cf. STATUS fear).
   if (n >= 3) out.push({ name: "Murmure Abyssal", icon: "😱", desc: "Un murmure d'avant les mots instille l'effroi.",
-             effect: "status", statusId: "fear", turns: 2, chance: 0.18, _loopMut: 'abyssal_fear' });
+             effect: "status", statusId: "fear", turns: 2, chance: 0.16, _loopMut: 'abyssal_fear' });
   // n≥4 Cauchemardesque — étourdit (saute le prochain tour, cf. STATUS stun).
   if (n >= 4) out.push({ name: "Vertige Cauchemardesque", icon: "💫", desc: "La réalité se gondole ; la cible perd pied.",
-             effect: "status", statusId: "stun", turns: 1, chance: 0.15, _loopMut: 'cauchemar_stun' });
-  // n≥5 Funeste — affaiblissement aggravé (le verdict de la spirale).
-  if (n >= 5) out.push({ name: "Verdict Funeste", icon: "⚰️", desc: "La spirale rend son verdict : l'armure cède.",
-             effect: "weaken", power: 2, chance: 0.22, _loopMut: 'funeste_weaken' });
+             effect: "status", statusId: "stun", turns: 1, chance: 0.14, _loopMut: 'cauchemar_stun' });
+  // n≥5 Funeste — venin tenace (DoT plus long, le verdict de la spirale).
+  if (n >= 5) out.push({ name: "Venin Funeste", icon: "⚰️", desc: "Un venin que la spirale entretient sans fin.",
+             effect: "status", statusId: "poison", power: Math.max(4, Math.round(0.30 * a)),
+             turns: 4, chance: 0.30, _loopMut: 'funeste_poison' });
   return out;
 }
 
