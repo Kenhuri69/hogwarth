@@ -184,6 +184,49 @@ function corruptionLevel(floor, victoryAchieved) {
   return c;
 }
 
+// ── Thermomètre de corruption (P2.1) ─────────────────────────
+// Paliers discrets 0–5 dérivés du niveau continu (pur). Palier 0 = masqué
+// (étages 1-2, corruption négligeable) ; 5 = saturé (étage 14+ / Boucle).
+function corruptionTier(level) {
+  const l = (typeof level === 'number' && level > 0) ? level : 0;
+  if (l < 0.15) return 0;
+  if (l < 0.35) return 1;
+  if (l < 0.55) return 2;
+  if (l < 0.75) return 3;
+  if (l < 1.00) return 4;
+  return 5;
+}
+
+const _CORRUPTION_TIER_LABELS = ['', 'naissante', 'diffuse', 'tenace', 'profonde', 'abyssale'];
+
+// HTML du thermomètre : ❄ pleins (palier) + · ternes (reste sur 5) + libellé.
+// Pur. Chaîne vide au palier 0 (le caller masque alors l'élément).
+function corruptionThermometerHtml(level) {
+  const t = corruptionTier(level);
+  if (t === 0) return '';
+  const flakes = '❄'.repeat(t);
+  const dim    = '·'.repeat(5 - t);
+  const label  = _CORRUPTION_TIER_LABELS[t] || '';
+  return '<span class="corruption-flakes" aria-hidden="true">' + flakes +
+         '<span class="corruption-dim">' + dim + '</span></span>' +
+         '<span class="corruption-label">Corruption ' + label + '</span>';
+}
+
+// Met à jour le thermomètre HUD #corruption-meter. Défensif (no-op si DOM
+// absent — file:// smoke). Masqué au palier 0.
+function _updateCorruptionMeter(floor) {
+  const el = (typeof safeEl === 'function') ? safeEl('corruption-meter') : document.getElementById('corruption-meter');
+  if (!el) return;
+  const va = (typeof victoryAchieved !== 'undefined') ? victoryAchieved : false;
+  const f  = (typeof floor === 'number' && floor > 0)
+    ? floor : ((typeof currentFloor !== 'undefined') ? currentFloor : 1);
+  const c  = corruptionLevel(f, va);
+  if (corruptionTier(c) === 0) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  el.innerHTML = corruptionThermometerHtml(c);
+  el.style.display = 'block';
+  el.setAttribute('title', 'Niveau de corruption de l’étage — il monte à mesure que tu descends');
+}
+
 // ── Variantes cosmétiques par Maison ────────────────────────
 // Une ligne occasionnelle (~1 entrée sur 4) selon chosenHouse.
 // Purement cosmétique, ne modifie pas la carte générée.
@@ -755,6 +798,8 @@ function _applyCorruptionAmbiance(floor) {
     opacity = Math.min(_FROST_LOOP_CAP, opacity + loopBonus);
   }
   el.style.opacity = String(opacity);
+  // P2.1 — synchronise le thermomètre HUD avec l'overlay (même point de cycle).
+  if (typeof _updateCorruptionMeter === 'function') _updateCorruptionMeter(floor);
 }
 
 // ── Pic de givre sur écho temporel (P-D4) ───────────────────────

@@ -34,7 +34,16 @@ clore, pas à refaire :
 
 ---
 
-## P2.1 — Thermomètre de corruption HUD (+ clé Codex)  ⬜
+## P2.1 — Thermomètre de corruption HUD (+ clé Codex)  ✅ Fait (2026-06-21)
+
+> **Livré** : helpers purs `corruptionTier()` / `corruptionThermometerHtml()` +
+> `_updateCorruptionMeter()` (`floor-ambiance.js`), HUD `#corruption-meter`
+> (`index.html`, sous `#house-crest`), styles (`css/frost.css`), hook
+> `updateUI()` + `_applyCorruptionAmbiance()`, clé Codex `corruption_gradient`
+> (`codex.js`, total 51→52). Tests : 12 assertions units (paliers/bornes/
+> monotonie) + scénario smoke `scenarioCorruptionMeter`. cache-bump
+> floor-ambiance v16 / ui v19 / codex v18 / frost.css v2 / CACHE_VERSION v205.
+> Étages 1-2 = caché (palier 0) ; saturé à 5 flocons dès l'étage 14 / en Boucle.
 
 **Impact : Élevé** (rend la descente *ressentie*) · **Difficulté : Moyenne**
 
@@ -187,7 +196,7 @@ clore, pas à refaire :
 
 | # | Tâche | Statut | Note |
 |---|-------|--------|------|
-| P3.1 | Art PNG des 4 boss-gardiens | ✅ **déjà livré** | PNG présents ; **action = vérifier mapping renderer + clore** (pas de re-gen). |
+| P3.1 | Art PNG des 4 boss-gardiens | ✅ **clos (2026-06-21)** | Vérifié : 4 PNG (200-280 Ko) wirés via `imgSrc` dans `monsters.js`, résolus par `_getMonsterImg`. Rien à faire. |
 | P3.2 | Combler les gaps audio (OGG) | ⬜ | Dépend de P2.6 (liste de gaps). Enregistrement/intégration = effort haut, hors-scope code seul. |
 | P3.3 | Refactor `monsters.js`/`data.js`/`npcs.js` en sous-fichiers | ⬜ (optionnel) | **Seulement si la dette gêne.** Respecter `check_doc_modules` (arbo↔index.html) + cache-bump massif. Risque > bénéfice à froid. |
 | P3.4 | Pass Lighthouse (LCP/TTI 1ʳᵉ visite) | ⬜ | Mesure d'abord (chiffrer), puis micro-optims ciblées (lazy-load scènes hors viewport, audio à la demande). Bénéficie de P1.5 (`defer`, déjà fait). |

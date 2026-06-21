@@ -172,6 +172,19 @@ const CODEX_ENTRIES = [
     },
   },
   {
+    id: 'corruption_gradient', category: 'glossaire', icon: '❄️', act: 2,
+    title: 'La Corruption qui monte',
+    links: ['froid_surnaturel', 'cle_de_voute'],
+    unlockConditions: [{ type: 'floor', value: 4 }],
+    revealedBy: [{ type: 'floor', value: 10 }],
+    corruptedBy: [{ type: 'victory' }],
+    textVersions: {
+      veiled: "Plus tu descends, plus l'air se charge : le givre gagne, les voix s'épaississent, la pierre oublie qu'elle fut une école. Ce n'est pas une impression — cela se mesure, étage après étage.",
+      revealed: "La corruption n'est pas un état, c'est une pente. À la surface, la Clé ne suinte qu'à peine ; au fond, elle déborde. Ce froid au creux du ventre n'est rien d'autre que la distance qui te sépare de la source — chaque palier franchi rapproche le murmure. Le lire sur soi, c'est savoir combien il reste à oser.",
+      corrupted: "Au-delà de la victoire, l'échelle se brise : la Boucle ajoute un cran que nul étage n'avait prévu. Le froid ne mesure plus la profondeur — il mesure ton entêtement à redescendre.",
+    },
+  },
+  {
     id: 'boucle_tenebreuse', category: 'glossaire', icon: '🌑', act: 4,
     title: 'La Boucle Ténébreuse',
     links: ['cle_de_voute', 'ruines_anciennes'],

@@ -31,7 +31,7 @@
 <link rel="stylesheet" href="css/combat-fx.css?v=13">
 <link rel="stylesheet" href="css/dungeon-fx.css?v=5">
 <link rel="stylesheet" href="css/cinematics.css?v=1">
-<link rel="stylesheet" href="css/frost.css?v=1">
+<link rel="stylesheet" href="css/frost.css?v=2">
 <link rel="stylesheet" href="css/codex.css?v=5">
 <link rel="stylesheet" href="css/pvp-duel.css?v=1">
 <link rel="manifest" href="manifest.json?v=2">
@@ -559,6 +559,9 @@
 
     <!-- Blason de la Maison (affiché après choix) -->
     <div id="house-crest" style="display:none;text-align:center;margin:4px 0 2px"></div>
+
+    <!-- Thermomètre de corruption (P2.1) — palier ❄ piloté par floor-ambiance.js -->
+    <div id="corruption-meter" role="status" aria-live="polite" style="display:none"></div>
 
     <!-- Stats de Harry -->
     <div class="stats-grid">
@@ -1306,17 +1309,17 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="js/npcs.js?v=42"></script>
 <script defer src="js/npcs-helpers.js?v=4"></script>
 <script defer src="js/riddles.js?v=2"></script>
-<script defer src="js/codex.js?v=17"></script>
+<script defer src="js/codex.js?v=18"></script>
 <script defer src="js/data.js?v=61"></script>
 <script defer src="js/data-icon-recipes.js?v=1"></script>
 <script defer src="js/floor-themes.js?v=2"></script>
-<script defer src="js/floor-ambiance.js?v=15"></script>
+<script defer src="js/floor-ambiance.js?v=16"></script>
 <script defer src="js/floor-events.js?v=1"></script>
 <script defer src="js/room-flavor.js?v=1"></script>
 <script defer src="js/item-icons.js?v=44"></script>
 <script defer src="js/state.js?v=43"></script>
 <script defer src="js/hero-barks.js?v=12"></script>
-<script defer src="js/ui.js?v=18"></script>
+<script defer src="js/ui.js?v=19"></script>
 <script defer src="js/modal-a11y.js?v=1"></script>
 <script defer src="js/ui-character-sheet.js?v=14"></script>
 <script defer src="js/ui-settings.js?v=4"></script>

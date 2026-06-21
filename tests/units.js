@@ -2464,6 +2464,35 @@ function loadModule(relPath, exportNames, globals = {}) {
 })();
 
 // ============================================================
+// N. floor-ambiance.js — thermomètre de corruption (P2.1)
+// ============================================================
+(function testCorruptionThermometer() {
+  const { corruptionLevel, corruptionTier, corruptionThermometerHtml } = loadModule(
+    'js/floor-ambiance.js',
+    ['corruptionLevel', 'corruptionTier', 'corruptionThermometerHtml']);
+
+  // Paliers : 0 (caché) en surface → 5 (saturé) au fond / Boucle.
+  check('tier : étage 1 → 0',            corruptionTier(corruptionLevel(1, false)) === 0);
+  check('tier : étage 2 → 0',            corruptionTier(corruptionLevel(2, false)) === 0);
+  check('tier : étage 4 → ≥ 1',          corruptionTier(corruptionLevel(4, false)) >= 1);
+  check('tier : étage 14 → 5',           corruptionTier(corruptionLevel(14, false)) === 5);
+  check('tier : Boucle (1.3) → 5',       corruptionTier(1.3) === 5);
+  // Bornes / entrées invalides.
+  check('tier : négatif → 0',            corruptionTier(-1) === 0);
+  check('tier : NaN → 0',                corruptionTier(NaN) === 0);
+  check('tier : monotone non décroissant',
+    [1,2,4,7,10,14].every((f, i, a) => i === 0 ||
+      corruptionTier(corruptionLevel(f, false)) >= corruptionTier(corruptionLevel(a[i-1], false))));
+
+  // HTML : vide au palier 0, sinon n flocons pleins + (5−n) ternes + libellé.
+  check('html : palier 0 → vide',        corruptionThermometerHtml(0) === '');
+  const h = corruptionThermometerHtml(0.6); // tier 3
+  check('html : 3 flocons pleins',       (h.match(/❄/g) || []).length === 3);
+  check('html : 2 flocons ternes',       (h.match(/·/g) || []).length === 2);
+  check('html : libellé présent',        h.includes('Corruption tenace'));
+})();
+
+// ============================================================
 // Rapport
 // ============================================================
 if (failures.length) {
