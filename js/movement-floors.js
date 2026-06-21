@@ -217,6 +217,10 @@ function _maybeAdvanceDarkLoop(prevFloor, nextFloor) {
   if (nextFloor <= prevDeepest) return;                     // pas un nouveau plus-profond
   // +1 Éclat porté par étage de Boucle franchi.
   if (typeof accumulatedEclats !== 'undefined') accumulatedEclats++;
+  // Héritage visible (P0) — célèbre les paliers d'Éclats (5/10/15) une seule
+  // fois : toast solennel, son, mise à jour de l'aura d'Éclats du HUD et des
+  // entrées Codex « Mémoire des Boucles ». Anti-doublon via eclatMilestones.
+  _maybeCelebrateEclatMilestone();
   // Ch.13 P2 — XP passive de Boucle : adoucit le mur endgame sans toucher au
   // scaling (axe de progression ADDITIF, règle §13.6 #6). Crédité UNIQUEMENT
   // sur un nouvel étage le plus profond (même gate anti-farm que l'Éclat) :
@@ -257,6 +261,35 @@ function _maybeAdvanceDarkLoop(prevFloor, nextFloor) {
       heroBark(speaker.heroKey, 'darkLoop', { channel: 'explore', once: 'darkloop:' + ln });
     }
   }
+}
+
+// Paliers d'Éclats (héritage visible — ch.11 P0). Aux seuils 5/10/15 Éclats
+// portés, célèbre une seule fois : toast + son + rafraîchit le HUD (aura
+// d'Éclats via updateUI) + déverrouille le Codex (condition eclatLoop).
+// Anti-doublon par eclatMilestones (sérialisé). Défensif partout.
+const ECLAT_MILESTONES = [5, 10, 15];
+const _ECLAT_MILESTONE_MSG = {
+  5:  "✦ Cinq Éclats — la Boucle commence à te reconnaître. Tu portes la mémoire de plusieurs spirales.",
+  10: "✦ Dix Éclats — peu de revenants descendent aussi loin. La faille, en bas, semble t'attendre.",
+  15: "✦ Quinze Éclats — tu portes assez de réalités brisées pour, peut-être, oser regarder le Cycle en face.",
+};
+function _maybeCelebrateEclatMilestone() {
+  if (typeof eclatMilestones === 'undefined' || !eclatMilestones) return;
+  const e = (typeof accumulatedEclats === 'number') ? accumulatedEclats : 0;
+  let celebrated = false;
+  for (const m of ECLAT_MILESTONES) {
+    if (e >= m && !eclatMilestones.has(m)) {
+      eclatMilestones.add(m);
+      celebrated = true;
+      if (typeof addMsg === 'function') addMsg(_ECLAT_MILESTONE_MSG[m] || `✦ ${m} Éclats portés.`, 'magic');
+    }
+  }
+  if (!celebrated) return;
+  if (typeof AudioSystem !== 'undefined' && AudioSystem && typeof AudioSystem.playLevelUp === 'function') {
+    try { AudioSystem.playLevelUp(); } catch (_) {}
+  }
+  if (typeof updateUI === 'function') updateUI();              // rafraîchit l'aura d'Éclats du HUD
+  if (typeof checkCodexUnlocks === 'function') checkCodexUnlocks('eclat-milestone');
 }
 
 // Communication du pivot endgame (Chapitre 13 §13.5 Sim 3 / §13.9.E) : à la

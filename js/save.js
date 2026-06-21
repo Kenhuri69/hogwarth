@@ -104,6 +104,7 @@ function _serializeState() {
     ngPlusLevel,
     ngPlusTitle,
     accumulatedEclats,
+    eclatMilestones: Array.from(eclatMilestones),
     combatTutorialSeen,
     endgamePivotSeen,
     hiverClair,
@@ -421,6 +422,10 @@ function _applyState(gs) {
   // Boucle Ténébreuse — Porteur d'Éclats : saves antérieures au flag → 0.
   if (typeof accumulatedEclats !== 'undefined') {
     accumulatedEclats = (typeof gs.accumulatedEclats === 'number') ? gs.accumulatedEclats : 0;
+  }
+  // Paliers d'Éclats célébrés (héritage P0) : saves antérieures → vide.
+  if (typeof eclatMilestones !== 'undefined') {
+    eclatMilestones = new Set(Array.isArray(gs.eclatMilestones) ? gs.eclatMilestones : []);
   }
   // Saves antérieures à D2 : champ absent → tuto réaffiché au prochain combat.
   combatTutorialSeen = !!gs.combatTutorialSeen;

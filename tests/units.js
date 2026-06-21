@@ -784,8 +784,9 @@ function loadNpcs() {
   check('beat étage NaN = null',   getScriptedFloorBeat(NaN) === null);
   check('beat étage undef = null', getScriptedFloorBeat() === null);
   // Cohérence dict ↔ résolveur.
-  check('FLOOR_SCRIPTED_BEATS a exactement 1/4/8',
-    JSON.stringify(Object.keys(FLOOR_SCRIPTED_BEATS).sort()) === JSON.stringify(['1', '4', '8']));
+  check('FLOOR_SCRIPTED_BEATS a 1/4/8 + Ruines 15/21',
+    JSON.stringify(Object.keys(FLOOR_SCRIPTED_BEATS).map(Number).sort((a, b) => a - b))
+      === JSON.stringify([1, 4, 8, 15, 21]));
 
   // ── Orchestrateur one-shot : seenScriptedBeat injecté + stubs d'affichage ──
   const seen = new Set();

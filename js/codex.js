@@ -87,6 +87,28 @@ const CODEX_ENTRIES = [
     },
   },
   {
+    id: 'dormeur_fondations', category: 'lieux', icon: '🫀', act: 4,
+    title: 'Le Dormeur des Fondations',
+    links: ['ruines_anciennes', 'cle_de_voute', 'echo_scellement'],
+    unlockConditions: [{ type: 'floor', value: 21 }],
+    revealedBy: [{ type: 'floor', value: 22 }],
+    textVersions: {
+      veiled: "Au seuil de l'Avant-Monde (étage 21), le chant runique cesse. À sa place monte un battement lent, énorme, organique — comme un cœur qui dort sous la pierre. Les Quatre n'ont pas osé l'écrire ; toi non plus, tu ne devrais pas chercher à l'éveiller.",
+      revealed: "Le Dormeur des Fondations est antérieur à l'écriture — donc aux runes, donc aux Fondateurs. Ce que la Clé de Voûte tenait clos n'était pas seulement une corruption : c'était le sommeil de cette présence, dont la simple respiration EST la magie brute qui irradie l'Avant-Monde. On ne l'affronte pas. On apprend qu'il rêve sous chaque fondation, et on remonte en le sachant. La profondeur, ici, n'est plus une conquête : c'est un vertige qu'on choisit de regarder.",
+    },
+  },
+  {
+    id: 'memoire_boucles', category: 'eclats', icon: '✦', act: 4,
+    title: 'La Mémoire des Boucles',
+    links: ['porteur_eclats', 'boucle_tenebreuse', 'cle_de_voute'],
+    unlockConditions: [{ type: 'eclatLoop', value: 5 }],
+    revealedBy: [{ type: 'eclatLoop', value: 15 }],
+    textVersions: {
+      veiled: "Chaque étage de Boucle franchi te laisse un Éclat de réalité — un fragment de toutes les spirales que d'autres, avant toi, ont parcourues. À cinq Éclats, le Gardien commence à te reconnaître. Tu ne descends plus seul : tu portes la mémoire de ceux qui sont déjà revenus.",
+      revealed: "Quinze Éclats. Tu portes assez de réalités brisées pour que la faille, en bas, semble t'attendre. C'est le seuil où le Reflet du Mythe devient affrontable — et où le choix de Briser le Cycle s'ouvre. Les Éclats ne se dépensent pas ; ils pèsent. Ils sont la preuve que tu as osé redescendre encore, là où la sagesse conseillait de s'arrêter.",
+    },
+  },
+  {
     id: 'voix_godric', category: 'eclats', icon: '🦁', act: 4,
     title: 'La Voix de Godric',
     links: ['echo_scellement'],

@@ -78,6 +78,7 @@ function updateUI() {
   if (typeof _updateCorruptionMeter === 'function') _updateCorruptionMeter();
   if (typeof _refreshEndgameCompassBtn === 'function') _refreshEndgameCompassBtn();
   _updateNgPlusTitle();
+  _updateEclatBadge();
   if (typeof _updateVisitsBtn === 'function') _updateVisitsBtn();
   if (typeof _updateBarksBtn === 'function') _updateBarksBtn();
 
@@ -369,6 +370,40 @@ function _updateNgPlusTitle() {
   const label = '✦ ' + ngPlusTitle + (lvl > 0 ? ` · NG+${lvl}` : '');
   if (el.textContent !== label) el.textContent = label;
   el.style.display = 'block';
+}
+
+// Héritage visible (ch.11 P0) — badge HUD du Porteur d'Éclats + aura cosmétique
+// escaladée sur le blason vivant. Visible uniquement en Boucle Ténébreuse
+// (victoire acquise, au moins 1 Éclat porté). Purement cosmétique : jamais lu
+// par un calcul. L'aura s'intensifie aux paliers 5/10/15 (eclatMilestones) et
+// gagne un liseré « Cycle brisé » si cycleBroken. Défensif (no-op si DOM absent).
+function _updateEclatBadge() {
+  const badge = document.getElementById('eclat-hud-badge');
+  const won = (typeof victoryAchieved !== 'undefined') && victoryAchieved;
+  const e   = (typeof accumulatedEclats === 'number') ? accumulatedEclats : 0;
+  // Palier d'aura = nombre de jalons franchis (0-3).
+  const milestones = (typeof eclatMilestones !== 'undefined' && eclatMilestones)
+    ? [5, 10, 15].filter(m => eclatMilestones.has(m)).length : 0;
+  if (badge) {
+    if (!won || e <= 0) {
+      badge.style.display = 'none';
+    } else {
+      badge.style.display = 'block';
+      const label = `✦ ${e} Éclat${e > 1 ? 's' : ''}`;
+      if (badge.textContent !== label) badge.textContent = label;
+      badge.className = 'eclat-hud-badge eclat-aura-' + milestones;
+    }
+  }
+  // Aura sur le blason vivant du header (toujours visible une fois en Boucle).
+  const crest = document.getElementById('crest-wrap');
+  if (crest) {
+    const broken = (typeof cycleBroken !== 'undefined') && cycleBroken;
+    const tier = (!won || e <= 0) ? '' :
+      (' eclat-aura-' + milestones + (broken ? ' eclat-cycle-broken' : ''));
+    // Retire les classes d'aura précédentes sans toucher au reste.
+    crest.className = crest.className
+      .replace(/\s*eclat-aura-\d/g, '').replace(/\s*eclat-cycle-broken/g, '') + tier;
+  }
 }
 
 function _updateCharBar(idx) {
