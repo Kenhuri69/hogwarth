@@ -1220,11 +1220,13 @@ const ITEMS = [
   // ── Potion évolutive (Potions 2.0 — Lot P8, §1.7) ────────────────────────
   // Philtre du Mage : restaure des PM dont l'ampleur ÉVOLUE avec le nombre de
   // focaliseurs de caster équipés (`formType` bâton/grimoire, Artefacts 2.0).
-  // Helper pur `potionEvolveMult` (potions.js) ; coeffs perStep/cap calibrés
-  // en P13. Synergie déclarative (tooltip + Codex).
+  // Helper pur `potionEvolveMult` (potions.js). Coeffs CALIBRÉS (P13) :
+  // perStep 0.18 (+18 % PM / focaliseur) ; cap 1.5 = plafond de design (+50 %).
+  // Un perso équipe au plus 2 focaliseurs (1 wand + 1 trinket) → max réel 1.36 ;
+  // le cap 1.5 est le garde-fou (futur 3ᵉ focaliseur). Synergie déclarative.
   { id:"philtre_mage", name:"Philtre du Mage", icon:"🔮", desc:"Restaure 20 PM, amplifiés par chaque focaliseur de caster équipé (bâton/grimoire).",
     type:"consumable", category:"mana", rarity:"rare", effect:"restore_sp", power:20, price:110,
-    evolves:{ source:"artifactForm", key:["baton","grimoire"], perStep:0.18, cap:1.8 },
+    evolves:{ source:"artifactForm", key:["baton","grimoire"], perStep:0.18, cap:1.5 },
     synergy:{ artifacts:["baton","grimoire"], note:"+PM par focaliseur de caster équipé (bâton / grimoire)." } },
   // ── Résilience Maison (Potions 2.0 — Lot P9, §1.5) ───────────────────────
   // Un seul item, 4 comportements selon `chosenHouse` (effet `house_buff`,
@@ -1271,7 +1273,7 @@ const ITEMS = [
   { id:"potion_corruption_ctrl", name:"Potion de Corruption Contrôlée", icon:"🌑",
     desc:"+8 MAG (amplifié par ta corruption) pendant 3 tours — mais épaissit la corruption (⚠️ contrecoup en Boucle).",
     type:"consumable", category:"buff", rarity:"epic", effect:"temp_buff", buffStat:"mag", power:8, turns:3,
-    corruptionRisk:2, evolves:{ source:"corruption", perStep:0.05, cap:1.5 },
+    corruptionRisk:2, evolves:{ source:"corruption", perStep:0.05, cap:1.5 }, // coeffs CALIBRÉS (P13) : cap atteint à corruption 10 (+50 % MAG)
     sideEffect:{ stat:"def", magnitude:0.15, turns:2, chance:0.5 },
     houseAffinity:null, price:0,
     synergy:{ artifacts:["TENEBRES_SET"], spells:["Sectumsempra","Morsmordre"], note:"La corruption nourrit la puissance — le Set des Ténèbres l'amplifie." } },

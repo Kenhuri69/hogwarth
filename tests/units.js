@@ -341,6 +341,48 @@ function loadModule(relPath, exportNames, globals = {}) {
 })();
 
 // ============================================================
+// 3bis. potions.js — potionEvolveMult (calibration P13, bornes évolutives)
+// ------------------------------------------------------------
+// Helper PUR lisant party/partySize/spellCorruption/currentFloor (globals).
+// loadModule crée un sandbox neuf par appel ; potions.js n'exécute aucun appel
+// top-level. On verrouille les bornes CALIBRÉES en P13 (Potions 2.0) :
+//   - Philtre du Mage : perStep 0.18, cap 1.5 (max réaliste 1.36 = 2 focaliseurs).
+//   - Corruption Contrôlée : perStep 0.05, cap 1.5 (atteint à corruption 10).
+(function testPotionEvolveCalibration() {
+  const itemPhiltre = { evolves: { source: 'artifactForm', key: ['baton', 'grimoire'], perStep: 0.18, cap: 1.5 } };
+  const itemCorrupt = { evolves: { source: 'corruption', perStep: 0.05, cap: 1.5 } };
+  // Party avec N focaliseurs caster équipés (slots factices ; _partyEquipMax
+  // itère Object.values(equipped) et ignore les membres morts).
+  const partyWith = (formTypes) => [{
+    hp: 10,
+    equipped: Object.fromEntries(formTypes.map((ft, i) => [`s${i}`, { formType: ft }])),
+  }];
+  const evolve = (item, globals) =>
+    loadModule('js/potions.js', ['potionEvolveMult'], globals).potionEvolveMult(item);
+
+  const baseG = { party: [], partySize: 0, spellCorruption: 0, currentFloor: 1 };
+  check('P13 philtre : 0 focaliseur → 1',
+    evolve(itemPhiltre, { ...baseG, party: partyWith([]), partySize: 1 }) === 1);
+  check('P13 philtre : 2 focaliseurs → 1.36 (max réaliste, < cap)',
+    approx(evolve(itemPhiltre, { ...baseG, party: partyWith(['baton', 'grimoire']), partySize: 1 }), 1.36, 1e-9));
+  check('P13 philtre : cap 1.5 (5 focaliseurs bornés)',
+    approx(evolve(itemPhiltre, { ...baseG, party: partyWith(['baton', 'baton', 'baton', 'baton', 'baton']), partySize: 1 }), 1.5, 1e-9));
+  check('P13 corruption : 4 → 1.20',
+    approx(evolve(itemCorrupt, { ...baseG, spellCorruption: 4 }), 1.20, 1e-9));
+  check('P13 corruption : 10 → 1.5 (cap exact)',
+    approx(evolve(itemCorrupt, { ...baseG, spellCorruption: 10 }), 1.5, 1e-9));
+  check('P13 corruption : 100 → 1.5 (borné)',
+    approx(evolve(itemCorrupt, { ...baseG, spellCorruption: 100 }), 1.5, 1e-9));
+
+  // Verrou anti-dérive doc ↔ data.js : les caps calibrés P13 figurent en source.
+  const dSrc = fs.readFileSync(path.join(ROOT, 'js/data.js'), 'utf8');
+  check('data.js philtre_mage cap 1.5 (P13)',
+    /key:\["baton","grimoire"\],\s*perStep:0\.18,\s*cap:1\.5/.test(dSrc));
+  check('data.js corruption_ctrl cap 1.5 (P13)',
+    /source:"corruption",\s*perStep:0\.05,\s*cap:1\.5/.test(dSrc));
+})();
+
+// ============================================================
 // 4. Échappement HTML des données externes (Mondes Parallèles)
 // ------------------------------------------------------------
 // Les noms de host/visiteur viennent du backend Supabase (non fiables) et
