@@ -281,13 +281,18 @@ verts. ✅ **Atteint** : P1.1 + P1.4 (2026-06-21, PR #634), **P1.5 + P1.6
 
 ## Priorité 2 — Moyen terme : frustration & feedback
 
+> 📋 **Plan d'implémentation du reste** (P2.1/2.2/2.3/2.4/2.6 + Priorité 3) :
+> [`rc-polish-remaining.md`](./rc-polish-remaining.md) — étapes code-grounded,
+> critères de vérification, corrections d'état (P3.1 déjà livré ; grille combat
+> P2.3 fiabilisée par #640).
+
 | # | Axe | Tâche | Difficulté | Impact | Dépendances |
 |---|-----|-------|-----------|--------|-------------|
 | P2.1 | Immersion | **Thermomètre de corruption HUD** (indicateur ❄→❄❄❄❄+ déjà amorcé `floor-ambiance.js`) + clé Codex. | Moyenne | **Élevé** (descente ressentie) | cache-bump |
 | P2.2 | Endgame | **Panneau « Boussole d'endgame »** post-victoire (destinations + déclencheurs). | Moyenne | Élevé (rejouabilité lisible) | — |
 | P2.3 | UX | **Hiérarchie d'action en combat** : mise en avant de l'action primaire (Attaquer), compactage des conditionnelles, surtout mobile. | Moyenne | Moyen (charge cognitive) | cache-bump |
 | P2.4 | UX | **Mini-tours contextuels endgame** (1ʳᵉ Forge/Biblio/Atelier) via infra `help-tour`. | Moyenne | Moyen (découvrabilité) | help-tour |
-| P2.5 | Narratif | **Marquer les quêtes signature** dans le journal + **compteur Codex** (« X/36 révélées »). | Faible | Moyen | — |
+| P2.5 | Narratif | **Marquer les quêtes signature** dans le journal + **compteur Codex** (« X/N révélées »). | Faible | Moyen | ✅ **Fait (2026-06-21, Lot B)** : chip « ✦ SIGNATURE » sur les 4 quêtes `houseSignatureQuest` (carte active + section terminées) ; compteur « ✨ X / 51 révélées » dans l'en-tête Codex (rafraîchi à chaque rendu de liste). Le total réel est **51** (pas 36 — l'audit citait un compte périmé). 2 scénarios smoke ajoutés. cache-bump quests v20 / ui-codex v10 / CACHE_VERSION v202. |
 | P2.6 | Immersion | **Inventaire audio** (samples livrés vs synthétisés) → liste de gaps prioritaires à enregistrer. | Faible | Faible→Moyen | — |
 
 **Critère de sortie P2** : un joueur perçoit la corruption, sait où aller en

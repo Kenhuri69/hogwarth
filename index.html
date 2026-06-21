@@ -21,7 +21,7 @@
 <meta name="twitter:title" content="Poudlard & Magie : Les Secrets de Poudlard">
 <meta name="twitter:description" content="RPG dungeon-crawler en tour par tour dans l'univers de Poudlard, jouable dans le navigateur.">
 <meta name="twitter:image" content="https://kenhuri69.github.io/hogwarth/img/scenes/title.jpg">
-<link rel="stylesheet" href="css/style.css?v=47">
+<link rel="stylesheet" href="css/style.css?v=49">
 <link rel="stylesheet" href="css/ux-improvements.css?v=5">
 <link rel="stylesheet" href="css/save-ui.css?v=5">
 <link rel="stylesheet" href="css/ornaments.css?v=1">
@@ -31,12 +31,12 @@
 <link rel="stylesheet" href="css/combat-fx.css?v=13">
 <link rel="stylesheet" href="css/dungeon-fx.css?v=5">
 <link rel="stylesheet" href="css/cinematics.css?v=1">
-<link rel="stylesheet" href="css/frost.css?v=1">
+<link rel="stylesheet" href="css/frost.css?v=2">
 <link rel="stylesheet" href="css/codex.css?v=5">
 <link rel="stylesheet" href="css/pvp-duel.css?v=1">
 <link rel="manifest" href="manifest.json?v=2">
 <meta name="theme-color" content="#c9a84c">
-<link rel="apple-touch-icon" href="img/icons/pwa/apple-touch-icon.png?v=3">
+<link rel="apple-touch-icon" href="img/icons/pwa/apple-touch-icon.png?v=4">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Poudlard & Magie">
@@ -560,6 +560,9 @@
     <!-- Blason de la Maison (affiché après choix) -->
     <div id="house-crest" style="display:none;text-align:center;margin:4px 0 2px"></div>
 
+    <!-- Thermomètre de corruption (P2.1) — palier ❄ piloté par floor-ambiance.js -->
+    <div id="corruption-meter" role="status" aria-live="polite" style="display:none"></div>
+
     <!-- Stats de Harry -->
     <div class="stats-grid">
       <div class="stat-item" data-stat="str" title="Force (STR) — dégâts physiques + pénétration de la défense ennemie"><div class="skey">FORCE</div><div class="sval" id="s-str">8</div></div>
@@ -712,12 +715,12 @@
           <div class="target-buttons" id="target-buttons"></div>
         </div>
         <div class="battle-actions">
-          <button class="cmd-btn" onclick="battleAction('attack')" title="Attaquer (A)" aria-label="Attaquer (A)"><img class="ui-icon ui-icon-md" src="img/icons/atk.png" alt=""> Attaquer</button>
+          <button class="cmd-btn cmd-btn--primary" onclick="battleAction('attack')" title="Attaquer (A)" aria-label="Attaquer (A)"><img class="ui-icon ui-icon-md" src="img/icons/atk.png" alt=""> Attaquer</button>
           <button class="cmd-btn" onclick="battleAction('spell')" title="Sortilège (S)" aria-label="Sortilège (S)"><img class="ui-icon ui-icon-md" src="img/icons/mp.png" alt=""> Sortilège</button>
           <button class="cmd-btn" onclick="battleAction('guard')" title="Garde (G)" aria-label="Garde (G)"><img class="ui-icon ui-icon-md" src="img/icons/protego.png" alt=""> Garde</button>
           <button class="cmd-btn" id="btn-artifact" style="display:none" onclick="battleAction('artifact')" title="Artefact actif" aria-label="Artefact actif">🏺 Artefact</button>
           <button class="cmd-btn" id="btn-posture" style="display:none" onclick="battleAction('posture')" title="Posture du Duo" aria-label="Posture du Duo">🔄 Posture</button>
-          <button class="cmd-btn" id="btn-env" style="display:none" onclick="battleAction('env')" title="Activer la rune (environnement)" aria-label="Activer la rune">🌿 Rune</button>
+          <button class="cmd-btn" id="btn-env" style="display:none" onclick="battleAction('env')" title="Activer la rune (environnement)" aria-label="Activer la rune"><img class="ui-icon ui-icon-md" src="img/icons/rune.png" alt=""> Rune</button>
           <button class="cmd-btn" onclick="battleAction('item')" title="Objet (O)" aria-label="Objet (O)"><img class="ui-icon ui-icon-md" src="img/icons/items/potion_m.png" alt=""> Objet</button>
           <button class="cmd-btn" onclick="battleAction('flee')" title="Fuir (F)" aria-label="Fuir (F)"><img class="ui-icon ui-icon-md" src="img/icons/agi.png" alt=""> Fuir</button>
         </div>
@@ -814,6 +817,7 @@
       <button class="cmd-btn" data-group="adventure" onclick="openBestiary()" title="Bestiaire"><span class="btn-icon"><img src="img/icons/bestiary.png" alt="Bestiaire"></span><span class="btn-label">Bestiaire</span></button>
       <button class="cmd-btn" data-group="adventure" onclick="openCodex()" title="Codex — journal vivant"><span class="btn-icon" style="font-size:18px">📖</span><span class="btn-label">Codex</span></button>
       <button class="cmd-btn" data-group="adventure" onclick="openQuestLog()" title="Quêtes actives"><span class="btn-icon"><img src="img/icons/quest.png" alt="Quêtes"></span><span class="btn-label">Quêtes</span></button>
+      <button class="cmd-btn" data-group="adventure" id="btn-endgame-compass" style="display:none" onclick="openEndgameCompass()" title="Boussole d'endgame — destinations débloquées"><span class="btn-icon" style="font-size:18px">🧭</span><span class="btn-label">Boussole</span></button>
       <button class="cmd-btn" data-group="adventure" id="btn-search" onclick="searchRoom()" title="Fouiller la salle (F)"><span class="btn-icon"><img src="img/icons/search.png" alt="Fouiller"></span><span class="btn-label">Fouiller</span></button>
       <button class="cmd-btn" data-group="adventure" onclick="rest()" title="Repos (R)"><span class="btn-icon"><img src="img/icons/rest.png" alt="Repos"></span><span class="btn-label">Repos</span></button>
       <button class="cmd-btn" data-group="adventure" id="btn-mp-message" onclick="openMessageComposer()" title="Laisser / lire un message"><span class="btn-icon" style="font-size:18px">🪶</span><span class="btn-label">Message</span></button>
@@ -1078,10 +1082,29 @@
 </div>
 
 <!-- CODEX — journal vivant (Chapitre 12). Modale DÉDIÉE (jamais #char-detail). -->
-<div id="codex-modal" role="dialog" aria-modal="true" aria-labelledby="codex-modal-title">
+<!-- Boussole d'endgame (P2.2) — destinations post-victoire. Backdrop inline
+     (hors liste #...-modal de style.css) ; focus-trap via modal-a11y MODAL_IDS,
+     Échap via ESC_CLOSEABLE_MODALS (main.js). -->
+<div id="endgame-compass-modal" role="dialog" aria-modal="true" aria-labelledby="endgame-compass-title"
+     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:500;align-items:center;justify-content:center;padding:20px">
+  <div class="modal-box" style="max-width:520px;max-height:88vh;overflow:auto">
+    <div class="bestiary-header">
+      <span class="bestiary-title" id="endgame-compass-title">🧭 Boussole d'endgame</span>
+      <span class="modal-close" onclick="closeEndgameCompass()" role="button" title="Fermer (Échap)" aria-label="Fermer (Échap)" tabindex="0">✕</span>
+    </div>
+    <p style="font-size:12px;color:var(--parchment-dark);line-height:1.5;margin:6px 0 10px">
+      Après la victoire, le château se rouvre plus profond. Voici où aller — et ce qui débloque chaque destination.
+    </p>
+    <div id="endgame-compass-list" style="display:flex;flex-direction:column;gap:8px"></div>
+  </div>
+</div>
+
+<div id="codex-modal" role="dialog" aria-modal="true" aria-labelledby="codex-modal-title"
   <div class="modal-box codex-modal-box">
     <div class="bestiary-header">
       <span class="bestiary-title" id="codex-modal-title">📖 Codex</span>
+      <span id="codex-progress" aria-live="polite" title="Entrées révélées / total"
+            style="margin-left:auto;margin-right:10px;font-family:'Cinzel',serif;font-size:11px;letter-spacing:1px;color:var(--gold-light);white-space:nowrap"></span>
       <span class="modal-close" onclick="closeCodex()" role="button" title="Fermer (Échap)" aria-label="Fermer (Échap)" tabindex="0">✕</span>
     </div>
 
@@ -1304,23 +1327,23 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="js/npcs.js?v=42"></script>
 <script defer src="js/npcs-helpers.js?v=4"></script>
 <script defer src="js/riddles.js?v=2"></script>
-<script defer src="js/codex.js?v=17"></script>
+<script defer src="js/codex.js?v=18"></script>
 <script defer src="js/data.js?v=63"></script>
 <script defer src="js/data-icon-recipes.js?v=1"></script>
 <script defer src="js/floor-themes.js?v=2"></script>
-<script defer src="js/floor-ambiance.js?v=15"></script>
+<script defer src="js/floor-ambiance.js?v=16"></script>
 <script defer src="js/floor-events.js?v=1"></script>
 <script defer src="js/room-flavor.js?v=1"></script>
 <script defer src="js/item-icons.js?v=45"></script>
 <script defer src="js/state.js?v=43"></script>
 <script defer src="js/hero-barks.js?v=12"></script>
-<script defer src="js/ui.js?v=18"></script>
-<script defer src="js/modal-a11y.js?v=1"></script>
+<script defer src="js/ui.js?v=20"></script>
+<script defer src="js/modal-a11y.js?v=2"></script>
 <script defer src="js/ui-character-sheet.js?v=14"></script>
 <script defer src="js/ui-settings.js?v=4"></script>
 <script defer src="js/keybindings.js?v=1"></script>
 <script defer src="js/ui-bestiary.js?v=6"></script>
-<script defer src="js/ui-codex.js?v=9"></script>
+<script defer src="js/ui-codex.js?v=10"></script>
 <script defer src="js/dungeon-scaling.js?v=7"></script>
 <script defer src="js/dungeon.js?v=20"></script>
 <script defer src="js/dungeon-spawning.js?v=2"></script>
@@ -1347,7 +1370,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="js/inventory-spells.js?v=11"></script>
 <script defer src="js/potions.js?v=8"></script>
 <script defer src="js/quests-templates.js?v=19"></script>
-<script defer src="js/quests.js?v=19"></script>
+<script defer src="js/quests.js?v=20"></script>
 <script defer src="js/quests-riddles.js?v=3"></script>
 <script defer src="js/npc-dialog.js?v=22"></script>
 <script defer src="js/house-donation.js?v=2"></script>
@@ -1370,15 +1393,15 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="js/visit-hud.js?v=6"></script>
 <script defer src="js/pvp-duel.js?v=1"></script>
 <script defer src="js/atelier-voyageur.js?v=4"></script>
-<script defer src="js/main.js?v=33"></script>
-<script defer src="js/endgame.js?v=9"></script>
+<script defer src="js/main.js?v=34"></script>
+<script defer src="js/endgame.js?v=10"></script>
 <script defer src="js/break-cycle.js?v=4"></script>
 <script defer src="js/forge.js?v=6"></script>
 <script defer src="js/library.js?v=4"></script>
 <script defer src="js/help-tour.js?v=3"></script>
 <script defer src="js/balance-log.js?v=1"></script>
 <script defer src="js/loader.js?v=56"></script>
-<script defer src="js/pwa.js?v=5"></script>
+<script defer src="js/pwa.js?v=6"></script>
 
 </body>
 </html>

@@ -180,15 +180,18 @@ async function scenarioCombatMobile() {
     const actions = document.querySelector('.battle-actions');
     const btn = actions ? actions.querySelector('.cmd-btn') : null;
     const btns = actions ? Array.from(actions.querySelectorAll('.cmd-btn')) : [];
-    // P2 : 2 boutons conditionnels (🏺 Artefact actif, 🔄 Posture) sont ajoutés
-    // mais masqués (display:none) hors de leur contexte (solo sans artefact actif
-    // → tous deux cachés). On compte les boutons VISIBLES pour l'ergonomie.
+    // P2/P4 : 3 boutons conditionnels (🏺 Artefact actif, 🔄 Posture, 🌿 Rune)
+    // sont ajoutés mais masqués (display:none) hors contexte (solo sans artefact
+    // → tous cachés). On compte les boutons VISIBLES pour l'ergonomie. La grille
+    // robuste (repeat(3,1fr)) ne dépend PAS de l'ordre/nombre des boutons —
+    // elle ne casse pas quand un bouton conditionnel apparaît (cf. fix nth-child).
     const visible = btns.filter(b => getComputedStyle(b).display !== 'none');
     return {
       bodyHasInBattle: document.body.classList.contains('in-battle'),
       cmdBarHidden:    cmdBar ? getComputedStyle(cmdBar).display === 'none' : null,
       actionsDisplay:  actions ? getComputedStyle(actions).display : null,
       actionsCols:     actions ? getComputedStyle(actions).gridTemplateColumns : null,
+      overflowX:       actions ? (actions.scrollWidth - actions.clientWidth) : 0,
       btnCount:        visible.length,
       btnMinHeight:    btn ? parseFloat(getComputedStyle(btn).minHeight) : 0
     };
@@ -199,7 +202,8 @@ async function scenarioCombatMobile() {
   assert(battle.actionsDisplay === 'grid',                  'battle-actions doit passer en grille sur mobile en combat');
   // grid-template-columns peut être résolu en "px px ..." — compter les tracks
   const trackCount = (battle.actionsCols || '').trim().split(/\s+/).filter(Boolean).length;
-  assert(trackCount === 6,                                  `battle-actions doit être 6 colonnes (${trackCount} vues)`);
+  assert(trackCount === 3,                                  `battle-actions doit être 3 colonnes (${trackCount} vues)`);
+  assert(battle.overflowX <= 1,                             `battle-actions ne doit pas déborder horizontalement (overflow ${battle.overflowX}px)`);
   assert(battle.btnCount === 5,                             `5 boutons attendus (Attaquer/Sortilège/Garde/Objet/Fuir), obtenu ${battle.btnCount}`);
   assert(battle.btnMinHeight >= 56,                         'boutons combat trop petits pour le tactile');
 

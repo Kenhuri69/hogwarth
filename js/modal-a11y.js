@@ -27,7 +27,8 @@
     'inventory-modal', 'spell-modal', 'shop-modal', 'character-modal',
     'bestiary-modal', 'codex-modal', 'house-detail-modal', 'house-donation-modal',
     'wizard-codex-modal', 'slot-modal', 'settings-modal', 'forge-modal',
-    'library-modal', 'brewing-modal', 'fusion-modal', 'riddle-modal'
+    'library-modal', 'brewing-modal', 'fusion-modal', 'riddle-modal',
+    'endgame-compass-modal'
   ];
 
   // Conteneurs de fond à neutraliser (`inert`) tant qu'une modale est ouverte.

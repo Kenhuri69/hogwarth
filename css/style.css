@@ -456,6 +456,29 @@ body {
   display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
 }
 
+/* P2.3 — hiérarchie d'action en combat : « Attaquer » est l'action primaire,
+   mise en avant (teinte or, légèrement plus grande) face aux secondaires. */
+.battle-actions .cmd-btn--primary {
+  border-color: #c9a84c;
+  background: linear-gradient(180deg, rgba(201,168,76,0.18), rgba(0,0,0,0.22));
+  color: var(--gold-light);
+  font-weight: 600;
+}
+.battle-actions .cmd-btn--primary:hover {
+  border-color: #f0d782;
+  color: #f0d782;
+  box-shadow: 0 0 14px rgba(201,168,76,0.45);
+}
+/* Mobile : l'action primaire passe en tête, pleine largeur ; les actions
+   secondaires (dont les conditionnelles) se compactent dessous. */
+@media (max-width: 700px) {
+  .battle-actions .cmd-btn--primary {
+    order: -1;
+    flex-basis: 100%;
+    padding: 11px 12px;
+  }
+}
+
 /* Combat desktop : l'overlay centrait tout son contenu, laissant de larges
    vides haut/bas autour d'un petit groupe d'ennemis. On ancre le contenu en
    haut, on laisse le groupe d'ennemis occuper la zone supérieure (ennemi
@@ -4435,27 +4458,28 @@ button.shop-tab.active {
   body.in-battle #encounter-overlay {
     padding: 44px 12px 16px;
   }
+  /* Grille robuste : 3 actions par rangée, indépendante de l'ordre/nombre
+     des boutons. Les boutons conditionnels (Artefact/Posture/Rune) en
+     display:none sont retirés du flux de grille — pas de règle nth-child
+     positionnelle qui casserait quand ils apparaissent/disparaissent.
+     min-width:0 empêche le débordement par contenu (défaut grid = auto). */
   body.in-battle .battle-actions {
     width: 100%;
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 8px;
-    flex-wrap: nowrap;
-  }
-  body.in-battle .battle-actions .cmd-btn:nth-child(1),
-  body.in-battle .battle-actions .cmd-btn:nth-child(2),
-  body.in-battle .battle-actions .cmd-btn:nth-child(3) {
-    grid-column: span 2;
-  }
-  body.in-battle .battle-actions .cmd-btn:nth-child(4),
-  body.in-battle .battle-actions .cmd-btn:nth-child(5) {
-    grid-column: span 3;
   }
   body.in-battle .battle-actions .cmd-btn {
+    min-width: 0;
     min-height: 56px;
     font-size: 15px;
-    padding: 12px;
+    padding: 12px 6px;
     justify-content: center;
+  }
+  body.in-battle .battle-actions .cmd-btn .btn-label,
+  body.in-battle .battle-actions .cmd-btn {
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   body.in-battle .battle-actions .cmd-btn img.ui-icon {
     width: 24px;
