@@ -117,6 +117,64 @@
     }
   }
 
+  // ── Cast Premium par Maison (P5 — combat-system-synthesis §2.7) ─
+  // Surcouche visuelle PURE déclenchée au lancement d'un sort Premium signature
+  // (spell.premium + spell.premiumFx). Anneau coloré qui s'évase + glyphe de
+  // Maison + gerbe de particules teintées, émanant du lanceur. Palette par clé
+  // `premiumFx` (gryff/slyth/serd/pouf) — miroir auto-suffisant de HOUSE_SPELL_FX
+  // (aucun couplage data.js). Défensif : no-op si la couche ou la clé manque.
+  const PREMIUM_FX = {
+    gryff: { colors: ['#ffd23f', '#ff8a2a', '#fff6c8'], glyph: '🦁', tint: '#d3a625' },
+    slyth: { colors: ['#3fbf6a', '#1a472a', '#9be8b0'], glyph: '🐍', tint: '#1a472a' },
+    serd:  { colors: ['#9fdcff', '#5fa8d3', '#e8f6ff'], glyph: '🦅', tint: '#0e1a40' },
+    pouf:  { colors: ['#ffe27a', '#caa23a', '#fff6c8'], glyph: '🦡', tint: '#f0c75e' },
+  };
+  function premiumCast(casterKey, fxKey) {
+    const def = PREMIUM_FX[fxKey];
+    if (!def) return;
+    const layer = ensureFxLayer();
+    if (!layer) return;
+    const pos = anchorFor(casterKey || 'ally');
+    if (!pos) return;
+
+    // Anneau Premium qui s'évase (toujours, même en reduced-motion : il fade).
+    const ring = document.createElement('div');
+    ring.className = 'cfx-premium-ring cfx-premium-' + fxKey;
+    ring.style.left = pos.x + 'px';
+    ring.style.top  = pos.y + 'px';
+    ring.style.setProperty('--cfx-prem-tint', def.tint);
+    layer.appendChild(ring);
+    setTimeout(() => ring.remove(), 720);
+
+    // Glyphe de Maison qui pulse.
+    const g = document.createElement('div');
+    g.className = 'cfx-premium-glyph cfx-premium-' + fxKey;
+    g.textContent = def.glyph;
+    g.style.left = pos.x + 'px';
+    g.style.top  = pos.y + 'px';
+    layer.appendChild(g);
+    setTimeout(() => g.remove(), 760);
+
+    // Gerbe de particules teintées (omises en reduced-motion).
+    if (prefersReducedMotion()) return;
+    const N = 12;
+    for (let i = 0; i < N; i++) {
+      const p = document.createElement('div');
+      p.className = 'cfx-premium-particle';
+      const angle = (Math.PI * 2 * i) / N + Math.random() * 0.4;
+      const dist  = 30 + Math.random() * 36;
+      const dx = Math.cos(angle) * dist;
+      const dy = Math.sin(angle) * dist - 14; // biais montant
+      p.style.left = pos.x + 'px';
+      p.style.top  = pos.y + 'px';
+      p.style.background = def.colors[i % def.colors.length];
+      p.style.setProperty('--cfx-dx', dx.toFixed(1) + 'px');
+      p.style.setProperty('--cfx-dy', dy.toFixed(1) + 'px');
+      layer.appendChild(p);
+      setTimeout(() => p.remove(), 760);
+    }
+  }
+
   // ── Désintégration d'un ennemi vaincu (G1) ───────────────────
   // Joué UNE fois quand un ennemi passe à 0 PV (hook en tête de
   // renderEnemyGroup, AVANT la reconstruction en état mort). Nuage qui se
@@ -456,7 +514,7 @@
     return DUR;
   }
 
-  window.CombatFX = { spellBurst, deathDissolve, castFlash, lootPop, healBurst, buffAura, shake, bossIntro, combatStart, hurtFlash, statusFlash, telegraph, petrify };
+  window.CombatFX = { spellBurst, premiumCast, deathDissolve, castFlash, lootPop, healBurst, buffAura, shake, bossIntro, combatStart, hurtFlash, statusFlash, telegraph, petrify };
 })();
 
 // Helper défensif (calqué sur UX_safe) : CFX_safe.foo(...) appelle

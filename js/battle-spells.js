@@ -567,7 +567,7 @@ function _computeSpellDamage(spell, char, enemy, opts) {
     const eIdx = (typeof enemyGroup !== 'undefined') ? enemyGroup.indexOf(enemy) : -1;
     const hIdx = (typeof party !== 'undefined') ? party.indexOf(char) : -1;
     const tenaille = _duoComboMult(eIdx, hIdx);
-    if (tenaille !== 1) { dmg = Math.floor(dmg * tenaille); suffix += ' 🤝'; }
+    if (tenaille !== 1) { dmg = Math.floor(dmg * tenaille); suffix += ' 🤝'; UX_safe.combatBanner('🤝 Tenaille', 'tenaille'); }
     if (typeof _duoMarkTarget === 'function') _duoMarkTarget(eIdx, hIdx);
   }
   const cr = rollSpellCrit(dmg, char);
@@ -1137,6 +1137,9 @@ function _spellPatronusCorporel(spell, char) {
 function _applyCorruptionBacklash(spell, char) {
   if (!char || typeof resolveCorruptionBacklash !== 'function') return '';
   const r = resolveCorruptionBacklash(spell.backlash, char);
+  // P5 — Bandeau « 🩸 Contrecoup » + impact grave (surcouche défensive).
+  UX_safe.combatBanner('🩸 Contrecoup', 'backlash');
+  if (typeof AudioSystem !== 'undefined' && AudioSystem.playBacklash) AudioSystem.playBacklash();
   if (r.kind === 'selfdmg') {
     const loss = Math.min(r.hpLoss, Math.max(0, char.hp - 1));
     char.hp = Math.max(1, char.hp - r.hpLoss);
@@ -1534,6 +1537,16 @@ function castSpellInBattle(spellName, targetIdx, targetAllyIdx) {
   if (typeof HAPTICS_safe !== 'undefined') HAPTICS_safe.cast(); // N2
   closeModal('spell-modal');
   document.getElementById('target-selection').style.display = 'none';
+
+  // P5 — FX/teinte & timbre Premium par Maison (surcouche PURE, défensive) au
+  // lancement d'un sort Premium signature. Apport 100 % cosmétique.
+  if (spell.premium && spell.premiumFx) {
+    CFX_safe.premiumCast('ally', spell.premiumFx);
+    if (typeof AudioSystem !== 'undefined' && AudioSystem.playPremiumCast) AudioSystem.playPremiumCast(spell.premiumFx);
+  }
+  // P5 — Bandeau « 🔗 Synergie » quand la forme signature est surchargée par
+  // l'artefact Premium de Maison (resolveSpellForm a posé _synergy).
+  if (spell._synergy) UX_safe.combatBanner('🔗 Synergie', 'synergy');
 
   let enemy     = enemyGroup[targetIdx >= 0 ? targetIdx : 0];
   if ((!enemy || enemy.currentHp <= 0) && typeof livingEnemies === 'function') {

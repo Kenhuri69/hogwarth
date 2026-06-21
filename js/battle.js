@@ -933,6 +933,9 @@ function useActiveArtifact(charIdx, targetIdx) {
   if (_artifactChargesLeft(charIdx, art) <= 0) return;
   artifactCharges[charIdx] = _artifactChargesLeft(charIdx, art) - 1;
 
+  // P5 — Bandeau « 🏺 Artefact » au déclenchement d'un artefact actif.
+  UX_safe.combatBanner('🏺 Artefact', 'artifact');
+
   if (typeof AudioSystem !== 'undefined' && AudioSystem.playSpellCast) {
     AudioSystem.playSpellCast(art.element === 'feu' ? 'Incendio'
       : (art.element === 'glace' ? 'Glacius' : 'Protego'));
@@ -1039,6 +1042,7 @@ function triggerRuneEnv() {
   setBattleLog(`🌿 ${char.name} libère la charge runique : ${enemy.name} est étourdi !`);
   addMsg(`🌿 Charge runique → ${enemy.name} étourdi.`, 'good');
   UX_safe.floatDmg(`enemy:${idx}`, 0, 'shield');
+  UX_safe.combatBanner('🌿 Rune', 'rune');   // P5 — bandeau d'environnement
   UX_safe.logCombat(`🌿 <b>${char.name}</b> active la rune → 💫 ${enemy.name} étourdi`, 'magic');
   renderEnemyGroup();
   advanceBattleChar();
@@ -1114,7 +1118,7 @@ function executeAttack(targetIdx) {
   // P2 — Tenaille (Duo offensif) : focus-fire sur une cible déjà frappée par
   // l'autre héros ce round (+15 %).
   const tenaille = _duoComboMult(targetIdx, currentBattleChar);
-  if (tenaille !== 1) dmg = Math.max(1, Math.floor(dmg * tenaille));
+  if (tenaille !== 1) { dmg = Math.max(1, Math.floor(dmg * tenaille)); UX_safe.combatBanner('🤝 Tenaille', 'tenaille'); }
   enemy.currentHp -= dmg;
   _duoMarkTarget(targetIdx, currentBattleChar);
 

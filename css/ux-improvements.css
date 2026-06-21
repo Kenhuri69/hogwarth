@@ -376,8 +376,55 @@
   40% { box-shadow: inset 0 0 0 9999px rgba(255,70,40,.34); }
 }
 
+/* ── BANDEAUX DE COMBAT (P5 — callouts de système) ──────────── */
+/* Couche empilable centrée en haut de l'arène : signale les déclenchements
+   des systèmes récents (synergie, artefact, tenaille, rune, contrecoup) dans
+   le même esprit que le message « ⚡ Célérité ! ». Pointer-events none → ne
+   bloque jamais les clics de la barre d'actions. */
+.combat-banner-layer {
+  position: absolute;
+  top: 8px; left: 0; right: 0;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  pointer-events: none;
+  z-index: 45;
+}
+.combat-banner {
+  font-family: 'Cinzel', Georgia, serif;
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: .04em;
+  padding: 6px 18px;
+  border-radius: 999px;
+  color: #fff6e0;
+  background: rgba(20,12,6,.82);
+  border: 1.5px solid #d9a521;
+  box-shadow: 0 2px 14px rgba(0,0,0,.5), inset 0 0 12px rgba(217,165,33,.25);
+  text-shadow: 0 1px 3px rgba(0,0,0,.8);
+  white-space: nowrap;
+  animation: combatBannerPop 1.5s cubic-bezier(.2,.9,.3,1) forwards;
+}
+.combat-banner.cb-synergy  { border-color: #5fd0ff; box-shadow: 0 2px 14px rgba(0,0,0,.5), inset 0 0 12px rgba(95,208,255,.3); }
+.combat-banner.cb-artifact { border-color: #d3a625; box-shadow: 0 2px 14px rgba(0,0,0,.5), inset 0 0 12px rgba(211,166,37,.3); }
+.combat-banner.cb-tenaille { border-color: #ff9f4a; box-shadow: 0 2px 14px rgba(0,0,0,.5), inset 0 0 12px rgba(255,159,74,.3); }
+.combat-banner.cb-rune     { border-color: #7be08a; box-shadow: 0 2px 14px rgba(0,0,0,.5), inset 0 0 12px rgba(123,224,138,.3); }
+.combat-banner.cb-backlash { border-color: #b35ad0; color: #f0d8ff; background: rgba(28,8,30,.86); box-shadow: 0 2px 14px rgba(0,0,0,.55), inset 0 0 12px rgba(179,90,208,.35); }
+@keyframes combatBannerPop {
+  0%   { opacity: 0; transform: translateY(-8px) scale(.85); }
+  14%  { opacity: 1; transform: translateY(0)     scale(1.06); }
+  24%  { transform: translateY(0) scale(1); }
+  82%  { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-6px) scale(.96); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .combat-banner { animation: combatBannerFade 1.5s ease-out forwards; }
+  @keyframes combatBannerFade {
+    0% { opacity: 0; } 12% { opacity: 1; } 82% { opacity: 1; } 100% { opacity: 0; }
+  }
+}
+
 /* ── RESPONSIVE MOBILE ─────────────────────────────────────── */
 @media (max-width: 700px) {
+  .combat-banner { font-size: 13px; padding: 5px 13px; }
   #combat-log-panel {
     width: 140px;
     max-height: 130px;
