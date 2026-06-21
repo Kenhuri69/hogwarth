@@ -11,18 +11,16 @@
 | Catégorie | Référencés | Présents | Manquants |
 |-----------|-----------:|---------:|----------:|
 | ambient | 5 | 5 | 0 |
-| autre | 1 | 0 | 1 |
+| autre | 1 | 1 | 0 |
 | combat | 5 | 5 | 0 |
 | menu | 1 | 1 | 0 |
 | voice | 181 | 353 | 0 |
 
-**Total** : 193 référencés · 364 présents · 1 manquants · 172 orphelins.
+**Total** : 193 référencés · 365 présents · 0 manquants · 172 orphelins.
 
 ## Samples référencés MANQUANTS (repli synthèse / 404 au runtime)
 
-| Sample manquant | Référencé dans |
-|-----------------|----------------|
-| `audio/ending_break.ogg` | audio-music.js |
+_Aucun — tout sample référencé par le code est présent._
 
 ## Fichiers ORPHELINS (présents, jamais référencés)
 
