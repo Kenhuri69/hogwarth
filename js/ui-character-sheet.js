@@ -136,6 +136,13 @@ function _renderItemTooltip(item, slotLabel, action) {
       ? `📈 Évolutif : +${pct}% d'effet (contexte actuel)`
       : `📈 Évolutif : potentiel inactif (équipe des focaliseurs)`);
   }
+  // P10 — télégraphe du risque (décision §3.3 : toujours visible ⚠️).
+  if (item.corruptionRisk > 0) {
+    bonuses.push(`<span style="color:#b06ad0">⚠️ Corruption +${item.corruptionRisk} à la consommation</span>`);
+  }
+  if (item.sideEffect) {
+    bonuses.push(`<span style="color:#c0703a">⚠️ Contrecoup possible en profondeur / Boucle</span>`);
+  }
   // Synergie déclarative (P7/P8) — note de tooltip (zéro logique).
   if (item.synergy && item.synergy.note) {
     bonuses.push(`🔗 ${item.synergy.note}`);

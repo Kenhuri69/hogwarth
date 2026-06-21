@@ -1258,6 +1258,19 @@ const ITEMS = [
     type:"consumable", category:"soin", rarity:"epic", effect:"regen_buff", power:10, turns:5,
     premium:true, premiumOf:"elixir_regen", houseAffinity:"Poufsouffle", premiumFx:"pouf", premiumTint:"#f0c75e", price:0,
     synergy:{ note:"Loyauté du Blaireau — la vigueur qui tient." } },
+  // ── Potion à risque (Potions 2.0 — Lot P10, §1.5/§1.8) ───────────────────
+  // Buff de sort évolutif (P8 — `evolves:corruption`) PUISSANT mais risqué :
+  // `corruptionRisk` (montée de spellCorruption à la conso) + `sideEffect`
+  // (contrecoup DEF borné en Tranche D/Boucle). Le risque nourrit la
+  // récompense (le buff MAG croît avec la corruption). Télégraphié ⚠️ ;
+  // neutralisable par une charge d'Élixir d'Immunité (P7). Craft Ruines/Boucle.
+  { id:"potion_corruption_ctrl", name:"Potion de Corruption Contrôlée", icon:"🌑",
+    desc:"+8 MAG (amplifié par ta corruption) pendant 3 tours — mais épaissit la corruption (⚠️ contrecoup en Boucle).",
+    type:"consumable", category:"buff", rarity:"epic", effect:"temp_buff", buffStat:"mag", power:8, turns:3,
+    corruptionRisk:2, evolves:{ source:"corruption", perStep:0.05, cap:1.5 },
+    sideEffect:{ stat:"def", magnitude:0.15, turns:2, chance:0.5 },
+    houseAffinity:null, price:0,
+    synergy:{ artifacts:["TENEBRES_SET"], spells:["Sectumsempra","Morsmordre"], note:"La corruption nourrit la puissance — le Set des Ténèbres l'amplifie." } },
   { id:"cape_invis",   name:"Cape d'Invisibilité",   icon:"🌫️", desc:"AGI+5 LCK+5 · Esquive +5%", type:"acc",   slot:"cloak", family:"cloak_invis",  rarity:"epic",     bonusAgi:5, bonusLck:5, bonusDodgeChance:5, power:5, price:550 },
   { id:"chapeau_pointu",name:"Chapeau de Serdaigle", icon:"🎓", desc:"MAG+3 INT+3",            type:"armor", slot:"head",  family:"hat_serd",     rarity:"rare",     bonusDef:2, bonusMag:3, power:3, price:300 },
   // Easter egg « Salle sur Demande » — objet unique offert à la 1ʳᵉ Salle de
@@ -1574,6 +1587,12 @@ const POTION_RECIPES = [
   { id:"brew_resilience_maison", name:"Potion de Résilience Maison", resultItemId:"potion_resilience_maison",
     ingredients:{ herbe_asphodele:1, herbe_branchiflore:1, eclat_vitalite:1 }, difficulty:16,
     lore:"Deux herbes nobles liées par un Éclat de Vitalité épousent la vertu de ta Maison." },
+  // ── Potion à risque (Potions 2.0 — Lot P10) ──────────────────────────────
+  // Voie Boucle : 2 asphodèles noires + aconit. Multiset inédit. workshop ruines.
+  { id:"brew_potion_corruption_ctrl", name:"Potion de Corruption Contrôlée", resultItemId:"potion_corruption_ctrl",
+    ingredients:{ herbe_asphodele_noire:2, herbe_aconit:1 },            difficulty:18,
+    workshop:"ruines", minFloor:11,
+    lore:"L'aconit bride la fleur noire — assez pour canaliser sa corruption, jamais pour l'éteindre." },
 ];
 
 const SHOP_ITEMS = ["potion_s","potion_m","felix","choco_sorcier","wand1","robe1","amulette","broom","mandragore","livre_sortileges","livre_soin","livre_bombarda"];
