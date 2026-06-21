@@ -480,6 +480,57 @@ function helpMenuStart(which) {
   startHelpTour(slice, { voiceOffset: sec.start, hideOptout: true });
 }
 
+// ============================================================
+// Mini-tours contextuels endgame (P2.4) — one-shot à la 1ʳᵉ ouverture de
+// Forge / Bibliothèque / Atelier. Réutilise l'infra help-tour ; respecte
+// l'opt-out global et ne double jamais un tour déjà actif.
+// ============================================================
+const FORGE_TOUR_STEPS = [
+  { targets: ['#forge-list'],
+    title: 'La Forge des Ténèbres',
+    text: 'Ici tu améliores tes objets ÉQUIPÉS : chaque palier renforce leurs ' +
+          'bonus. Clique un objet pour le forger.' },
+  { targets: ['#forge-essence'],
+    title: 'Le carburant',
+    text: 'Forger coûte de l\'or ET de l\'Essence des Ténèbres (drop de Boucle). ' +
+          'L\'Essence Primordiale 🔮 débloque les paliers les plus hauts.' },
+];
+const LIBRARY_TOUR_STEPS = [
+  { targets: ['#library-list'],
+    title: 'La Bibliothèque Interdite',
+    text: 'Le pendant de la Forge pour tes SORTS : augmente leur puissance ' +
+          'palier par palier.' },
+  { targets: ['#library-pages'],
+    title: 'Les pages de grimoire',
+    text: 'Étudier consomme de l\'or et des Pages de Grimoire, récoltées en ' +
+          'Boucle Ténébreuse.' },
+];
+const ATELIER_TOUR_STEPS = [
+  { targets: ['#atelier-voyageur-overlay .atelier-tabs', '#atelier-voyageur-overlay'],
+    title: 'L\'Atelier du Voyageur',
+    text: 'Ton hub inter-mondes : souvenirs, cosmétiques et sorts cross-plan ' +
+          'rapportés de tes visites. Explore les onglets.' },
+];
+
+// Déclenche un mini-tour une seule fois (flag localStorage), sauf opt-out
+// global ou tour déjà actif. Petit délai pour laisser la modale se peindre.
+function _maybeContextTour(flagKey, steps) {
+  if (_helpTourActive) return;
+  try { if (localStorage.getItem(flagKey) === '1') return; } catch (e) { /* localStorage indispo */ }
+  if (_htOptedOut()) return;
+  setTimeout(function () {
+    if (_helpTourActive) return;
+    try { localStorage.setItem(flagKey, '1'); } catch (e) { /* non persisté */ }
+    startHelpTour(steps, { hideOptout: true });
+  }, 350);
+}
+function maybeForgeTour()   { _maybeContextTour('hh_tour_forge_seen',   FORGE_TOUR_STEPS); }
+function maybeLibraryTour() { _maybeContextTour('hh_tour_library_seen', LIBRARY_TOUR_STEPS); }
+function maybeAtelierTour() { _maybeContextTour('hh_tour_atelier_seen', ATELIER_TOUR_STEPS); }
+
+window.maybeForgeTour       = maybeForgeTour;
+window.maybeLibraryTour     = maybeLibraryTour;
+window.maybeAtelierTour     = maybeAtelierTour;
 window.openHelpMenu         = openHelpMenu;
 window.closeHelpMenu        = closeHelpMenu;
 window.helpMenuStart        = helpMenuStart;

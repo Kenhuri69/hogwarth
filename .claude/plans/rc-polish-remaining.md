@@ -162,7 +162,16 @@ clore, pas à refaire :
 
 ---
 
-## P2.4 — Mini-tours contextuels endgame  ⬜
+## P2.4 — Mini-tours contextuels endgame  ✅ Fait (2026-06-21)
+
+> **Livré** : 3 jeux d'étapes (`FORGE/LIBRARY/ATELIER_TOUR_STEPS`) + helper
+> `_maybeContextTour(flagKey, steps)` (one-shot localStorage, respecte l'opt-out
+> global, ne double pas un tour actif) dans `help-tour.js` ; `maybeForgeTour` /
+> `maybeLibraryTour` / `maybeAtelierTour` exposés et appelés à la 1ʳᵉ ouverture
+> (hook défensif dans `openForge`/`openLibrary`/`openAtelierVoyageur`). Réutilise
+> l'infra `startHelpTour`. Tests : scénario smoke `scenarioEndgameMiniTours`
+> (déclenche 1×, one-shot ensuite). cache-bump help-tour v4 / forge v7 /
+> library v5 / atelier-voyageur v5 / CACHE_VERSION v208.
 
 **Impact : Moyen** (découvrabilité) · **Difficulté : Moyenne**
 
@@ -190,7 +199,16 @@ clore, pas à refaire :
 
 ---
 
-## P2.6 — Inventaire audio (samples livrés vs synthétisés)  ⬜
+## P2.6 — Inventaire audio (samples livrés vs synthétisés)  ✅ Fait (2026-06-21)
+
+> **Livré** : `tools/audio_inventory.js` (Node pur, `--write`/`--strict`) croise
+> les samples `audio/….ogg` référencés par `js/` avec les fichiers présents, et
+> écrit `docs/audio-inventory.md`. **Résultat** : ambient 5/5, combat 5/5,
+> menu 1/1, voice 181/181 — **1 seul gap musical** : `audio/ending_break.ogg`
+> (référencé mais absent → repli procédural ; **cible n°1 de P3.2**). 172
+> orphelins = surtout `audio/voice/_raw/*.mp3` (sources d'enregistrement). SFX
+> 100 % procéduraux (design), barks en synthèse par défaut. Tooling/doc seuls —
+> pas de cache-bump.
 
 **Impact : Faible→Moyen** · **Difficulté : Faible** (audit, pas de runtime)
 
