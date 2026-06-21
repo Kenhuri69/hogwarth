@@ -38,7 +38,9 @@ function loadGameData() {
   vm.createContext(sandbox);
   vm.runInContext(read('js/monsters.js') + '\n;exports.MONSTERS = MONSTERS;', sandbox, { filename: 'monsters.js' });
   vm.runInContext(read('js/data.js') +
-    '\n;exports.ITEMS = ITEMS;\n;exports.LEVEL_UP_XP_MULTIPLIER = LEVEL_UP_XP_MULTIPLIER;', sandbox, { filename: 'data.js' });
+    '\n;exports.LEVEL_UP_XP_MULTIPLIER = LEVEL_UP_XP_MULTIPLIER;', sandbox, { filename: 'data.js' });
+  // Lot A P3.3 : ITEMS extrait de data.js vers data-items.js.
+  vm.runInContext(read('js/data-items.js') + '\n;exports.ITEMS = ITEMS;', sandbox, { filename: 'data-items.js' });
   vm.runInContext(read('js/quests-templates.js') + '\n;exports.QUEST_TEMPLATES = QUEST_TEMPLATES;', sandbox, { filename: 'quests-templates.js' });
   vm.runInContext(read('js/shop.js') + '\n;exports.SHOP_CATALOG = SHOP_CATALOG;', sandbox, { filename: 'shop.js' });
   return sandbox.exports;
