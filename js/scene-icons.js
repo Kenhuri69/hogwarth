@@ -511,6 +511,46 @@ const SCENE_ICONS = {
     </text>
   </svg>`,
 
+  // ── Chaudron des Ruines (Potions 2.0 — Lot P11) ──────────────
+  // Chaudron de fer noir sur braises runiques, vapeur verte montante.
+  cauldron: `<svg viewBox="0 0 120 110" width="130" height="120" xmlns="http://www.w3.org/2000/svg" style="display:block">
+    <defs>
+      <radialGradient id="cauldGlow" cx="50%" cy="78%" r="60%">
+        <stop offset="0%" stop-color="#5fd070" stop-opacity="0.6"/>
+        <stop offset="55%" stop-color="#2a8050" stop-opacity="0.3"/>
+        <stop offset="100%" stop-color="#1a2a2a" stop-opacity="0"/>
+      </radialGradient>
+      <linearGradient id="cauldIron" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#3a3a42"/>
+        <stop offset="100%" stop-color="#14141a"/>
+      </linearGradient>
+    </defs>
+    <ellipse cx="60" cy="92" rx="48" ry="18" fill="url(#cauldGlow)"/>
+    <path d="M 36 96 L 50 96 L 48 102 L 38 102 Z" fill="#3a2a1a" stroke="#5a4030" stroke-width="1"/>
+    <path d="M 70 96 L 84 96 L 82 102 L 72 102 Z" fill="#3a2a1a" stroke="#5a4030" stroke-width="1"/>
+    <ellipse cx="60" cy="98" rx="30" ry="6" fill="#ff6020" opacity="0.85"/>
+    <circle cx="48" cy="98" r="2" fill="#ffc060"><animate attributeName="opacity" values="0.6;1;0.6" dur="1.7s" repeatCount="indefinite"/></circle>
+    <circle cx="72" cy="98" r="2" fill="#ff9040"><animate attributeName="opacity" values="1;0.5;1" dur="1.4s" repeatCount="indefinite"/></circle>
+    <path d="M 26 60 Q 24 92 60 92 Q 96 92 94 60 Z" fill="url(#cauldIron)" stroke="#000" stroke-width="2"/>
+    <path d="M 24 60 Q 8 64 22 78" fill="none" stroke="#2a2a32" stroke-width="5" stroke-linecap="round"/>
+    <path d="M 96 60 Q 112 64 98 78" fill="none" stroke="#2a2a32" stroke-width="5" stroke-linecap="round"/>
+    <ellipse cx="60" cy="60" rx="36" ry="10" fill="#101016"/>
+    <ellipse cx="60" cy="59" rx="31" ry="7.5" fill="#3a9d60"/>
+    <ellipse cx="60" cy="57.5" rx="25" ry="5" fill="#7fe0a0" opacity="0.5"/>
+    <circle cx="52" cy="48" r="1.6" fill="#9fe8b0" opacity="0.85">
+      <animate attributeName="cy" values="50;30;50" dur="2.6s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.85;0;0.85" dur="2.6s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="62" cy="44" r="1.9" fill="#7fd890" opacity="0.8">
+      <animate attributeName="cy" values="44;22;44" dur="3.2s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.8;0;0.8" dur="3.2s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="70" cy="50" r="1.4" fill="#a8f0c0" opacity="0.85">
+      <animate attributeName="cy" values="50;32;50" dur="2.2s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.85;0;0.85" dur="2.2s" repeatCount="indefinite"/>
+    </circle>
+  </svg>`,
+
   // ── Autel Ancien (enrichissement du donjon §2.B) ─────────────
   // Dalle de pierre runique sur socle, orbe pulsé violet-or au sommet.
   altar: `<svg viewBox="0 0 120 110" width="130" height="120" xmlns="http://www.w3.org/2000/svg" style="display:block">

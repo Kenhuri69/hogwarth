@@ -670,6 +670,8 @@ body {
 .map-forge   { background: #7a2210; box-shadow: inset 0 0 2px #ffb070; }
 /* Endgame Tranche 2 — Bibliothèque interdite (violet grimoire). */
 .map-library { background: #3a1a5a; box-shadow: inset 0 0 2px #c080ff; }
+/* Potions 2.0 P11 — Chaudron des Ruines (vert alchimique). */
+.map-cauldron { background: #1a5a3a; box-shadow: inset 0 0 2px #7fe0a0; }
 /* Enrichissement §2.B — Autel Ancien (violet-or runique). */
 .map-altar   { background: #5a3a6a; box-shadow: inset 0 0 3px #e8c860; }
 /* Enrichissement V2 — dalle-rune éteinte (pierre sourde) / allumée (lueur). */

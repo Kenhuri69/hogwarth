@@ -32,7 +32,11 @@ const CELL = {
   // Refuge du Blaireau (Poufsouffle) — point de repos récurrent, parent de la
   // fontaine. N'apparaît que si chosenHouse==='Poufsouffle'. Soin partiel
   // 1×/visite. Voir .claude/plans/refuge-poufsouffle.md.
-  REFUGE:17
+  REFUGE:17,
+  // Chaudron des Ruines (Potions 2.0 — Lot P11) — atelier d'alchimie endgame,
+  // posé comme Forge/Bibliothèque (post-victoire). Interaction → openBrewingModal
+  // ({ workshop:"ruines" }). Voir .claude/plans/potions-consumables-craft-2.0.md §1.9.
+  CAULDRON:18
 };
 
 // Refuge du Blaireau — fraction des PV/PM max rendus par usage (≠ fontaine

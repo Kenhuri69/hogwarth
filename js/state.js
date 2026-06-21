@@ -556,6 +556,12 @@ let spellCorruption         = 0;
 // (inventory.js). SÉRIALISÉE (clé save `wardCharges`). Persistante (non
 // combat-scoped) : la garde tient jusqu'à ce qu'elle serve.
 let wardCharges             = 0;
+// Ateliers d'alchimie débloqués (Potions 2.0 — Lot P11 §1.9/§2.2).
+//   0 = aucun · 1 = Chaudron de Slughorn · 2 = Chaudron des Ruines (endgame).
+// Monotone croissant (max des ateliers ouverts). Pilote le bonus de jet de
+// l'atelier supérieur (workshopLevel >= 2 → −1 difficulté effective de brassage,
+// décision §3.5). Reset à 0 dans startGame ; SÉRIALISÉE (clé save `workshopLevel`).
+let workshopLevel           = 0;
 // Sélection de cible en combat (cycle producteur → consommateur) :
 //  - battle-ui.js — showTargetSelection(actionType)  écrit pendingAction
 //  - inventory.js — openBattleSpells onclick         écrit pendingSpell
