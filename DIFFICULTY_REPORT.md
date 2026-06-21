@@ -50,10 +50,12 @@
 > **72 %**, aucun mur < 40 % ≤ ét. 12). **Gate CI fiabilisé** : la dérive flaky
 > observée (étage 9-Duo qui franchissait ±10 pts à N=800) venait d'une baseline
 > périmée — vérifié **0 dérive sur 6 runs** consécutifs après régénération.
-> Les autres tables du §📊 (« toutes difficultés » n=600, « impact du rework »
-> legacy↔rework) et le **§7** (clear d'étage, méthodo PR #213) sont des
-> **instantanés antérieurs** conservés pour comparaison, **non re-simulés** dans
-> ce pass (méthodologies distinctes ; colonne Normal à ±quelques pts de §3).
+> **MAJ 2026-06-21 (P1.6 polish RC)** : la table « toutes difficultés » du §📊
+> et les tables complètes du **§3bis** ont été **régénérées à N=4000** par
+> difficulté (Facile / Difficile / Expert ; Normal = §3). *Mesure pure — aucun
+> changement de scaling.* La table « impact du rework » legacy↔rework et le **§7**
+> (clear d'étage, méthodo PR #213) restent des **instantanés antérieurs** conservés
+> pour comparaison, **non re-simulés** (méthodologies distinctes).
 
 Deux métriques complémentaires (cf. §3 et §7) :
 
@@ -69,17 +71,38 @@ Deux métriques complémentaires (cf. §3 et §7) :
 | **Solo** | 1–7 | **Étage 8** (71 %) | aucun ≤ ét. 12 (plancher 52 %) |
 | **Duo**  | 1–10 | **Étage 11** (73 %) | aucun ≤ ét. 12 (plancher 72 %) |
 
-### Win % combat solo — toutes difficultés (balanced, n=600)
+### Win % par combat — toutes difficultés (baseline RC, N=4000, balanced)
+
+> Régénéré à **N=4000** par difficulté le **2026-06-21** (P1.6 du plan de polish
+> RC). La colonne **Normal** est reportée du §3 (baseline du garde-fou CI) ;
+> Facile / Difficile / Expert sont les nouvelles passes RC. Tables complètes
+> (tours, PV restants, dégâts subis) au **§3bis**.
+
+**Solo**
 
 | Étage | Facile | Normal | Difficile | Expert |
 |------:|:------:|:------:|:---------:|:------:|
-| 5  | 100 % | 96 % | 93 % | 79 % |
-| 6  | 99 %  | 87 % | 73 % | 62 % |
-| 7  | 97 %  | 87 % | 69 % | 58 % |
-| 8  | 95 %  | 72 % | 49 % | 33 % |
-| 9  | 90 %  | 61 % | 34 % | 18 % |
-| 10 | 90 %  | 54 % | 26 % | 15 % |
-| 12 | 83 %  | 49 % | 27 % | 11 % |
+| 5  | 99 % | 96 % | 90 % | 79 % |
+| 6  | 98 % | 86 % | 72 % | 58 % |
+| 7  | 98 % | 86 % | 69 % | 53 % |
+| 8  | 95 % | 71 % | 48 % | 29 % |
+| 9  | 93 % | 65 % | 44 % | 24 % |
+| 10 | 90 % | 58 % | 37 % | 20 % |
+| 11 | 86 % | 54 % | 36 % | 20 % |
+| 12 | 87 % | 52 % | 30 % | 16 % |
+
+**Duo**
+
+| Étage | Facile | Normal | Difficile | Expert |
+|------:|:------:|:------:|:---------:|:------:|
+| 5  | 100 % | 100 % | 100 % | 99 % |
+| 6  | 100 % | 100 % | 97 % | 91 % |
+| 7  | 100 % | 98 %  | 90 % | 81 % |
+| 8  | 100 % | 92 %  | 80 % | 60 % |
+| 9  | 99 %  | 85 %  | 71 % | 53 % |
+| 10 | 96 %  | 82 %  | 66 % | 44 % |
+| 11 | 93 %  | 73 %  | 56 % | 42 % |
+| 12 | 88 %  | 72 %  | 54 % | 35 % |
 
 ### Taux de clear d'étage (Normal, §7) — la contrainte réelle
 
@@ -180,6 +203,111 @@ C'est l'écart exact qui manquait au rapport pré-rework.
 | 11 | Duo  | 11 | 73% | 12.5 | 74% | 365.3 |
 | 12 | Solo | 11 | 52% | 14.4 | 59% | 309.5 |
 | 12 | Duo  | 12 | 72% | 12.8 | 73% | 380.5 |
+
+## 3bis. Baseline RC par difficulté (N=4000, balanced)
+
+> Régénéré le **2026-06-21** (P1.6 plan de polish RC) via
+> `node tools/sim-difficulty.js --difficulty=<NAME> --build=balanced 4000`.
+> **Mesure pure, aucun changement de scaling** : ces tables figent l'état RC des
+> difficultés non-Normal (le **Normal** reste la baseline du garde-fou CI au §3).
+> Le multiplicateur de difficulté agit sur les stats/butin des monstres
+> (`DIFFICULTY_SETTINGS`) — il n'est pas re-calibré ici, seulement mesuré.
+
+### Facile
+
+| Étage | Mode | Niv. | Win % | Tours moy. | PV restants (win) | Dégâts moy. subis |
+|------:|:----:|-----:|------:|-----------:|------------------:|------------------:|
+| 1 | Solo | 1 | 100% | 2.0 | 100% | 0.0 |
+| 1 | Duo  | 1 | 100% | 1.0 | 100% | 0.0 |
+| 2 | Solo | 2 | 100% | 2.0 | 100% | 0.1 |
+| 2 | Duo  | 2 | 100% | 1.0 | 100% | 0.0 |
+| 3 | Solo | 5 | 100% | 2.3 | 99% | 1.0 |
+| 3 | Duo  | 5 | 100% | 1.6 | 100% | 0.4 |
+| 4 | Solo | 7 | 100% | 2.7 | 98% | 2.8 |
+| 4 | Duo  | 7 | 100% | 2.0 | 99% | 1.7 |
+| 5 | Solo | 8 | 99% | 4.3 | 92% | 15.3 |
+| 5 | Duo  | 8 | 100% | 2.5 | 98% | 5.6 |
+| 6 | Solo | 8 | 98% | 5.5 | 86% | 36.7 |
+| 6 | Duo  | 8 | 100% | 3.0 | 96% | 12.6 |
+| 7 | Solo | 9 | 98% | 6.4 | 84% | 43.2 |
+| 7 | Duo  | 9 | 100% | 5.1 | 90% | 38.8 |
+| 8 | Solo | 9 | 95% | 8.4 | 77% | 76.5 |
+| 8 | Duo  | 10 | 100% | 6.9 | 85% | 69.4 |
+| 9 | Solo | 10 | 93% | 9.0 | 76% | 96.4 |
+| 9 | Duo  | 11 | 99% | 7.4 | 85% | 92.0 |
+| 10 | Solo | 11 | 90% | 9.6 | 76% | 124.0 |
+| 10 | Duo  | 11 | 96% | 8.8 | 82% | 143.0 |
+| 11 | Solo | 11 | 86% | 10.1 | 73% | 149.6 |
+| 11 | Duo  | 12 | 93% | 8.7 | 83% | 170.9 |
+| 12 | Solo | 12 | 87% | 10.7 | 72% | 157.1 |
+| 12 | Duo  | 12 | 88% | 9.8 | 80% | 225.9 |
+
+### Difficile
+
+| Étage | Mode | Niv. | Win % | Tours moy. | PV restants (win) | Dégâts moy. subis |
+|------:|:----:|-----:|------:|-----------:|------------------:|------------------:|
+| 1 | Solo | 1 | 100% | 2.2 | 99% | 0.3 |
+| 1 | Duo  | 1 | 100% | 1.6 | 100% | 0.1 |
+| 2 | Solo | 2 | 100% | 2.3 | 98% | 0.9 |
+| 2 | Duo  | 2 | 100% | 1.7 | 99% | 0.5 |
+| 3 | Solo | 5 | 100% | 3.7 | 93% | 7.3 |
+| 3 | Duo  | 5 | 100% | 2.2 | 99% | 2.7 |
+| 4 | Solo | 6 | 100% | 4.9 | 87% | 19.0 |
+| 4 | Duo  | 7 | 100% | 2.8 | 97% | 7.2 |
+| 5 | Solo | 8 | 90% | 7.8 | 78% | 86.6 |
+| 5 | Duo  | 8 | 100% | 4.2 | 92% | 27.0 |
+| 6 | Solo | 8 | 72% | 8.6 | 72% | 146.6 |
+| 6 | Duo  | 8 | 97% | 5.5 | 87% | 67.3 |
+| 7 | Solo | 9 | 69% | 11.7 | 66% | 189.1 |
+| 7 | Duo  | 9 | 90% | 8.7 | 79% | 152.3 |
+| 8 | Solo | 9 | 48% | 14.4 | 57% | 256.9 |
+| 8 | Duo  | 10 | 80% | 11.3 | 74% | 249.7 |
+| 9 | Solo | 10 | 44% | 14.9 | 57% | 298.1 |
+| 9 | Duo  | 10 | 71% | 13.0 | 71% | 338.5 |
+| 10 | Solo | 10 | 37% | 16.4 | 56% | 337.7 |
+| 10 | Duo  | 11 | 66% | 13.6 | 71% | 402.6 |
+| 11 | Solo | 11 | 36% | 16.5 | 55% | 350.1 |
+| 11 | Duo  | 11 | 56% | 13.8 | 70% | 461.0 |
+| 12 | Solo | 11 | 30% | 16.3 | 55% | 355.7 |
+| 12 | Duo  | 12 | 54% | 14.3 | 70% | 495.2 |
+
+### Expert
+
+| Étage | Mode | Niv. | Win % | Tours moy. | PV restants (win) | Dégâts moy. subis |
+|------:|:----:|-----:|------:|-----------:|------------------:|------------------:|
+| 1 | Solo | 1 | 100% | 2.3 | 99% | 0.3 |
+| 1 | Duo  | 1 | 100% | 1.8 | 99% | 0.4 |
+| 2 | Solo | 2 | 100% | 2.6 | 97% | 1.6 |
+| 2 | Duo  | 2 | 100% | 2.1 | 99% | 1.4 |
+| 3 | Solo | 5 | 100% | 4.5 | 90% | 12.0 |
+| 3 | Duo  | 5 | 100% | 2.5 | 98% | 4.1 |
+| 4 | Solo | 6 | 97% | 6.3 | 81% | 38.7 |
+| 4 | Duo  | 6 | 100% | 3.1 | 95% | 11.1 |
+| 5 | Solo | 8 | 79% | 8.5 | 73% | 125.6 |
+| 5 | Duo  | 8 | 99% | 5.1 | 89% | 49.6 |
+| 6 | Solo | 8 | 58% | 9.8 | 67% | 181.6 |
+| 6 | Duo  | 8 | 91% | 6.3 | 83% | 113.3 |
+| 7 | Solo | 9 | 53% | 12.0 | 63% | 221.3 |
+| 7 | Duo  | 9 | 81% | 9.8 | 76% | 212.9 |
+| 8 | Solo | 9 | 29% | 14.1 | 55% | 275.4 |
+| 8 | Duo  | 9 | 60% | 12.5 | 70% | 333.7 |
+| 9 | Solo | 10 | 24% | 14.8 | 54% | 319.7 |
+| 9 | Duo  | 10 | 53% | 14.5 | 67% | 426.2 |
+| 10 | Solo | 10 | 20% | 15.0 | 54% | 348.8 |
+| 10 | Duo  | 10 | 44% | 14.7 | 67% | 500.5 |
+| 11 | Solo | 11 | 20% | 15.9 | 53% | 362.9 |
+| 11 | Duo  | 11 | 42% | 14.8 | 66% | 534.1 |
+| 12 | Solo | 11 | 16% | 15.1 | 52% | 361.9 |
+| 12 | Duo  | 11 | 35% | 15.2 | 65% | 568.0 |
+
+> **Lecture RC.** Facile garde le solo ≥ 86 % et le duo ≥ 88 % jusqu'à l'ét. 12
+> (rampe d'accès douce). Difficile fait décrocher le **solo** sous 50 % dès
+> l'ét. 8 (48 %) et le **duo** sous 60 % à l'ét. 11 (56 %). Expert est un mode
+> « duo + endgame attendu » : le solo plonge sous 30 % dès l'ét. 8 et le duo
+> sous 50 % à l'ét. 9 — cohérent avec `DIFFICULTY_SCORE_MULT` (Expert 1.8) qui
+> récompense ce surcroît de risque au classement Ironman. Comme au §3, ces
+> chiffres sont **par combat isolé** (no-endgame, boutique only) — le clear
+> d'étage réel (§7) est mécaniquement plus dur.
 
 ## 4. Diagnostic : étages charnières
 
