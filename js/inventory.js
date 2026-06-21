@@ -509,6 +509,31 @@ function _applyConsumableEffect(item, target) {
     target._baseEnd += (item.power || 0);
     if (typeof recalculateStats === 'function') recalculateStats();
   }
+  // ── Anti-corruption (Potions 2.0 — Lot P7, §1.5/§2.5) ──────────
+  // `purge_corruption` : seule soupape qui fait REDESCENDRE le compteur de
+  // groupe `spellCorruption` (combat). Décision figée P7 : agit sur
+  // spellCorruption uniquement (gameplay), VFX d'ambiance léger côté useItem.
+  // Le Baume du Patronus porte en plus `cureGroup` (purge fear/gel sur tout
+  // le groupe) — un seul effet, deux gestes.
+  else if (item.effect === 'purge_corruption') {
+    const amt = item.corruptionPurge || 0;
+    if (typeof spellCorruption === 'number') {
+      spellCorruption = Math.max(0, spellCorruption - amt);
+    }
+    if (Array.isArray(item.cureGroup)) {
+      for (const c of party.slice(0, partySize)) {
+        if (c && Array.isArray(c.statusEffects)) {
+          c.statusEffects = c.statusEffects.filter(s => !item.cureGroup.includes(s.id));
+        }
+      }
+    }
+  }
+  // `ward_charge` : arme une charge de protection (Élixir d'Immunité). Chaque
+  // charge absorbera le prochain sideEffect/gain de corruption d'une potion
+  // risquée (consommée par les lots P10). Persistante, sérialisée (state.js).
+  else if (item.effect === 'ward_charge') {
+    if (typeof wardCharges === 'number') wardCharges += (item.power || 1);
+  }
   // 'stat_boost' (Pierre d'Âme) est intercepté en amont par useItem →
   // _openStatBoostMenu (modale de choix de stat). Ne devrait jamais
   // arriver ici, mais no-op par sécurité.
@@ -710,6 +735,12 @@ function _isWastedRestore(item, c) {
     case 'restore_sp':
     case 'restore_sp_full': return spFull;
     case 'both':            return hpFull && spFull;
+    // Anti-corruption (P7) : gaspillé seulement si AUCUNE corruption à dissiper
+    // ET pas de purge de groupe à appliquer (le Baume reste utile à corruption 0
+    // pour chasser fear/gel).
+    case 'purge_corruption':
+      return (typeof spellCorruption !== 'number' || spellCorruption <= 0)
+             && !Array.isArray(item.cureGroup);
     default:                return false;
   }
 }
@@ -819,7 +850,16 @@ function useItem(idx, battleMode) {
   }
 
   _applyConsumableEffect(item, target);
-  addMsg(`${target.name} utilise : ${item.name}`, 'good');
+  // Messages dédiés anti-corruption (P7) + VFX d'ambiance léger (décision figée).
+  if (item.effect === 'purge_corruption') {
+    addMsg(`✨ ${item.name} — la corruption reflue (niveau ${spellCorruption}).`, 'magic');
+    // VFX d'ambiance léger (décision P7) : volute cristalline d'éclaircissement.
+    if (typeof DFX_safe !== 'undefined') DFX_safe.burst('game-container', 'water');
+  } else if (item.effect === 'ward_charge') {
+    addMsg(`🔰 ${item.name} — une garde mystique t'enveloppe (${wardCharges} charge${wardCharges > 1 ? 's' : ''}).`, 'magic');
+  } else {
+    addMsg(`${target.name} utilise : ${item.name}`, 'good');
+  }
   _consumeAt(idx, 1);
 
   updateUI();

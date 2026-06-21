@@ -18,7 +18,7 @@ async function scenarioBrewing() {
     const added  = tryAddItem('herbe_armoise', { silent: true });
     return {
       herbCount,
-      recipesDefined: typeof POTION_RECIPES !== 'undefined' && POTION_RECIPES.length === 26,
+      recipesDefined: typeof POTION_RECIPES !== 'undefined' && POTION_RECIPES.length === 29,
       added,
       herbInBesace: getHerbCount('herbe_armoise'),
       inventoryUnchanged: player.inventory.length === before,
@@ -27,7 +27,7 @@ async function scenarioBrewing() {
   });
   console.log('  T1 données →', t1);
   assert(t1.herbCount === 7,          '7 items herbe attendus (6 + l\'herbe rare endgame)');
-  assert(t1.recipesDefined,           'POTION_RECIPES doit définir 26 recettes');
+  assert(t1.recipesDefined,           'POTION_RECIPES doit définir 29 recettes');
   assert(t1.added,                    'tryAddItem(herbe) doit réussir');
   assert(t1.herbInBesace === 1,       'la herbe doit aller dans la besace');
   assert(t1.inventoryUnchanged,       'la herbe ne doit pas occuper le sac');
@@ -338,7 +338,7 @@ async function scenarioRareHerb() {
     };
   });
   console.log('  T2 recettes prestige →', t2);
-  assert(t2.count === 26, `POTION_RECIPES doit compter 26 recettes (obtenu ${t2.count})`);
+  assert(t2.count === 29, `POTION_RECIPES doit compter 29 recettes (obtenu ${t2.count})`);
   assert(t2.xlResult === 'potion_xl',      'brew_xl_tenebres doit produire potion_xl (item existant)');
   assert(t2.xlspResult === 'potion_xl_sp', 'brew_xl_sp_tenebres doit produire potion_xl_sp (item existant)');
   assert(t2.match2 === 'brew_xl_tenebres',     '2 asphodèles noires → brew_xl_tenebres');
@@ -732,7 +732,7 @@ async function scenarioThrowablePotions() {
     };
   });
   console.log('  T4 recettes:', t4);
-  assert(t4.count === 26, `POTION_RECIPES doit compter 26 recettes (obtenu ${t4.count})`);
+  assert(t4.count === 29, `POTION_RECIPES doit compter 29 recettes (obtenu ${t4.count})`);
   assert(t4.present, 'les 3 recettes de flacons doivent exister');
   assert(t4.feu === 'brew_flacon_feu' && t4.givre === 'brew_flacon_givre' && t4.venin === 'brew_flacon_venin', 'chaque combo matche sa recette (multisets inédits)');
 
@@ -780,7 +780,7 @@ async function scenarioPotionUpgradeCraft() {
   assert(t1.heals[0] === 15 && t1.heals[1] === 30 && t1.heals[2] === 55, 'paliers de soin 15/30/55');
   assert(t1.recipesOk, 'les 7 recettes P4 doivent exister');
   assert(t1.iconsOk, 'les 4 nouveaux items doivent avoir une icône PNG');
-  assert(t1.count === 26, `POTION_RECIPES doit compter 26 recettes (obtenu ${t1.count})`);
+  assert(t1.count === 29, `POTION_RECIPES doit compter 29 recettes (obtenu ${t1.count})`);
 
   // T2 — pas de collision d'ingrédients (chaque set est unique).
   const t2 = await page.evaluate(() => {
@@ -1335,4 +1335,126 @@ async function scenarioPotionAoeAndEnemyUse() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioBrewing, scenarioRecipeCodex, scenarioRareHerb, scenarioSlugClub, scenarioPotionBuff, scenarioPotionResistance, scenarioThrowablePotions, scenarioPotionUpgradeCraft, scenarioHerbGarden, scenarioGardenQuest, scenarioHerbEconomy, scenarioPotionAoeAndEnemyUse] };
+// ============================================================
+// Potions 2.0 — Lot P7 : anti-corruption (Lucidité / Baume / Immunité)
+// ============================================================
+async function scenarioAntiCorruption() {
+  console.log('\n── Scénario : potions anti-corruption (Potions 2.0 — Lot P7) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Poufsouffle' });
+
+  // T1 — données : 3 items anti_corruption + 3 recettes + champs §1.4 + sources.
+  const t1 = await page.evaluate(() => {
+    const luc = ITEMS.find(i => i.id === 'elixir_lucidite');
+    const bau = ITEMS.find(i => i.id === 'baume_patronus');
+    const imm = ITEMS.find(i => i.id === 'elixir_immunite');
+    const recIds = ['brew_elixir_lucidite', 'brew_baume_patronus', 'brew_elixir_immunite'];
+    const recipesOk = recIds.every(id => POTION_RECIPES.some(r => r.id === id));
+    const mLuc = _matchRecipe({ herbe_dictame: 2, herbe_asphodele_noire: 1 });
+    const mBau = _matchRecipe({ herbe_dictame: 1, herbe_branchiflore: 1, herbe_armoise: 1 });
+    const mImm = _matchRecipe({ herbe_dictame: 1, herbe_asphodele: 2 });
+    const apo = NPCS.find(n => n.id === 'apothicaire_tenebreux');
+    const qPouf = QUEST_TEMPLATES.find(q => q.id === 'quest_signature_pouf');
+    const qRaven = QUEST_TEMPLATES.find(q => q.id === 'quest_signature_raven');
+    return {
+      itemsOk: !!luc && !!bau && !!imm,
+      catOk: luc.category === 'anti_corruption' && bau.category === 'anti_corruption' && imm.category === 'anti_corruption',
+      lucEffect: luc.effect, lucPurge: luc.corruptionPurge,
+      bauEffect: bau.effect, bauPurge: bau.corruptionPurge, bauCure: (bau.cureGroup || []).slice(),
+      immEffect: imm.effect,
+      ruinesWorkshop: (POTION_RECIPES.find(r => r.id === 'brew_elixir_lucidite') || {}).workshop,
+      ruinesMinFloor: (POTION_RECIPES.find(r => r.id === 'brew_elixir_lucidite') || {}).minFloor,
+      recipesOk,
+      matchOk: mLuc && mLuc.id === 'brew_elixir_lucidite'
+             && mBau && mBau.id === 'brew_baume_patronus'
+             && mImm && mImm.id === 'brew_elixir_immunite',
+      onApothicaire: !!apo && (apo.wares || []).some(w => w.id === 'elixir_lucidite'),
+      poufTeachesBaume: !!qPouf && (qPouf.reward.recipes || []).includes('brew_baume_patronus'),
+      ravenTeachesImmunite: !!qRaven && (qRaven.reward.recipes || []).includes('brew_elixir_immunite'),
+      wardChargesDefined: typeof wardCharges === 'number',
+    };
+  });
+  console.log('  T1 données →', t1);
+  assert(t1.itemsOk, 'les 3 potions anti-corruption doivent exister');
+  assert(t1.catOk, 'les 3 potions doivent porter category:"anti_corruption"');
+  assert(t1.lucEffect === 'purge_corruption' && t1.lucPurge === 3, 'Élixir de Lucidité : purge_corruption / −3');
+  assert(t1.bauEffect === 'purge_corruption' && t1.bauPurge === 2, 'Baume du Patronus : purge_corruption / −2');
+  assert(t1.bauCure.includes('fear') && t1.bauCure.includes('gel'), 'Baume du Patronus : cureGroup fear+gel');
+  assert(t1.immEffect === 'ward_charge', 'Élixir d\'Immunité : ward_charge');
+  assert(t1.ruinesWorkshop === 'ruines' && t1.ruinesMinFloor === 11, 'recette Lucidité : workshop ruines / minFloor 11');
+  assert(t1.recipesOk && t1.matchOk, 'les 3 recettes existent et matchent leur multiset');
+  assert(t1.onApothicaire, 'l\'Apothicaire Ténébreux doit vendre l\'Élixir de Lucidité');
+  assert(t1.poufTeachesBaume, 'la quête signature Poufsouffle enseigne brew_baume_patronus');
+  assert(t1.ravenTeachesImmunite, 'la quête signature Serdaigle enseigne brew_elixir_immunite');
+  assert(t1.wardChargesDefined, 'le flag wardCharges doit être défini');
+
+  // T2 — purge_corruption : Élixir de Lucidité fait redescendre spellCorruption.
+  const t2 = await page.evaluate(() => {
+    inBattle = false;
+    spellCorruption = 5;
+    player.inventory = [{ ...ITEMS.find(i => i.id === 'elixir_lucidite') }];
+    useItem(0, false);
+    const after = spellCorruption;
+    const consumed = !player.inventory.some(i => i.id === 'elixir_lucidite');
+    // À corruption 0, une 2ᵉ Lucidité est refusée (gaspillage) → non consommée.
+    spellCorruption = 0;
+    player.inventory = [{ ...ITEMS.find(i => i.id === 'elixir_lucidite') }];
+    useItem(0, false);
+    const refusedAtZero = player.inventory.some(i => i.id === 'elixir_lucidite');
+    return { after, consumed, refusedAtZero };
+  });
+  console.log('  T2 purge →', t2);
+  assert(t2.after === 2, 'Lucidité doit ramener spellCorruption 5 → 2');
+  assert(t2.consumed, 'l\'Élixir de Lucidité doit être consommé');
+  assert(t2.refusedAtZero, 'à corruption 0, Lucidité doit être refusée (anti-gaspillage)');
+
+  // T3 — Baume du Patronus : purge 2 corruption + nettoie fear/gel du groupe.
+  const t3 = await page.evaluate(() => {
+    spellCorruption = 5;
+    party[0].statusEffects = [
+      { id: 'fear', power: 0, turns: 2 },
+      { id: 'gel', power: 0, turns: 3 },
+      { id: 'burn', power: 4, turns: 3 },
+    ];
+    player.inventory = [{ ...ITEMS.find(i => i.id === 'baume_patronus') }];
+    useItem(0, false);
+    const ids = (party[0].statusEffects || []).map(s => s.id);
+    return { corruption: spellCorruption, ids };
+  });
+  console.log('  T3 baume →', t3);
+  assert(t3.corruption === 3, 'Baume doit ramener spellCorruption 5 → 3');
+  assert(!t3.ids.includes('fear') && !t3.ids.includes('gel'), 'Baume doit purger fear et gel');
+  assert(t3.ids.includes('burn'), 'Baume ne touche pas les DoT hors fear/gel (burn conservé)');
+
+  // T4 — ward_charge : l'Élixir d'Immunité arme une charge wardCharges.
+  const t4 = await page.evaluate(() => {
+    wardCharges = 0;
+    player.inventory = [{ ...ITEMS.find(i => i.id === 'elixir_immunite') }];
+    useItem(0, false);
+    return { charges: wardCharges, consumed: !player.inventory.some(i => i.id === 'elixir_immunite') };
+  });
+  console.log('  T4 immunité →', t4);
+  assert(t4.charges === 1, 'Élixir d\'Immunité doit armer 1 charge wardCharges');
+  assert(t4.consumed, 'l\'Élixir d\'Immunité doit être consommé');
+
+  // T5 — sérialisation : wardCharges + spellCorruption survivent au round-trip.
+  const t5 = await page.evaluate(() => {
+    spellCorruption = 4; wardCharges = 3;
+    const snap = _serializeState();
+    spellCorruption = 0; wardCharges = 0;
+    _applyState(snap);
+    return { corruption: spellCorruption, charges: wardCharges, serialized: typeof snap.wardCharges === 'number' };
+  });
+  console.log('  T5 save →', t5);
+  assert(t5.serialized, 'wardCharges doit être sérialisé dans _serializeState');
+  assert(t5.corruption === 4 && t5.charges === 3, 'spellCorruption + wardCharges doivent survivre au round-trip');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (anti-corruption)`);
+  }
+  console.log('  ✅ Anti-corruption OK (données, purge, cure de groupe, ward, sources, save)');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioBrewing, scenarioRecipeCodex, scenarioRareHerb, scenarioSlugClub, scenarioPotionBuff, scenarioPotionResistance, scenarioThrowablePotions, scenarioPotionUpgradeCraft, scenarioHerbGarden, scenarioGardenQuest, scenarioHerbEconomy, scenarioPotionAoeAndEnemyUse, scenarioAntiCorruption] };

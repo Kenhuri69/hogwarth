@@ -550,6 +550,12 @@ let badgerOathUsedThisFight = false; // Serment du Blaireau — 1×/combat
 // `corruptionLevel(floor, victoryAchieved)` de floor-ambiance.js (corruption
 // de LIEU, distincte). La clé sérialisée reste `corruptionLevel` (spec §2.2).
 let spellCorruption         = 0;
+// Charges de protection « Élixir d'Immunité » (Potions 2.0 — Lot P7 §1.5).
+// Chaque charge absorbe le prochain `sideEffect`/gain de corruption d'une
+// potion risquée (consommée par les lots P10). Armée par l'effet `ward_charge`
+// (inventory.js). SÉRIALISÉE (clé save `wardCharges`). Persistante (non
+// combat-scoped) : la garde tient jusqu'à ce qu'elle serve.
+let wardCharges             = 0;
 // Sélection de cible en combat (cycle producteur → consommateur) :
 //  - battle-ui.js — showTargetSelection(actionType)  écrit pendingAction
 //  - inventory.js — openBattleSpells onclick         écrit pendingSpell

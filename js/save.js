@@ -74,6 +74,8 @@ function _serializeState() {
                           .map(([f, set]) => [f, Array.from(set)]),
     floorKillCount: Array.from(floorKillCount.entries()),
     corruptionLevel: spellCorruption,
+    wardCharges,                              // Potions 2.0 P7 — charges d'Immunité
+
     // Jardin d'herbes (Potions P6.b3) — jardins cachés + pool + éveil.
     hiddenGardens: Array.from(hiddenGardens),
     gardenStock,
@@ -496,6 +498,8 @@ function _applyState(gs) {
   floorKillCount = new Map(gs.floorKillCount || []);
   // Compteur de corruption (Lot P4) — fallback 0 pour les saves antérieures.
   spellCorruption = (typeof gs.corruptionLevel === 'number') ? gs.corruptionLevel : 0;
+  // Charges d'Immunité (Potions 2.0 P7) — fallback 0 pour les saves antérieures.
+  wardCharges = (typeof gs.wardCharges === 'number') ? gs.wardCharges : 0;
   // Jardin d'herbes (Potions P6.b3) — jardins cachés + pool + éveil.
   hiddenGardens = new Set(gs.hiddenGardens || []);
   gardenStock = (typeof gs.gardenStock === 'number') ? gs.gardenStock : 0;

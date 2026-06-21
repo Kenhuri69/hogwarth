@@ -1195,6 +1195,24 @@ const ITEMS = [
   // Flacons à dispersion (AOE) — touchent TOUT le groupe ennemi (flag aoe).
   { id:"flacon_deflagration", name:"Flacon de Déflagration", icon:"💥", desc:"Lancé : 16 dégâts de feu sur tout le groupe ennemi", type:"consumable", effect:"throw", aoe:true, element:"feu", power:16, price:90, rarity:"rare" },
   { id:"flacon_brume_toxique", name:"Flacon de Brume Toxique", icon:"☠️", desc:"Lancé : 6 dégâts + poison (4/tour, 4 t) sur tout le groupe ennemi", type:"consumable", effect:"throw", aoe:true, power:6, statusId:"poison", statusPower:4, statusTurns:4, price:95, rarity:"rare" },
+  // ── Potions anti-corruption (Potions 2.0 — Lot P7, §1.5/§1.5bis) ─────────
+  // Catégorie neuve `category:"anti_corruption"` : seule soupape pour faire
+  // REDESCENDRE `spellCorruption` (combat). Champs optionnels §1.4
+  // (category/houseAffinity/corruptionPurge/synergy) — tous back-compat, fallback
+  // = comportement actuel. Effets `purge_corruption` / `ward_charge` :
+  // inventory.js — _applyConsumableEffect.
+  { id:"elixir_lucidite", name:"Élixir de Lucidité", icon:"🧪", desc:"Dissipe 3 points de corruption magique du groupe.",
+    type:"consumable", category:"anti_corruption", rarity:"epic", effect:"purge_corruption", corruptionPurge:3,
+    houseAffinity:null, price:220,
+    synergy:{ spells:["Sectumsempra","Morsmordre"], note:"Seule soupape pour faire redescendre la corruption." } },
+  { id:"baume_patronus", name:"Baume du Patronus", icon:"🦌", desc:"Dissipe 2 points de corruption et purge peur & gel de tout le groupe.",
+    type:"consumable", category:"anti_corruption", rarity:"rare", effect:"purge_corruption", corruptionPurge:2,
+    cureGroup:["fear","gel"], houseAffinity:"poufsouffle", price:120,
+    synergy:{ spells:["Patronus Maxima"], note:"Le souvenir heureux distillé chasse la peur et le givre." } },
+  { id:"elixir_immunite", name:"Élixir d'Immunité", icon:"🔰", desc:"Arme une garde mystique : absorbe le prochain effet secondaire ou gain de corruption.",
+    type:"consumable", category:"anti_corruption", rarity:"rare", effect:"ward_charge",
+    houseAffinity:"serdaigle", price:110,
+    synergy:{ note:"Contre-jeu explicite aux potions risquées de la Boucle." } },
   { id:"cape_invis",   name:"Cape d'Invisibilité",   icon:"🌫️", desc:"AGI+5 LCK+5 · Esquive +5%", type:"acc",   slot:"cloak", family:"cloak_invis",  rarity:"epic",     bonusAgi:5, bonusLck:5, bonusDodgeChance:5, power:5, price:550 },
   { id:"chapeau_pointu",name:"Chapeau de Serdaigle", icon:"🎓", desc:"MAG+3 INT+3",            type:"armor", slot:"head",  family:"hat_serd",     rarity:"rare",     bonusDef:2, bonusMag:3, power:3, price:300 },
   // Easter egg « Salle sur Demande » — objet unique offert à la 1ʳᵉ Salle de
@@ -1481,6 +1499,25 @@ const POTION_RECIPES = [
   { id:"brew_flacon_venin", name:"Flacon de Venin", resultItemId:"flacon_venin",
     ingredients:{ herbe_ortie:1, herbe_dictame:1 },                     difficulty:14,
     lore:"Un venin paradoxal : l'ortie attaque là où le dictame guérit." },
+  // ── Anti-corruption (Potions 2.0 — Lot P7) ───────────────────────────────
+  // Nouveaux champs de recette optionnels §1.4 : `workshop` (atelier requis,
+  // défaut "any"), `minFloor` (gate de découverte). Inertes au runtime tant que
+  // le Chaudron des Ruines / `workshopLevel` n'existent pas (Lot P11) — la
+  // disponibilité réelle est portée par les ingrédients (asphodèle noire =
+  // Boucle) et par les recettes pré-enseignées en quête signature.
+  // Multisets vérifiés sans collision (cf. scenarioPotionUpgradeCraft T2).
+  { id:"brew_elixir_lucidite", name:"Élixir de Lucidité", resultItemId:"elixir_lucidite",
+    ingredients:{ herbe_dictame:2, herbe_asphodele_noire:1 },           difficulty:18,
+    workshop:"ruines", minFloor:11,
+    lore:"Le dictame purifie ce que l'asphodèle noire a souillé — l'esprit s'éclaircit." },
+  { id:"brew_baume_patronus", name:"Baume du Patronus", resultItemId:"baume_patronus",
+    ingredients:{ herbe_dictame:1, herbe_branchiflore:1, herbe_armoise:1 }, difficulty:14,
+    workshop:"slughorn",
+    lore:"Trois herbes douces tressées en un souvenir heureux — la peur recule." },
+  { id:"brew_elixir_immunite", name:"Élixir d'Immunité", resultItemId:"elixir_immunite",
+    ingredients:{ herbe_dictame:1, herbe_asphodele:2 },                 difficulty:13,
+    workshop:"slughorn",
+    lore:"L'asphodèle stabilise l'âme ; le dictame la cuirasse contre la dérive." },
 ];
 
 const SHOP_ITEMS = ["potion_s","potion_m","felix","choco_sorcier","wand1","robe1","amulette","broom","mandragore","livre_sortileges","livre_soin","livre_bombarda"];
