@@ -129,7 +129,17 @@ clore, pas à refaire :
 
 ---
 
-## P2.3 — Hiérarchie d'action en combat (reliquat)  ⬜
+## P2.3 — Hiérarchie d'action en combat (reliquat)  ✅ Fait (2026-06-21)
+
+> **Livré** : classe `.cmd-btn--primary` sur « Attaquer » (teinte or, font-weight
+> 600 ; en ≤700px : `order:-1` + pleine largeur → action primaire en tête, les
+> secondaires/conditionnelles se compactent dessous). CSS-only + 1 classe dans
+> `index.html`. cache-bump style.css v49 / CACHE_VERSION v207. Fonction inchangée
+> (couverte par les scénarios combat existants ; vérif computed-style OK).
+> *Note : 2 scénarios flaky pré-existants observés sur le run complet
+> (`scenarioFloorEvents` « marché ambulant », `scenarioHouseApotheoseTier` régén
+> Poufsouffle) — tous deux passent en isolation sur ma branche ET sur master
+> propre ; aléa de pas/spawn, sans rapport avec ce changement CSS.*
 
 **Impact : Moyen** · **Difficulté : Faible** (la grille est déjà robuste, #640)
 

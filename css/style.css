@@ -456,6 +456,29 @@ body {
   display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
 }
 
+/* P2.3 — hiérarchie d'action en combat : « Attaquer » est l'action primaire,
+   mise en avant (teinte or, légèrement plus grande) face aux secondaires. */
+.battle-actions .cmd-btn--primary {
+  border-color: #c9a84c;
+  background: linear-gradient(180deg, rgba(201,168,76,0.18), rgba(0,0,0,0.22));
+  color: var(--gold-light);
+  font-weight: 600;
+}
+.battle-actions .cmd-btn--primary:hover {
+  border-color: #f0d782;
+  color: #f0d782;
+  box-shadow: 0 0 14px rgba(201,168,76,0.45);
+}
+/* Mobile : l'action primaire passe en tête, pleine largeur ; les actions
+   secondaires (dont les conditionnelles) se compactent dessous. */
+@media (max-width: 700px) {
+  .battle-actions .cmd-btn--primary {
+    order: -1;
+    flex-basis: 100%;
+    padding: 11px 12px;
+  }
+}
+
 /* Combat desktop : l'overlay centrait tout son contenu, laissant de larges
    vides haut/bas autour d'un petit groupe d'ennemis. On ancre le contenu en
    haut, on laisse le groupe d'ennemis occuper la zone supérieure (ennemi
