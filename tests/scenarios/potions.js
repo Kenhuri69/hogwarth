@@ -18,7 +18,7 @@ async function scenarioBrewing() {
     const added  = tryAddItem('herbe_armoise', { silent: true });
     return {
       herbCount,
-      recipesDefined: typeof POTION_RECIPES !== 'undefined' && POTION_RECIPES.length === 29,
+      recipesDefined: typeof POTION_RECIPES !== 'undefined' && POTION_RECIPES.length === 30,
       added,
       herbInBesace: getHerbCount('herbe_armoise'),
       inventoryUnchanged: player.inventory.length === before,
@@ -27,7 +27,7 @@ async function scenarioBrewing() {
   });
   console.log('  T1 données →', t1);
   assert(t1.herbCount === 7,          '7 items herbe attendus (6 + l\'herbe rare endgame)');
-  assert(t1.recipesDefined,           'POTION_RECIPES doit définir 29 recettes');
+  assert(t1.recipesDefined,           'POTION_RECIPES doit définir 30 recettes');
   assert(t1.added,                    'tryAddItem(herbe) doit réussir');
   assert(t1.herbInBesace === 1,       'la herbe doit aller dans la besace');
   assert(t1.inventoryUnchanged,       'la herbe ne doit pas occuper le sac');
@@ -338,7 +338,7 @@ async function scenarioRareHerb() {
     };
   });
   console.log('  T2 recettes prestige →', t2);
-  assert(t2.count === 29, `POTION_RECIPES doit compter 29 recettes (obtenu ${t2.count})`);
+  assert(t2.count === 30, `POTION_RECIPES doit compter 30 recettes (obtenu ${t2.count})`);
   assert(t2.xlResult === 'potion_xl',      'brew_xl_tenebres doit produire potion_xl (item existant)');
   assert(t2.xlspResult === 'potion_xl_sp', 'brew_xl_sp_tenebres doit produire potion_xl_sp (item existant)');
   assert(t2.match2 === 'brew_xl_tenebres',     '2 asphodèles noires → brew_xl_tenebres');
@@ -732,7 +732,7 @@ async function scenarioThrowablePotions() {
     };
   });
   console.log('  T4 recettes:', t4);
-  assert(t4.count === 29, `POTION_RECIPES doit compter 29 recettes (obtenu ${t4.count})`);
+  assert(t4.count === 30, `POTION_RECIPES doit compter 30 recettes (obtenu ${t4.count})`);
   assert(t4.present, 'les 3 recettes de flacons doivent exister');
   assert(t4.feu === 'brew_flacon_feu' && t4.givre === 'brew_flacon_givre' && t4.venin === 'brew_flacon_venin', 'chaque combo matche sa recette (multisets inédits)');
 
@@ -780,7 +780,7 @@ async function scenarioPotionUpgradeCraft() {
   assert(t1.heals[0] === 15 && t1.heals[1] === 30 && t1.heals[2] === 55, 'paliers de soin 15/30/55');
   assert(t1.recipesOk, 'les 7 recettes P4 doivent exister');
   assert(t1.iconsOk, 'les 4 nouveaux items doivent avoir une icône PNG');
-  assert(t1.count === 29, `POTION_RECIPES doit compter 29 recettes (obtenu ${t1.count})`);
+  assert(t1.count === 30, `POTION_RECIPES doit compter 30 recettes (obtenu ${t1.count})`);
 
   // T2 — pas de collision d'ingrédients (chaque set est unique).
   const t2 = await page.evaluate(() => {
@@ -1457,4 +1457,92 @@ async function scenarioAntiCorruption() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioBrewing, scenarioRecipeCodex, scenarioRareHerb, scenarioSlugClub, scenarioPotionBuff, scenarioPotionResistance, scenarioThrowablePotions, scenarioPotionUpgradeCraft, scenarioHerbGarden, scenarioGardenQuest, scenarioHerbEconomy, scenarioPotionAoeAndEnemyUse, scenarioAntiCorruption] };
+// ============================================================
+// Potions 2.0 — Lot P8 : potions évolutives (potionEvolveMult + Philtre du Mage)
+// ============================================================
+async function scenarioPotionEvolve() {
+  console.log('\n── Scénario : potions évolutives (Potions 2.0 — Lot P8) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Serdaigle' });
+
+  // T1 — données : Philtre du Mage (mana évolutif) + recette + helper exposé.
+  const t1 = await page.evaluate(() => {
+    const ph = ITEMS.find(i => i.id === 'philtre_mage');
+    const rec = POTION_RECIPES.find(r => r.id === 'brew_philtre_mage');
+    const m = _matchRecipe({ herbe_dictame: 1, eclat_vitalite: 1 });
+    return {
+      exists: !!ph,
+      category: ph && ph.category,
+      effect: ph && ph.effect,
+      evolveSource: ph && ph.evolves && ph.evolves.source,
+      helper: typeof potionEvolveMult === 'function',
+      recipeOk: !!rec && m && m.id === 'brew_philtre_mage',
+      total: POTION_RECIPES.length,
+    };
+  });
+  console.log('  T1 données →', t1);
+  assert(t1.exists, 'le Philtre du Mage doit exister');
+  assert(t1.category === 'mana' && t1.effect === 'restore_sp', 'Philtre = mana / restore_sp');
+  assert(t1.evolveSource === 'artifactForm', 'Philtre : evolves source artifactForm');
+  assert(t1.helper, 'potionEvolveMult doit être exposé (potions.js)');
+  assert(t1.recipeOk, 'recette brew_philtre_mage présente et matchable');
+  assert(t1.total === 30, `POTION_RECIPES doit compter 30 recettes (obtenu ${t1.total})`);
+
+  // T2 — helper pur : multiplicateur ∈ [1, cap] selon le contexte du buveur.
+  const t2 = await page.evaluate(() => {
+    const base = { evolves: { source: 'artifactForm', key: ['baton', 'grimoire'], perStep: 0.18, cap: 1.8 } };
+    party[0].equipped = {};
+    const m0 = potionEvolveMult(base);
+    // 2 focaliseurs caster équipés → 1 + 0.18×2 = 1.36 (le masque ne compte pas)
+    party[0].equipped = {
+      wand:    { id: 'baton_apprenti', formType: 'baton' },
+      trinket: { id: 'grimoire_flottant', formType: 'grimoire' },
+      head:    { id: 'masque_courage', formType: 'masque' },
+    };
+    const m2 = potionEvolveMult(base);
+    // cap : perStep 1 × beaucoup → borné à 1.8
+    const capped = potionEvolveMult({ evolves: { source: 'artifactForm', key: ['baton'], perStep: 1, cap: 1.8 } });
+    // autres sources + absence d'evolves
+    spellCorruption = 4;
+    const mc = potionEvolveMult({ evolves: { source: 'corruption', perStep: 0.05, cap: 1.5 } });
+    const plain = potionEvolveMult({ power: 10 });
+    return { m0, m2: Math.round(m2 * 100) / 100, capped, mc: Math.round(mc * 100) / 100, plain };
+  });
+  console.log('  T2 helper →', t2);
+  assert(t2.m0 === 1, 'sans focaliseur : multiplicateur 1');
+  assert(t2.m2 === 1.36, '2 focaliseurs caster (bâton+grimoire) → 1.36 (masque exclu)');
+  assert(t2.capped === 1.8, 'le multiplicateur est borné par cap');
+  assert(t2.mc === 1.2, 'source corruption=4 → 1 + 0.05×4 = 1.20');
+  assert(t2.plain === 1, 'un item sans evolves retourne 1');
+
+  // T3 — effet appliqué : restore_sp évolue avec l'équipement du buveur.
+  const t3 = await page.evaluate(() => {
+    const c = party[0];
+    c.equipped = {}; c.spMax = 200; c.sp = 0;
+    player.inventory = [{ ...ITEMS.find(i => i.id === 'philtre_mage') }];
+    useItem(0, false);
+    const noGear = c.sp;                 // base 20
+    c.sp = 0;
+    c.equipped = {
+      wand:    { id: 'baton_apprenti', formType: 'baton' },
+      trinket: { id: 'grimoire_flottant', formType: 'grimoire' },
+    };
+    player.inventory = [{ ...ITEMS.find(i => i.id === 'philtre_mage') }];
+    useItem(0, false);
+    const withGear = c.sp;
+    return { noGear, withGear };
+  });
+  console.log('  T3 effet →', t3);
+  assert(t3.noGear === 20, 'sans focaliseur : Philtre restaure 20 PM (base)');
+  assert(t3.withGear === 27, '2 focaliseurs : Philtre restaure 27 PM (20 × 1.36, arrondi)');
+  assert(t3.withGear > t3.noGear, 'l\'effet évolue avec l\'équipement caster');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (potions évolutives)`);
+  }
+  console.log('  ✅ Potions évolutives OK (données, helper pur, effet contextuel)');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioBrewing, scenarioRecipeCodex, scenarioRareHerb, scenarioSlugClub, scenarioPotionBuff, scenarioPotionResistance, scenarioThrowablePotions, scenarioPotionUpgradeCraft, scenarioHerbGarden, scenarioGardenQuest, scenarioHerbEconomy, scenarioPotionAoeAndEnemyUse, scenarioAntiCorruption, scenarioPotionEvolve] };

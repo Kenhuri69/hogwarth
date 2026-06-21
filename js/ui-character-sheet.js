@@ -127,6 +127,19 @@ function _renderItemTooltip(item, slotLabel, action) {
     const pct = (p >= 0 ? '+' : '') + Math.round(p * 100) + '%';
     bonuses.push(`<img class="ui-icon ui-icon-md" src="img/icons/items/potion_m.png" alt=""> ${p < 0 ? 'Fiole diluée' : 'Brassage maison'} : ${pct} d'effet`);
   }
+  // P8 — potion évolutive : ampleur RÉELLE au moment de l'usage (lecture du
+  // contexte du buveur via potionEvolveMult, pur). 0 % = aucun focaliseur.
+  if (item.evolves && typeof potionEvolveMult === 'function') {
+    const m   = potionEvolveMult(item);
+    const pct = Math.round((m - 1) * 100);
+    bonuses.push(pct > 0
+      ? `📈 Évolutif : +${pct}% d'effet (contexte actuel)`
+      : `📈 Évolutif : potentiel inactif (équipe des focaliseurs)`);
+  }
+  // Synergie déclarative (P7/P8) — note de tooltip (zéro logique).
+  if (item.synergy && item.synergy.note) {
+    bonuses.push(`🔗 ${item.synergy.note}`);
+  }
 
   // Enchantement rerollable (Piste D) — affixe posé à la Forge.
   const enchLine = (item.enchant && item.enchant.label)

@@ -1213,6 +1213,15 @@ const ITEMS = [
     type:"consumable", category:"anti_corruption", rarity:"rare", effect:"ward_charge",
     houseAffinity:"serdaigle", price:110,
     synergy:{ note:"Contre-jeu explicite aux potions risquées de la Boucle." } },
+  // ── Potion évolutive (Potions 2.0 — Lot P8, §1.7) ────────────────────────
+  // Philtre du Mage : restaure des PM dont l'ampleur ÉVOLUE avec le nombre de
+  // focaliseurs de caster équipés (`formType` bâton/grimoire, Artefacts 2.0).
+  // Helper pur `potionEvolveMult` (potions.js) ; coeffs perStep/cap calibrés
+  // en P13. Synergie déclarative (tooltip + Codex).
+  { id:"philtre_mage", name:"Philtre du Mage", icon:"🔮", desc:"Restaure 20 PM, amplifiés par chaque focaliseur de caster équipé (bâton/grimoire).",
+    type:"consumable", category:"mana", rarity:"rare", effect:"restore_sp", power:20, price:110,
+    evolves:{ source:"artifactForm", key:["baton","grimoire"], perStep:0.18, cap:1.8 },
+    synergy:{ artifacts:["baton","grimoire"], note:"+PM par focaliseur de caster équipé (bâton / grimoire)." } },
   { id:"cape_invis",   name:"Cape d'Invisibilité",   icon:"🌫️", desc:"AGI+5 LCK+5 · Esquive +5%", type:"acc",   slot:"cloak", family:"cloak_invis",  rarity:"epic",     bonusAgi:5, bonusLck:5, bonusDodgeChance:5, power:5, price:550 },
   { id:"chapeau_pointu",name:"Chapeau de Serdaigle", icon:"🎓", desc:"MAG+3 INT+3",            type:"armor", slot:"head",  family:"hat_serd",     rarity:"rare",     bonusDef:2, bonusMag:3, power:3, price:300 },
   // Easter egg « Salle sur Demande » — objet unique offert à la 1ʳᵉ Salle de
@@ -1518,6 +1527,11 @@ const POTION_RECIPES = [
     ingredients:{ herbe_dictame:1, herbe_asphodele:2 },                 difficulty:13,
     workshop:"slughorn",
     lore:"L'asphodèle stabilise l'âme ; le dictame la cuirasse contre la dérive." },
+  // ── Potion évolutive (Potions 2.0 — Lot P8) ──────────────────────────────
+  // Multiset inédit (herbe T3 + Éclat de Vitalité). Découvrable librement.
+  { id:"brew_philtre_mage", name:"Philtre du Mage", resultItemId:"philtre_mage",
+    ingredients:{ herbe_dictame:1, eclat_vitalite:1 },                  difficulty:15,
+    lore:"Le dictame infusé sur un Éclat de Vitalité s'accorde aux focaliseurs du mage." },
 ];
 
 const SHOP_ITEMS = ["potion_s","potion_m","felix","choco_sorcier","wand1","robe1","amulette","broom","mandragore","livre_sortileges","livre_soin","livre_bombarda"];

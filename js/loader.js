@@ -251,6 +251,7 @@ window.UX_safe = new Proxy({}, {
     { name: 'ITEM_ICON_SVG_REGISTRY', source: 'item-icons.js', kind: 'obj' },
     { name: 'openBrewingModal',   source: 'potions.js',      kind: 'fn'  },
     { name: 'attemptBrew',        source: 'potions.js',      kind: 'fn'  },
+    { name: 'potionEvolveMult',   source: 'potions.js',      kind: 'fn'  },
     { name: 'addHerb',            source: 'potions.js',      kind: 'fn'  },
 
     // ── Boutique ──
