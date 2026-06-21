@@ -604,6 +604,8 @@ function startBattle(baseEnemyData, opts) {
   elanStacks        = [0, 0];
   celeriteGauge     = [0, 0];   // D5 Célérité — accumulateur de tempo (combat-scoped)
   celeriteExtra     = [0, 0];
+  weaponOil         = [null, null]; // P12 — huiles d'arme (combat-scoped)
+  temporalEchoUsed  = false;        // P12 — Écho Temporel : action sup. 1×/combat
   combatFamiliars   = [];       // P2 — familiers invoqués (Avis Praesidium), combat-scoped
   artifactCharges   = {};       // P2 — charges d'artefacts actifs (reset à chaque combat)
   duoPostureSwitched = false;   // P2 — bascule gratuite de posture réarmée
@@ -1134,12 +1136,29 @@ function executeAttack(targetIdx) {
   }
   if (isCrit && typeof AudioSystem !== 'undefined' && AudioSystem.playCrit) AudioSystem.playCrit();
   _updateElan(char, isCrit);   // Apothéose Gryffondor — Élan
+  // Huile d'arme (P12) : rider élémentaire sur l'attaque physique. Respecte
+  // resist/weak + déclenche les combos de l'élément (synergie). Décrémente l'enduit.
+  let oilTxt = '';
+  const oil = (typeof weaponOil !== 'undefined' && weaponOil) ? weaponOil[currentBattleChar] : null;
+  if (oil && oil.power > 0 && enemy.currentHp > 0) {
+    let ob = oil.power;
+    if (enemy.resist && enemy.resist.includes(oil.element)) ob = Math.max(1, Math.floor(ob * RESIST_MULTIPLIER));
+    if (enemy.weak   && enemy.weak.includes(oil.element))   ob = Math.floor(ob * WEAK_MULTIPLIER);
+    const ocombo = (typeof comboDamageMult === 'function') ? comboDamageMult(enemy, oil.element) : { mult: 1, label: null };
+    if (ocombo.mult !== 1) ob = Math.max(1, Math.floor(ob * ocombo.mult));
+    enemy.currentHp -= ob;
+    const elemEmoji = { feu: '🔥', glace: '❄️', foudre: '⚡' }[oil.element] || '✨';
+    oilTxt = ` ${elemEmoji}+${ob}${ocombo.label ? ` ${ocombo.label}` : ''}`;
+    UX_safe.floatDmg(`enemy:${targetIdx}`, ob, 'dmg');
+    oil.turns--;
+    if (oil.turns <= 0) weaponOil[currentBattleChar] = null;
+  }
   const comboTxt = combo.label ? ` ${combo.label}` : '';
-  setBattleLog(`⚔️ ${char.name} frappe ${enemy.name} pour ${finalDmg} dégâts${isCrit?' (CRITIQUE !)':''}${comboTxt} !`);
+  setBattleLog(`⚔️ ${char.name} frappe ${enemy.name} pour ${finalDmg} dégâts${isCrit?' (CRITIQUE !)':''}${comboTxt}${oilTxt} !`);
   UX_safe.floatDmg(`enemy:${targetIdx}`, finalDmg, isCrit ? 'crit' : 'dmg');
   if (isCrit) CFX_safe.shake('light'); // crit phys → secousse (Lot 1)
   if (isCrit) HAPTICS_safe.crit(); else HAPTICS_safe.hit(); // haptique mobile (D1)
-  UX_safe.logCombat(`⚔️ <b>${char.name}</b> frappe ${enemy.name} : <b>−${finalDmg}</b>${isCrit?' 💥 CRIT':''}${comboTxt}`, isCrit?'magic':'good');
+  UX_safe.logCombat(`⚔️ <b>${char.name}</b> frappe ${enemy.name} : <b>−${finalDmg}</b>${isCrit?' 💥 CRIT':''}${comboTxt}${oilTxt}`, isCrit?'magic':'good');
   // Voix des héros — crit physique décisif (cosmétique, défensif).
   if (isCrit && typeof heroBark === 'function' && char && char.heroKey) heroBark(char.heroKey, 'crit');
   renderEnemyGroup();
@@ -1229,10 +1248,13 @@ function throwItemAoe(invIdx) {
 
   let total = 0;
   for (const { e, i } of targets) {
-    const { dmg } = _thrownPotionDamage(item, e);
-    e.currentHp -= dmg;
-    total += dmg;
-    UX_safe.floatDmg(`enemy:${i}`, dmg, 'dmg');
+    // P12 — poudre de contrôle pur (`power:0`) : aucun dégât, le statut prime.
+    const dmg = (item.power > 0) ? _thrownPotionDamage(item, e).dmg : 0;
+    if (dmg > 0) {
+      e.currentHp -= dmg;
+      total += dmg;
+      UX_safe.floatDmg(`enemy:${i}`, dmg, 'dmg');
+    }
     if (item.statusId && e.currentHp > 0 && typeof applyStatus === 'function') {
       const sp = (typeof item.statusPower === 'number') ? item.statusPower : Math.max(1, Math.floor((item.power || 0) * 0.25));
       applyStatus(e, item.statusId, sp, item.statusTurns || 3);
@@ -1245,9 +1267,15 @@ function throwItemAoe(invIdx) {
   }
   const statusTxt = item.statusId && typeof STATUS_DEFS !== 'undefined' && STATUS_DEFS[item.statusId]
     ? ` + ${STATUS_DEFS[item.statusId].label || item.statusId}` : '';
-  setBattleLog(`🧪 ${char.name} lance ${item.name} sur tout le groupe : ${total} dégâts au total${statusTxt} !`);
+  // Poudre de contrôle pur (0 dégât) : message centré sur le statut AoE.
+  if (item.power > 0) {
+    setBattleLog(`🧪 ${char.name} lance ${item.name} sur tout le groupe : ${total} dégâts au total${statusTxt} !`);
+    UX_safe.logCombat(`🧪 <b>${char.name}</b> disperse ${item.name} : <b>−${total}</b> sur ${targets.length} ennemis${statusTxt}`, 'magic');
+  } else {
+    setBattleLog(`💨 ${char.name} disperse ${item.name} sur tout le groupe${statusTxt} !`);
+    UX_safe.logCombat(`💨 <b>${char.name}</b> disperse ${item.name} sur ${targets.length} ennemis${statusTxt}`, 'magic');
+  }
   addMsg(`${char.name} lance ${item.name} (${targets.length} ennemis touchés).`, 'good');
-  UX_safe.logCombat(`🧪 <b>${char.name}</b> disperse ${item.name} : <b>−${total}</b> sur ${targets.length} ennemis${statusTxt}`, 'magic');
   renderEnemyGroup();
   updateUI();
   if (checkAllEnemiesDead()) return;

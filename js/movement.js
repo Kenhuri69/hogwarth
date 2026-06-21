@@ -103,6 +103,16 @@ function _step(dir, faceDir) {
     updateCompass();
     return;
   }
+  // Écho Temporel (P12) — mémorise l'état d'avant-pas (position + PV/PM) pour
+  // un éventuel rollback. Capturé ici : seuls les vrais déplacements comptent
+  // (le mur et la porte ont déjà court-circuité plus haut).
+  if (typeof _lastStepUndo !== 'undefined') {
+    _lastStepUndo = {
+      floor: currentFloor, x: playerX, y: playerY, dir: playerDir,
+      hp: party.slice(0, partySize).map(c => c.hp),
+      sp: party.slice(0, partySize).map(c => c.sp),
+    };
+  }
   playerX += dx; playerY += dy;
   visited[playerY][playerX] = true;
   stepCount++;
@@ -115,6 +125,8 @@ function _step(dir, faceDir) {
   if (restCooldown > 0) restCooldown--;
   // D5 — buff Félix Felicis (Fortune) : décrémenté à chaque pas d'exploration.
   if (typeof felixFortuneSteps === 'number' && felixFortuneSteps > 0) felixFortuneSteps--;
+  // Vision des Éclats (P12) — fouille aiguisée : décrémentée à chaque pas.
+  if (typeof visionSearchSteps === 'number' && visionSearchSteps > 0) visionSearchSteps--;
   if (typeof healSpellCooldown === 'number' && healSpellCooldown > 0) healSpellCooldown--;
   if (typeof _tickShopRestock === 'function') _tickShopRestock();
   AudioSystem.playFootstep();
@@ -240,6 +252,27 @@ function _step(dir, faceDir) {
 // Contrôles relatifs (avancer/reculer + rotation).
 function moveForward()  { _step(playerDir, true); }
 function moveBackward() { _step(_oppositeDir(playerDir), false); }
+
+// Écho Temporel (P12) — annule le dernier pas : restaure position + orientation
+// + PV/PM d'avant-pas. Refusé s'il n'y a pas de snapshot, ou s'il appartient à
+// un autre étage (pas de téléport inter-étages). Consomme le snapshot (1 seul
+// rollback). Retourne true si l'annulation a eu lieu.
+function _undoLastStep() {
+  const u = (typeof _lastStepUndo !== 'undefined') ? _lastStepUndo : null;
+  if (!u || u.floor !== currentFloor) return false;
+  playerX = u.x; playerY = u.y; playerDir = u.dir;
+  for (let i = 0; i < (partySize || 1); i++) {
+    const c = party[i];
+    if (!c) continue;
+    if (Array.isArray(u.hp) && typeof u.hp[i] === 'number') c.hp = Math.min(c.hpMax, u.hp[i]);
+    if (Array.isArray(u.sp) && typeof u.sp[i] === 'number') c.sp = Math.min(c.spMax, u.sp[i]);
+  }
+  _lastStepUndo = null;
+  if (typeof updateCompass === 'function') updateCompass();
+  if (typeof renderMinimap === 'function') renderMinimap();
+  if (typeof drawDungeon   === 'function') drawDungeon();
+  return true;
+}
 function turnLeft() {
   if (inBattle) return;
   playerDir = _rotateDir(playerDir, -1);

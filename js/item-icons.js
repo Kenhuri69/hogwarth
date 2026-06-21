@@ -647,6 +647,16 @@ const ITEM_ICON_SVG_REGISTRY = {
   vigueur_blaireau:   _potionSvg('cl_blai', 30, '#c89028', '#f0c75e', '#5a4020', true),
   // Corruption Contrôlée (Potions 2.0 — Lot P10) : violet ténébreux corrompu.
   potion_corruption_ctrl: _potionSvg('cl_corrc', 27, '#3a1a56', '#7a3a9d', '#1a0a2a', true),
+  // ── Formes utilitaires & contrôle (Potions 2.0 — Lot P12) ────────────────
+  // Vision = œil cristallin ambré ; Écho Temporel = sablier indigo scintillant ;
+  // huiles = fioles élémentaires ; poudres = fioles runiques à dispersion.
+  potion_vision:         _potionSvg('cl_vis', 30, '#2aa0b0', '#9fe8f0', '#caa84c', true),
+  potion_echo_temporel:  _potionSvg('cl_echo', 27, '#3a4ad0', '#9aa8f0', '#caa84c', true),
+  huile_feu:    _potionSvg('cl_hfeu', 33, '#d8501a', '#ff9050', '#5a3a1a'),
+  huile_givre:  _potionSvg('cl_hgiv', 33, '#2a90c8', '#8ad6f0', '#3a5a6a'),
+  huile_foudre: _potionSvg('cl_hfou', 33, '#c8a81a', '#f0e060', '#5a4a1a'),
+  poudre_stun:  _potionSvg('cl_pstun', 40, '#9a7ad8', '#d8c0ff', '#5a4a8a', true),
+  poudre_fear:  _potionSvg('cl_pfear', 40, '#7a3a9a', '#c87ad8', '#3a1a4a', true),
   // Éclat de Lumière (objet de quête — dumbledore_lumiere) : étoile de
   // clarté à 4 branches, halo doux. SVG inline (pas de PNG dédié).
   eclat_lumiere: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="21" fill="#fff3b0" opacity="0.28"/><path d="M32 5 L38 26 L59 32 L38 38 L32 59 L26 38 L5 32 L26 26 Z" fill="#ffe98a"/><path d="M32 15 L36 28 L49 32 L36 36 L32 49 L28 36 L15 32 L28 28 Z" fill="#fff7d8"/><circle cx="32" cy="32" r="3.6" fill="#ffffff"/></svg>`,

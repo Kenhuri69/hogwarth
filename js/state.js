@@ -556,6 +556,19 @@ let spellCorruption         = 0;
 // (inventory.js). SÉRIALISÉE (clé save `wardCharges`). Persistante (non
 // combat-scoped) : la garde tient jusqu'à ce qu'elle serve.
 let wardCharges             = 0;
+// Huile d'arme active par personnage (Potions 2.0 — Lot P12 §1.5/§2.5).
+// `weaponOil[idx] = { element, power, turns }` | null. Combat-scoped (reset
+// startBattle, NON sérialisé — comme celeriteGauge). Lue par executeAttack.
+let weaponOil               = [null, null];
+// Écho Temporel (Potions 2.0 — Lot P12) — garde 1×/combat de l'action sup.
+// Combat-scoped (reset startBattle, NON sérialisé).
+let temporalEchoUsed        = false;
+// Vision des Éclats (Potions 2.0 — Lot P12) — pas de fouille aiguisée restants.
+// Décrémenté à chaque pas (movement.js — _step). SÉRIALISÉ (clé `visionSearchSteps`).
+let visionSearchSteps       = 0;
+// Écho Temporel hors combat — snapshot du dernier pas (position + PV/PM), pour
+// l'annulation. Transitoire (NON sérialisé, reset par pas/étage/partie).
+let _lastStepUndo           = null;
 // Ateliers d'alchimie débloqués (Potions 2.0 — Lot P11 §1.9/§2.2).
 //   0 = aucun · 1 = Chaudron de Slughorn · 2 = Chaudron des Ruines (endgame).
 // Monotone croissant (max des ateliers ouverts). Pilote le bonus de jet de

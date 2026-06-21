@@ -546,6 +546,9 @@ async function startGame(count = 2) {
   gardenDiscovered = false;
   // Ateliers d'alchimie (Potions 2.0 P11) — état neuf : aucun atelier débloqué.
   if (typeof workshopLevel !== 'undefined') workshopLevel = 0;
+  // Formes P12 — état neuf : fouille aiguisée + snapshot d'annulation remis à zéro.
+  if (typeof visionSearchSteps !== 'undefined') visionSearchSteps = 0;
+  if (typeof _lastStepUndo !== 'undefined') _lastStepUndo = null;
   visitedFloors = new Set([1]);
   seenScriptedBeat = new Set();   // étages-scènes (P5) — beats neufs à chaque partie
   totalKills     = 0;

@@ -583,6 +583,16 @@ function _applyConsumableEffect(item, target) {
   else if (item.effect === 'ward_charge') {
     if (typeof wardCharges === 'number') wardCharges += (item.power || 1);
   }
+  // ── Huile d'arme (Potions 2.0 — Lot P12, §1.5/§2.5) ────────────
+  // Enduit l'arme du buveur : ses attaques PHYSIQUES infligent un bonus
+  // élémentaire `power` pendant `turns` attaques (lu par executeAttack). En
+  // combat seulement (combat-scoped `weaponOil[idx]`, gaté par useItem).
+  else if (item.effect === 'weapon_oil') {
+    const idx = party.indexOf(target);
+    if (idx >= 0 && typeof weaponOil !== 'undefined') {
+      weaponOil[idx] = { element: item.element || 'feu', power: item.power || 6, turns: item.turns || 4 };
+    }
+  }
   // 'stat_boost' (Pierre d'Âme) est intercepté en amont par useItem →
   // _openStatBoostMenu (modale de choix de stat). Ne devrait jamais
   // arriver ici, mais no-op par sécurité.
@@ -938,6 +948,51 @@ function useItem(idx, battleMode) {
     felixFortuneSteps = (typeof FELIX_STEPS === 'number') ? FELIX_STEPS : 40;
     addMsg(`${item.name} : une chance insolente t'enveloppe (${felixFortuneSteps} pas).`, 'magic');
     _consumeAt(idx, 1);
+    updateUI();
+    closeModal('inventory-modal');
+    return;
+  }
+
+  // Huile d'arme (P12) — enduit de combat : à appliquer en combat (l'état
+  // weaponOil est combat-scoped). Hors combat = refus explicite.
+  if (item.effect === 'weapon_oil' && !(battleMode && inBattle)) {
+    addMsg(`${item.name} : à appliquer sur l'arme en plein combat.`, '');
+    return;
+  }
+
+  // Vision des Éclats (P12) — révèle l'étage + aiguise la fouille N pas. Hors combat.
+  if (item.effect === 'reveal_treasures') {
+    if (battleMode || inBattle) { addMsg(`${item.name} : à boire hors combat.`, ''); return; }
+    const revealed = (typeof _revealFloorTreasures === 'function') ? _revealFloorTreasures() : 0;
+    if (typeof visionSearchSteps === 'number') visionSearchSteps = (item.power || 20);
+    addMsg(`🔮 ${item.name} — l'étage se dévoile (${revealed} secret${revealed > 1 ? 's' : ''}) ; ta fouille s'aiguise (${visionSearchSteps} pas).`, 'magic');
+    if (typeof DFX_safe !== 'undefined') DFX_safe.burst('game-container', 'gold');
+    _consumeAt(idx, 1);
+    updateUI();
+    closeModal('inventory-modal');
+    return;
+  }
+
+  // Écho Temporel (P12) — dual-mode. En combat : action immédiate 1×/combat
+  // (ne consomme PAS le tour, pas de contre-attaque). Hors combat : annule le
+  // dernier pas (position + PV/PM).
+  if (item.effect === 'temporal_echo') {
+    if (battleMode && inBattle) {
+      if (temporalEchoUsed) { addMsg(`${item.name} : le flux temporel s'est déjà replié ce combat.`, ''); return; }
+      temporalEchoUsed = true;
+      _consumeAt(idx, 1);
+      addMsg(`⏳ ${item.name} — tu reprends un instant au destin : agis de nouveau !`, 'magic');
+      UX_safe.combatBanner('⏳ Écho Temporel', 'tenaille');
+      updateUI();
+      closeModal('inventory-modal');
+      return; // tour conservé : le héros actif rejoue
+    }
+    if (typeof _undoLastStep !== 'function' || !_undoLastStep()) {
+      addMsg(`${item.name} : aucun pas récent à annuler ici.`, '');
+      return;
+    }
+    _consumeAt(idx, 1);
+    addMsg(`⏳ ${item.name} — le dernier pas se défait, le temps reflue.`, 'magic');
     updateUI();
     closeModal('inventory-modal');
     return;
