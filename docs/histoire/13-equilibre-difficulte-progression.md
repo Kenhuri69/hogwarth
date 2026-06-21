@@ -453,122 +453,361 @@ d'escalade** ([04 §4.3](04-structure-actes-et-etages.md)).
 
 ## 13.5 Simulations de validation
 
-> Méthode : Monte-Carlo `tools/sim-difficulty.js` (600-800 combats/étage/mode) sur
-> les formules réelles + lecture *« run d'étage »* (4 salles, attrition). Les
-> chiffres ci-dessous sont **mesurés** (`DIFFICULTY_REPORT.md`,
-> `DIFFICULTY_STUDY.md`) ; les « scénarios » ci-dessous les *narrativisent*.
+> **Méthode (à reproduire).** Toutes les courbes ci-dessous sont **mesurées** par
+> Monte-Carlo sur `tools/sim-difficulty.js` (le sim rejoue les formules réelles de
+> `battle*.js`/`dungeon-scaling.js`/`data.js`), **N = 600 combats par couple
+> (étage, mode)**, modèle **rework D1–D5 live** (jeu actuel). Chaque simulation
+> donne sa **commande exacte** : elles sont rejouables à l'identique. Les colonnes :
+> *Win %* = victoire sur un combat isolé (mesuré) ; *Clear* = probabilité estimée
+> de **vider l'étage entier** (4 combats enchaînés avec attrition — `Win⁴` corrigé
+> du report de PV, modèle de `DIFFICULTY_STUDY.md §9`) ; *Ressenti* = lecture
+> qualitative. Bruit Monte-Carlo à N=600 : SE ≈ ±2 pts.
+>
+> Six scénarios couvrent la matrice {Maison × mode × phase × investissement} :
+> 1️⃣ Gryffondor Solo classique · 2️⃣ Serpentard Duo optimisé · 3️⃣ Serdaigle
+> exploration/Codex · 4️⃣ Boucle Ténébreuse niveau 3 · 5️⃣ « tout collecté » ·
+> 6️⃣ pire scénario.
 
-### Simulation 1 — Run Gryffondor solo, étages 1–8 (Normal)
+---
 
-> Commande de référence : `node tools/sim-difficulty.js --difficulty=Normal --build=balanced 800`
+### Simulation 1 — Run Gryffondor Solo classique (étages 1–10, Normal)
 
-**Déroulé mesuré :**
+> `node tools/sim-difficulty.js --difficulty=Normal --build=balanced 600`
 
-| Étage | Niv. | Win % combat | Clear d'étage | Ressenti |
-|------:|-----:|:------------:|:-------------:|----------|
-| 1–4 | 1→6 | 100 % | 98-100 % | 🟢 prise en main fluide |
-| 5 | 8 | 96 % | 81 % | 🟢 premiers vrais échanges |
-| 6 | 8 | 87 % | **43 %** | 🟡 l'attrition mord |
-| 7 | 9 | 87 % | **34 %** | 🟠 entrée des Profondeurs, Solo sous pression |
-| 8 | 9 | 72 % | **11 %** | 🟠 mur de clear-d'étage Solo |
+**Hypothèses** — Harry seul, build `balanced` (1 STR / 1 AGI / 1 END par niveau),
+quêtes principales acceptées (XP nominale), équipement boutique/coffre **sans**
+artefacts ni systèmes endgame. Sorts : montée standard (Stupefix→Diffindo). Pas de
+farming dédié (on descend dès l'étage nettoyé).
 
-- ✅ **Points forts** : courbe lisse, aucun spike ; le profil Gryffondor (LCK
-  élevé → crit physique) brille en combat isolé ; sentiment net de descente.
-- ⚠️ **Points de frustration** : l'écart combat-isolé (87 %) vs clear-d'étage
-  (43 % à l'étage 6) peut **surprendre** un joueur Solo qui « gagne tous ses
-  combats » mais meurt sur l'étage. La fontaine de l'étage 8 arrive *après* le
-  pic d'attrition de l'étage 6-7.
-- 💡 **Ajustements recommandés** : (1) **signal UI** du niveau de visite / état
-  d'attrition (proposé en [G8](../gameplay/G8-difficulte-scaling.md)) ; (2) inciter
-  le Solo à descendre plutôt qu'à poncer (le grind densifie *contre* lui) ; (3)
-  garder la fontaine de l'étage 5 comme respiration avant la crête.
+**Courbe de difficulté ressentie (mesurée) :**
 
-### Simulation 2 — Run Serpentard duo (Normal)
+| Étage | Niv. | Win % combat | Clear d'étage (est.) | Ressenti |
+|------:|-----:|:------------:|:--------------------:|----------|
+| 1–4 | 1→6 | 100 % | 98–100 % | 🟢 prise en main fluide |
+| 5 | 8 | **97 %** | ~84 % | 🟢 premiers vrais échanges (49 PV subis moy.) |
+| 6 | 8 | **87 %** | ~43 % | 🟡 l'attrition mord (106 PV subis moy.) |
+| 7 | 9 | **87 %** | ~34 % | 🟠 entrée des Profondeurs, Solo sous pression |
+| 8 | 9 | **72 %** | ~11 % | 🟠 mur de clear-d'étage Solo |
+| 9 | 10 | **65 %** | faible | 🟠 difficile — farming/équipement attendus |
+| 10 | 10 | **59 %** | faible | 🟠 climax Voldemort — le Solo nu décroche |
 
-**Déroulé mesuré :**
+- ✅ **Pics de plaisir** : montée fluide 1→5 (le LCK 15 de Harry fait briller le
+  crit physique en combat isolé) ; sensation nette et *progressive* de descente ;
+  aucun spike (`§5` du rapport : « aucun spike détecté »). Le combat isolé reste
+  gagnable (≥ 59 %) **partout** jusqu'à l'étage 10 → le joueur ne se sent jamais
+  « bloqué porte close », seulement *pressé*.
+- ⚠️ **Frustration / ennui** : le **grand écart combat-isolé (87 %) vs
+  clear-d'étage (43 %)** à l'étage 6 peut **dérouter** — le joueur « gagne tous ses
+  combats » mais meurt sur l'étage par accumulation. La fontaine suivante (étage 8)
+  arrive *après* le pic d'attrition 6–7. Risque d'**ennui inverse** s'il ponce
+  l'étage : le grind le densifie *contre* lui (`floorKillCount`).
+- 💡 **Ajustements concrets** : (1) ✅ **indicateur d'attrition** (implémenté, P1 —
+  étiquette narrative « maîtrisé→hostile » dérivée de `floorKillCount`) pour
+  expliquer la chute ; (2) **conserver** la fontaine de l'étage 5 comme respiration
+  avant la crête ; (3) *ne PAS* nerfer les étages 6–10 — le combat isolé reste sain,
+  c'est le clear-Solo qui est volontairement exigeant (pénalité Solo, §13.3.2).
 
-| Étage | Niv. | Win % combat | Clear d'étage | Ressenti |
-|------:|-----:|:------------:|:-------------:|----------|
-| 1–6 | 1→8 | 100 % | 95-100 % | 🟢 confortable, deux corps absorbent |
-| 7 | 9 | 98 % | 69 % | 🟢→🟡 trios apparaissent (ét. 7+) |
-| 8 | 10 | 92 % | 44 % | 🟡 attrition à deux, soigneuse sollicitée |
-| 9 | 10 | 77 % | 10 % | 🟠 tendu, le farming devient utile |
-| 10 | 11 | 74 % | 8 % | 🟠 climax Voldemort — modif. signature 🐍 (lifesteal/debuff) aide |
+---
 
-- ✅ **Points forts** : le Duo lisse l'attrition (Hermione soigne, set Maison +
-  set Ténèbres répartis) ; le profil Serpentard (MAG) exploite faiblesses
-  élémentaires ; trios différés à l'étage 7 = montée *pile* à l'entrée des
-  Profondeurs.
-- ⚠️ **Points de frustration** : le clear-d'étage chute fort à l'étage 9 (10 %)
-  *sans* systèmes endgame ni farming — un Duo « boutique pure » heurte un mur
-  réel avant le climax.
-- 💡 **Ajustements recommandés** : la signature 🐍 (`slythPactChoice`) doit rester
-  un **vrai choix tactique** au climax ; vérifier que la quête de set ouvre assez
-  tôt (Maître Or) pour donner la 4ᵉ pièce avant la Boucle.
+### Simulation 2 — Run Serpentard Duo optimisé (étages 1–12, Normal)
 
-### Simulation 3 — Boucle 3 (étages 21–30, Duo, post-victoire)
+> `node tools/sim-difficulty.js --difficulty=Normal --build=balanced --artifacts --house-set=serpentard 600`
 
-> Commande : `node tools/sim-difficulty.js --difficulty=Normal --endgame --bonus-levels=25 --artifacts --forge=5 --library=3 --house-set=Gryffondor --tenebres-set 800`
+**Hypothèses** — Harry + Hermione. **Build de Maison assumé** : profil MAG, set
+Serpentard (sort-crit) sur Hermione, **artefacts actifs équipés** (burst élémentaire
++ purge + bouclier de groupe), potions de combat disponibles. Le joueur exploite les
+**faiblesses élémentaires** (Glacius/Incendio/Fulgari selon résistance) et la
+**posture Tenaille** (focus-fire +15 %).
 
-**Déroulé mesuré** (`DIFFICULTY_STUDY.md §8`) :
+**Courbe de difficulté ressentie (mesurée, Duo) :**
 
-| Étage | Sans farming | Duo +25 niv | Kit complet (niv+artefacts+Forge 5+Biblio 3+sets) |
-|------:|:------------:|:-----------:|:--------------------------------------------------:|
-| 20 | 70 % | 99 % | ~100 % |
-| 25 | 40 % | 92 % | ~90 % |
-| 30 | 26 % | 85 % | 88-100 % |
+| Étage | Niv. | Win % combat | Clear d'étage (est.) | Ressenti |
+|------:|-----:|:------------:|:--------------------:|----------|
+| 1–6 | 1→8 | 100 % | 96–100 % | 🟢 confortable, deux corps absorbent |
+| 7 | 9 | **100 %** | ~92 % | 🟢 trios (ét. 7+) absorbés par les artefacts |
+| 8 | 10 | **100 %** | ~88 % | 🟢 burst élémentaire = combats courts (5 tours) |
+| 9 | 10 | **97 %** | ~78 % | 🟢→🟡 tendu sur les boss, soigneuse sollicitée |
+| 10 | 11 | **96 %** | ~74 % | 🟡 climax Voldemort — signature 🐍 (lifesteal/debuff) |
+| 11 | 11 | **88 %** | ~58 % | 🟡 entrée Boucle — densité quad/quint |
+| 12 | 12 | **86 %** | ~52 % | 🟡 maîtrisé tant que le kit suit |
 
-- ✅ **Points forts** : la Boucle est un **gate infini farmable** cohérent ; à
-  Boucle 3, le kit complet maintient le confort ; les paliers Apothéose/★ N
-  donnent un objectif de prestige illimité (don à la Maison = gold-sink).
-- ⚠️ **Points de frustration** : **aucune progression passive** en endgame
-  (`xpNext × 1.6` compose plus vite que l'XP gagnée) — descendre *sans farmer*
-  heurte un mur réel vers l'étage 19-21. C'est un **choix de design assumé**
-  (roguelike), mais surprenant pour qui a traversé la trame principale en
-  sur-leveling passif.
-- ✅ **Implémenté (P2)** : on a retenu l'**XP passive de Boucle**
-  (`LOOP_PASSIVE_XP_FRAC = 0.45`, `data.js`) — un axe de progression *additif*
-  (règle §13.6 #6 : on ne touche pas au scaling), crédité par étage de Boucle
-  le plus profond franchi (anti-farm). Mesure : le mur de l'étage 19-21
-  s'adoucit (ét. 20 Duo 63 → 76 %, Solo 48 → 63 %) **sans trivialiser** le deep
-  endgame (ét. 30 reste ≤ 36 % sans farming, qui garde toute sa valeur). Cf.
-  `DIFFICULTY_STUDY.md §8.8`. Le pivot du P1 (toast *« la puissance se gagne »*)
-  reste vrai : la passive est un filet, pas une rente.
+> 📊 **Mesure de synergie** : à l'étage 10, le Duo optimisé tient **96 %** vs
+> **83 %** pour le Duo baseline (Sim 1 étendue). L'apport **artefacts + set
+> Serpentard ≈ +13 pts** de win-rate au climax, et raccourcit les combats
+> (8,3 tours → 8,3 mais avec 84 % PV restants vs 76 %). La synergie
+> *« élément vs faiblesse + posture Tenaille + artefact burst »* est le cœur du
+> plaisir Serpentard.
 
-### Simulation 4 — Cas extrême : toutes quêtes signature + max Éclats + kit endgame
+- ✅ **Pics de plaisir** : combats **courts et explosifs** (le burst élémentaire +
+  focus-fire liquide les groupes) ; le pari MAG est **récompensé** ; au climax, le
+  choix tactique de la signature 🐍 (`slythPactChoice` : lifesteal **ou** debuff)
+  est un vrai moment de décision.
+- ⚠️ **Frustration** : risque de **redondance** si le joueur spamme un seul sort
+  élémentaire — la diversité (résistances variées par monstre) doit l'y forcer.
+  Sans artefacts ni set (Duo « boutique pure »), le mur réapparaît dès l'étage 9
+  (clear ~10 %, cf. Sim 1) : la *récompense de l'optimisation* doit rester lisible.
+- 💡 **Ajustements concrets** : (1) **garder** la signature 🐍 comme choix (ne pas la
+  rendre auto) ; (2) vérifier que la **quête de set** ouvre assez tôt (Maître Or)
+  pour livrer la 4ᵉ pièce avant la Boucle ; (3) `❓` surveiller que le Duo optimisé
+  ne **trivialise pas** l'Acte II–III (ét. 1–8 = 100 %) — c'est acceptable (le
+  joueur a *investi*), mais à monitorer si l'on ajoute d'autres sources de burst.
 
-**Hypothèse** : joueur Duo « complétionniste » — signature de Maison terminée
-(modif. one-shot au climax), 3 Éclats collectés, palier Apothéose (18) atteint,
-Forge 5 / Biblio 3 / sets 4/4 répartis, ~30 niveaux farmés.
+---
 
-- ✅ **Points forts (mesurés/extrapolés)** : au climax (étage 10), la signature
-  neutralise/atténue une phase de boss → quasi-100 % ; en Boucle profonde, le
-  passif d'Apothéose (Élan / Soif / Esprit / Souffle) + sets crit (post-refonte,
-  non gaspillés) maintiennent le confort jusqu'à l'étage 30+.
-- ⚠️ **Points de frustration** : risque de **trivialisation** du climax si la
-  signature + le sur-leveling se cumulent — le combat-événement le plus important
-  du jeu pourrait être *trop* facile pour un complétionniste.
-- 💡 **Ajustements recommandés** : (1) la signature étant **one-shot et
-  bénéfique**, elle est saine — ne pas la nerf ; (2) vérifier que **Voldemort
-  garde ses phases** (enrage 50 %, terreur 25 %) même avec la signature 🦁 (qui ne
-  *neutralise que* la terreur, pas l'enrage) ; (3) **ne PAS** ajouter
-  `eclatPowerBoost` (§13.3.4) : empiler un bonus d'Éclats sur ce profil
-  accentuerait la trivialisation. Les Éclats doivent rester narratifs.
+### Simulation 3 — Run Serdaigle focus exploration / Codex (étages 1–10, Duo)
 
-### 13.5.1 Synthèse des simulations
+> `node tools/sim-difficulty.js --difficulty=Normal --build=balanced --house-set=serdaigle --bonus-levels=2 600`
+> *(`--bonus-levels=2` modélise l'avance de niveau d'un joueur qui fouille tout,
+> résout les énigmes et accepte toutes les quêtes annexes.)*
 
-| Scénario | Verdict global | Action recommandée |
-|----------|----------------|--------------------|
-| Gryff Solo 1–8 | ✅ sain, mais écart combat/clear surprenant | Signal UI d'attrition (💡) |
-| Serp Duo | ✅ confortable, mur ét. 9 sans endgame | RAS (farming = réponse prévue) |
-| Boucle 3 | ✅ gate farmable tenable ; mur ét. 19-21 adouci par l'XP passive (P2) | Pivot communiqué (toast P1) + XP passive de Boucle ✅ (P2) |
-| Cas extrême | ✅ sain, léger risque de trivialisation climax | Garder phases boss ; refuser `eclatPowerBoost` |
+**Hypothèses** — Harry + Hermione, profil Serdaigle (MAG/AGI, set sort-crit),
+**joueur explorateur** : fouille systématique (XP + or + livres de sorts), résout
+les stèles d'énigme, complète le Codex. **Pas d'artefacts** (l'explorateur
+privilégie l'ampleur à l'optimisation de combat). Effet net : il arrive à chaque
+étage **~1–2 niveaux au-dessus** du joueur « rusher » + dispose de plus de sorts.
 
-> ✅ **Conclusion d'ensemble** (alignée sur `DIFFICULTY_STUDY.md §1, §7`) : *« la
-> courbe est saine »*. **Aucun correctif de scaling n'est requis.** Le seul mur —
-> le clear-d'étage Solo de milieu/fin de partie — est **intentionnel** et se
-> franchit par la progression. Les rares ajustements proposés sont **cosmétiques
-> ou de communication** (signaux, toasts), pas d'équilibrage.
+**Courbe de difficulté ressentie (mesurée) :**
+
+| Étage | Niv. | Win % Solo | Win % Duo | Ressenti |
+|------:|-----:|:----------:|:---------:|----------|
+| 5 | 10 | 99 % | 100 % | 🟢 l'avance de niveau paie |
+| 6 | 10 | 95 % | 100 % | 🟢 confortable, sorts variés |
+| 7 | 11 | 93 % | 100 % | 🟢 trios gérés par le sur-niveau |
+| 8 | 11 | 87 % | 99 % | 🟢 Duo serein |
+| 9 | 12 | 85 % | 95 % | 🟢→🟡 boss tendus mais tenables |
+| 10 | 12 | **74 %** | **93 %** | 🟡 climax — Duo confortable (vs 83 % baseline) |
+
+> 📊 **Mesure de synergie** : le sur-niveau d'exploration (+2 niv) lève le Solo de
+> **59 → 74 %** et le Duo de **83 → 93 %** à l'étage 10. **L'exploration est un
+> *vrai* levier de difficulté** — via l'XP/l'or/les livres qu'elle rapporte, **pas**
+> via le Codex lui-même.
+
+- ✅ **Pics de plaisir** : sentiment de **maîtrise** (on entre « préparé »
+  partout) ; déverrouillage du Codex = récompense de curiosité ; le profil
+  Serdaigle (AGI → Célérité + sort-crit) donne des **tours bonus** gratifiants.
+- ⚠️ **Frustration / ennui** : risque d'**ennui de sur-leveling** — si l'exploration
+  rend l'Acte I–II *trop* faciles (Duo 100 % jusqu'à l'étage 8), la tension
+  narrative s'émousse. ❓ **Point de vigilance** : le Codex étant **cosmétique**
+  (aucune puissance), l'explorateur ne doit pas *croire* qu'il « doit » tout
+  compléter pour survivre — sinon corvée. Le message doit rester *« explore par
+  plaisir, pas par nécessité »*.
+- 💡 **Ajustements concrets** : (1) **garder le Codex cosmétique** (ancrage narratif,
+  pas gate de puissance — cohérent avec le refus de `eclatPowerBoost`, §13.3.4) ;
+  (2) `❓` envisager des **entrées Codex qui *valorisent* l'exploration sans la
+  rendre obligatoire** (lore, bestiaire complété) plutôt qu'un bonus de stat ;
+  (3) rien à corriger côté scaling : le sur-niveau est un choix de jeu *légitime*
+  que la difficulté absorbe sainement.
+
+---
+
+### Simulation 4 — Run en Boucle Ténébreuse niveau 3 (étages 21–30, post-victoire)
+
+> Nu : `node tools/sim-difficulty.js --difficulty=Normal --endgame --max-floor=30 600`
+> Avec XP passive : ajouter `--bonus-levels=25 --loop-xp-frac=0.45`
+
+**Hypothèses** — partie post-victoire, **3ᵉ palier de Boucle** (`n=3`, étages
+21–30 → `endgameTierIndex = 2`→`3`). Deux profils comparés : **(A) joueur nu**
+(descend sans farmer, niveau ~12–16) ; **(B) joueur farmé** (+25 niveaux, XP passive
+de Boucle active).
+
+**Courbe de difficulté ressentie (mesurée, Duo) :**
+
+| Étage | (A) Nu — Win % | (B) +25 niv & XP passive — Win % | Ressenti |
+|------:|:--------------:|:--------------------------------:|----------|
+| 20 | 62 % | 100 % | charnière de palier (fin Boucle 2) |
+| 21 | **27 %** | 96 % | 🔴(A) cliff de palier (n:2→3) / 🟢(B) |
+| 25 | 28 % | ~97 % (kit) | 🔴(A) mur dur / 🟡(B) tendu mais tenable |
+| 30 | 23 % | ~94 % (kit) | 🔴(A) infranchissable nu / 🟡(B) maîtrisé |
+
+> 📊 **Mesure** : le **cliff 20→21** (Duo nu 62 → 27 %) matérialise le **passage de
+> palier** (`×~1.5` de puissance ennemie d'un coup). C'est **voulu** : la Boucle est
+> un *gate farmable*, pas une pente continue. L'**XP passive de Boucle** (P2,
+> `LOOP_PASSIVE_XP_FRAC = 0.45`) adoucit le bord : à l'étage 21, +25 niv passe de
+> **79 → 85 %** (Solo) / **93 → 96 %** (Duo) — *sans* trivialiser (le joueur nu
+> reste mur, le farming garde sa valeur).
+
+- ✅ **Pics de plaisir** : objectif de **prestige illimité** (Apothéose → ★ N, don à
+  la Maison = gold-sink) ; chaque palier franchi *rouvre une marge confortable* →
+  boucle d'auto-dépassement. Le kit complet (Sim 5) **valide** que l'investissement
+  paie jusqu'à l'étage 30+.
+- ⚠️ **Frustration** : le **cliff de palier** (20→21) peut surprendre — *« je tenais
+  à 62 %, soudain 27 % »*. Sans communication, c'est lu comme un bug. Le joueur **nu**
+  doit comprendre qu'**ici la puissance se gagne** (elle ne « tombe » plus).
+- ✅/💡 **Ajustements concrets** : (1) ✅ **toast de pivot endgame** (P1, *« Ici, la
+  puissance se gagne — elle ne tombe plus »*, one-shot sérialisé) communique le
+  contrat ; (2) ✅ **XP passive de Boucle** (P2) transforme le mur en pente franchissable ;
+  (3) `❓` *facultatif* : lisser le cliff de palier en répartissant `scalDelta` sur 2–3
+  étages plutôt qu'en bloc (à valider à la sim — ne pas baisser la puissance cible,
+  juste sa *marche*).
+
+---
+
+### Simulation 5 — Run « tout collecté » (max Éclats + quêtes signature + kit endgame)
+
+> `node tools/sim-difficulty.js --difficulty=Normal --endgame --max-floor=30 --bonus-levels=25 --artifacts --forge=5 --library=3 --house-set=gryffondor --tenebres-set 600`
+
+**Hypothèses** — joueur Duo **complétionniste** : signature de Maison terminée
+(modif. one-shot au climax), **3 Éclats** collectés (narratifs), palier **Apothéose
+(18)** atteint (passif légendaire actif), **Forge 5 / Bibliothèque 3 / sets 4-4
+répartis** (Harry → set Maison, Hermione → set Ténèbres), ~25–30 niveaux farmés,
+artefacts Premium équipés.
+
+**Courbe de difficulté ressentie (mesurée, Duo, Boucle 3) :**
+
+| Étage | Win % Solo | Win % Duo | PV restants Duo | Ressenti |
+|------:|:----------:|:---------:|:---------------:|----------|
+| 20 | 100 % | 100 % | 94 % | 🟢 domination totale |
+| 21 | 94 % | 99 % | 89 % | 🟢 cliff de palier absorbé par le kit |
+| 25 | 91 % | 97 % | 85 % | 🟢 confort maintenu |
+| 30 | 84 % | 94 % | 82 % | 🟢→🟡 reste un *léger* défi (sain) |
+
+> 📊 **Mesure** : le **kit complet** maintient le Duo à **94–100 %** et le Solo à
+> **84–100 %** sur tout le palier 3 — là où le joueur **nu** plafonne à **12–27 %**
+> (Sim 4). C'est la **preuve chiffrée** que les 4 axes de farming (niveau +
+> réputation + Forge + Biblio + sets) *fonctionnent* comme antidote au scaling.
+
+- ✅ **Pics de plaisir** : aboutissement du build — chaque système (artefact, set
+  crit non gaspillé post-refonte, passif d'Apothéose Élan/Soif/Esprit/Souffle)
+  **compose** ; sentiment de **toute-puissance méritée** ; objectif ★ N infini.
+- ⚠️ **Frustration / risque de trivialisation** : au **climax (étage 10)**, signature
+  *plus* sur-leveling *plus* kit peuvent rendre le combat-événement majeur **trop
+  facile** (quasi-100 %) — le « boss du jeu » perd son poids pour le complétionniste.
+  Les **Éclats** n'ajoutent **aucune** puissance (volontaire) : ils ne creusent pas
+  ce risque.
+- 💡 **Ajustements concrets** : (1) **garder** la signature one-shot et bénéfique
+  (saine) ; (2) **vérifier que Voldemort conserve ses phases** (enrage 50 %, terreur
+  25 %) même sous signature 🦁 (qui ne neutralise *que* la terreur) — la trame ne
+  doit pas s'effondrer ; (3) ✅ **refuser `eclatPowerBoost`** (§13.3.4) : empiler un
+  bonus d'Éclats sur ce profil **aggraverait** la trivialisation ; les Éclats restent
+  narratifs ; (4) `❓` *si* la trivialisation du climax dérange en playtest, préférer
+  une **phase de boss supplémentaire gated par le sur-niveau** plutôt qu'un nerf des
+  aides du joueur.
+
+---
+
+### Simulation 6 — Cas extrême / pire scénario (mauvais choix + mort fréquente)
+
+> `node tools/sim-difficulty.js --difficulty=Expert --pessimistic --build=balanced 600`
+> *(`--pessimistic` = aucune quête (donc **sous-niveau**), aucun équipement, aucune
+> potion — le profil « je fonce sans rien préparer », aggravé par le réglage Expert.)*
+
+**Hypothèses** — joueur qui **cumule les mauvais choix** : difficulté **Expert**
+(×1.45 stats, ×1.65 groupes, éco famélique), **ignore les quêtes** (reste
+sous-leveled), **ne s'équipe pas**, **n'utilise pas de potions**, et — côté
+narratif — un *« mauvais alignement de Maison »* (joue un profil de stat que sa
+Maison ne récompense pas, p. ex. un build physique en Serdaigle). Morts répétées →
+pétrification/`resurrect` (standard) ou permadeath (Ironman).
+
+**Courbe de difficulté ressentie (mesurée) :**
+
+| Étage | Niv. | Win % Solo | Win % Duo | Ressenti |
+|------:|-----:|:----------:|:---------:|----------|
+| 1–2 | 1 | 100 % | 100 % | 🟢 trompeusement calme |
+| 3 | 2 | 65 % | 98 % | 🟡 Solo décroche déjà (sous-niveau) |
+| 5 | 4 | **22 %** | 76 % | 🔴 Solo punitif / 🟡 Duo tendu |
+| 6 | 5 | 19 % | 64 % | 🔴 / 🟠 |
+| 7 | 6 | **10 %** | 30 % | 🔴 effondrement Solo, Duo bascule |
+| 8 | 7 | 2 % | 13 % | 🔴 quasi-mortel |
+| 10 | 9 | **0 %** | 3 % | 🔴 infranchissable |
+
+> 📊 **Mesure** : le pire scénario s'effondre dès l'**étage 5 en Solo (22 %)** et
+> l'**étage 7 en Duo (30 %)**. La cause **n°1 n'est pas le scaling** mais le
+> **sous-niveau** (niveau 4 à l'étage 5 au lieu de 8) : ignorer les quêtes prive de
+> ~50 % de l'XP attendue. Expert *amplifie* mais le **mauvais build/équipement** est
+> le facteur dominant.
+
+- ✅ **Ce qui va bien (design)** : le jeu **punit la négligence sans piéger** —
+  l'effondrement est **progressif** (pas de mort surprise à l'étage 1) et **chaque
+  cause est réparable** (accepter les quêtes, s'équiper, ajuster le build à sa
+  Maison). En standard, la pétrification évite le game-over dur → on apprend de
+  l'échec. Le Duo « rattrape » plus longtemps (mur étage 7 vs 5) → la coopération
+  est récompensée.
+- ⚠️ **Frustration réelle** : un débutant en **Expert** peut se croire face à un mur
+  injuste alors qu'il a juste **sauté les systèmes**. Risque d'**abandon** s'il
+  n'identifie pas la cause. Le *« mauvais choix de Maison »* (build off-profil)
+  n'est **pas** puni par le code (équité stricte) mais par l'**inefficacité** : le
+  joueur ne *voit* pas pourquoi son build patine.
+- 💡 **Ajustements concrets** : (1) **garde-fou d'onboarding** — déconseiller Expert
+  au 1ᵉʳ run (info-bulle à la sélection de difficulté) ; (2) ✅ **toasts d'attrition**
+  + suggestion contextuelle *« des quêtes t'attendent »* si le joueur est sous-leveled
+  de ≥ 2 niveaux (💡 à implémenter, cosmétique) ; (3) **ne PAS** nerfer Expert : c'est
+  un mode assumé, compensé au classement (Ironman ×1.8) ; (4) `❓` envisager un
+  **panneau « profil de Maison »** dans la fiche perso qui *montre* quel build sa
+  Maison récompense (orientation, pas contrainte) — adresse le « mauvais alignement »
+  par la pédagogie, pas par la mécanique.
+
+---
+
+### 13.5.1 Synthèse des 6 simulations
+
+| # | Scénario | Commande clé | Verdict | Action |
+|--:|----------|--------------|---------|--------|
+| 1 | Gryffondor Solo classique | `--build=balanced` | ✅ sain ; écart combat/clear surprenant | Indicateur d'attrition ✅ (P1) |
+| 2 | Serpentard Duo optimisé | `--artifacts --house-set=serpentard` | ✅ synergie récompensée (+13 pts climax) | Garder signature = choix ; surveiller trivialisation Acte I–II |
+| 3 | Serdaigle exploration/Codex | `--house-set=serdaigle --bonus-levels=2` | ✅ explo = vrai levier (XP), Codex cosmétique | Garder Codex sans puissance |
+| 4 | Boucle Ténébreuse niv. 3 | `--endgame --max-floor=30` | ✅ gate farmable ; cliff de palier voulu | Toast pivot ✅ + XP passive ✅ (P1/P2) |
+| 5 | « Tout collecté » | `…--forge=5 --library=3 --tenebres-set` | ✅ kit valide (94–100 %) ; léger risque climax | Garder phases boss ; refuser `eclatPowerBoost` |
+| 6 | Pire scénario | `--difficulty=Expert --pessimistic` | ✅ punition juste & réparable | Onboarding Expert + nudge quêtes (💡) |
+
+> ✅ **Conclusion d'ensemble** (alignée `DIFFICULTY_STUDY.md §1, §7` + run de
+> validation de ce jour) : **la courbe est saine, aucun spike, aucun correctif de
+> scaling requis.** Les trois « murs » mesurés sont **tous intentionnels et
+> franchissables** : (a) le **clear-Solo** de milieu de partie (pénalité Solo
+> compensée Ironman ×1.3) ; (b) le **cliff de palier de Boucle** (gate farmable,
+> adouci par l'XP passive) ; (c) l'**effondrement du joueur négligent** (réparable
+> par les systèmes ignorés). Les ajustements proposés sont **cosmétiques ou de
+> communication** (signaux, toasts, onboarding), **jamais** des nerfs de scaling.
+
+### 13.5.2 Synergies & variables d'influence (lecture par simulation)
+
+> Les 6 simulations isolent chacune **une variable**. Croisées, elles mesurent le
+> **poids relatif** de chaque levier sur la difficulté ressentie. Repère commun :
+> **win-rate Duo à l'étage 10** (le climax), baseline = **83 %**.
+
+| Variable testée | Sim | Δ vs baseline (ét. 10 Duo) | Nature | Statut |
+|-----------------|:---:|:--------------------------:|--------|:------:|
+| **Artefacts + set de Maison** | 2 | 83 → **96 %** (+13) | build/investissement | ✅ |
+| **Sur-niveau d'exploration** (+2 niv) | 3 | 83 → **93 %** (+10) | XP optionnelle | ✅ |
+| **Kit endgame complet** (Boucle 3, ét. 21) | 5 | 27 → **99 %** (+72) | farming 4 axes | ✅ |
+| **Réglage Expert + négligence** | 6 | 83 → **3 %** (−80) | curseur × mauvais jeu | ✅ |
+| **Choix de Maison seul** (build only) | 1↔2 | ≈ **0** (à équipement égal) | identité, pas difficulté | ✅ |
+| **Éclats collectés** | 5 | **0** (volontaire) | narratif pur | ✅ |
+| **XP passive de Boucle** (P2) | 4 | +3 à +6 pts au cliff | filet endgame | ✅ |
+
+💡 **Lecture** : le **plus gros levier *positif*** est le **kit endgame** (+72 pts au
+cœur de la Boucle) — il *est* la réponse de design au scaling. Le **plus gros levier
+*négatif*** est le **cumul Expert × négligence** (−80) — la difficulté punit le jeu
+*paresseux*, pas le joueur *honnête*. Le **choix de Maison** et les **Éclats** sont,
+par construction, **neutres sur la difficulté** : c'est l'équité (Maison) et le
+contrat narratif (Éclats) qui le garantissent.
+
+✅ **Synergies vertueuses confirmées par la sim** (à préserver) :
+
+| Synergie | Pièces | Effet mesuré |
+|----------|--------|--------------|
+| **Burst élémentaire** | sort `vs` faiblesse + posture Tenaille + artefact `elemBurst` | combats courts, PV préservés (Sim 2 : 84 % PV restants ét. 12) |
+| **Tank-soutien Duo** | Hermione soin + set + Garde empilée | lisse l'attrition (mur Duo ét. 7 vs Solo ét. 5, Sim 1/6) |
+| **Préparation explorateur** | quêtes + fouille + livres de sorts | +1–2 niv → +10 pts au climax (Sim 3) |
+| **Boucle farmée** | niveau + réputation + Forge 5 + Biblio 3 + sets répartis | maintient 94–100 % jusqu'à ét. 30 (Sim 5) |
+
+❓ **Variables à surveiller en playtest réel** (la sim ne les capture pas) :
+
+- **Synergies *Premium*** (artefacts payants/cosmétiques) : vérifier qu'elles
+  restent dans la **même bande** que les artefacts gratuits — *aucun pay-to-win*.
+  Tant qu'un artefact Premium n'a pas de stat **supérieure** à son équivalent
+  gagnable, la sim `--artifacts` reste représentative.
+- **Diversité d'usage des sorts** (`synergyUsageRate`, §13.9.G) : la sim suppose un
+  joueur qui *exploite* les faiblesses ; un joueur qui spamme un sort unique vit une
+  courbe plus dure → mesurable seulement en télémétrie de playtest.
+- **Fréquence réelle des potions/craft** : la sim active `usePotions` par défaut ;
+  si les playtests montrent un usage faible, la difficulté *vécue* se rapproche de la
+  Sim 6 (`--no-potions`) plutôt que de la baseline.
+
+> ✅ **Règle d'ajustement continu (rappel, détaillée §13.6 + §13.9.G)** : tout
+> rééquilibrage d'une de ces variables (a) part d'une **mesure sim** avant/après,
+> (b) régénère `DIFFICULTY_REPORT.md` dans le même commit, (c) reste dans la **bande
+> ±5 pts inter-Maisons**, (d) ne touche **jamais** le scaling pour « compenser » un
+> levier de build — on ajoute un axe, on ne nerfe pas le donjon.
 
 ---
 
@@ -761,7 +1000,7 @@ bruit Monte-Carlo (SE de la différence ≈ 2.5 pts à N=800). Analogue à
   « La Descente », « La Boucle se referme »).
 - ✅ **Notifications implémentées** (cosmétiques, P1, issues des simulations) :
   - Toast à la 1ʳᵉ entrée en Boucle : *« Ici, la puissance se gagne — elle ne
-    tombe plus. »* — communique le pivot endgame (Sim 3). One-shot **sérialisé**
+    tombe plus. »* — communique le pivot endgame (Sim 4). One-shot **sérialisé**
     (`endgamePivotSeen`, state.js), distinct du toast d'ambiance
     `_darknessToastShown` (session-only). Posé dans `_maybeAnnounceEndgamePivot()`
     (`movement-floors.js`), déclenché par `goDeeper` (étage 11+ post-victoire).
@@ -781,28 +1020,132 @@ bruit Monte-Carlo (SE de la différence ≈ 2.5 pts à N=800). Analogue à
 | **P1** ✅ | Toast d'entrée de Boucle + indicateur d'attrition (E) | UX cosmétique | Résout la frustration n°1 des sims (écart combat/clear, pivot endgame) — **sans toucher l'équilibrage**. **Implémenté** |
 | **P2** ✅ | XP passive de Boucle (`LOOP_PASSIVE_XP_FRAC`, axe additif — pas de nerf scaling) | Équilibrage | **Implémenté** — adoucit le mur ét. 19-21 sans trivialiser (`DIFFICULTY_STUDY.md §8.8`) |
 | **P3** ✅ (refuges) | Refuges de Maison (cosmétique, équité préservée) **implémenté** · `houseDifficultyModifier` non retenu (rompt l'équité) | Feature | Refuges : habillage par Maison, répit partiel uniforme (§13.4.3) |
+| **P4** 💡 ❓ | Logger `BALANCE_DEBUG` in-game (opt-in, local) — métriques réelles `synergyUsageRate`/`loopDepthMedian` (§13.9.H) | Tooling | **Uniquement si** playtest communautaire lancé (§13.9.J) ; la sim couvre déjà la non-régression |
 | **Hors-scope V1** | `eclatPowerBoost`, héritage en Boucle (💡 ❓) | Feature | Déconseillé (§13.3.4, §13.4.4) |
 
 > ✅ **Ordre directeur** : *base scaling (déjà là → documenter) → garde-fou de
 > sim → modifiers avancés (UX, puis équilibrage) → simulations automatisées*.
 > Conforme à la demande, en plaçant la **non-régression** avant les features.
 
-## G. Balancing continu — métriques à suivre
+## G. Balancing continu — métriques clés à monitorer
 
-💡 (proposition de tableau de bord — playtesting) :
+Tableau de bord d'équilibrage. **Deux sources** : ✅ **sim** (déjà mesurable
+aujourd'hui via `sim-difficulty.js`) et 💡 **télémétrie de playtest** (à collecter —
+voir §H, aucune n'existe en jeu actuellement).
 
-| Métrique | Cible | Outil |
-|----------|-------|-------|
-| Taux de mort par étage | progressif, pas de cliff > 15 pts | `sim-difficulty.js §7` + télémétrie playtest |
-| Clear-d'étage par mode | Solo tenable ≤ ét. 5-6, Duo ≤ ét. 8 sans farming | `sim-difficulty.js --endgame` |
-| Temps moyen / run principal | borne haute confortable | playtest |
-| Win-rate inter-Maisons | bande ±5 pts | `--house-set` × 4 |
-| Profondeur de Boucle médiane | corrélée au farming investi | télémétrie |
-| Spikes détectés | **0** | `DIFFICULTY_REPORT.md §5` |
+| Métrique (nom canonique) | Définition | Cible | Source |
+|--------------------------|-----------|-------|--------|
+| **`difficultyScore`** | win-rate moyen pondéré par étage (proxy de difficulté) | courbe douce, **0 cliff > 15 pts** | ✅ `sim-difficulty.js §3/§5` |
+| **`deathRatePerFloor`** | % de runs morts à l'étage *f* | progressif, ≤ 1 cliff intentionnel (palier Boucle) | 💡 télémétrie · proxy ✅ `1 − clear` |
+| **`averageClearTime`** | tours moyens pour vider un étage | borne haute confortable (combats ≤ ~14 tours) | ✅ colonne « Tours moy. » + 💡 temps réel playtest |
+| **`synergyUsageRate`** | % de combats où le joueur exploite une faiblesse / un artefact / une potion | élevé chez les builds optimisés (Sim 2/5) | 💡 télémétrie uniquement |
+| **`interHouseWinSpread`** | écart de win-rate max entre les 4 Maisons | **bande ±5 pts** | ✅ `--house-set` × 4 |
+| **`loopDepthMedian`** | profondeur de Boucle médiane atteinte | corrélée au farming investi (pas au hasard) | 💡 télémétrie |
+| **`spikesDetected`** | nb de chutes > 15 pts entre 2 étages | **0** (hors cliffs de palier voulus) | ✅ `DIFFICULTY_REPORT.md §5` |
+| **`underLevelGap`** | écart niveau joueur vs niveau attendu (`§1`) | nudge si ≤ −2 (cause n°1 d'échec, Sim 6) | 💡 in-game (calculable live) |
+
+> ✅ **Aujourd'hui mesurables sans rien coder** : `difficultyScore`,
+> `averageClearTime`, `interHouseWinSpread`, `spikesDetected` (et un proxy de
+> `deathRatePerFloor`) sortent **directement** de `sim-difficulty.js`.
+> 💡 `synergyUsageRate`, `loopDepthMedian`, `deathRatePerFloor` *réel* exigent une
+> **télémétrie de playtest** qui n'existe pas encore (§H).
+
+## H. Intégration de logs de simulation / debug in-game (💡 proposition)
+
+> ⚠️ **État réel** : le jeu **n'a aucune télémétrie ni logger de debug**
+> (vérifié — aucun `window.DEBUG`, `simLog`, flag de trace). Tout ce qui suit est
+> une **proposition opt-in**, derrière un flag (modèle `MP_CONFIG`), **désactivée
+> par défaut** (zéro impact joueur, zéro réseau imposé).
+
+**Proposition `BALANCE_DEBUG` (local, opt-in)** — un logger léger qui, *quand
+activé en console* (`localStorage.hogwarts_balance_debug = '1'`), accumule en
+mémoire/`localStorage` des compteurs **anonymes et locaux** :
+
+| Hook | Donnée logguée | Module |
+|------|----------------|--------|
+| `endBattle()` | étage, mode, tours, PV restants, issue (win/flee/death) | `battle-rewards.js` |
+| `triggerDeath()` | étage, niveau, `underLevelGap`, cause | `battle-death.js` |
+| `castSpellInBattle()` | exploita-t-il une faiblesse ? artefact/potion utilisés ? → `synergyUsageRate` | `battle-spells.js` |
+| `goDeeper()` | profondeur atteinte, temps de run → `loopDepthMedian`, `averageClearTime` | `movement-floors.js` |
+
+- ✅ **Réutilise les hooks existants** (`autoSave` est déjà branché sur ces mêmes
+  points — §« Sauvegarde ») → **call-sites défensifs** `if (window.BalanceLog)`,
+  zéro régression si le module n'est pas chargé.
+- 💡 **Export** : un bouton debug *« Exporter mes logs d'équilibrage »* (JSON copié
+  presse-papiers) que les playtesters volontaires renvoient — **pas de collecte
+  automatique** (respect vie privée, cohérent avec le repli localStorage du HoF).
+- 💡 **Pont sim ↔ jeu** : le format de log exporté est **le même schéma** que la
+  sortie `sim-difficulty.js §3` → on peut **superposer** courbe simulée et courbe
+  réelle dans un même tableur pour valider que le modèle Monte-Carlo *prédit* le
+  terrain. C'est le chaînon manquant entre théorie et playtest.
+- ❓ **À trancher** : implémenter `BALANCE_DEBUG` (utile pour le playtest
+  communautaire, §J) ou rester sur la sim seule (suffisante pour la non-régression).
+  **Recommandation : implémenter en P4** *si* un playtest communautaire est lancé —
+  inutile tant que la validation reste interne (la sim couvre déjà la non-régression).
+
+## I. Processus itératif — Simulation → Playtest → Ajustement
+
+> ✅ Boucle de validation **gravée** (la sim est la preuve, le playtest l'arbitre,
+> ce chapitre le contrat) :
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ 1. MESURER   node tools/sim-difficulty.js … (baseline)            │
+│              → difficultyScore, spikesDetected, interHouseWinSpread│
+│ 2. HYPOTHÈSE Identifier 1 variable (cliff, mur, synergie suspecte) │
+│ 3. SIMULER   Rejouer avec le flag dédié (--*) ; comparer Δ         │
+│              → ajouter un flag au sim si la variable est nouvelle  │
+│ 4. ARBITRER  Playtest réel (interne, puis communautaire §J)        │
+│              → confronter au ressenti + logs §H si dispo           │
+│ 5. AJUSTER   1 constante à la fois (data.js / dungeon-scaling.js)  │
+│ 6. VÉRIFIER  check_difficulty.js (CI, ±10 pts) + units + smoke     │
+│              régénérer DIFFICULTY_REPORT.md DANS le même commit     │
+│ 7. DOCUMENTER amender ce chapitre + G3/G4/G8 si écart  ──┐          │
+└──────────────────────────────────────────────────────────┼────────┘
+                                          (retour à 1) ◄─────┘
+```
+
+✅ **Garde-fou automatisé** : `tools/check_difficulty.js` en CI **bloque** (exit 1)
+toute dérive > 10 pts d'un couple (étage, mode) **non documentée** dans
+`DIFFICULTY_REPORT.md` — l'étape 6 n'est pas facultative, elle est *forcée*.
+
+### Priorisation des ajustements (rappel de l'ordre d'impact)
+
+D'après §13.5.2 (poids relatif mesuré), prioriser dans cet ordre :
+
+1. **🔴 Spikes non intentionnels** (`spikesDetected > 0`) — *toujours* P0, c'est un bug.
+2. **🟠 Cliffs de palier de Boucle** mal communiqués — UX/toast avant nerf.
+3. **🟡 Écart inter-Maisons > ±5 pts** — un item/passif de Maison déséquilibre.
+4. **🟢 Confort de courbe** (murs intentionnels) — *ne pas toucher* sauf playtest probant.
+
+> ✅ **Règle d'or** : on **ajoute un axe de progression** (ex. XP passive de Boucle)
+> plutôt que de **baisser le scaling** ; on corrige par la **communication** (toast,
+> onboarding) avant de toucher une **valeur**. Les nerfs de scaling sont le **dernier**
+> recours, jamais le premier.
+
+## J. Playtesting communautaire (suggestions futures)
+
+💡 (hors-scope V1, piste pour après publication GitHub Pages) :
+
+- **Cohortes ciblées** : recruter par profil (1ᵉʳ run Normal Solo / vétéran Boucle /
+  complétionniste) pour couvrir les 6 simulations *avec de vrais humains*.
+- **Sondage post-run léger** (1 écran, opt-in) : *« À quel étage as-tu senti le mur ? »*,
+  *« T'es-tu senti bloqué ou pressé ? »* — confronte le **ressenti** au
+  `difficultyScore` simulé (un mur *perçu* avant le mur *mesuré* = problème d'UX, pas
+  d'équilibrage).
+- **Partage de logs `BALANCE_DEBUG`** (§H) : export JSON volontaire → superposition
+  sim/réel. **Anonyme, local, jamais automatique.**
+- **Canal de feedback** : issues GitHub étiquetées `balance` → triage selon la
+  priorisation §I. Une plainte isolée ≠ un ajustement ; un *pattern* sur plusieurs
+  cohortes = hypothèse à simuler.
+- **Hall of Fame comme signal passif** : la distribution des `loopDepthMedian` et des
+  scores Ironman par difficulté est **déjà** un proxy d'équilibrage gratuit (données
+  Supabase existantes) — à exploiter avant toute nouvelle collecte.
 
 > ✅ **Règle d'or du balancing continu** : *toute valeur d'équilibrage modifiée
 > régénère `DIFFICULTY_REPORT.md` dans le même commit, et amende ce chapitre.* La
-> simulation est la **preuve**, ce chapitre est le **contrat**.
+> simulation est la **preuve**, le playtest est l'**arbitre**, ce chapitre est le
+> **contrat**.
 
 ---
 
@@ -819,7 +1162,15 @@ bruit Monte-Carlo (SE de la différence ≈ 2.5 pts à N=800). Analogue à
 5. ✅ Adoucir l'endgame (XP passive de Boucle) — **tranché : implémenté** (P2,
    `LOOP_PASSIVE_XP_FRAC = 0.45`). Axe additif sans toucher au scaling ; adoucit
    le mur sans trivialiser (le farming reste la voie du confort total). Le pivot
-   reste communiqué (toast P1). Cf. §13.5 Sim 3 / `DIFFICULTY_STUDY.md §8.8`.
+   reste communiqué (toast P1). Cf. §13.5 Sim 4 / `DIFFICULTY_STUDY.md §8.8`.
 6. ✅ Garde-fou de sim en CI (`check_difficulty.js`) — **implémenté** (P1,
    §13.9.C/F). Le toast de pivot endgame + l'indicateur d'attrition (§13.9.E)
    sont aussi **implémentés**.
+7. ❓ Implémenter un logger d'équilibrage in-game `BALANCE_DEBUG` (opt-in, local,
+   anonyme) pour collecter `synergyUsageRate`/`loopDepthMedian`/`deathRatePerFloor`
+   réels ? *(Recommandation : P4, **uniquement si** un playtest communautaire est
+   lancé — la sim couvre déjà la non-régression — §13.9.H/J.)*
+8. ❓ Atténuer le **cliff de palier de Boucle** (20→21) en répartissant `scalDelta`
+   sur 2–3 étages plutôt qu'en bloc ? *(Recommandation : d'abord communication
+   (toast pivot ✅) ; ne lisser qu'après playtest, sans baisser la puissance cible —
+   §13.5 Sim 4.)*
