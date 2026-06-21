@@ -271,13 +271,13 @@ Avant l'audit, il faut poser le décor honnêtement, sinon le plan sonne faux :
 | P1.2 | Technique | ~~Nettoyer la racine servie (dev HTML).~~ | Faible | — | ❌ **Abandonné** : bundle `_site` curaté (`deploy.yml`) → non servis ; `robot.html` déployé exprès. Audit initial inexact. |
 | P1.3 | Technique | ~~Ajouter `.nojekyll`.~~ | Faible | — | ❌ **Abandonné** : Pages via GitHub Actions, pas Jekyll → sans objet. |
 | P1.4 | UX | **Métadonnées sociales** : `<meta description>` + Open Graph + Twitter card (image `title.jpg`). | Faible | Moyen (partage) | ✅ **Fait (2026-06-21)** (cache-bump) |
-| P1.5 | Performance | **`defer` sur les `<script>`**. | Moyenne | **Révisé : Faible** | ⏸️ **Reporté** : scripts en fin de `<body>` → gain marginal ; risque 88 balises à valider en smoke complet. |
-| P1.6 | Équilibrage | **Sim N=4000 par difficulté** → figer `DIFFICULTY_REPORT.md`. | Moyenne | Moyen | ⏸️ **Reporté** : Monte-Carlo lourd, session dédiée. |
+| P1.5 | Performance | **`defer` sur les `<script>`**. | Moyenne | **Révisé : Faible** | ✅ **Fait (2026-06-21)** : `defer` ajouté aux 88 `<script src>` ; smoke COMPLET vert (259 scénarios) + units (908) + pwa-smoke ; cache bumpé (`CACHE_VERSION` v199→v200). Effet net = parallélisation des téléchargements (1ʳᵉ visite), ordre d'exécution préservé. Corrigé au passage : `tools/check_doc_modules.js` (regex `<script src` → tolère `defer`). |
+| P1.6 | Équilibrage | **Sim N=4000 par difficulté** → figer `DIFFICULTY_REPORT.md`. | Moyenne | Moyen | ✅ **Fait (2026-06-21)** : passes N=4000 Facile/Difficile/Expert figées en **§3bis** (tables complètes) + table « toutes difficultés » du §📊 régénérée (solo+duo). Mesure pure, **aucun changement de scaling** ; §3 Normal (baseline CI) intact, `check_difficulty.js` vert. |
 
 **Critère de sortie P1** : vitrine (README + métadonnées de partage), tests
-verts. ✅ **Atteint (2026-06-21)** pour le périmètre retenu (P1.1 + P1.4).
-P1.5/P1.6 portés à la session suivante ; P1.2/P1.3 abandonnés après lecture
-de `deploy.yml`.
+verts. ✅ **Atteint** : P1.1 + P1.4 (2026-06-21, PR #634), **P1.5 + P1.6
+(2026-06-21, Lot A)**. P1.2/P1.3 abandonnés après lecture de `deploy.yml`.
+**Priorité 1 close.**
 
 ## Priorité 2 — Moyen terme : frustration & feedback
 

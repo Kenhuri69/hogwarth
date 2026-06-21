@@ -24,7 +24,8 @@ const CLAUDE = path.join(ROOT, 'CLAUDE.md');
 // 1) Modules <script src="js/xxx.js?v=N"> dans index.html, ordonnés.
 function indexModules() {
   const html = fs.readFileSync(INDEX, 'utf8');
-  const re = /<script\s+src="js\/([A-Za-z0-9_-]+)\.js(?:\?[^"]*)?"/g;
+  // `[^>]*` tolère les attributs intermédiaires (ex. `defer`) entre <script et src=.
+  const re = /<script\b[^>]*\bsrc="js\/([A-Za-z0-9_-]+)\.js(?:\?[^"]*)?"/g;
   const out = [];
   let m;
   while ((m = re.exec(html)) !== null) out.push(m[1]);
