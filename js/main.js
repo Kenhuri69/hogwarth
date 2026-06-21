@@ -697,7 +697,7 @@ const ESC_CLOSEABLE_MODALS = [
   'bestiary-modal', 'codex-modal', 'house-detail-modal', 'house-donation-modal',
   'wizard-codex-modal', 'slot-modal', 'monster-info-overlay',
   'settings-modal', 'forge-modal', 'library-modal', 'brewing-modal',
-  'fusion-modal', 'riddle-modal'
+  'fusion-modal', 'riddle-modal', 'endgame-compass-modal'
 ];
 
 // Cellule cible d'un déplacement aux flèches dans une grille focusée.

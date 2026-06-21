@@ -830,4 +830,56 @@ async function scenarioBalanceLog() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioStartup, scenarioLoader, scenarioIronman, scenarioIronmanConfirm, scenarioContentConsumablesTradeoffs, scenarioHeroBarks, scenarioFullJourneyDuo, scenarioBalanceLog] };
+// P2.2 — boussole d'endgame : bouton masqué avant victoire, modale post-victoire
+// listant les destinations avec leurs états dérivés.
+async function scenarioEndgameCompass() {
+  console.log('\n── Scénario : boussole d\'endgame (P2.2) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // T1 : avant victoire, le bouton est masqué.
+  const t1 = await page.evaluate(() => {
+    victoryAchieved = false; updateUI();
+    const btn = document.getElementById('btn-endgame-compass');
+    return { hasBtn: !!btn, hidden: btn && btn.style.display === 'none',
+             hasFn: typeof openEndgameCompass === 'function' && typeof endgameDestinations === 'function' };
+  });
+  console.log('  T1:', t1);
+  assert(t1.hasBtn, '#btn-endgame-compass absent');
+  assert(t1.hasFn, 'API boussole non exposée');
+  assert(t1.hidden, 'le bouton doit être masqué avant victoire');
+
+  // T2 : post-victoire, bouton visible + modale rendue avec 4 destinations.
+  const t2 = await page.evaluate(() => {
+    victoryAchieved = true; currentFloor = 17; accumulatedEclats = 15; houseTier = 18;
+    updateUI();
+    const btnVisible = document.getElementById('btn-endgame-compass').style.display !== 'none';
+    openEndgameCompass();
+    const modal = document.getElementById('endgame-compass-modal');
+    const cards = document.querySelectorAll('#endgame-compass-list > div').length;
+    const html  = document.getElementById('endgame-compass-list').innerHTML;
+    return { btnVisible, open: modal.style.display === 'flex', cards,
+             hasGardien: html.includes('Gardien'), hasChambre: html.includes('Gryffondor') };
+  });
+  console.log('  T2:', t2);
+  assert(t2.btnVisible, 'le bouton doit être visible post-victoire');
+  assert(t2.open, 'la modale boussole doit s\'ouvrir');
+  assert(t2.cards === 4, `4 destinations attendues, got ${t2.cards}`);
+  assert(t2.hasGardien && t2.hasChambre, 'destinations clés absentes du rendu');
+
+  // T3 : fermeture.
+  const t3 = await page.evaluate(() => {
+    closeEndgameCompass();
+    return { closed: document.getElementById('endgame-compass-modal').style.display === 'none' };
+  });
+  assert(t3.closed, 'la modale doit se fermer');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS (boussole endgame)`);
+  }
+  console.log('  ✅ Boussole d\'endgame conforme');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioStartup, scenarioLoader, scenarioIronman, scenarioIronmanConfirm, scenarioContentConsumablesTradeoffs, scenarioHeroBarks, scenarioFullJourneyDuo, scenarioBalanceLog, scenarioEndgameCompass] };

@@ -151,6 +151,113 @@ function refreshEndingType() {
   return endingType;
 }
 
+// ============================================================
+// Boussole d'endgame (P2.2) — panneau post-victoire qui liste les
+// destinations débloquées et leur déclencheur. Convertit la profondeur
+// latente en objectifs lisibles. Tout est DÉRIVÉ (aucun flag nouveau).
+// ============================================================
+
+// Helper PUR : retourne la liste des destinations endgame à partir d'un ctx
+// plat. Testable hors navigateur (units.js).
+function endgameDestinations(ctx) {
+  ctx = ctx || {};
+  const va     = !!ctx.victoryAchieved;
+  const floor  = (typeof ctx.currentFloor === 'number') ? ctx.currentFloor : 1;
+  const eclats = (typeof ctx.accumulatedEclats === 'number') ? ctx.accumulatedEclats : 0;
+  const seuil  = (typeof ctx.eclatsSeuil === 'number') ? ctx.eclatsSeuil : 15;
+  const tier   = (typeof ctx.houseTier === 'number') ? ctx.houseTier : 0;
+  const house  = ctx.chosenHouse || null;
+  const broken = !!ctx.cycleBroken;
+  return [
+    {
+      id: 'gardien_boucle', icon: '🌑', label: 'Gardien de la Boucle',
+      trigger: 'Étage 11 (post-victoire)', unlocked: va,
+      hint: va
+        ? 'Quêtes répétables de purge → matériaux Forge / Bibliothèque.'
+        : 'Vaincs Voldemort (étage 10) pour ouvrir la Boucle Ténébreuse.'
+    },
+    {
+      id: 'chambres', icon: '🏛️',
+      label: house ? ('Chambre des Fondateurs — ' + house) : 'Chambres des Fondateurs',
+      trigger: 'Étage 17+ en Boucle', unlocked: va && floor >= 17,
+      hint: 'Affronte le Gardien-Fondateur de ta Maison (butin signature).'
+    },
+    {
+      id: 'apotheose', icon: '⭐', label: 'Apothéose & série ★',
+      trigger: 'Palier de Maison 17+ · Don à la Maison', unlocked: tier >= 17,
+      hint: tier >= 18
+        ? 'Passif légendaire éveillé — empile les ★ via le Don à la Maison.'
+        : 'Atteins le palier Mythe (17) pour ouvrir le Don à la Maison.'
+    },
+    {
+      id: 'briser_cycle', icon: '🕊️', label: 'Briser le Cycle',
+      trigger: eclats + ' / ' + seuil + ' Éclats portés',
+      unlocked: va && !broken && eclats >= seuil,
+      hint: broken
+        ? 'Le Cycle est déjà brisé.'
+        : 'Porte ' + seuil + ' Éclats, puis affronte le Reflet du Mythe.'
+    }
+  ];
+}
+
+// ctx live depuis l'état runtime. Défensif (typeof).
+function _endgameCompassCtx() {
+  return {
+    victoryAchieved:   (typeof victoryAchieved !== 'undefined') && victoryAchieved,
+    currentFloor:      (typeof currentFloor !== 'undefined') ? currentFloor : 1,
+    accumulatedEclats: (typeof accumulatedEclats !== 'undefined') ? accumulatedEclats : 0,
+    eclatsSeuil:       (typeof BRISER_ECLAT_SEUIL !== 'undefined') ? BRISER_ECLAT_SEUIL : 15,
+    houseTier:         (typeof houseTier !== 'undefined') ? houseTier : 0,
+    chosenHouse:       (typeof chosenHouse !== 'undefined') ? chosenHouse : null,
+    cycleBroken:       (typeof cycleBroken !== 'undefined') && cycleBroken
+  };
+}
+
+function _renderEndgameCompass() {
+  const box = (typeof safeEl === 'function') ? safeEl('endgame-compass-list')
+                                             : document.getElementById('endgame-compass-list');
+  if (!box) return;
+  const esc = (typeof htmlEscape === 'function') ? htmlEscape : (s => String(s));
+  const dests = endgameDestinations(_endgameCompassCtx());
+  box.innerHTML = dests.map(d => {
+    const on = d.unlocked;
+    return '<div style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;' +
+      'border:1px solid ' + (on ? '#7a5a1a' : '#2a1a08') + ';border-radius:4px;' +
+      'background:rgba(0,0,0,.2);opacity:' + (on ? '1' : '.6') + '">' +
+      '<div style="font-size:22px;line-height:1">' + (on ? d.icon : '🔒') + '</div>' +
+      '<div style="flex:1">' +
+        '<div style="font-family:\'Cinzel\',serif;font-size:13px;color:var(--gold-light)">' +
+          esc(d.label) + ' <span style="font-size:11px">' + (on ? '✅' : '🔒') + '</span></div>' +
+        '<div style="font-size:11px;color:#c9a84c;margin:2px 0">📍 ' + esc(d.trigger) + '</div>' +
+        '<div style="font-size:11px;color:var(--parchment-dark);line-height:1.4">' + esc(d.hint) + '</div>' +
+      '</div></div>';
+  }).join('');
+}
+
+function openEndgameCompass() {
+  const modal = (typeof safeEl === 'function') ? safeEl('endgame-compass-modal')
+                                               : document.getElementById('endgame-compass-modal');
+  if (!modal) return;
+  _renderEndgameCompass();
+  modal.style.display = 'flex';
+}
+
+function closeEndgameCompass() {
+  const modal = (typeof safeEl === 'function') ? safeEl('endgame-compass-modal')
+                                               : document.getElementById('endgame-compass-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+// Bouton #btn-endgame-compass : visible uniquement post-victoire. Appelé par
+// updateUI() (défensif).
+function _refreshEndgameCompassBtn() {
+  const btn = (typeof safeEl === 'function') ? safeEl('btn-endgame-compass')
+                                             : document.getElementById('btn-endgame-compass');
+  if (!btn) return;
+  const va = (typeof victoryAchieved !== 'undefined') && victoryAchieved;
+  btn.style.display = va ? '' : 'none';
+}
+
 (function () {
   // A1 — sting audio de victoire : garde-fou d'idempotence. La modale peut
   // être ré-affichée (double trigger défensif) ; le son ne doit jouer qu'à

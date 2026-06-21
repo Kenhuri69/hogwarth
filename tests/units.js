@@ -2493,6 +2493,42 @@ function loadModule(relPath, exportNames, globals = {}) {
 })();
 
 // ============================================================
+// N. endgame.js — boussole d'endgame (P2.2)
+// ============================================================
+(function testEndgameCompass() {
+  const { endgameDestinations } = loadModule(
+    'js/endgame.js', ['endgameDestinations'],
+    { window: {}, document: { getElementById: () => null }, addEventListener: () => {} });
+
+  // Pré-victoire : tout verrouillé.
+  const pre = endgameDestinations({ victoryAchieved: false });
+  check('compass : 4 destinations', pre.length === 4);
+  check('compass : pré-victoire tout verrouillé', pre.every(d => !d.unlocked));
+  check('compass : chaque dest a id/label/trigger/hint',
+    pre.every(d => d.id && d.label && d.trigger && typeof d.hint === 'string'));
+
+  // Post-victoire frais (étage 11, 0 Éclat, tier 0) : Gardien ouvert, reste non.
+  const fresh = endgameDestinations({ victoryAchieved: true, currentFloor: 11, accumulatedEclats: 0, houseTier: 0 });
+  const byId = id => fresh.find(d => d.id === id);
+  check('compass : Gardien ouvert post-victoire', byId('gardien_boucle').unlocked === true);
+  check('compass : Chambres fermées avant ét.17', byId('chambres').unlocked === false);
+  check('compass : Apothéose fermée tier<17',     byId('apotheose').unlocked === false);
+  check('compass : Briser fermé < seuil',         byId('briser_cycle').unlocked === false);
+
+  // Conditions remplies : Chambres ét.17, Apothéose tier 18, Briser 15 Éclats.
+  const full = endgameDestinations({ victoryAchieved: true, currentFloor: 17, accumulatedEclats: 15, houseTier: 18, chosenHouse: 'Serpentard' });
+  const f = id => full.find(d => d.id === id);
+  check('compass : Chambres ouvertes ét.17',  f('chambres').unlocked === true);
+  check('compass : libellé Chambre = Maison',  f('chambres').label.includes('Serpentard'));
+  check('compass : Apothéose ouverte tier 18', f('apotheose').unlocked === true);
+  check('compass : Briser ouvert à 15 Éclats', f('briser_cycle').unlocked === true);
+  // Cycle déjà brisé → Briser re-verrouillé.
+  check('compass : Briser fermé si cycleBroken',
+    endgameDestinations({ victoryAchieved: true, accumulatedEclats: 20, cycleBroken: true })
+      .find(d => d.id === 'briser_cycle').unlocked === false);
+})();
+
+// ============================================================
 // Rapport
 // ============================================================
 if (failures.length) {
