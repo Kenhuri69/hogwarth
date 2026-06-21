@@ -338,6 +338,19 @@ Chaque lot est **livrable indépendamment** : la qualité perçue monte dès C1
   - Test : scénario `AutoSave` étendu (T6 : toast affiché, aria-live, non
     cliquable). `node tests/smoke.js` 263 verts + cache-bump (v218).
 
+- **2026-06-21 — C3 (Parité feedback consommables) : ✅ livré.**
+  - `js/audio-sfx.js` : 2 SFX procéduraux — `playPotionDrink()` (glouglou +
+    étincelle) et `playDenied()` (bip sourd descendant).
+  - `js/inventory.js` : `_applyConsumableEffect()` (point unique des 3 sites
+    d'usage) joue son + haptique `HAPTICS_safe.cast()` à chaque potion bue.
+  - `js/battle.js` : `throwItemAtEnemy()` déclenche `CFX_safe.spellBurst` à
+    l'élément du flacon → parité visuelle potion lancée ↔ sort.
+  - `js/battle-spells.js` + `css/style.css` : refus de sort (PM insuffisant)
+    → `playDenied()` + micro-secousse `.battle-actions.deny-shake`
+    (gardée `prefers-reduced-motion`).
+  - Tous les call-sites défensifs. `node tests/smoke.js` 263 verts +
+    cache-bump (v219). **Phase Critique (C1-C3) terminée.**
+
 ---
 
 ## Recommandation de démarrage
