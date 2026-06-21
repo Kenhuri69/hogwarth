@@ -80,3 +80,11 @@ Incendio Majeur, Glacius Profond, Sanguini Vorace, Protego Diabolica.
   v191. Vérifs : units 897 ✓, smoke 249 ✓ (T5 = 6 splashes), pwa-smoke ✓.
   - Reste P4 : Fardeau Partagé + Tempus Echo + Reliquae Temporis + Écho Fantôme
     (4) + 8 variantes P3.
+- 2026-06-21 : **Lot 3 livré** (même PR #624) — **P4 COMPLET**. 4 icônes + 4
+  splashes dédiés : Fardeau Partagé (Pouf), Tempus Echo (rituel), Reliquae
+  Temporis (corrompu), Écho Fantôme (corrompu). Les 10 sorts P4 sont désormais
+  en art dédié (icône + splash). cache-bump : item-icons.js v41, CACHE_VERSION
+  v192. Vérifs : units 897 ✓, smoke 249 ✓ (T5 = 10 splashes), pwa-smoke ✓.
+  - Reste : **8 variantes P3** (Incendio Royal, Morsure d'Émeraude, Givre de
+    Rowena, Soin du Blaireau, Incendio Majeur, Glacius Profond, Sanguini Vorace,
+    Protego Diabolica) — prompts déjà fournis.
