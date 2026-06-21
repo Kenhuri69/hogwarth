@@ -547,6 +547,15 @@ const SPELL_ICON_REGISTRY = {
   // ── Lot P3 — formes évoluées + Premium (icônes dédiées). ──
   'Incendio Majeur':    'img/icons/spells/incendio_majeur.png',    // icône dédiée (brasier amplifié)
   'Glacius Profond':    'img/icons/spells/glacius_profond.png',    // icône dédiée (cristaux glaciaux)
+  // Formes évoluées (mono Lumos Solem Ardent + 6 AoE) — alias temporaires sur
+  // l'art de la base (précédent Lot P2/P4) ; fallback emoji garanti. Art dédié reporté.
+  'Lumos Solem Ardent': 'img/icons/spells/lumos_solem.png',        // alias base (brasier solaire)
+  'Glacius Cataclysme': 'img/icons/spells/glacius_tempete.png',    // alias base AoE
+  'Fulgur Imperium':    'img/icons/spells/fulgur_catena.png',      // alias base AoE
+  'Lux Suprema':        'img/icons/spells/lux_aeterna.png',        // alias base AoE
+  'Nox Devorans':       'img/icons/spells/nox_vorax.png',          // alias base AoE
+  'Diffindo Ultima':    'img/icons/spells/diffindo_maxima.png',    // alias base AoE
+  'Vulnera Maxima':     'img/icons/spells/vulnera_sanentur.png',   // alias base AoE
   'Incendio Royal':     'img/icons/spells/incendio_royal.png',     // icône dédiée (couronne de feu)
   "Morsure d'Émeraude": 'img/icons/spells/morsure_emeraude.png',   // icône dédiée (crocs émeraude)
   'Givre de Rowena':    'img/icons/spells/givre_rowena.png',       // icône dédiée (diadème de givre)
