@@ -817,6 +817,7 @@
       <button class="cmd-btn" data-group="adventure" onclick="openBestiary()" title="Bestiaire"><span class="btn-icon"><img src="img/icons/bestiary.png" alt="Bestiaire"></span><span class="btn-label">Bestiaire</span></button>
       <button class="cmd-btn" data-group="adventure" onclick="openCodex()" title="Codex — journal vivant"><span class="btn-icon" style="font-size:18px">📖</span><span class="btn-label">Codex</span></button>
       <button class="cmd-btn" data-group="adventure" onclick="openQuestLog()" title="Quêtes actives"><span class="btn-icon"><img src="img/icons/quest.png" alt="Quêtes"></span><span class="btn-label">Quêtes</span></button>
+      <button class="cmd-btn" data-group="adventure" id="btn-endgame-compass" style="display:none" onclick="openEndgameCompass()" title="Boussole d'endgame — destinations débloquées"><span class="btn-icon" style="font-size:18px">🧭</span><span class="btn-label">Boussole</span></button>
       <button class="cmd-btn" data-group="adventure" id="btn-search" onclick="searchRoom()" title="Fouiller la salle (F)"><span class="btn-icon"><img src="img/icons/search.png" alt="Fouiller"></span><span class="btn-label">Fouiller</span></button>
       <button class="cmd-btn" data-group="adventure" onclick="rest()" title="Repos (R)"><span class="btn-icon"><img src="img/icons/rest.png" alt="Repos"></span><span class="btn-label">Repos</span></button>
       <button class="cmd-btn" data-group="adventure" id="btn-mp-message" onclick="openMessageComposer()" title="Laisser / lire un message"><span class="btn-icon" style="font-size:18px">🪶</span><span class="btn-label">Message</span></button>
@@ -1081,7 +1082,24 @@
 </div>
 
 <!-- CODEX — journal vivant (Chapitre 12). Modale DÉDIÉE (jamais #char-detail). -->
-<div id="codex-modal" role="dialog" aria-modal="true" aria-labelledby="codex-modal-title">
+<!-- Boussole d'endgame (P2.2) — destinations post-victoire. Backdrop inline
+     (hors liste #...-modal de style.css) ; focus-trap via modal-a11y MODAL_IDS,
+     Échap via ESC_CLOSEABLE_MODALS (main.js). -->
+<div id="endgame-compass-modal" role="dialog" aria-modal="true" aria-labelledby="endgame-compass-title"
+     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:500;align-items:center;justify-content:center;padding:20px">
+  <div class="modal-box" style="max-width:520px;max-height:88vh;overflow:auto">
+    <div class="bestiary-header">
+      <span class="bestiary-title" id="endgame-compass-title">🧭 Boussole d'endgame</span>
+      <span class="modal-close" onclick="closeEndgameCompass()" role="button" title="Fermer (Échap)" aria-label="Fermer (Échap)" tabindex="0">✕</span>
+    </div>
+    <p style="font-size:12px;color:var(--parchment-dark);line-height:1.5;margin:6px 0 10px">
+      Après la victoire, le château se rouvre plus profond. Voici où aller — et ce qui débloque chaque destination.
+    </p>
+    <div id="endgame-compass-list" style="display:flex;flex-direction:column;gap:8px"></div>
+  </div>
+</div>
+
+<div id="codex-modal" role="dialog" aria-modal="true" aria-labelledby="codex-modal-title"
   <div class="modal-box codex-modal-box">
     <div class="bestiary-header">
       <span class="bestiary-title" id="codex-modal-title">📖 Codex</span>
@@ -1319,8 +1337,8 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="js/item-icons.js?v=44"></script>
 <script defer src="js/state.js?v=43"></script>
 <script defer src="js/hero-barks.js?v=12"></script>
-<script defer src="js/ui.js?v=19"></script>
-<script defer src="js/modal-a11y.js?v=1"></script>
+<script defer src="js/ui.js?v=20"></script>
+<script defer src="js/modal-a11y.js?v=2"></script>
 <script defer src="js/ui-character-sheet.js?v=14"></script>
 <script defer src="js/ui-settings.js?v=4"></script>
 <script defer src="js/keybindings.js?v=1"></script>
@@ -1375,8 +1393,8 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="js/visit-hud.js?v=6"></script>
 <script defer src="js/pvp-duel.js?v=1"></script>
 <script defer src="js/atelier-voyageur.js?v=4"></script>
-<script defer src="js/main.js?v=33"></script>
-<script defer src="js/endgame.js?v=9"></script>
+<script defer src="js/main.js?v=34"></script>
+<script defer src="js/endgame.js?v=10"></script>
 <script defer src="js/break-cycle.js?v=4"></script>
 <script defer src="js/forge.js?v=6"></script>
 <script defer src="js/library.js?v=4"></script>

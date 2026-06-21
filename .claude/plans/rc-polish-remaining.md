@@ -85,7 +85,17 @@ clore, pas à refaire :
 
 ---
 
-## P2.2 — Boussole d'endgame (panneau post-victoire)  ⬜
+## P2.2 — Boussole d'endgame (panneau post-victoire)  ✅ Fait (2026-06-21)
+
+> **Livré** : helper PUR `endgameDestinations(ctx)` (4 destinations dérivées —
+> Gardien de la Boucle ét.11, Chambres ét.17+, Apothéose/★ tier 17+, Briser le
+> Cycle 15 Éclats), modale `#endgame-compass-modal` + bouton `🧭 Boussole`
+> (`#btn-endgame-compass`, visible post-victoire seulement via
+> `_refreshEndgameCompassBtn` dans `updateUI`). Backdrop inline ; focus-trap
+> (`modal-a11y` MODAL_IDS) + Échap (`main.js` ESC_CLOSEABLE_MODALS). **Zéro flag
+> nouveau** (tout dérivé). Tests : 13 assertions units + scénario smoke
+> `scenarioEndgameCompass`. cache-bump endgame v10 / ui v20 / main v34 /
+> modal-a11y v2 / CACHE_VERSION v206.
 
 **Impact : Élevé** (rejouabilité lisible) · **Difficulté : Moyenne**
 

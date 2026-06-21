@@ -76,6 +76,7 @@ function updateUI() {
   _updateXpWrap();
   _updateHouseBadge();
   if (typeof _updateCorruptionMeter === 'function') _updateCorruptionMeter();
+  if (typeof _refreshEndgameCompassBtn === 'function') _refreshEndgameCompassBtn();
   _updateNgPlusTitle();
   if (typeof _updateVisitsBtn === 'function') _updateVisitsBtn();
   if (typeof _updateBarksBtn === 'function') _updateBarksBtn();
