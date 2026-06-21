@@ -547,15 +547,14 @@ const SPELL_ICON_REGISTRY = {
   // ── Lot P3 — formes évoluées + Premium (icônes dédiées). ──
   'Incendio Majeur':    'img/icons/spells/incendio_majeur.png',    // icône dédiée (brasier amplifié)
   'Glacius Profond':    'img/icons/spells/glacius_profond.png',    // icône dédiée (cristaux glaciaux)
-  // Formes évoluées (mono Lumos Solem Ardent + 6 AoE) — alias temporaires sur
-  // l'art de la base (précédent Lot P2/P4) ; fallback emoji garanti. Art dédié reporté.
-  'Lumos Solem Ardent': 'img/icons/spells/lumos_solem.png',        // alias base (brasier solaire)
-  'Glacius Cataclysme': 'img/icons/spells/glacius_tempete.png',    // alias base AoE
-  'Fulgur Imperium':    'img/icons/spells/fulgur_catena.png',      // alias base AoE
-  'Lux Suprema':        'img/icons/spells/lux_aeterna.png',        // alias base AoE
-  'Nox Devorans':       'img/icons/spells/nox_vorax.png',          // alias base AoE
-  'Diffindo Ultima':    'img/icons/spells/diffindo_maxima.png',    // alias base AoE
-  'Vulnera Maxima':     'img/icons/spells/vulnera_sanentur.png',   // alias base AoE
+  // Formes évoluées (mono Lumos Solem Ardent + 6 AoE) — icônes dédiées.
+  'Lumos Solem Ardent': 'img/icons/spells/lumos_solem_ardent.png',  // lance solaire ardente
+  'Glacius Cataclysme': 'img/icons/spells/glacius_cataclysme.png',  // cataclysme de givre
+  'Fulgur Imperium':    'img/icons/spells/fulgur_imperium.png',     // tempête électrique impériale
+  'Lux Suprema':        'img/icons/spells/lux_suprema.png',         // déluge de lumière
+  'Nox Devorans':       'img/icons/spells/nox_devorans.png',        // vortex dévorant
+  'Diffindo Ultima':    'img/icons/spells/diffindo_ultima.png',     // lames croisées
+  'Vulnera Maxima':     'img/icons/spells/vulnera_maxima.png',      // grand chant de guérison
   'Incendio Royal':     'img/icons/spells/incendio_royal.png',     // icône dédiée (couronne de feu)
   "Morsure d'Émeraude": 'img/icons/spells/morsure_emeraude.png',   // icône dédiée (crocs émeraude)
   'Givre de Rowena':    'img/icons/spells/givre_rowena.png',       // icône dédiée (diadème de givre)
@@ -602,7 +601,15 @@ const SPELL_SPLASH_REGISTRY = {
   'Incendio Majeur':  'img/fx/spells/incendio_majeur.png',   // explosion de feu en anneau
   'Glacius Profond':  'img/fx/spells/glacius_profond.png',   // éclat de glace dense
   'Sanguini Vorace':  'img/fx/spells/sanguini_vorace.png',   // spirale de sang dévorante
-  'Protego Diabolica':'img/fx/spells/protego_diabolica.png'  // brasier d'anneau noir/violet
+  'Protego Diabolica':'img/fx/spells/protego_diabolica.png', // brasier d'anneau noir/violet
+  // ── Formes évoluées spell-scaling (PR #645) — splashes dédiés ──
+  'Lumos Solem Ardent': 'img/fx/spells/lumos_solem_ardent.png', // lance solaire descendante
+  'Glacius Cataclysme': 'img/fx/spells/glacius_cataclysme.png', // onde de givre éclatée
+  'Fulgur Imperium':    'img/fx/spells/fulgur_imperium.png',    // chaîne d'éclairs ramifiée
+  'Lux Suprema':        'img/fx/spells/lux_suprema.png',        // onde de lumière dorée
+  'Nox Devorans':       'img/fx/spells/nox_devorans.png',       // marée d'ombre dévorante
+  'Diffindo Ultima':    'img/fx/spells/diffindo_ultima.png',    // fauchage en croix argenté
+  'Vulnera Maxima':     'img/fx/spells/vulnera_maxima.png'      // aura de guérison rose-or
 };
 
 // Résout le PNG de splash d'un sort (par nom), ou null si aucun.

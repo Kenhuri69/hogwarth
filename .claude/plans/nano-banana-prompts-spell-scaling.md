@@ -223,5 +223,12 @@ outward, area full-heal aura, [+ suffixe SPLASH d'effet]
 
 - 2026-06-21 : doc créé. 7 sorts (1 mono Lumos Solem Ardent + 6 AoE évolués),
   prompts icône + splash. Slugs alignés sur `SPELL_ICON_REGISTRY` (alias
-  temporaires en place depuis PR #645). En attente des 14 images
-  (symbole + splash × 7) pour intégration par lots.
+  temporaires en place depuis PR #645).
+- 2026-06-21 : **14 images reçues + intégrées**. Détourage `dechecker_png.py`
+  (icônes → 128² `img/icons/spells/`, splashes → 256² `img/fx/spells/`).
+  Cas particulier **Diffindo Ultima splash** : effet monochrome blanc/argent →
+  la méthode saturation du dechecker le vidait ; keyer luminance+saturation
+  custom pour récupérer la croix de fauchage. `SPELL_ICON_REGISTRY` (7 alias →
+  art dédié) + `SPELL_SPLASH_REGISTRY` (7 nouvelles entrées). cache-bump
+  item-icons.js v46 / CACHE_VERSION v209. Vérifs : SpellIcons ✓ (25 icônes,
+  allLoaded), units 946 ✓, pwa-smoke ✓.
