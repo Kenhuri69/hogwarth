@@ -139,4 +139,15 @@ Agréger les fiches. Seuils indicatifs (panel ≥ 3) :
 le livrable P3.5 ; il n'engage **aucune** modif de gameplay tant que le
 playtest n'a pas produit de constat de lassitude mesuré. Reporter ici les
 résultats agrégés + le verdict de la §5 une fois la session menée.
+
+> **Amorce variété livrée (2026-06-21)** — indépendante du verdict de
+> lassitude. Le beat `darkLoop` (déclenché 1×/palier, soit 3× sur 3 Boucles,
+> via `pickHeroBark` qui tire **au hasard** dans le pool du héros) ne comptait
+> qu'**une seule réplique par héros** : le tirage renvoyait donc toujours la
+> même phrase (l'infra de variété était neutralisée par un pool de taille 1).
+> Chaque pool `darkLoop` est porté à **3 variantes** (×16 héros, en voix). Cela
+> ne touche **ni la cadence** (`_BARK_COOLDOWN_MS` inchangé) **ni l'équilibrage**
+> — c'est le levier « enrichir les variantes » préféré du §5. Le playtest reste
+> nécessaire pour trancher §5 (fréquence trop haute/basse) et décider d'étendre
+> l'enrichissement à `loopEcho`/`darkBoss` si besoin.
 </content>
