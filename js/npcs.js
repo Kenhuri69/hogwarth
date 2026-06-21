@@ -1573,6 +1573,10 @@ const NPCS = [
       { id: "elixir_lucidite",  price: 240 },
       { id: "potion_corruption_ctrl", price: 360 },
       { id: "potion_resilience_maison", price: 320 },
+      // Potions 2.0 P12 — formes Boucle (Écho Temporel + poudres runiques).
+      { id: "potion_echo_temporel", price: 300 },
+      { id: "poudre_stun",      price: 90 },
+      { id: "poudre_fear",      price: 90 },
       // Marchand d'Ombre (Potions 2.0 P9) : les 4 Premium hors-Maison se
       // monnaient ici, cher (la Premium de chosenHouse reste « facile » via
       // la quête signature — décision §3.4).

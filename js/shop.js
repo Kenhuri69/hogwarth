@@ -27,6 +27,11 @@ const SHOP_CATALOG = [
   { id: "flacon_venin",        minFloor: 4 },
   { id: "flacon_deflagration", minFloor: 5 },
   { id: "flacon_brume_toxique",minFloor: 6 },
+  // Potions 2.0 P12 — utilitaire + huiles d'arme (combat prep).
+  { id: "potion_vision",       minFloor: 3 },
+  { id: "huile_feu",           minFloor: 5 },
+  { id: "huile_givre",         minFloor: 5 },
+  { id: "huile_foudre",        minFloor: 5 },
   { id: "lame_sanguinaire",    minFloor: 4 },
   { id: "armure_lourde",       minFloor: 4 },
   { id: "anneau_furie",        minFloor: 5 },

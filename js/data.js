@@ -1275,6 +1275,47 @@ const ITEMS = [
     sideEffect:{ stat:"def", magnitude:0.15, turns:2, chance:0.5 },
     houseAffinity:null, price:0,
     synergy:{ artifacts:["TENEBRES_SET"], spells:["Sectumsempra","Morsmordre"], note:"La corruption nourrit la puissance — le Set des Ténèbres l'amplifie." } },
+  // ── Formes utilitaires & contrôle (Potions 2.0 — Lot P12, §1.5) ──────────
+  // Vision des Éclats : révèle l'étage entier (brouillard + jardins + passages
+  // secrets) et aiguise la fouille N pas. Effet `reveal_treasures` (inventory.js),
+  // hors combat. Source : chaudron + boutique (≥3).
+  { id:"potion_vision", name:"Potion de Vision des Éclats", icon:"🔮",
+    desc:"Révèle l'étage entier (coffres, jardins, passages cachés) et aiguise la fouille pendant 20 pas.",
+    type:"consumable", category:"utilitaire", rarity:"rare", effect:"reveal_treasures", power:20, price:90,
+    synergy:{ note:"Niffleurs, jardins, coffres et Revelio — tout se dévoile." } },
+  // Écho Temporel : hors combat annule le dernier pas (position + PV/PM) ; en
+  // combat accorde une action immédiate (1×/combat). Effet `temporal_echo`.
+  { id:"potion_echo_temporel", name:"Potion d'Écho Temporel", icon:"⏳",
+    desc:"Hors combat : annule ton dernier pas. En combat : t'accorde une action immédiate (1×/combat).",
+    type:"consumable", category:"utilitaire", rarity:"epic", effect:"temporal_echo", price:260,
+    synergy:{ artifacts:["retourneur_temps"], spells:["Reliquae Temporis"], note:"Le Retourneur de Temps distillé — un instant repris au destin." } },
+  // Huiles d'arme (×3 éléments) : enduisent l'arme du personnage actif ; ses
+  // attaques PHYSIQUES infligent un bonus élémentaire N attaques (effet
+  // `weapon_oil`, battle.js — executeAttack) et déclenchent les combos.
+  { id:"huile_feu", name:"Huile de Feu", icon:"🔥",
+    desc:"Enduit l'arme : +6 dégâts de feu sur tes 4 prochaines attaques (combat).",
+    type:"consumable", category:"buff", rarity:"rare", effect:"weapon_oil", element:"feu", power:6, turns:4, price:70,
+    synergy:{ note:"Les attaques physiques déclenchent les combos de feu." } },
+  { id:"huile_givre", name:"Huile de Givre", icon:"❄️",
+    desc:"Enduit l'arme : +6 dégâts de glace sur tes 4 prochaines attaques (combat).",
+    type:"consumable", category:"buff", rarity:"rare", effect:"weapon_oil", element:"glace", power:6, turns:4, price:70,
+    synergy:{ note:"Les attaques physiques déclenchent les combos de gel." } },
+  { id:"huile_foudre", name:"Huile de Foudre", icon:"⚡",
+    desc:"Enduit l'arme : +6 dégâts de foudre sur tes 4 prochaines attaques (combat).",
+    type:"consumable", category:"buff", rarity:"rare", effect:"weapon_oil", element:"foudre", power:6, turns:4, price:70,
+    synergy:{ note:"Les attaques physiques déclenchent les combos de foudre." } },
+  // Poudres runiques (×2) : jetées sur TOUT le groupe ennemi, 0 dégât, contrôle
+  // pur (statut AoE). Réemploi de l'effet `throw` + `aoe` (battle.js — throwItemAoe).
+  { id:"poudre_stun", name:"Poudre Runique Étourdissante", icon:"💫",
+    desc:"Jetée sur tout le groupe ennemi : étourdit 1 tour (aucun dégât).",
+    type:"consumable", category:"debuff", rarity:"rare", effect:"throw", power:0, aoe:true,
+    statusId:"stun", statusTurns:1, price:80,
+    synergy:{ note:"Contrôle pur — fige le groupe le temps d'un sort." } },
+  { id:"poudre_fear", name:"Poudre Runique Aveuglante", icon:"😱",
+    desc:"Jetée sur tout le groupe ennemi : sème la peur 2 tours (aucun dégât).",
+    type:"consumable", category:"debuff", rarity:"rare", effect:"throw", power:0, aoe:true,
+    statusId:"fear", statusTurns:2, price:80,
+    synergy:{ note:"Contrôle pur — la panique brise leur élan." } },
   { id:"cape_invis",   name:"Cape d'Invisibilité",   icon:"🌫️", desc:"AGI+5 LCK+5 · Esquive +5%", type:"acc",   slot:"cloak", family:"cloak_invis",  rarity:"epic",     bonusAgi:5, bonusLck:5, bonusDodgeChance:5, power:5, price:550 },
   { id:"chapeau_pointu",name:"Chapeau de Serdaigle", icon:"🎓", desc:"MAG+3 INT+3",            type:"armor", slot:"head",  family:"hat_serd",     rarity:"rare",     bonusDef:2, bonusMag:3, power:3, price:300 },
   // Easter egg « Salle sur Demande » — objet unique offert à la 1ʳᵉ Salle de
@@ -1597,6 +1638,35 @@ const POTION_RECIPES = [
     ingredients:{ herbe_asphodele_noire:2, herbe_aconit:1 },            difficulty:18,
     workshop:"ruines", minFloor:11,
     lore:"L'aconit bride la fleur noire — assez pour canaliser sa corruption, jamais pour l'éteindre." },
+  // ── Formes utilitaires & contrôle (Potions 2.0 — Lot P12, §1.5) ──────────
+  // Multisets vérifiés uniques (aucune collision avec les 32 recettes existantes).
+  { id:"brew_potion_vision", name:"Potion de Vision des Éclats", resultItemId:"potion_vision",
+    ingredients:{ herbe_branchiflore:1, herbe_ortie:1 },                difficulty:12,
+    lore:"La branchiflore ouvre l'œil intérieur ; l'ortie le tient éveillé." },
+  // Écho Temporel : un Retourneur de Temps (sac) infusé au dictame. workshop ruines.
+  { id:"brew_echo_temporel", name:"Potion d'Écho Temporel", resultItemId:"potion_echo_temporel",
+    ingredients:{ herbe_dictame:2, retourneur_temps:1 },               difficulty:18,
+    workshop:"ruines", minFloor:11,
+    lore:"Le dictame infusé sur un Retourneur de Temps fige un instant dans la fiole." },
+  // Huiles d'arme ×3 — herbes par élément. workshop "any" (gatées par les herbes).
+  { id:"brew_huile_feu", name:"Huile de Feu", resultItemId:"huile_feu",
+    ingredients:{ herbe_aconit:1, herbe_ortie:1 },                     difficulty:14,
+    lore:"L'aconit et l'ortie macérés mordent le métal d'une ardeur brûlante." },
+  { id:"brew_huile_givre", name:"Huile de Givre", resultItemId:"huile_givre",
+    ingredients:{ herbe_branchiflore:1, herbe_asphodele:1 },           difficulty:14,
+    lore:"La branchiflore liée à l'asphodèle dépose un froid mordant sur la lame." },
+  { id:"brew_huile_foudre", name:"Huile de Foudre", resultItemId:"huile_foudre",
+    ingredients:{ herbe_aconit:1, herbe_branchiflore:1 },              difficulty:14,
+    lore:"Aconit et branchiflore tressent une charge qui crépite au contact." },
+  // Poudres runiques ×2 — Page de Grimoire (sac) pulvérisée avec une herbe. workshop ruines.
+  { id:"brew_poudre_stun", name:"Poudre Runique Étourdissante", resultItemId:"poudre_stun",
+    ingredients:{ herbe_aconit:1, page_grimoire:1 },                   difficulty:15,
+    workshop:"ruines", minFloor:11,
+    lore:"Une Page de Grimoire pulvérisée avec l'aconit — la rune fige qui la respire." },
+  { id:"brew_poudre_fear", name:"Poudre Runique Aveuglante", resultItemId:"poudre_fear",
+    ingredients:{ herbe_armoise:1, page_grimoire:1 },                  difficulty:15,
+    workshop:"ruines", minFloor:11,
+    lore:"L'armoise broyée sur une Page de Grimoire exhale une terreur runique." },
 ];
 
 const SHOP_ITEMS = ["potion_s","potion_m","felix","choco_sorcier","wand1","robe1","amulette","broom","mandragore","livre_sortileges","livre_soin","livre_bombarda"];

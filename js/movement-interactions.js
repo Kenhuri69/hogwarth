@@ -331,7 +331,10 @@ function searchRoom() {
   // D5 — Fortune (volet LCK) : seuil objet élargi de +F (borné), or majoré
   // × (1 + F×0.5), double-herbe + F. Cf. luck-fortune.md §2.4.
   const F        = (typeof partyFortune === 'function') ? partyFortune() : 0;
-  const itemThr  = Math.min(0.9, SEARCH_ITEM_THRESHOLD + F);
+  // Vision des Éclats (P12) — fouille aiguisée : seuil objet/herbe élargi tant
+  // que `visionSearchSteps > 0` (décrémenté à chaque pas). Borné comme la Fortune.
+  const visionB  = (typeof visionSearchSteps === 'number' && visionSearchSteps > 0) ? 0.25 : 0;
+  const itemThr  = Math.min(0.9, SEARCH_ITEM_THRESHOLD + F + visionB);
 
   const roll = Math.random();
   if (roll < SEARCH_GOLD_THRESHOLD) {
@@ -937,6 +940,38 @@ function _revealGardensNear(cx, cy, r) {
     if (typeof updateQuestTracker === 'function') updateQuestTracker();
   }
   return revealed;
+}
+
+// Vision des Éclats (Potions 2.0 — Lot P12, §1.5) — révèle l'étage ENTIER :
+// dissipe le brouillard, dévoile tous les jardins cachés et tous les passages
+// secrets de l'étage. Retourne le nombre de secrets concrets mis au jour
+// (jardins + passages) — le brouillard n'est pas compté.
+function _revealFloorTreasures() {
+  // Brouillard : tout l'étage devient connu (coffres/boutiques/escaliers visibles
+  // sur la minimap).
+  if (typeof visited !== 'undefined' && Array.isArray(visited)) {
+    for (let y = 0; y < MAP_H; y++) {
+      for (let x = 0; x < MAP_W; x++) {
+        if (visited[y]) visited[y][x] = true;
+      }
+    }
+  }
+  // Jardins cachés : rayon couvrant toute la carte depuis la position courante.
+  let secrets = _revealGardensNear(playerX, playerY, MAP_W);
+  // Passages secrets : convertis en sol (comme une fouille adjacente réussie).
+  if (typeof secretWalls !== 'undefined' && secretWalls && secretWalls.size) {
+    for (const k of Array.from(secretWalls)) {
+      const [sx, sy] = k.split(',').map(Number);
+      if (dungeon[sy] && typeof dungeon[sy][sx] !== 'undefined') {
+        dungeon[sy][sx] = CELL.FLOOR;
+        secrets++;
+      }
+      secretWalls.delete(k);
+    }
+  }
+  if (typeof renderMinimap === 'function') renderMinimap();
+  if (typeof drawDungeon   === 'function') drawDungeon();
+  return secrets;
 }
 
 // Récolte le pool `gardenStock` en herbes du palier de l'étage courant.

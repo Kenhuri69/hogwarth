@@ -18,7 +18,7 @@ async function scenarioBrewing() {
     const added  = tryAddItem('herbe_armoise', { silent: true });
     return {
       herbCount,
-      recipesDefined: typeof POTION_RECIPES !== 'undefined' && POTION_RECIPES.length === 32,
+      recipesDefined: typeof POTION_RECIPES !== 'undefined' && POTION_RECIPES.length === 39,
       added,
       herbInBesace: getHerbCount('herbe_armoise'),
       inventoryUnchanged: player.inventory.length === before,
@@ -27,7 +27,7 @@ async function scenarioBrewing() {
   });
   console.log('  T1 données →', t1);
   assert(t1.herbCount === 7,          '7 items herbe attendus (6 + l\'herbe rare endgame)');
-  assert(t1.recipesDefined,           'POTION_RECIPES doit définir 32 recettes');
+  assert(t1.recipesDefined,           'POTION_RECIPES doit définir 39 recettes');
   assert(t1.added,                    'tryAddItem(herbe) doit réussir');
   assert(t1.herbInBesace === 1,       'la herbe doit aller dans la besace');
   assert(t1.inventoryUnchanged,       'la herbe ne doit pas occuper le sac');
@@ -340,7 +340,7 @@ async function scenarioRareHerb() {
     };
   });
   console.log('  T2 recettes prestige →', t2);
-  assert(t2.count === 32, `POTION_RECIPES doit compter 32 recettes (obtenu ${t2.count})`);
+  assert(t2.count === 39, `POTION_RECIPES doit compter 39 recettes (obtenu ${t2.count})`);
   assert(t2.xlResult === 'potion_xl',      'brew_xl_tenebres doit produire potion_xl (item existant)');
   assert(t2.xlspResult === 'potion_xl_sp', 'brew_xl_sp_tenebres doit produire potion_xl_sp (item existant)');
   assert(t2.match2 === 'brew_xl_tenebres',     '2 asphodèles noires → brew_xl_tenebres');
@@ -734,7 +734,7 @@ async function scenarioThrowablePotions() {
     };
   });
   console.log('  T4 recettes:', t4);
-  assert(t4.count === 32, `POTION_RECIPES doit compter 32 recettes (obtenu ${t4.count})`);
+  assert(t4.count === 39, `POTION_RECIPES doit compter 39 recettes (obtenu ${t4.count})`);
   assert(t4.present, 'les 3 recettes de flacons doivent exister');
   assert(t4.feu === 'brew_flacon_feu' && t4.givre === 'brew_flacon_givre' && t4.venin === 'brew_flacon_venin', 'chaque combo matche sa recette (multisets inédits)');
 
@@ -782,7 +782,7 @@ async function scenarioPotionUpgradeCraft() {
   assert(t1.heals[0] === 15 && t1.heals[1] === 30 && t1.heals[2] === 55, 'paliers de soin 15/30/55');
   assert(t1.recipesOk, 'les 7 recettes P4 doivent exister');
   assert(t1.iconsOk, 'les 4 nouveaux items doivent avoir une icône PNG');
-  assert(t1.count === 32, `POTION_RECIPES doit compter 32 recettes (obtenu ${t1.count})`);
+  assert(t1.count === 39, `POTION_RECIPES doit compter 39 recettes (obtenu ${t1.count})`);
 
   // T2 — pas de collision d'ingrédients (chaque set est unique).
   const t2 = await page.evaluate(() => {
@@ -1488,7 +1488,7 @@ async function scenarioPotionEvolve() {
   assert(t1.evolveSource === 'artifactForm', 'Philtre : evolves source artifactForm');
   assert(t1.helper, 'potionEvolveMult doit être exposé (potions.js)');
   assert(t1.recipeOk, 'recette brew_philtre_mage présente et matchable');
-  assert(t1.total === 32, `POTION_RECIPES doit compter 32 recettes (obtenu ${t1.total})`);
+  assert(t1.total === 39, `POTION_RECIPES doit compter 39 recettes (obtenu ${t1.total})`);
 
   // T2 — helper pur : multiplicateur ∈ [1, cap] selon le contexte du buveur.
   const t2 = await page.evaluate(() => {
@@ -1571,7 +1571,7 @@ async function scenarioHouseResilience() {
   assert(t1.exists && t1.effect === 'house_buff' && t1.category === 'buff', 'Résilience = house_buff / buff');
   assert(t1.recipeOk, 'recette brew_resilience_maison présente et matchable');
   assert(t1.plansDefined, 'HOUSE_BUFF_PLANS doit être défini');
-  assert(t1.total === 32, `POTION_RECIPES doit compter 32 recettes (obtenu ${t1.total})`);
+  assert(t1.total === 39, `POTION_RECIPES doit compter 39 recettes (obtenu ${t1.total})`);
 
   // T2 — buff aligné Gryffondor : +ATK (primaire) + LCK (rider crit).
   const t2 = await page.evaluate(() => {
@@ -1718,7 +1718,7 @@ async function scenarioPotionSideEffects() {
   assert(t1.evolveSource === 'corruption', 'evolves source corruption');
   assert(t1.hasSideEffect, 'sideEffect défini');
   assert(t1.recipeOk, 'recette brew_potion_corruption_ctrl (workshop ruines) matchable');
-  assert(t1.total === 32, `POTION_RECIPES doit compter 32 recettes (obtenu ${t1.total})`);
+  assert(t1.total === 39, `POTION_RECIPES doit compter 39 recettes (obtenu ${t1.total})`);
 
   // T2 — corruptionRisk : la conso monte spellCorruption (hors Boucle = pas de
   // contrecoup). currentFloor bas + pas de victoire → sideEffect inactif.
@@ -1807,7 +1807,7 @@ async function scenarioRuinsCauldron() {
   assert(t1.ruinesRecipes.includes('brew_elixir_lucidite')
       && t1.ruinesRecipes.includes('brew_potion_corruption_ctrl'),
       'les 2 recettes Ruines portent workshop:"ruines"');
-  assert(t1.total === 32, `POTION_RECIPES doit compter 32 recettes (obtenu ${t1.total})`);
+  assert(t1.total === 39, `POTION_RECIPES doit compter 39 recettes (obtenu ${t1.total})`);
 
   // T2 — génération : cellule garantie en Boucle (étage 13 post-victoire),
   // jamais hors victoire.
@@ -1917,4 +1917,155 @@ async function scenarioRuinsCauldron() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioBrewing, scenarioRecipeCodex, scenarioRareHerb, scenarioSlugClub, scenarioPotionBuff, scenarioPotionResistance, scenarioThrowablePotions, scenarioPotionUpgradeCraft, scenarioHerbGarden, scenarioGardenQuest, scenarioHerbEconomy, scenarioPotionAoeAndEnemyUse, scenarioAntiCorruption, scenarioPotionEvolve, scenarioHouseResilience, scenarioPremiumPotions, scenarioPotionSideEffects, scenarioRuinsCauldron] };
+async function scenarioP12Forms() {
+  console.log('\n── Scénario : formes utilitaires & contrôle (Potions 2.0 — Lot P12) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 — données : 7 items + 7 recettes + total 39 + multisets uniques + icônes.
+  const t1 = await page.evaluate(() => {
+    const ids = ['potion_vision','potion_echo_temporel','huile_feu','huile_givre','huile_foudre','poudre_stun','poudre_fear'];
+    const items = ids.map(id => ITEMS.find(i => i.id === id));
+    const recs = ['brew_potion_vision','brew_echo_temporel','brew_huile_feu','brew_huile_givre','brew_huile_foudre','brew_poudre_stun','brew_poudre_fear']
+      .map(id => POTION_RECIPES.find(r => r.id === id));
+    const match = {
+      vision: (_matchRecipe({ herbe_branchiflore:1, herbe_ortie:1 }) || {}).id,
+      echo:   (_matchRecipe({ herbe_dictame:2, retourneur_temps:1 }) || {}).id,
+      hfeu:   (_matchRecipe({ herbe_aconit:1, herbe_ortie:1 }) || {}).id,
+      pstun:  (_matchRecipe({ herbe_aconit:1, page_grimoire:1 }) || {}).id,
+      pfear:  (_matchRecipe({ herbe_armoise:1, page_grimoire:1 }) || {}).id,
+    };
+    return {
+      allItems: items.every(Boolean),
+      allRecs: recs.every(Boolean),
+      total: POTION_RECIPES.length,
+      vision: items[0] && items[0].effect,
+      echo:   items[1] && items[1].effect,
+      oil:    items[2] && { effect: items[2].effect, el: items[2].element, turns: items[2].turns },
+      stun:   items[5] && { effect: items[5].effect, aoe: items[5].aoe, st: items[5].statusId, pow: items[5].power },
+      echoRuines: recs[1] && recs[1].workshop === 'ruines',
+      pstunRuines: recs[5] && recs[5].workshop === 'ruines',
+      svgOk:  ids.every(id => typeof ITEM_ICON_SVG_REGISTRY !== 'undefined' && !!ITEM_ICON_SVG_REGISTRY[id]),
+      match,
+    };
+  });
+  console.log('  T1 données →', t1);
+  assert(t1.allItems && t1.allRecs, 'les 7 items + 7 recettes P12 existent');
+  assert(t1.total === 39, `POTION_RECIPES doit compter 39 recettes (obtenu ${t1.total})`);
+  assert(t1.vision === 'reveal_treasures' && t1.echo === 'temporal_echo', 'effets vision/écho corrects');
+  assert(t1.oil.effect === 'weapon_oil' && t1.oil.el === 'feu' && t1.oil.turns === 4, 'huile_feu = weapon_oil feu 4 tours');
+  assert(t1.stun.effect === 'throw' && t1.stun.aoe === true && t1.stun.st === 'stun' && t1.stun.pow === 0, 'poudre_stun = throw aoe stun 0 dégât');
+  assert(t1.echoRuines && t1.pstunRuines, 'Écho + poudres = recettes workshop ruines');
+  assert(t1.match.vision === 'brew_potion_vision' && t1.match.echo === 'brew_echo_temporel'
+      && t1.match.hfeu === 'brew_huile_feu' && t1.match.pstun === 'brew_poudre_stun'
+      && t1.match.pfear === 'brew_poudre_fear', 'multisets uniques → chacun matche sa recette');
+  assert(t1.svgOk, 'les 7 items P12 ont une icône SVG inline');
+
+  // T2 — Vision des Éclats : reveal_treasures (hors combat) dissipe le brouillard
+  // + arme la fouille aiguisée.
+  const t2 = await page.evaluate(() => {
+    inBattle = false;
+    for (let y = 0; y < MAP_H; y++) for (let x = 0; x < MAP_W; x++) visited[y][x] = false;
+    visionSearchSteps = 0;
+    player.inventory = [{ ...ITEMS.find(i => i.id === 'potion_vision') }];
+    useItem(0, false);
+    let allRevealed = true;
+    for (let y = 0; y < MAP_H; y++) for (let x = 0; x < MAP_W; x++) if (!visited[y][x]) allRevealed = false;
+    return { allRevealed, steps: visionSearchSteps, consumed: player.inventory.length === 0 };
+  });
+  console.log('  T2 Vision →', t2);
+  assert(t2.allRevealed, 'Vision dissipe tout le brouillard de l\'étage');
+  assert(t2.steps === 20, 'Vision arme 20 pas de fouille aiguisée');
+  assert(t2.consumed, 'la potion de Vision est consommée');
+
+  // T3 — Huile d'arme : weapon_oil arme weaponOil[idx] ; executeAttack ajoute un
+  // rider élémentaire (faiblesse feu → ×1.5) et décrémente l'enduit.
+  const t3 = await page.evaluate(() => {
+    inBattle = true; partySize = 1; currentBattleChar = 0;
+    shieldTurns = [0, 0]; guardTurns = [0, 0]; guardRegenCooldown = [0, 0];
+    weaponOil = [null, null]; celeriteExtra = [0, 0]; celeriteGauge = [0, 0];
+    const c = party[0]; c.hp = c.hpMax = 300; c.statusEffects = []; c.atk = 10; c.str = 0; c.critChance = 0; c.critMultiplier = 1.5;
+    _applyConsumableEffect(ITEMS.find(i => i.id === 'huile_feu'), party[0]);
+    const oilSet = !!(weaponOil[0] && weaponOil[0].element === 'feu' && weaponOil[0].turns === 4);
+    enemyGroup = [{ id: 'd', name: 'M', icon: '🎯', hp: 1000, currentHp: 1000, atk: 0, def: 0, mag: 0, agi: 0, resist: [], weak: ['feu'], statusEffects: [] }];
+    const origR = Math.random; Math.random = () => 0;
+    const before = enemyGroup[0].currentHp;
+    executeAttack(0);
+    Math.random = origR;
+    return { oilSet, turnsAfter: weaponOil[0] && weaponOil[0].turns, dealt: before - enemyGroup[0].currentHp };
+  });
+  console.log('  T3 Huile →', t3);
+  assert(t3.oilSet, 'huile_feu arme weaponOil[0] (feu, 4 attaques)');
+  assert(t3.turnsAfter === 3, 'une attaque décrémente l\'enduit (4 → 3)');
+  assert(t3.dealt >= 9, 'le rider élémentaire (+6 ×1.5 faiblesse = 9) s\'ajoute aux dégâts physiques');
+
+  // T4 — Poudre runique : throw aoe, 0 dégât, statut à TOUT le groupe. Duo (les
+  // deux héros vivants) pour éviter le tour ennemi synchrone (qui consommerait le stun).
+  const t4 = await page.evaluate(() => {
+    inBattle = true; partySize = 2; currentBattleChar = 0;
+    shieldTurns = [0, 0]; guardTurns = [0, 0]; guardRegenCooldown = [0, 0];
+    celeriteExtra = [0, 0]; celeriteGauge = [0, 0];
+    party[0].hp = party[0].hpMax = 300;
+    party[1].hp = party[1].hpMax = 300; party[1].statusEffects = [];
+    enemyGroup = [
+      { id: 'a', name: 'A', icon: '🎯', hp: 100, currentHp: 100, atk: 0, def: 0, mag: 0, agi: 0, resist: [], weak: [], statusEffects: [] },
+      { id: 'b', name: 'B', icon: '🎯', hp: 100, currentHp: 100, atk: 0, def: 0, mag: 0, agi: 0, resist: [], weak: [], statusEffects: [] },
+    ];
+    player.inventory = [{ ...ITEMS.find(i => i.id === 'poudre_stun') }];
+    const before = enemyGroup.map(e => e.currentHp);
+    const origR = Math.random; Math.random = () => 0;
+    throwItemAoe(0);
+    Math.random = origR;
+    return {
+      before, after: enemyGroup.map(e => e.currentHp),
+      stunned: enemyGroup.every(e => (e.statusEffects || []).some(s => s.id === 'stun')),
+      consumed: _countItems('poudre_stun') === 0,
+    };
+  });
+  console.log('  T4 Poudre →', t4);
+  assert(t4.after[0] === t4.before[0] && t4.after[1] === t4.before[1], 'poudre = 0 dégât (contrôle pur)');
+  assert(t4.stunned, 'la poudre étourdit TOUT le groupe ennemi');
+  assert(t4.consumed, 'la poudre est consommée');
+
+  // T5a — Écho Temporel en combat : action immédiate 1×/combat (2e usage refusé).
+  const t5a = await page.evaluate(() => {
+    inBattle = true; partySize = 1; currentBattleChar = 0; temporalEchoUsed = false;
+    player.inventory = [
+      { ...ITEMS.find(i => i.id === 'potion_echo_temporel') },
+      { ...ITEMS.find(i => i.id === 'potion_echo_temporel') },
+    ];
+    useItem(0, true);
+    const usedFlag = temporalEchoUsed, afterFirst = player.inventory.length;
+    useItem(0, true);                       // refusé (déjà replié)
+    return { usedFlag, afterFirst, afterSecond: player.inventory.length };
+  });
+  console.log('  T5a Écho combat →', t5a);
+  assert(t5a.usedFlag, 'Écho en combat arme temporalEchoUsed');
+  assert(t5a.afterFirst === 1, '1er Écho consommé (2 → 1)');
+  assert(t5a.afterSecond === 1, '2e Écho refusé le même combat (1×/combat)');
+
+  // T5b — Écho Temporel hors combat : annule le dernier pas (position + PV/PM).
+  const t5b = await page.evaluate(() => {
+    inBattle = false; partySize = 1;
+    const c = party[0]; c.hpMax = 100; c.hp = 100; c.spMax = 50; c.sp = 50;
+    playerX = 5; playerY = 5; playerDir = 'n';
+    _lastStepUndo = { floor: currentFloor, x: 4, y: 5, dir: 's', hp: [60], sp: [20] };
+    player.inventory = [{ ...ITEMS.find(i => i.id === 'potion_echo_temporel') }];
+    useItem(0, false);
+    return { x: playerX, y: playerY, dir: playerDir, hp: party[0].hp, sp: party[0].sp,
+             consumed: player.inventory.length === 0, undoCleared: _lastStepUndo === null };
+  });
+  console.log('  T5b Écho hors combat →', t5b);
+  assert(t5b.x === 4 && t5b.y === 5 && t5b.dir === 's', 'Écho hors combat restaure la position d\'avant-pas');
+  assert(t5b.hp === 60 && t5b.sp === 20, 'Écho restaure les PV/PM d\'avant-pas');
+  assert(t5b.consumed && t5b.undoCleared, 'la potion est consommée et le snapshot vidé');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (formes P12)`);
+  }
+  console.log('  ✅ Formes P12 OK (Vision, Huiles, Poudres, Écho Temporel)');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioBrewing, scenarioRecipeCodex, scenarioRareHerb, scenarioSlugClub, scenarioPotionBuff, scenarioPotionResistance, scenarioThrowablePotions, scenarioPotionUpgradeCraft, scenarioHerbGarden, scenarioGardenQuest, scenarioHerbEconomy, scenarioPotionAoeAndEnemyUse, scenarioAntiCorruption, scenarioPotionEvolve, scenarioHouseResilience, scenarioPremiumPotions, scenarioPotionSideEffects, scenarioRuinsCauldron, scenarioP12Forms] };

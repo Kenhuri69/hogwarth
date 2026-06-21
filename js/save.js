@@ -76,6 +76,7 @@ function _serializeState() {
     corruptionLevel: spellCorruption,
     wardCharges,                              // Potions 2.0 P7 — charges d'Immunité
     workshopLevel,                            // Potions 2.0 P11 — ateliers débloqués
+    visionSearchSteps,                        // Potions 2.0 P12 — fouille aiguisée (Vision)
 
     // Jardin d'herbes (Potions P6.b3) — jardins cachés + pool + éveil.
     hiddenGardens: Array.from(hiddenGardens),
@@ -503,6 +504,8 @@ function _applyState(gs) {
   wardCharges = (typeof gs.wardCharges === 'number') ? gs.wardCharges : 0;
   // Ateliers d'alchimie débloqués (Potions 2.0 P11) — fallback 0 (saves antérieures).
   workshopLevel = (typeof gs.workshopLevel === 'number') ? gs.workshopLevel : 0;
+  // Vision des Éclats (Potions 2.0 P12) — fouille aiguisée (fallback 0).
+  visionSearchSteps = (typeof gs.visionSearchSteps === 'number') ? gs.visionSearchSteps : 0;
   // Jardin d'herbes (Potions P6.b3) — jardins cachés + pool + éveil.
   hiddenGardens = new Set(gs.hiddenGardens || []);
   gardenStock = (typeof gs.gardenStock === 'number') ? gs.gardenStock : 0;
