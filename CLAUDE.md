@@ -51,8 +51,11 @@ js/
   monsters-mid.js  →  MONSTERS.push(…) — créatures étages 4-10. APRÈS monsters-low.js
   monsters-high.js →  MONSTERS.push(…) — étage 10+ / boss / Boucle / Gardiens des
                       Fondateurs. APRÈS monsters-mid.js
-  npcs.js          →  NPCS[] — registre de données des PNJ (donneurs de quêtes,
-                      vendeurs, PNJ lore)
+  npcs.js          →  SOCLE du registre des PNJ : header + `const NPCS = []`
+                      (Lot C P3.3 — découpé). Les ENTRÉES vivent dans npcs-a/b.js.
+  npcs-a.js        →  NPCS.push(…) — PNJ nommés (écoles & quêtes). APRÈS npcs.js
+  npcs-b.js        →  NPCS.push(…) — PNJ ambiants/aléatoires & endgame/Boucle.
+                      APRÈS npcs-a.js
   npcs-helpers.js  →  Helpers de requête : getNpcById(), getNpcsForFloor(),
                       getRandom{Vendors,Lore,Encounters,QuestGivers,Ambient}ForFloor().
                       Chargé APRÈS npcs.js
@@ -360,7 +363,12 @@ ou `[data-item-id]` dans les modales.
 
 ## Système PNJ (`js/npcs.js` + `js/npc-dialog.js`)
 
-### Modèle de PNJ (`NPCS[]` dans `npcs.js`)
+### Modèle de PNJ (`NPCS[]` — socle `npcs.js`, entrées dans `npcs-a/b.js`)
+
+> Lot C P3.3 : `NPCS` est découpé en socle `npcs.js` (`const NPCS = []`) +
+> `npcs-a.js`/`npcs-b.js` (`NPCS.push(…)`). Pour ajouter un PNJ, insérer
+> l'objet dans le `NPCS.push(…)` de `npcs-a.js` (PNJ nommés) ou `npcs-b.js`
+> (ambiants/endgame). L'ordre du tableau = socle → a → b.
 
 ```js
 {
