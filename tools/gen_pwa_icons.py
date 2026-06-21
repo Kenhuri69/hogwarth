@@ -11,10 +11,9 @@ Produit dans img/icons/pwa/ :
 La source `title_icon.jpg` est une image CARRÉE dédiée (château centré,
 fissure runique en dessous) — distincte de l'image de garde portrait
 `title.jpg`. Un léger recadrage central remonte le château pour qu'il
-remplisse l'icône. Le **cartouche or** reste à l'intérieur de la
-safe-zone 80 %, pour survivre aux masques que les launchers Android
-appliquent (squircle, circle, rounded square, teardrop). Le fond pourpre
-du ciel s'étend jusqu'au bord (bleed-safe).
+remplisse l'icône. Pas de cadre ajouté : l'image se suffit à elle-même.
+Pour les variantes maskable, le contenu critique tient dans la safe-zone
+80 % et le fond pourpre du ciel s'étend jusqu'au bord (bleed-safe).
 
 Dépendance : pillow.
 
@@ -30,9 +29,6 @@ OUT_DIR = ROOT / "img" / "icons" / "pwa"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 BG_COLOR = (26, 15, 6)         # background_color du manifest (#1a0f06)
-GOLD_OUTER = (201, 168, 76)    # theme_color (#c9a84c)
-GOLD_INNER = (236, 214, 146)   # accent doré clair
-GOLD_DARK = (132, 99, 20)      # ombre dorée
 
 # title_icon.jpg : 1024x1024, château centré. On recadre légèrement vers
 # le haut (on rogne un peu de ciel et la base de la fissure) pour que le
@@ -63,82 +59,19 @@ def load_castle_crop() -> Image.Image:
     return crop
 
 
-def draw_gold_frame(canvas: Image.Image, inset: int, thickness: int) -> None:
-    """
-    Trace un cartouche or à `inset` pixels du bord, épaisseur `thickness`.
-    Dégradé sombre → clair → sombre pour effet ciselé, + liseré or clair
-    intérieur.
-    """
-    draw = ImageDraw.Draw(canvas)
-    size = canvas.size[0]
-
-    # Anneau dégradé
-    for i in range(thickness):
-        t = i / max(1, thickness - 1)
-        # courbe en V : pic clair au milieu de l'épaisseur
-        v = 1.0 - abs(2 * t - 1)  # 0 → 1 → 0
-        r = int(GOLD_DARK[0] * (1 - v) + GOLD_INNER[0] * v)
-        g = int(GOLD_DARK[1] * (1 - v) + GOLD_INNER[1] * v)
-        b = int(GOLD_DARK[2] * (1 - v) + GOLD_INNER[2] * v)
-        x0 = inset + i
-        y0 = inset + i
-        x1 = size - 1 - inset - i
-        y1 = size - 1 - inset - i
-        draw.rectangle([x0, y0, x1, y1], outline=(r, g, b), width=1)
-
-    # Liseré or clair intérieur
-    pin = inset + thickness + max(1, size // 96)
-    draw.rectangle(
-        [pin, pin, size - 1 - pin, size - 1 - pin],
-        outline=GOLD_OUTER,
-        width=max(1, size // 96),
-    )
-
-
-def add_corner_studs(canvas: Image.Image, inset: int, thickness: int) -> None:
-    """Petites pastilles dorées aux 4 coins du cartouche."""
-    size = canvas.size[0]
-    draw = ImageDraw.Draw(canvas)
-    radius = max(3, size // 24)
-    center = inset + thickness // 2
-    for cx, cy in [
-        (center, center),
-        (size - 1 - center, center),
-        (center, size - 1 - center),
-        (size - 1 - center, size - 1 - center),
-    ]:
-        # halo extérieur
-        draw.ellipse([cx - radius - 1, cy - radius - 1, cx + radius + 1, cy + radius + 1],
-                     fill=GOLD_DARK)
-        # disque or
-        draw.ellipse([cx - radius, cy - radius, cx + radius, cy + radius], fill=GOLD_OUTER)
-        # reflet clair
-        r2 = max(1, radius // 2)
-        draw.ellipse([cx - r2, cy - r2, cx, cy], fill=GOLD_INNER)
-
-
 def make_any_icon(source: Image.Image, size: int) -> Image.Image:
     """
     purpose=any : le château remplit le canvas (bleed-safe — seul le ciel
-    peut être croppé par un mask launcher). Le cartouche or est INDENTÉ
-    de ~10 % du bord pour rester visible quel que soit le mask appliqué
-    (squircle, rounded square, circle).
+    peut être croppé par un mask launcher).
     """
-    castle = source.resize((size, size), Image.LANCZOS)
-    canvas = castle.copy()
-
-    inset = max(2, int(size * 0.10))         # 10 % du côté
-    thickness = max(3, int(size * 0.022))    # 2,2 % du côté
-    draw_gold_frame(canvas, inset=inset, thickness=thickness)
-    add_corner_studs(canvas, inset=inset, thickness=thickness)
-    return canvas
+    return source.resize((size, size), Image.LANCZOS)
 
 
 def make_maskable_icon(source: Image.Image, size: int) -> Image.Image:
     """
     purpose=maskable : le contenu critique est dans la safe-zone 80 %.
     Le château occupe les 80 % centraux, le fond pourpre s'étend
-    jusqu'au bord pour bleed-safe. Cartouche or au bord de la safe-zone.
+    jusqu'au bord pour bleed-safe.
     """
     safe = int(size * 0.80)
     inner = source.resize((safe, safe), Image.LANCZOS)
@@ -154,11 +87,6 @@ def make_maskable_icon(source: Image.Image, size: int) -> Image.Image:
     off = (size - safe) // 2
     canvas.paste(inner, (off, off))
 
-    # Cartouche or au bord de la safe-zone (donc à `off` du bord du canvas)
-    thickness = max(2, int(size * 0.018))
-    draw_gold_frame(canvas, inset=off, thickness=thickness)
-    add_corner_studs(canvas, inset=off, thickness=thickness)
-
     # Léger blur sur la couture entre le château et le fond étendu
     mask = Image.new("L", (size, size), 0)
     md = ImageDraw.Draw(mask)
@@ -172,17 +100,10 @@ def make_maskable_icon(source: Image.Image, size: int) -> Image.Image:
 def make_apple_touch_icon(source: Image.Image) -> Image.Image:
     """
     iOS applique un arrondi de coin doux (pas de masque squircle agressif).
-    Cartouche indenté ~8 % suffit. Fond opaque obligatoire.
+    Fond opaque obligatoire.
     """
     size = 180
-    castle = source.resize((size, size), Image.LANCZOS)
-    canvas = castle.copy()
-
-    inset = max(2, int(size * 0.08))
-    thickness = max(3, int(size * 0.022))
-    draw_gold_frame(canvas, inset=inset, thickness=thickness)
-    add_corner_studs(canvas, inset=inset, thickness=thickness)
-    return canvas
+    return source.resize((size, size), Image.LANCZOS)
 
 
 def main() -> None:
