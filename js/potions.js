@@ -34,6 +34,62 @@ function _brewPotencyFor(kind) {
   return Math.max(BREW_POTENCY_FLOOR, Math.min(BREW_POTENCY_CAP, base + intBonus));
 }
 
+// ── Potions évolutives (Potions 2.0 — Lot P8, §1.7/§2.5) ─────────────────
+// `item.evolves = { source, key?, perStep?, cap? }` : l'effet d'une potion
+// s'amplifie selon le CONTEXTE du buveur, calculé À LA CONSOMMATION (lecture
+// seule, zéro nouvel état). Helper PUR : retourne un multiplicateur ∈ [1, cap]
+// que `_applyConsumableEffect` applique sur `pow`. 4 sources :
+//   artifactForm → nb de pièces équipées d'un `formType` donné (Artefacts 2.0)
+//   artifactSet  → nb de pièces d'un `setKey` actif
+//   corruption   → `spellCorruption` courant
+//   floor        → profondeur (− `key`/`base` offset éventuel, ≥ 0)
+// Or/inventaire partagés → on lit le MAX sur les membres vivants du groupe
+// (comme partyFortune), pas la somme (anti-double-comptage en duo).
+// Les coefficients (`perStep`/`cap`) des items sont calibrés en P13.
+function _partyEquipMax(predicate) {
+  let best = 0;
+  const size = (typeof partySize === 'number') ? partySize : party.length;
+  for (let i = 0; i < size; i++) {
+    const c = party[i];
+    if (!c || c.hp <= 0 || !c.equipped) continue;
+    let n = 0;
+    for (const it of Object.values(c.equipped)) {
+      if (it && predicate(it)) n++;
+    }
+    best = Math.max(best, n);
+  }
+  return best;
+}
+
+function potionEvolveMult(item) {
+  const ev = item && item.evolves;
+  if (!ev || typeof ev !== 'object') return 1;
+  const perStep = (typeof ev.perStep === 'number') ? ev.perStep : 0;
+  const cap     = (typeof ev.cap === 'number') ? ev.cap : Infinity;
+  let steps = 0;
+  switch (ev.source) {
+    case 'artifactForm': {
+      const keys = Array.isArray(ev.key) ? ev.key : (ev.key ? [ev.key] : []);
+      steps = _partyEquipMax(it => it.formType && keys.includes(it.formType));
+      break;
+    }
+    case 'artifactSet':
+      steps = _partyEquipMax(it => it.setKey && it.setKey === ev.key);
+      break;
+    case 'corruption':
+      steps = (typeof spellCorruption === 'number') ? Math.max(0, spellCorruption) : 0;
+      break;
+    case 'floor':
+      steps = (typeof currentFloor === 'number')
+        ? Math.max(0, currentFloor - (ev.base || 0)) : 0;
+      break;
+    default:
+      return 1;
+  }
+  const mult = 1 + perStep * steps;
+  return Math.max(1, Math.min(cap, mult));
+}
+
 // ── Besace d'herboriste ──────────────────────────────────────
 
 function addHerb(id, n) {
