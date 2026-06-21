@@ -404,6 +404,19 @@ function _updateEclatBadge() {
     crest.className = crest.className
       .replace(/\s*eclat-aura-\d/g, '').replace(/\s*eclat-cycle-broken/g, '') + tier;
   }
+  // H4 (ch.11 P2) — aura cumulative par FILTRE CSS sur l'avatar des héros
+  // (médaillon de carte). Surface joueur toujours visible, distincte du blason
+  // Maison (P0). Même escalade de paliers + liseré « Cycle brisé ». Cosmétique
+  // pur, défensif. La teinte est portée par `.pcard-medaillon.eclat-aura-N`.
+  const broken2 = (typeof cycleBroken !== 'undefined') && cycleBroken;
+  const avatarTier = (!won || e <= 0) ? '' :
+    (' eclat-aura-' + milestones + (broken2 ? ' eclat-cycle-broken' : ''));
+  for (let i = 0; i < 2; i++) {
+    const av = document.getElementById('pcard-medaillon-' + i);
+    if (!av) continue;
+    av.className = av.className
+      .replace(/\s*eclat-aura-\d/g, '').replace(/\s*eclat-cycle-broken/g, '') + avatarTier;
+  }
 }
 
 function _updateCharBar(idx) {

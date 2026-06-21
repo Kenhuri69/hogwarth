@@ -702,6 +702,95 @@ function useRefuge() {
   safeCall('autoSave', 'refuge-used');
 }
 
+// ── Le Refuge d'Helga (P2 — S4, ét.18, Boucle) ──────────────────────────
+// SEULE vraie mécanique neuve de la P2 : à la 1re entrée de l'étage 18, une
+// niche tiède creusée par Helga propose un CHOIX à 2 options, rendu via le
+// `#explore-overlay` existant (pas de système `choice` générique) :
+//   • Se reposer    → soin partiel (REFUGE_HEAL_FRAC, comme useRefuge) ;
+//   • Offrir un objet → sacrifie 1 consommable du sac → +1 Éclat porté
+//     (héritage visible) + une parole de Poufsouffle.
+// One-shot via le flag SÉRIALISÉ `helgaRefugeUsed` (posé seulement quand un
+// choix est résolu — fermer l'overlay le re-proposera à la prochaine visite).
+// Défensif partout (no-op si DOM/état absents — file:// smoke).
+const HELGA_REFUGE_FLOOR = 18;
+
+// Orchestrateur one-shot : ouvre l'overlay du Refuge à la 1re entrée de l'ét.18.
+function maybeHelgaRefugeBeat(floor) {
+  if (floor !== HELGA_REFUGE_FLOOR) return false;
+  if (typeof helgaRefugeUsed !== 'undefined' && helgaRefugeUsed) return false;
+  return _showHelgaRefugeOverlay();
+}
+
+// Rend l'overlay du Refuge dans le conteneur #explore-overlay (mêmes éléments
+// que _showExploreOverlay, contenu sur mesure + 2 boutons d'action).
+function _showHelgaRefugeOverlay() {
+  const icon    = (typeof safeEl === 'function') ? safeEl('explore-icon')    : document.getElementById('explore-icon');
+  const title   = (typeof safeEl === 'function') ? safeEl('explore-title')   : document.getElementById('explore-title');
+  const descEl  = (typeof safeEl === 'function') ? safeEl('explore-desc')    : document.getElementById('explore-desc');
+  const actions = (typeof safeEl === 'function') ? safeEl('explore-actions') : document.getElementById('explore-actions');
+  const overlay = (typeof safeEl === 'function') ? safeEl('explore-overlay') : document.getElementById('explore-overlay');
+  if (!icon || !title || !descEl || !actions || !overlay) return false;
+  const frac = (typeof REFUGE_HEAL_FRAC === 'number') ? REFUGE_HEAL_FRAC : 0.5;
+  icon.innerHTML     = '🦡';
+  title.textContent  = "Le Refuge d'Helga";
+  descEl.textContent = "Entre deux racines géantes pétrifiées, une niche tiède résiste au gel de l'Avant-Monde — le premier abri qu'Helga creusa pour ceux qui resteraient. Tu peux y reprendre ton souffle, ou laisser une offrande aux égarés qui rôdent encore ici.";
+  actions.innerHTML =
+    `<button class="explore-btn" onclick="helgaRest()">Se reposer (+${Math.round(frac * 100)} % PV/PM)</button>
+     <button class="explore-btn" onclick="helgaOffer()">Offrir un objet aux égarés (+1 Éclat)</button>
+     <button class="explore-btn secondary" onclick="_hideExploreOverlay()">S'éloigner</button>`;
+  overlay.style.display = 'flex';
+  return true;
+}
+
+// Option « Se reposer » : soin partiel identique au Refuge de Maison.
+function helgaRest() {
+  if (typeof helgaRefugeUsed !== 'undefined' && helgaRefugeUsed) { _hideExploreOverlay(); return; }
+  const frac = (typeof REFUGE_HEAL_FRAC === 'number') ? REFUGE_HEAL_FRAC : 0.5;
+  party.forEach(c => {
+    if (c.hp <= 0) return;
+    c.hp = Math.min(c.hpMax, c.hp + Math.ceil(c.hpMax * frac));
+    c.sp = Math.min(c.spMax, c.sp + Math.ceil(c.spMax * frac));
+  });
+  if (typeof helgaRefugeUsed !== 'undefined') helgaRefugeUsed = true;
+  if (typeof DFX_safe !== 'undefined') DFX_safe.burst('explore-overlay', 'heal');
+  setNarrative("Tu t'assieds dans la niche tiède. Le gel s'éloigne, le souffle revient. Quelque part, Helga veille encore sur ceux qui n'abandonnent pas.");
+  if (typeof addMsg === 'function') addMsg(`🦡 Le Refuge d'Helga : ${Math.round(frac * 100)} % des PV et PM restaurés.`, 'good');
+  if (typeof AudioSystem !== 'undefined' && AudioSystem.playLevelUp) AudioSystem.playLevelUp();
+  _hideExploreOverlay();
+  updateUI();
+  safeCall('autoSave', 'helga-rest');
+}
+
+// Option « Offrir un objet » : sacrifie 1 consommable du sac → +1 Éclat porté.
+// Si le sac n'a aucun consommable, refuse sans consommer le one-shot.
+function helgaOffer() {
+  if (typeof helgaRefugeUsed !== 'undefined' && helgaRefugeUsed) { _hideExploreOverlay(); return; }
+  const inv = (typeof player !== 'undefined' && player && Array.isArray(player.inventory)) ? player.inventory : null;
+  const idx = inv ? inv.findIndex(it => it && it.type === 'consumable') : -1;
+  if (idx < 0) {
+    if (typeof addMsg === 'function') addMsg("Tu n'as aucun objet consommable à offrir aux égarés.", 'bad');
+    return;  // overlay reste ouvert, one-shot non consommé
+  }
+  const given = inv.splice(idx, 1)[0];
+  if (typeof accumulatedEclats !== 'undefined') accumulatedEclats++;
+  if (typeof helgaRefugeUsed !== 'undefined') helgaRefugeUsed = true;
+  // Héritage visible : un don peut franchir un palier d'Éclats (toast + Codex).
+  if (typeof _maybeCelebrateEclatMilestone === 'function') _maybeCelebrateEclatMilestone();
+  if (typeof DFX_safe !== 'undefined') DFX_safe.burst('explore-overlay', 'magic');
+  setNarrative(`Tu déposes ${given && given.name ? given.name : 'ton offrande'} dans la niche. Une chaleur reconnaissante répond — un Éclat de réalité se condense entre tes doigts. « On ne descend pas seul quand on a appris à ne pas abandonner. »`);
+  if (typeof addMsg === 'function') addMsg(`🦡 Offrande acceptée — +1 Éclat porté. (${given && given.name ? given.name : 'objet'} sacrifié.)`, 'magic');
+  // Parole de Poufsouffle (cosmétique, défensif).
+  if (typeof heroBark === 'function' && typeof party !== 'undefined') {
+    const n = (typeof partySize === 'number') ? partySize : party.length;
+    const speaker = party.slice(0, n).find(c => c && c.hp > 0) || party[0];
+    if (speaker && speaker.heroKey) heroBark(speaker.heroKey, 'levelUp', { channel: 'explore', once: 'helga-offer' });
+  }
+  if (typeof AudioSystem !== 'undefined' && AudioSystem.playLevelUp) AudioSystem.playLevelUp();
+  _hideExploreOverlay();
+  updateUI();
+  safeCall('autoSave', 'helga-offer');
+}
+
 // ── Salle sur Demande (easter egg) ───────────────────────────
 // Révèle la porte : le mur « propice » de l'étage devient CELL.REQUIREMENT,
 // marchable. Déclenché par le 3ᵉ passage sur la tuile (cf. movement.js _step).

@@ -755,6 +755,60 @@ function maybeSignatureEchoBeat(floor) {
   return true;
 }
 
+// ── Écho-rappel du Pacte de Salazar (P2 — S2, ét.16, Boucle) ────────────
+// Scène-RAPPEL contextuelle : derrière un passage scellé des Ruines, l'écho de
+// Salazar revient et réagit au choix DÉJÀ fait dans la quête signature
+// Serpentard (`slythPactChoice` : 'pact' | 'defiance' | null). AUCUN nouveau
+// choix, AUCUN flag neuf, AUCUN type d'objectif — pur affichage textuel + un
+// écho Codex selon la branche. Même patron one-shot que maybeSignatureEchoBeat
+// (sentinelle string dédiée dans seenScriptedBeat). Distinct de l'écho de
+// signature (étage 14, house-aware) : ici c'est une passation tardive (étage 16)
+// ouverte à tout héros qui a, ou non, scellé le Pacte des Cachots.
+const SALAZAR_PACT_FLOOR = 16;
+const _SALAZAR_PACT_SEEN_KEY = 'salazar_pact_recall';
+const SALAZAR_PACT_RECALL = {
+  pact: {
+    narrative: "Un pan de roche pivote sur ton seul passage : derrière, l'écho de Salazar t'attend, reconnaissant le pacte que tu as scellé jadis aux Cachots. « Tu as accepté ma part d'ombre, et tu es descendu plus bas que tous. » La voix glisse, satisfaite — chaque gain garde son ombre, mais l'ombre, elle, te connaît désormais. Tu repars marqué, et plus libre de l'avouer.",
+    toast: "🐍 L'écho du Pacte te reconnaît — l'ombre que tu as scellée te suit jusqu'ici.",
+    echoId: 'echo_pacte_scelle',
+  },
+  defiance: {
+    narrative: "Un pan de roche pivote, et l'écho de Salazar te toise — il se souvient que tu as REFUSÉ son pacte. « Tu es venu jusqu'ici sans moi. Sans raccourci, sans marque. » La voix n'a plus rien de mielleux : presque du respect. On n'a pas besoin d'un pacte pour descendre — seulement du cran de regarder ce qu'on a refusé, et de le refuser encore.",
+    toast: "🐍 L'écho du Pacte, refusé — tu es descendu sans lui, et il le sait.",
+    echoId: 'echo_pacte_defi',
+  },
+  none: {
+    narrative: "Un pan de roche refuse de pivoter : l'écho de Salazar te frôle sans te reconnaître. Le pacte des Cachots ne t'a jamais été offert — ni scellé, ni refusé. Le passage gris reste clos. Une voix basse s'éteint : « Pas toi. Pas cette descente-ci. » Tu longes le mur muet et poursuis.",
+    toast: "🐍 Le passage scellé reste muet — le Pacte ne t'a jamais été offert.",
+    echoId: null,
+  },
+};
+
+// Résolveur PUR : variante de l'écho-rappel à l'étage 16 selon le choix du Pacte.
+function getSalazarPactBeat(floor, pactChoice) {
+  if (floor !== SALAZAR_PACT_FLOOR) return null;
+  if (pactChoice === 'pact')      return SALAZAR_PACT_RECALL.pact;
+  if (pactChoice === 'defiance')  return SALAZAR_PACT_RECALL.defiance;
+  return SALAZAR_PACT_RECALL.none;
+}
+
+// Orchestrateur one-shot : joue l'écho-rappel à la 1re entrée de l'étage 16.
+// Lit `slythPactChoice` (existant), pose l'écho Codex de la branche (si présent)
+// puis déverrouille via le robinet `echo`. No-op silencieux hors runtime.
+function maybeSalazarPactBeat(floor) {
+  const pact = (typeof slythPactChoice !== 'undefined') ? slythPactChoice : null;
+  const beat = getSalazarPactBeat(floor, pact);
+  if (!beat) return false;
+  if (typeof seenScriptedBeat === 'undefined' || !seenScriptedBeat) return false;
+  if (seenScriptedBeat.has(_SALAZAR_PACT_SEEN_KEY)) return false;
+  seenScriptedBeat.add(_SALAZAR_PACT_SEEN_KEY);
+  if (typeof setNarrative === 'function') setNarrative(beat.narrative);
+  if (typeof addMsg === 'function') addMsg('📜 ' + beat.toast, 'narrative');
+  if (beat.echoId && typeof seenEchoes !== 'undefined' && seenEchoes) seenEchoes.add(beat.echoId);
+  if (typeof checkCodexUnlocks === 'function') checkCodexUnlocks('echo-pacte');
+  return true;
+}
+
 // ── Voix des Ruines — beat solennel 13↔14 (P3 — ch.06 §6.9.4, ch.04 §4.5) ──
 // Au franchissement de la frontière de tranche 13→14 (entrée des Ruines
 // Anciennes), un beat SOLENNEL universel marque le passage de tout ce qui est

@@ -16,7 +16,7 @@
 //     individuel suffit pour eux.
 // =======================================================================
 
-const CACHE_VERSION = 'hogwarth-v216';
+const CACHE_VERSION = 'hogwarth-v217';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Précache minimal (~1 Mo) : shell HTML/CSS/JS + premier visuel.
@@ -27,7 +27,7 @@ const PRECACHE_URLS = [
   './manifest.json',
 
   // CSS
-  './css/style.css?v=50',
+  './css/style.css?v=51',
   './css/ux-improvements.css?v=5',
   './css/save-ui.css?v=5',
   './css/ornaments.css?v=1',
@@ -59,7 +59,7 @@ const PRECACHE_URLS = [
   './js/npcs-b.js?v=2',
   './js/npcs-helpers.js?v=4',
   './js/riddles.js?v=3',
-  './js/codex.js?v=19',
+  './js/codex.js?v=20',
   './js/data.js?v=64',
   './js/data-characters.js?v=1',
   './js/data-spells.js?v=1',
@@ -67,13 +67,13 @@ const PRECACHE_URLS = [
   './js/data-world.js?v=1',
   './js/data-icon-recipes.js?v=1',
   './js/floor-themes.js?v=2',
-  './js/floor-ambiance.js?v=17',
-  './js/floor-events.js?v=2',
+  './js/floor-ambiance.js?v=18',
+  './js/floor-events.js?v=3',
   './js/room-flavor.js?v=1',
   './js/item-icons.js?v=47',
-  './js/state.js?v=44',
+  './js/state.js?v=45',
   './js/hero-barks.js?v=13',
-  './js/ui.js?v=21',
+  './js/ui.js?v=22',
   './js/modal-a11y.js?v=2',
   './js/ui-character-sheet.js?v=14',
   './js/ui-settings.js?v=4',
@@ -92,8 +92,8 @@ const PRECACHE_URLS = [
   './js/renderer-entities.js?v=8',
   './js/renderer-minimap.js?v=9',
   './js/movement.js?v=39',
-  './js/movement-floors.js?v=19',
-  './js/movement-interactions.js?v=21',
+  './js/movement-floors.js?v=20',
+  './js/movement-interactions.js?v=22',
   './js/swipe-canvas.js?v=4',
   './js/battle.js?v=39',
   './js/battle-rewards.js?v=12',
@@ -113,7 +113,7 @@ const PRECACHE_URLS = [
   './js/intro.js?v=3',
   './js/shop.js?v=19',
   './js/save-slots.js?v=3',
-  './js/save.js?v=46',
+  './js/save.js?v=47',
   './js/save-visit-snapshot.js?v=2',
   './js/profile.js?v=3',
   './js/save-ui.js?v=9',
@@ -122,14 +122,14 @@ const PRECACHE_URLS = [
   './js/multiplayer.js?v=9',
   './js/multiplayer-social.js?v=1',
   './js/multiplayer-visits.js?v=1',
-  './js/main.js?v=35',
+  './js/main.js?v=36',
   './js/endgame.js?v=10',
   './js/break-cycle.js?v=4',
   './js/forge.js?v=7',
   './js/library.js?v=5',
   './js/help-tour.js?v=4',
   './js/balance-log.js?v=1',
-  './js/loader.js?v=57',
+  './js/loader.js?v=58',
   './js/pwa.js?v=6',
 
   // Icônes PWA + premier écran

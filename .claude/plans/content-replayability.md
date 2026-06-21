@@ -448,3 +448,68 @@ Nouveaux (tous **sérialisés** dans `_serializeState`/`_applyState`, save.js) :
 3. Mutations d'ennemis graduées par palier (étendre `applyLoopVariant`) : on l'adopte (impact équilibrage, re-sim) ou on garde la mutation unique actuelle ?
 4. Le rappel du Pacte (S2/Q3) en Zone D : simple écho contextuel (zéro moteur) — confirmé ? (on ne crée pas de type `choice`).
 5. Portée P0 finale : confirmer « 2 étages + 3 quêtes + 2 variantes Boucle » = la liste P0 ci-dessus.
+
+---
+
+# TRANCHE P2 — écho du Pacte, Refuge d'Helga, events de Boucle profonde, aura héros
+
+> Branche : `claude/hogwarth-content-replayability-p2-07hqw3` (partie de `master` à jour).
+> Principe : RÉUTILISER l'existant, moteur quasi nul. P0/P1 déjà mergées.
+
+## Décisions utilisateur (2026-06-21, avant code)
+- **❓1** réglé en P1 (gate `minFloor` dans `rollFloorEvent`) — `procession`/`silence`
+  sont `minFloor:21` + poids faible, pas de rééquilibrage du pool requis.
+- **❓2** : H5 (badge HUD + aura blason) déjà livré en P0. **H4 retenu** = aura cumulative
+  par **filtre CSS de teinte** (pas d'asset neuf), escaladée par paliers d'Éclats —
+  appliquée sur l'avatar joueur DOM (`#pcard-medaillon-0/1`), surface toujours visible et
+  testable, distincte du blason Maison (P0). (Le « sprite joueur » canonique `drawGhostSprite`
+  est canvas — pas de filtre CSS possible, visible uniquement en visite, non smoke-testable :
+  écarté au profit de l'avatar de carte.)
+- **❓3** déjà livré en P0 (`_loopVariantAbilities`). Non touché.
+- **❓4** confirmé par la tâche : écho contextuel zéro moteur, lit `slythPactChoice`, AUCUN
+  flag/`choice` neuf.
+- **Point 4 (à valider)** : D3/D5 salles spéciales → **DIFFÉRÉ** (vrai moteur cellule, hors
+  principe P2). H4 → **inclus en filtre CSS** (ci-dessus).
+
+## Découpage P2
+
+| # | Élément | Fichiers | Moteur | One-shot |
+|---|---|---|---|---|
+| S2 | **Pacte de Salazar** (écho-rappel, ét.16) — lit `slythPactChoice`, 3 variantes (pacte/défiance/jamais) | `floor-ambiance.js` (registre + orchestrateur, patron `maybeSignatureEchoBeat`), call `movement-floors.js`, Codex `codex.js` | orchestrateur (zéro flag neuf) | sentinelle `'salazar_pact_recall'` dans `seenScriptedBeat` |
+| S2-Codex | `pacte_salazar` (echo `echo_pacte_scelle`) + `defiance` (echo `echo_pacte_defi`) | `codex.js` | non (condition `echo` existante) | — |
+| S4 | **Refuge d'Helga** (ét.18) — overlay 2 options (repos 50 % OU offrir 1 conso → +1 Éclat + bark Pouf.) | `movement-interactions.js` (overlay + résolveurs), call `movement-floors.js`, flag `state.js`/`save.js` | léger (réutilise `#explore-overlay`, `REFUGE_HEAL_FRAC`, `_maybeCelebrateEclatMilestone`) | flag sérialisé `helgaRefugeUsed` |
+| EV | **2 events Boucle 3+** `procession`/`silence` (`minFloor:21`, pure ambiance) | `floor-events.js` | non (registre) | — |
+| H4 | **Aura cumulative avatar héros** (filtre CSS teinte, paliers Éclats) | `ui.js` (`_updateEclatBadge`), `css/style.css` | non | — |
+
+## Vérif P2
+- `node tests/units.js` (gating `rollFloorEvent` 15 vs 21, beat Salazar pur), `node tests/smoke.js`
+  (scénario S4 repos/offrande + gating events Boucle), `node tests/pwa-smoke.js`.
+- `cache-bump` pour tout `js/`/`css/` touché + `node tools/check_cache_versions.js --base origin/master`.
+- PR finale (merge sur demande explicite uniquement).
+
+### Journal P2
+- **2026-06-21 (P2 — kickoff)** — Plan lu, ❓ tranchés (ci-dessus), découpage validé. Début code.
+- **2026-06-21 (P2 — IMPLÉMENTÉ)** — Livré :
+  - ✅ **S2 « Pacte de Salazar »** (écho-rappel ét.16) : `SALAZAR_PACT_RECALL` +
+    `getSalazarPactBeat` (pur) + `maybeSalazarPactBeat` (one-shot, sentinelle
+    `'salazar_pact_recall'` dans `seenScriptedBeat`) dans `floor-ambiance.js` ; lit
+    `slythPactChoice` (3 variantes pacte/défiance/jamais), pose l'écho de branche
+    (`echo_pacte_scelle`/`echo_pacte_defi`) + `checkCodexUnlocks('echo-pacte')`. Call
+    dans `_changeFloor`. **Zéro flag neuf.** Codex `pacte_salazar` + `defiance` (branches
+    étanches, révélés à 5 Éclats de Boucle).
+  - ✅ **S4 « Refuge d'Helga »** (ét.18) : overlay 2 options via `#explore-overlay`
+    (`maybeHelgaRefugeBeat`/`_showHelgaRefugeOverlay`/`helgaRest`/`helgaOffer`,
+    `movement-interactions.js`). Repos = soin `REFUGE_HEAL_FRAC` ; offrande = sacrifie
+    1 consommable → `accumulatedEclats++` + `_maybeCelebrateEclatMilestone` + bark.
+    Flag sérialisé `helgaRefugeUsed` (state.js/save.js/main.js). Call dans `_changeFloor`.
+  - ✅ **Events Boucle 3+** : `procession` + `silence` (`minFloor:21`, pure ambiance,
+    aucun effet dans `generateDungeon`) dans `floor-events.js`.
+  - ✅ **H4** : aura cumulative par filtre CSS (`drop-shadow`) sur l'avatar héros
+    (`#pcard-medaillon-0/1`), escaladée par paliers d'Éclats + variante « Cycle brisé »
+    (`_updateEclatBadge` dans `ui.js` + `css/style.css`). Distinct du blason Maison (P0).
+  - ✅ **D3/D5 différés** (décision utilisateur — vrai moteur cellule, hors P2).
+  - ✅ **Tests** : `units.js` 974 ✅ (Salazar pur, gating events Boucle, Codex pacte/défiance) ;
+    `smoke.js` 264 ✅ (nouveau `scenarioReplayabilityP2` : Refuge repos/offrande/sac vide/
+    sérialisation + écho Pacte runtime + Codex ; `scenarioFloorEvents` MAJ count 10→12 +
+    gating Boucle 3+) ; `pwa-smoke.js` ✅. Cache PWA bumpé (v216→v217, 11 assets) ;
+    `check_cache_versions.js` ✅. `loader.js` MANIFEST : +`getSalazarPactBeat`/`maybeSalazarPactBeat`.

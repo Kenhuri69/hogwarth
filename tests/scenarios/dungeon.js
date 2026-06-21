@@ -2133,7 +2133,7 @@ async function scenarioFloorEvents() {
     state:  typeof currentFloorEvent !== 'undefined',
   }));
   console.log('  T1:', t1);
-  assert(t1.events === 10, 'FLOOR_EVENTS doit compter 10 événements (6 base + 4 Zone D)');
+  assert(t1.events === 12, 'FLOOR_EVENTS doit compter 12 événements (6 base + 4 Zone D + 2 Boucle 3+)');
   assert(t1.roll && t1.get, 'rollFloorEvent / getFloorEvent non exposées');
   assert(t1.state,          'currentFloorEvent non exposé');
 
@@ -2150,6 +2150,20 @@ async function scenarioFloorEvents() {
     'events Zone D (minFloor 14) ne doivent pas apparaître à l\'étage 1');
   assert(t1b.deep.includes('givre_ancien') || t1b.deep.includes('sceau_fissure'),
     'events Zone D doivent être éligibles à l\'étage 16');
+
+  // T1c : events de Boucle profonde (minFloor 21) — absents à l'étage 16,
+  // éligibles à l'étage 21.
+  const t1c = await page.evaluate(() => {
+    const seen16 = new Set(), seen21 = new Set();
+    for (let i = 0; i < 3000; i++) { const e = rollFloorEvent(16); if (e) seen16.add(e); }
+    for (let i = 0; i < 3000; i++) { const e = rollFloorEvent(21); if (e) seen21.add(e); }
+    return { f16: [...seen16], f21: [...seen21] };
+  });
+  console.log('  T1c gating Boucle 3+:', t1c);
+  assert(!t1c.f16.includes('procession') && !t1c.f16.includes('silence'),
+    'events Boucle 3+ (minFloor 21) ne doivent pas apparaître à l\'étage 16');
+  assert(t1c.f21.includes('procession') && t1c.f21.includes('silence'),
+    'events Boucle 3+ doivent être éligibles à l\'étage 21');
 
   // T2 : rollFloorEvent — null si random élevé, id valide sinon
   const t2 = await page.evaluate(() => {
@@ -3594,4 +3608,117 @@ async function scenarioHouseRoomBias() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioCh13EndgamePivot, scenarioScriptedFloorBeats, scenarioVoixDesRuines, scenarioDungeonLife, scenarioFountain, scenarioRefuge, scenarioSoloSoftlock, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioRespawn20Percent, scenarioVictoryTrigger, scenarioStairsGated, scenarioFinalBossGuaranteed, scenarioChamberGuardians, scenarioChamberGuardianPolish, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioFloorTheming, scenarioZoneDEchoes, scenarioZoneDFx, scenarioFounderChamber, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioRoomOfRequirement, scenarioStairsReachable, scenarioHouseRoomBias] };
+// Contenu & Rejouabilité P2 — Le Refuge d'Helga (S4, étage 18, Boucle) :
+// overlay de choix interactif (repos OU offrande → +1 Éclat), one-shot
+// sérialisé `helgaRefugeUsed`. + écho-rappel du Pacte de Salazar (S2, ét.16)
+// runtime + déverrouillage Codex de la branche.
+async function scenarioReplayabilityP2() {
+  console.log('\n── Scénario : Contenu P2 — Refuge d\'Helga + Pacte de Salazar ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'], house: 'Poufsouffle' });
+
+  // T1 : surface publique présente.
+  const t1 = await page.evaluate(() => ({
+    hasOrch:  typeof maybeHelgaRefugeBeat === 'function',
+    hasRest:  typeof helgaRest === 'function',
+    hasOffer: typeof helgaOffer === 'function',
+    hasShow:  typeof _showHelgaRefugeOverlay === 'function',
+  }));
+  console.log('  T1 API:', t1);
+  assert(t1.hasOrch && t1.hasRest && t1.hasOffer && t1.hasShow, 'API Refuge d\'Helga absente');
+
+  // T2 : maybeHelgaRefugeBeat ouvre l'overlay à l'étage 18 (non utilisé), pas ailleurs.
+  const t2 = await page.evaluate(() => {
+    helgaRefugeUsed = false;
+    _hideExploreOverlay();
+    const off = maybeHelgaRefugeBeat(17) === false;
+    const offDisplay = document.getElementById('explore-overlay').style.display;
+    const on = maybeHelgaRefugeBeat(18) === true;
+    const onDisplay = document.getElementById('explore-overlay').style.display;
+    const title = document.getElementById('explore-title').textContent;
+    return { off, offDisplay, on, onDisplay, title };
+  });
+  console.log('  T2 overlay:', t2);
+  assert(t2.off && t2.offDisplay === 'none', 'pas d\'overlay hors étage 18');
+  assert(t2.on && t2.onDisplay === 'flex', 'overlay du Refuge attendu à l\'étage 18');
+  assert(t2.title.includes('Helga'), 'titre du Refuge incorrect');
+
+  // T3 : helgaRest soigne ~50 % et arme le one-shot.
+  const t3 = await page.evaluate(() => {
+    helgaRefugeUsed = false;
+    party[0].hp = 1; party[1].hp = 1;
+    const max0 = party[0].hpMax;
+    helgaRest();
+    return { hp0: party[0].hp, max0, used: helgaRefugeUsed,
+             display: document.getElementById('explore-overlay').style.display };
+  });
+  console.log('  T3 repos:', t3);
+  assert(t3.hp0 > 1 && t3.hp0 >= Math.ceil(t3.max0 * 0.5), 'helgaRest doit soigner ~50 %');
+  assert(t3.used === true, 'helgaRest doit armer helgaRefugeUsed');
+  assert(t3.display === 'none', 'overlay fermé après le repos');
+
+  // T4 : helgaOffer sacrifie 1 consommable → +1 Éclat + one-shot.
+  const t4 = await page.evaluate(() => {
+    helgaRefugeUsed = false;
+    accumulatedEclats = 0;
+    player.inventory.push({ id: 'potion_s', name: 'Potion test', type: 'consumable' });
+    const before = player.inventory.length;
+    helgaOffer();
+    return { before, after: player.inventory.length, eclats: accumulatedEclats, used: helgaRefugeUsed };
+  });
+  console.log('  T4 offrande:', t4);
+  assert(t4.after === t4.before - 1, 'helgaOffer doit consommer 1 consommable');
+  assert(t4.eclats === 1, 'helgaOffer doit accorder +1 Éclat');
+  assert(t4.used === true, 'helgaOffer doit armer helgaRefugeUsed');
+
+  // T5 : offrande sans consommable → refus, one-shot NON consommé.
+  const t5 = await page.evaluate(() => {
+    helgaRefugeUsed = false;
+    accumulatedEclats = 0;
+    player.inventory = player.inventory.filter(it => it && it.type !== 'consumable');
+    helgaOffer();
+    return { used: helgaRefugeUsed, eclats: accumulatedEclats };
+  });
+  console.log('  T5 sac vide:', t5);
+  assert(t5.used === false, 'sans consommable, le Refuge ne doit pas se consommer');
+  assert(t5.eclats === 0, 'aucun Éclat sans offrande');
+
+  // T6 : sérialisation du flag one-shot.
+  const t6 = await page.evaluate(() => {
+    helgaRefugeUsed = true;
+    const ser = _serializeState();
+    helgaRefugeUsed = false;
+    _applyState(ser);
+    return { serialized: ser.helgaRefugeUsed, restored: helgaRefugeUsed };
+  });
+  console.log('  T6 sérialisation:', t6);
+  assert(t6.serialized === true, 'helgaRefugeUsed absent de _serializeState');
+  assert(t6.restored === true, 'helgaRefugeUsed non restauré par _applyState');
+
+  // T7 : écho-rappel du Pacte de Salazar (S2) — runtime + déverrouillage Codex.
+  const t7 = await page.evaluate(() => {
+    seenScriptedBeat.delete('salazar_pact_recall');
+    seenEchoes.delete('echo_pacte_scelle');
+    slythPactChoice = 'pact';
+    const played = maybeSalazarPactBeat(16) === true;
+    const echo = seenEchoes.has('echo_pacte_scelle');
+    const again = maybeSalazarPactBeat(16) === false;       // one-shot
+    // Codex : pacte_salazar débloqué (au moins veiled) via l'écho posé.
+    const ctx = _codexContext();
+    const state = codexEntryState(getCodexEntry('pacte_salazar'), ctx);
+    return { played, echo, again, state };
+  });
+  console.log('  T7 Pacte Salazar:', t7);
+  assert(t7.played && t7.echo, 'maybeSalazarPactBeat(16) doit jouer + poser l\'écho');
+  assert(t7.again, 'l\'écho-rappel du Pacte est one-shot');
+  assert(t7.state !== 'locked', 'Codex pacte_salazar doit s\'ouvrir après l\'écho scellé');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS (Contenu P2)`);
+  }
+  console.log('  ✅ Contenu P2 — Refuge d\'Helga + écho du Pacte de Salazar OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioCh13EndgamePivot, scenarioScriptedFloorBeats, scenarioVoixDesRuines, scenarioDungeonLife, scenarioFountain, scenarioRefuge, scenarioSoloSoftlock, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioRespawn20Percent, scenarioVictoryTrigger, scenarioStairsGated, scenarioFinalBossGuaranteed, scenarioChamberGuardians, scenarioChamberGuardianPolish, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioFloorTheming, scenarioZoneDEchoes, scenarioZoneDFx, scenarioFounderChamber, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioRoomOfRequirement, scenarioStairsReachable, scenarioHouseRoomBias, scenarioReplayabilityP2] };

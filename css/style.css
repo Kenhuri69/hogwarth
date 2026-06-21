@@ -357,8 +357,25 @@ body {
 .crest-wrap.eclat-cycle-broken {
   box-shadow: 0 0 20px rgba(210,225,255,0.75), 0 0 6px rgba(180,120,240,0.6);
 }
+/* H4 (ch.11 P2) — aura cumulative sur l'avatar des héros (médaillon de carte),
+   par FILTRE CSS (drop-shadow respecte la découpe ronde de l'image). Même
+   escalade de paliers (1→3) + variante « Cycle brisé » que le blason. */
+.pcard-medaillon.eclat-aura-1 { filter: drop-shadow(0 0 5px rgba(138,111,208,0.55)); }
+.pcard-medaillon.eclat-aura-2 { filter: drop-shadow(0 0 8px rgba(160,111,216,0.70)); }
+.pcard-medaillon.eclat-aura-3 {
+  filter: drop-shadow(0 0 12px rgba(190,130,245,0.90));
+  animation: eclatAvatarPulse 2.4s ease-in-out infinite;
+}
+.pcard-medaillon.eclat-cycle-broken {
+  filter: drop-shadow(0 0 11px rgba(210,225,255,0.85)) drop-shadow(0 0 4px rgba(180,120,240,0.7));
+}
+@keyframes eclatAvatarPulse {
+  0%, 100% { filter: drop-shadow(0 0 9px rgba(190,130,245,0.70)); }
+  50%      { filter: drop-shadow(0 0 15px rgba(205,150,255,1.0)); }
+}
 @media (prefers-reduced-motion: reduce) {
-  .eclat-hud-badge.eclat-aura-3, .crest-wrap.eclat-aura-3 { animation: none; }
+  .eclat-hud-badge.eclat-aura-3, .crest-wrap.eclat-aura-3,
+  .pcard-medaillon.eclat-aura-3 { animation: none; }
 }
 @media (max-width: 700px) {
   .eclat-hud-badge { font-size: 9px; letter-spacing: 0.5px; padding: 2px 6px; }

@@ -903,6 +903,12 @@ let combatTutorialSeen = false;
 // Réinitialisé par startGame, persisté via _serializeState / _applyState.
 let endgamePivotSeen = false;
 
+// Refuge d'Helga (P2 — S4, étage 18) — true une fois qu'un choix (repos OU
+// offrande) a été résolu dans l'overlay du Refuge. One-shot par partie ;
+// fermer l'overlay sans choisir le laisse à false (re-proposé à la revisite).
+// Réinitialisé par startGame, persisté via _serializeState / _applyState.
+let helgaRefugeUsed = false;
+
 // Passif « Hiver Clair » (Manon Acte III) — true une fois l'Acte III remis
 // à Manon (fuseAct3). Effet : hors combat, +1 PM par pas d'exploration
 // (plafonné spMax). Réinitialisé par startGame, persisté via

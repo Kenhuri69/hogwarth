@@ -107,6 +107,7 @@ function _serializeState() {
     eclatMilestones: Array.from(eclatMilestones),
     combatTutorialSeen,
     endgamePivotSeen,
+    helgaRefugeUsed,
     hiverClair,
     headlessHuntMember,
     maitreDeLaMort,
@@ -431,6 +432,7 @@ function _applyState(gs) {
   combatTutorialSeen = !!gs.combatTutorialSeen;
   // Pivot endgame (Ch.13) : saves antérieures → false (toast re-jouable une fois).
   if (typeof endgamePivotSeen !== 'undefined') endgamePivotSeen = !!gs.endgamePivotSeen;
+  if (typeof helgaRefugeUsed !== 'undefined') helgaRefugeUsed = !!gs.helgaRefugeUsed;
   // Passif Hiver Clair (Manon Acte III) : saves antérieures → false.
   if (typeof hiverClair !== 'undefined') hiverClair = !!gs.hiverClair;
   if (typeof headlessHuntMember !== 'undefined') headlessHuntMember = !!gs.headlessHuntMember;

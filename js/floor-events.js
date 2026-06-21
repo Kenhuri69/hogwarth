@@ -33,6 +33,16 @@ const FLOOR_EVENTS = [
     desc: "Une fêlure du sceau garde un trésor derrière une énigme — et le récompense au double." },
   { id: 'chambre_scellee', weight: 6, minFloor: 11, name: 'Chambre scellée',
     desc: "Un vestige des Fondateurs recèle plus de coffres scellés qu'à l'accoutumée." },
+
+  // ── Événements d'ambiance de Boucle profonde (P2, Avant-Monde 21+) ──
+  // Pure ambiance : ils ne touchent NI la densité, NI les coffres, NI les
+  // pièges (aucune branche dans generateDungeon) — seul le toast s'affiche,
+  // comme `echo_temporel`. Poids faible : ils colorent les Ruines profondes
+  // sans noyer le pool. Gatés `minFloor:21` (Boucle 3+ uniquement).
+  { id: 'procession', weight: 5, minFloor: 21, name: 'Procession d\'ombres',
+    desc: "Une procession d'ombres traverse l'Avant-Monde en silence, encore et encore — les morts y marchent en boucle, sans te voir." },
+  { id: 'silence', weight: 5, minFloor: 21, name: 'Silence du Dormeur',
+    desc: "Le moindre son meurt dans la pierre. Seul un battement lointain demeure : le Dormeur respire, et l'on retient son souffle pour ne pas l'éveiller." },
 ];
 
 const FLOOR_EVENT_CHANCE = 0.35;

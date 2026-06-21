@@ -109,6 +109,33 @@ const CODEX_ENTRIES = [
     },
   },
   {
+    // P2 — S2 : écho-rappel du Pacte de Salazar (étage 16, Boucle). Branche
+    // « pacte scellé » — déverrouillée par l'écho `echo_pacte_scelle` posé par
+    // maybeSalazarPactBeat quand slythPactChoice === 'pact'.
+    id: 'pacte_salazar', category: 'histoire', icon: '🐍', act: 4,
+    title: 'Le Pacte de Salazar',
+    links: ['ruines_anciennes', 'voix_salazar', 'boucle_tenebreuse'],
+    unlockConditions: [{ type: 'echo', value: 'echo_pacte_scelle' }],
+    revealedBy: [{ type: 'eclatLoop', value: 5 }],
+    textVersions: {
+      veiled: "Aux Cachots, jadis, tu as scellé le pacte que Salazar te tendait : un raccourci, un peu de puissance, contre une part d'ombre acceptée. Plus bas, dans les Ruines, son écho t'a reconnu — l'ombre que tu portes te connaît désormais.",
+      revealed: "Le Pacte n'était pas un piège : c'était un miroir. Salazar a scellé sa faute dans le verrou, et te propose de faire de même — non pour te corrompre, mais pour t'apprendre que tout gain garde son ombre, et qu'on descend plus loin quand on cesse de le nier. Tu as accepté. Dans la Boucle, le serpent t'ouvre les passages que les autres ne voient pas : une part d'ombre assumée est une clé de plus.",
+    },
+  },
+  {
+    // P2 — S2 : branche « défiance » — déverrouillée par l'écho
+    // `echo_pacte_defi` posé quand slythPactChoice === 'defiance'.
+    id: 'defiance', category: 'histoire', icon: '🐍', act: 4,
+    title: 'La Défiance',
+    links: ['ruines_anciennes', 'voix_salazar', 'boucle_tenebreuse'],
+    unlockConditions: [{ type: 'echo', value: 'echo_pacte_defi' }],
+    revealedBy: [{ type: 'eclatLoop', value: 5 }],
+    textVersions: {
+      veiled: "Aux Cachots, jadis, tu as REFUSÉ le pacte de Salazar : pas de raccourci, pas de marque, pas d'ombre empruntée. Plus bas, dans les Ruines, son écho s'en souvient — et te laisse passer quand même, presque amusé.",
+      revealed: "Refuser le Pacte n'était pas de la peur : c'était un choix de descendre nu. Salazar lui-même finit par y voir du cran — on n'a pas besoin de son ombre pour atteindre le fond, seulement de la volonté de le regarder sans rien lui devoir. Dans la Boucle, le serpent te toise toujours, mais il ne te barre plus la route : ta défiance est devenue, elle aussi, une forme de passage.",
+    },
+  },
+  {
     id: 'voix_godric', category: 'eclats', icon: '🦁', act: 4,
     title: 'La Voix de Godric',
     links: ['echo_scellement'],

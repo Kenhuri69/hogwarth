@@ -364,6 +364,14 @@ function _changeFloor(delta, opts) {
     // Écho de signature en Boucle (V2) : à l'entrée des Ruines (étage 14), la
     // quête signature accomplie/laissée revient, déchirée. House-aware, one-shot.
     if (typeof maybeSignatureEchoBeat === 'function') maybeSignatureEchoBeat(currentFloor);
+    // Écho-rappel du Pacte de Salazar (P2 — S2, étage 16) : réagit à
+    // `slythPactChoice`. Pur texte + écho Codex, one-shot. Boucle uniquement
+    // (étage 16 inatteignable sans victoire).
+    if (typeof maybeSalazarPactBeat === 'function') maybeSalazarPactBeat(currentFloor);
+    // Le Refuge d'Helga (P2 — S4, étage 18) : overlay de choix interactif
+    // (repos OU offrande → +1 Éclat), one-shot via helgaRefugeUsed. Après les
+    // beats textuels pour ne pas se faire écraser la narration.
+    if (typeof maybeHelgaRefugeBeat === 'function') maybeHelgaRefugeBeat(currentFloor);
     AudioSystem.playAmbientMusic(currentFloor);
     if (typeof checkFloorQuests === 'function') checkFloorQuests(currentFloor);
     // Mondes parallèles — si une visite est active côté host, reposter

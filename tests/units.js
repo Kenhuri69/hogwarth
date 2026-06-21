@@ -864,6 +864,90 @@ function loadNpcs() {
 })();
 
 // ============================================================
+// 6ter. floor-ambiance.js — Écho-rappel du Pacte de Salazar (P2 — S2)
+//    getSalazarPactBeat (pur) + maybeSalazarPactBeat (one-shot)
+// ============================================================
+(function testSalazarPactRecall() {
+  // ── Résolveur pur ──
+  const pure = loadModule('js/floor-ambiance.js',
+    ['getSalazarPactBeat', 'SALAZAR_PACT_RECALL']);
+  const { getSalazarPactBeat, SALAZAR_PACT_RECALL } = pure;
+  // Branche pacte → écho echo_pacte_scelle.
+  const bPact = getSalazarPactBeat(16, 'pact');
+  check('pacte(16,pact) = branche pacte', bPact === SALAZAR_PACT_RECALL.pact);
+  check('pacte → echoId echo_pacte_scelle', bPact && bPact.echoId === 'echo_pacte_scelle');
+  // Branche défiance → écho echo_pacte_defi.
+  const bDef = getSalazarPactBeat(16, 'defiance');
+  check('pacte(16,defiance) = branche défiance', bDef === SALAZAR_PACT_RECALL.defiance);
+  check('défiance → echoId echo_pacte_defi', bDef && bDef.echoId === 'echo_pacte_defi');
+  // Branche jamais offert → echoId null.
+  const bNone = getSalazarPactBeat(16, null);
+  check('pacte(16,null) = branche none', bNone === SALAZAR_PACT_RECALL.none);
+  check('none → echoId null', bNone && bNone.echoId === null);
+  // Hors étage 16 → null.
+  check('pacte(15) = null', getSalazarPactBeat(15, 'pact') === null);
+  check('pacte(17) = null', getSalazarPactBeat(17, 'pact') === null);
+
+  // ── Orchestrateur one-shot ──
+  const seen = new Set();
+  const ech  = new Set();
+  let narr = 0, toast = 0;
+  const orch = loadModule('js/floor-ambiance.js',
+    ['maybeSalazarPactBeat'],
+    {
+      slythPactChoice: 'pact',
+      seenScriptedBeat: seen,
+      seenEchoes: ech,
+      setNarrative: () => { narr++; },
+      addMsg: () => { toast++; },
+    });
+  const { maybeSalazarPactBeat } = orch;
+  check('salazar(16) 1re fois = true', maybeSalazarPactBeat(16) === true);
+  check('sentinelle salazar_pact_recall posée', seen.has('salazar_pact_recall'));
+  check('écho echo_pacte_scelle posé', ech.has('echo_pacte_scelle'));
+  check('salazar narrative + toast 1×', narr === 1 && toast === 1);
+  check('salazar(16) 2e fois = false (idempotent)', maybeSalazarPactBeat(16) === false);
+  check('salazar pas de double affichage', narr === 1 && toast === 1);
+  // Branche none → aucun écho posé.
+  const ech2 = new Set();
+  const orch2 = loadModule('js/floor-ambiance.js',
+    ['maybeSalazarPactBeat'],
+    { slythPactChoice: null, seenScriptedBeat: new Set(), seenEchoes: ech2,
+      setNarrative: () => {}, addMsg: () => {} });
+  check('salazar(16) none = true', orch2.maybeSalazarPactBeat(16) === true);
+  check('none → aucun écho posé', ech2.size === 0);
+})();
+
+// ============================================================
+// 6quater. floor-events.js — events de Boucle profonde gatés (P2)
+//    procession / silence (minFloor 21) absents avant l'étage 21
+// ============================================================
+(function testDeepLoopFloorEvents() {
+  // Registre : procession/silence existent, minFloor 21.
+  const reg = loadModule('js/floor-events.js', ['FLOOR_EVENTS', 'getFloorEvent']);
+  const proc = reg.getFloorEvent('procession');
+  const sil  = reg.getFloorEvent('silence');
+  check('event procession existe', proc && proc.minFloor === 21);
+  check('event silence existe', sil && sil.minFloor === 21);
+
+  // Gate déterministe via stub Math : séquence [chance, pick] par appel.
+  // pick=0.999 → dernier élément éligible du pool (fallback).
+  function mkMath(pick) {
+    let i = 0;
+    return Object.assign(Object.create(Math), {
+      random: () => { const v = (i % 2 === 0) ? 0.01 : pick; i++; return v; },
+    });
+  }
+  // Étage 15 : pool SANS procession/silence → dernier éligible = chambre_scellee.
+  const r15 = loadModule('js/floor-events.js', ['rollFloorEvent'], { Math: mkMath(0.999) });
+  check('rollFloorEvent(15) ≠ silence/procession',
+    !['silence', 'procession'].includes(r15.rollFloorEvent(15)));
+  // Étage 21 : pool AVEC silence (dernier éligible) → atteignable.
+  const r21 = loadModule('js/floor-events.js', ['rollFloorEvent'], { Math: mkMath(0.999) });
+  check('rollFloorEvent(21) = silence (dernier éligible)', r21.rollFloorEvent(21) === 'silence');
+})();
+
+// ============================================================
 // 6bis. floor-ambiance.js — Écho de signature en Boucle (V2, ch.11 §11.8)
 //    getSignatureEchoBeat (pur) + maybeSignatureEchoBeat (one-shot)
 // ============================================================
@@ -1166,6 +1250,24 @@ function loadNpcs() {
     codexEntryState(sce, { ...empty, echoSeen: new Set(['echo_scene_sceau', 'echo_godric', 'echo_salazar', 'echo_rowena']) }) === 'veiled');
   check('echo: 4 voix → revealed',
     codexEntryState(sce, { ...empty, echoSeen: new Set(['echo_scene_sceau', 'echo_godric', 'echo_salazar', 'echo_rowena', 'echo_helga']) }) === 'revealed');
+
+  // ── P2 — Pacte de Salazar / Défiance : unlock par écho de branche ──
+  const pacte = getCodexEntry('pacte_salazar');
+  const defi  = getCodexEntry('defiance');
+  check('pacte_salazar existe', !!pacte);
+  check('defiance existe', !!defi);
+  check('pacte: rien vu → locked', codexEntryState(pacte, empty) === 'locked');
+  check('pacte: echo_pacte_scelle → veiled',
+    codexEntryState(pacte, { ...empty, echoSeen: new Set(['echo_pacte_scelle']) }) === 'veiled');
+  check('pacte: + 5 éclats Boucle → revealed',
+    codexEntryState(pacte, { ...empty, echoSeen: new Set(['echo_pacte_scelle']), accumulatedEclats: 5 }) === 'revealed');
+  // L'écho de défiance NE débloque PAS le pacte (branches étanches).
+  check('pacte: echo_pacte_defi → locked (mauvaise branche)',
+    codexEntryState(pacte, { ...empty, echoSeen: new Set(['echo_pacte_defi']) }) === 'locked');
+  check('defiance: echo_pacte_defi → veiled',
+    codexEntryState(defi, { ...empty, echoSeen: new Set(['echo_pacte_defi']) }) === 'veiled');
+  check('defiance: echo_pacte_scelle → locked (mauvaise branche)',
+    codexEntryState(defi, { ...empty, echoSeen: new Set(['echo_pacte_scelle']) }) === 'locked');
 
   // ── victory : Boucle Ténébreuse ──
   const bcl = getCodexEntry('boucle_tenebreuse');
