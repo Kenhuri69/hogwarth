@@ -29,6 +29,10 @@ function loadGameData() {
   const root = path.join(__dirname, '..');
   const monstersSrc = fs.readFileSync(path.join(root, 'js/monsters.js'), 'utf8');
   const dataSrc     = fs.readFileSync(path.join(root, 'js/data.js'),     'utf8');
+  // Lot A P3.3 : SPELLS/CHARACTERS/ITEMS extraits de data.js vers data-*.js.
+  const charactersSrc = fs.readFileSync(path.join(root, 'js/data-characters.js'), 'utf8');
+  const spellsSrc     = fs.readFileSync(path.join(root, 'js/data-spells.js'),     'utf8');
+  const itemsSrc      = fs.readFileSync(path.join(root, 'js/data-items.js'),      'utf8');
   // QUEST_TEMPLATES a été extrait de quests.js vers quests-templates.js
   // (données inertes). On charge ce module-là — quests.js touche le DOM et
   // n'apporte rien à la sim.
@@ -57,19 +61,21 @@ function loadGameData() {
   const patchedMonsters = monstersSrc + '\n;exports.MONSTERS = MONSTERS;';
   vm.runInContext(patchedMonsters, sandbox, { filename: 'monsters.js' });
 
-  // data.js définit beaucoup de constantes mais on a juste besoin
-  // de SPELLS, CHARACTERS, LEVEL_UP_XP_MULTIPLIER, RESIST/WEAK, ITEMS.
-  // On évalue le fichier complet dans le même sandbox.
-  const patchedData = dataSrc + `\n;exports.SPELLS = SPELLS;\n;exports.CHARACTERS = CHARACTERS;\n` +
-    `;exports.LEVEL_UP_XP_MULTIPLIER = LEVEL_UP_XP_MULTIPLIER;\n` +
+  // data.js (socle) définit beaucoup de constantes ; SPELLS/CHARACTERS/ITEMS
+  // vivent désormais dans data-spells/characters/items.js (Lot A P3.3). On
+  // évalue chaque fichier dans le même sandbox (ordre de chargement réel).
+  const patchedData = dataSrc +
+    `\n;exports.LEVEL_UP_XP_MULTIPLIER = LEVEL_UP_XP_MULTIPLIER;\n` +
     `;exports.RESIST_MULTIPLIER = RESIST_MULTIPLIER;\n` +
     `;exports.WEAK_MULTIPLIER = WEAK_MULTIPLIER;\n` +
-    `;exports.ITEMS = ITEMS;\n` +
     `;exports.SEARCH_MONSTER_CHANCE = SEARCH_MONSTER_CHANCE;\n` +
     `;exports.SEARCH_TRAP_CHANCE = SEARCH_TRAP_CHANCE;\n` +
     `;exports.REST_ENCOUNTER_CHANCE = REST_ENCOUNTER_CHANCE;\n` +
     `;exports.REST_INTERRUPT_HEAL_FRACTION = REST_INTERRUPT_HEAL_FRACTION;\n`;
   vm.runInContext(patchedData, sandbox, { filename: 'data.js' });
+  vm.runInContext(charactersSrc + '\n;exports.CHARACTERS = CHARACTERS;', sandbox, { filename: 'data-characters.js' });
+  vm.runInContext(spellsSrc + '\n;exports.SPELLS = SPELLS;', sandbox, { filename: 'data-spells.js' });
+  vm.runInContext(itemsSrc + '\n;exports.ITEMS = ITEMS;', sandbox, { filename: 'data-items.js' });
 
   // quests-templates.js : module inerte qui déclare `QUEST_TEMPLATES`.
   const patchedQuests = questsSrc + '\n;exports.QUEST_TEMPLATES = QUEST_TEMPLATES;';

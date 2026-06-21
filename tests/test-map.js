@@ -27,7 +27,11 @@ const BASELINE = ['startup', 'loader'];
 // scénarios. On relance donc l'intégralité de la suite.
 const FULL_SUITE_TRIGGERS = [
   'js/state.js',     // 81 globals mutables, lus partout
-  'js/data.js',      // SPELLS / ITEMS / CHARACTERS / CELL… constantes globales
+  'js/data.js',      // socle de constantes monde/équilibrage (CELL, MAP_W…)
+  'js/data-characters.js', // CHARACTERS (Lot A P3.3)
+  'js/data-spells.js',     // SPELLS + helpers sorts (Lot A P3.3)
+  'js/data-items.js',      // ITEMS + recettes/coffres (Lot A P3.3)
+  'js/data-world.js',      // LOCATIONS / NARRATIVES / OUTREMONDE (Lot A P3.3)
   'js/loader.js',    // MANIFEST + helpers défensifs (safeEl, UX_safe)
   'js/main.js',      // startGame / confirmHeroSelection / chooseHouse : amorçage commun
   'index.html',      // ordre des <script> : casse silencieuse possible partout

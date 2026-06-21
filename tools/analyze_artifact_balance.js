@@ -20,7 +20,8 @@ const ROOT = path.resolve(__dirname, '..');
 
 // ── 1. Charger ITEMS depuis data.js dans un bac à sable permissif ──────────
 function loadItems() {
-  let src = fs.readFileSync(path.join(ROOT, 'js', 'data.js'), 'utf8');
+  // Lot A P3.3 : ITEMS + TENEBRES_SET vivent dans data-items.js.
+  let src = fs.readFileSync(path.join(ROOT, 'js', 'data-items.js'), 'utf8');
   // const/let au scope script n'attachent pas au global du vm : on exfiltre via
   // un callback injecté, lisible depuis le scope déclaratif du même script.
   src += '\n;__exfil(typeof ITEMS!=="undefined"?ITEMS:null, typeof TENEBRES_SET!=="undefined"?TENEBRES_SET:[]);';
@@ -32,7 +33,7 @@ function loadItems() {
     get: (t, k) => (k in t ? t[k] : undefined),
     set: (t, k, v) => { t[k] = v; return true; },
   });
-  vm.runInNewContext(src, proxy, { filename: 'data.js' });
+  vm.runInNewContext(src, proxy, { filename: 'data-items.js' });
   if (!Array.isArray(out.ITEMS)) throw new Error('ITEMS introuvable');
   return { ITEMS: out.ITEMS, TENEBRES_SET: out.TENEBRES_SET || [] };
 }

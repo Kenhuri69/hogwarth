@@ -26,13 +26,13 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 
-// ── Chargement de SPELLS depuis js/data.js ───────────────────
+// ── Chargement de SPELLS depuis js/data-spells.js (Lot A P3.3) ──
 function loadSpells() {
   const root = path.join(__dirname, '..');
-  const src = fs.readFileSync(path.join(root, 'js/data.js'), 'utf8');
+  const src = fs.readFileSync(path.join(root, 'js/data-spells.js'), 'utf8');
   const sandbox = { exports: {}, console };
   vm.createContext(sandbox);
-  vm.runInContext(src + '\n;exports.SPELLS = SPELLS;', sandbox, { filename: 'data.js' });
+  vm.runInContext(src + '\n;exports.SPELLS = SPELLS;', sandbox, { filename: 'data-spells.js' });
   return sandbox.exports.SPELLS;
 }
 
