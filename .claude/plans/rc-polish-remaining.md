@@ -199,7 +199,16 @@ clore, pas à refaire :
 
 ---
 
-## P2.6 — Inventaire audio (samples livrés vs synthétisés)  ⬜
+## P2.6 — Inventaire audio (samples livrés vs synthétisés)  ✅ Fait (2026-06-21)
+
+> **Livré** : `tools/audio_inventory.js` (Node pur, `--write`/`--strict`) croise
+> les samples `audio/….ogg` référencés par `js/` avec les fichiers présents, et
+> écrit `docs/audio-inventory.md`. **Résultat** : ambient 5/5, combat 5/5,
+> menu 1/1, voice 181/181 — **1 seul gap musical** : `audio/ending_break.ogg`
+> (référencé mais absent → repli procédural ; **cible n°1 de P3.2**). 172
+> orphelins = surtout `audio/voice/_raw/*.mp3` (sources d'enregistrement). SFX
+> 100 % procéduraux (design), barks en synthèse par défaut. Tooling/doc seuls —
+> pas de cache-bump.
 
 **Impact : Faible→Moyen** · **Difficulté : Faible** (audit, pas de runtime)
 
