@@ -42,19 +42,20 @@ Les 6 sorts de zone (`Glacius Tempête`, `Fulgur Catena`, `Lux Aeterna`,
 
 ### Partie 2 — Évolutions AoE → AoE plus fort
 
-Pour chacun des 6 sorts de zone : ajout `evolvesTo` + `evolveCondition`
-(`{ type:"floor", value:14 }` — tranche D « Ruines Anciennes », endgame/Boucle).
-Chaque forme évoluée garde **strictement le même** `effect`/`element`/`stat2`/
-`magDiv`/`stat2Div` (donc même comportement de zone) avec `power` ↑ ~+50 % et `cost` ↑.
+Pour chacun des 6 sorts de zone : ajout `evolvesTo` + `evolveCondition` de type
+`floor`, débloqué **PROGRESSIVEMENT, un sort par étage à partir de 14** (tranche D
+« Ruines Anciennes », endgame/Boucle). Chaque forme évoluée garde **strictement
+le même** `effect`/`element`/`stat2`/`magDiv`/`stat2Div` (donc même comportement
+de zone) avec `power` ↑ ~+50 % et `cost` ↑.
 
-| Base AoE (power/cost) | Évolution (power/cost) |
-|---|---|
-| Glacius Tempête (12/16) | Glacius Cataclysme (18/20) |
-| Fulgur Catena (18/15) | Fulgur Imperium (27/19) |
-| Lux Aeterna (15/17) | Lux Suprema (23/21) |
-| Nox Vorax (14/18) | Nox Devorans (21/22) |
-| Diffindo Maxima (18/14) | Diffindo Ultima (27/18) |
-| Vulnera Sanentur (22/16) | Vulnera Maxima (33/20) |
+| Base AoE (power/cost) | Évolution (power/cost) | Étage de déblocage |
+|---|---|---|
+| Glacius Tempête (12/16) | Glacius Cataclysme (18/20) | 14 |
+| Fulgur Catena (18/15) | Fulgur Imperium (27/19) | 15 |
+| Lux Aeterna (15/17) | Lux Suprema (23/21) | 16 |
+| Nox Vorax (14/18) | Nox Devorans (21/22) | 17 |
+| Diffindo Maxima (18/14) | Diffindo Ultima (27/18) | 18 |
+| Vulnera Sanentur (22/16) | Vulnera Maxima (33/20) | 19 |
 
 ### Câblage transverse
 
@@ -74,11 +75,12 @@ Chaque forme évoluée garde **strictement le même** `effect`/`element`/`stat2`
 ## Étapes
 
 1. [x] Partie 1 — data.js : nouveau sort mono (Lumos Solem Ardent) + repointage Lumos Solem
-2. [x] Partie 2 — data.js : 6 formes AoE évoluées + evolvesTo sur les bases (gate floor 14)
+2. [x] Partie 2 — data.js : 6 formes AoE évoluées + evolvesTo sur les bases
 3. [x] SPELL_META + SPELL_ICON_REGISTRY (7 sorts)
-4. [x] Tests units (920 OK, test évolution réécrit : mono→mono + AoE→AoE) + smoke (259 OK)
-5. [x] cache-bump (data.js v62, item-icons.js v45, CACHE_VERSION v202) + check + pwa-smoke
-6. [ ] commit + push
+4. [x] Suivi retour joueur : déblocage AoE PROGRESSIF (1/étage, 14→19) au lieu de floor 14 uniforme
+5. [x] Tests units (test évolution = staggering verrouillé) + smoke
+6. [x] cache-bump (data.js, CACHE_VERSION) + check + pwa-smoke
+7. [ ] commit + push (suivi)
 
 ## Notes d'exécution
 

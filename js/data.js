@@ -385,15 +385,16 @@ const SPELLS = [
   // magDiv/stat2Div varient par sort pour l'équilibrage — un sort à gros
   // rider (gel, vol de vie) scale plus doucement. Défaut 3/3.
   // Chaque sort de zone possède une forme évoluée — plus PUISSANTE mais
-  // toujours de zone (jamais de bascule vers du mono-cible). Gate `floor 14`
-  // (tranche D « Ruines Anciennes », endgame/Boucle). Formes définies plus bas
-  // (bloc « formes AoE évoluées »).
+  // toujours de zone (jamais de bascule vers du mono-cible). Déblocage
+  // PROGRESSIF, un sort par étage à partir de la tranche D « Ruines Anciennes »
+  // (endgame/Boucle) : Glacius 14, Fulgur 15, Lux 16, Nox 17, Diffindo 18,
+  // Vulnera 19. Formes définies plus bas (bloc « formes AoE évoluées »).
   { name:"Glacius Tempête",   icon:"🌨️", desc:"Blizzard : dégâts de glace à tous les ennemis + gel",            cost:16, effect:"aoe_field",  element:"glace",    power:12, stat2:"int", magDiv:3, stat2Div:3, evolvesTo:"Glacius Cataclysme", evolveCondition:{ type:"floor", value:14 } },
-  { name:"Fulgur Catena",     icon:"⚡",  desc:"Arc électrique : chaîne d'ennemi en ennemi (dégâts décroissants)", cost:15, effect:"aoe_chain",  element:"foudre",   power:18, stat2:"agi", magDiv:2, stat2Div:4, evolvesTo:"Fulgur Imperium", evolveCondition:{ type:"floor", value:14 } },
-  { name:"Lux Aeterna",       icon:"🌟",  desc:"Onde de lumière : frappe tous les ennemis (×1,5 morts-vivants)",  cost:17, effect:"aoe_wave",   element:"lumière",  power:15, bonusVsUndead:1.5, stat2:"int", magDiv:2, stat2Div:4, evolvesTo:"Lux Suprema", evolveCondition:{ type:"floor", value:14 } },
-  { name:"Nox Vorax",         icon:"🌑",  desc:"Vague obscure : dégâts à tous + draine la vie pour le lanceur",   cost:18, effect:"aoe_drain",  element:"ténèbres", power:14, stat2:"end", magDiv:3, stat2Div:3, evolvesTo:"Nox Devorans", evolveCondition:{ type:"floor", value:14 } },
-  { name:"Diffindo Maxima",   icon:"⚔️", desc:"Fauchage : tranche la cible et les ennemis adjacents",            cost:14, effect:"aoe_cleave", element:"physique", power:18, stat2:"str", magDiv:3, stat2Div:2, evolvesTo:"Diffindo Ultima", evolveCondition:{ type:"floor", value:14 } },
-  { name:"Vulnera Sanentur",  icon:"💗",  desc:"Chant de guérison : soigne tout le groupe",                       cost:16, effect:"heal_aoe",  power:22, evolvesTo:"Vulnera Maxima", evolveCondition:{ type:"floor", value:14 } },
+  { name:"Fulgur Catena",     icon:"⚡",  desc:"Arc électrique : chaîne d'ennemi en ennemi (dégâts décroissants)", cost:15, effect:"aoe_chain",  element:"foudre",   power:18, stat2:"agi", magDiv:2, stat2Div:4, evolvesTo:"Fulgur Imperium", evolveCondition:{ type:"floor", value:15 } },
+  { name:"Lux Aeterna",       icon:"🌟",  desc:"Onde de lumière : frappe tous les ennemis (×1,5 morts-vivants)",  cost:17, effect:"aoe_wave",   element:"lumière",  power:15, bonusVsUndead:1.5, stat2:"int", magDiv:2, stat2Div:4, evolvesTo:"Lux Suprema", evolveCondition:{ type:"floor", value:16 } },
+  { name:"Nox Vorax",         icon:"🌑",  desc:"Vague obscure : dégâts à tous + draine la vie pour le lanceur",   cost:18, effect:"aoe_drain",  element:"ténèbres", power:14, stat2:"end", magDiv:3, stat2Div:3, evolvesTo:"Nox Devorans", evolveCondition:{ type:"floor", value:17 } },
+  { name:"Diffindo Maxima",   icon:"⚔️", desc:"Fauchage : tranche la cible et les ennemis adjacents",            cost:14, effect:"aoe_cleave", element:"physique", power:18, stat2:"str", magDiv:3, stat2Div:2, evolvesTo:"Diffindo Ultima", evolveCondition:{ type:"floor", value:18 } },
+  { name:"Vulnera Sanentur",  icon:"💗",  desc:"Chant de guérison : soigne tout le groupe",                       cost:16, effect:"heal_aoe",  power:22, evolvesTo:"Vulnera Maxima", evolveCondition:{ type:"floor", value:19 } },
   // ── Sort exclusif endgame (Grimoire Interdit, sinks A+E) ──────
   // Feu Maudit : flammes vivantes, dégâts massifs single-target,
   // brûlure persistante. Coût prohibitif → utilisation parcimonieuse.
