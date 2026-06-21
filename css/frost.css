@@ -16,3 +16,31 @@
   /* Transition douce à chaque changement d'étage */
   transition: opacity 1.2s ease-in-out;
 }
+
+/* ============================================================
+   THERMOMÈTRE DE CORRUPTION (P2.1) — indicateur HUD discret.
+   Rendu par corruptionThermometerHtml() / _updateCorruptionMeter().
+   ============================================================ */
+#corruption-meter {
+  text-align: center;
+  margin: 2px 0 4px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+#corruption-meter .corruption-flakes {
+  color: #bfe6ff;
+  text-shadow: 0 0 4px rgba(160, 210, 255, 0.7);
+  margin-right: 5px;
+  letter-spacing: 1px;
+}
+#corruption-meter .corruption-dim {
+  color: #3a4658;
+  text-shadow: none;
+}
+#corruption-meter .corruption-label {
+  font-family: 'Cinzel', serif;
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: #8fb6d6;
+  text-transform: uppercase;
+}

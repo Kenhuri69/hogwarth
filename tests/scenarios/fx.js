@@ -1096,4 +1096,56 @@ async function scenarioHapticsExtended() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioEnemyIdle, scenarioDungeonVfx, scenarioCombatFeedback, scenarioCombatFX, scenarioDungeonFX, scenarioCinematics, scenarioHaptics, scenarioDangerVignette, scenarioCardReact, scenarioLowHpCard, scenarioActiveCharPulse, scenarioGoldTick, scenarioHapticsExtended] };
+// P2.1 — thermomètre de corruption HUD : caché en surface, visible et
+// croissant à mesure qu'on descend (et au-delà en Boucle).
+async function scenarioCorruptionMeter() {
+  console.log('\n── Scénario : thermomètre de corruption HUD (P2.1) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  const r = await page.evaluate(() => {
+    const out = { threw: false };
+    try {
+      const el = document.getElementById('corruption-meter');
+      out.hasEl  = !!el;
+      out.hasFns = typeof corruptionTier === 'function' &&
+                   typeof _updateCorruptionMeter === 'function';
+
+      // Étage 1 : palier 0 → caché.
+      currentFloor = 1; victoryAchieved = false; _updateCorruptionMeter();
+      out.floor1Hidden = el.style.display === 'none';
+
+      // Étage 10 : palier élevé → visible avec flocons.
+      currentFloor = 10; _updateCorruptionMeter();
+      out.floor10Visible = el.style.display !== 'none';
+      out.floor10Flakes  = (el.textContent.match(/❄/g) || []).length;
+
+      // Étage 14 : saturé (5 flocons).
+      currentFloor = 14; _updateCorruptionMeter();
+      out.floor14Flakes = (el.textContent.match(/❄/g) || []).length;
+
+      // Boucle profonde : reste borné à 5 (lisibilité).
+      currentFloor = 25; victoryAchieved = true; _updateCorruptionMeter();
+      out.loopFlakes = (el.textContent.match(/❄/g) || []).length;
+    } catch (e) { out.threw = true; out.err = String(e); }
+    return out;
+  });
+  console.log('  result:', r);
+  assert(!r.threw, 'thermomètre a levé une exception : ' + r.err);
+  assert(r.hasEl, '#corruption-meter absent du DOM');
+  assert(r.hasFns, 'helpers corruption non exposés');
+  assert(r.floor1Hidden, 'le thermomètre doit être caché à l\'étage 1');
+  assert(r.floor10Visible, 'le thermomètre doit être visible à l\'étage 10');
+  assert(r.floor10Flakes >= 1 && r.floor10Flakes <= 5, 'flocons hors bornes à l\'étage 10');
+  assert(r.floor14Flakes === 5, 'étage 14 doit saturer à 5 flocons');
+  assert(r.loopFlakes === 5, 'Boucle doit rester bornée à 5 flocons');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS (thermomètre corruption)`);
+  }
+  console.log('  ✅ Thermomètre de corruption conforme');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioEnemyIdle, scenarioDungeonVfx, scenarioCombatFeedback, scenarioCombatFX, scenarioDungeonFX, scenarioCinematics, scenarioHaptics, scenarioDangerVignette, scenarioCardReact, scenarioLowHpCard, scenarioActiveCharPulse, scenarioGoldTick, scenarioHapticsExtended, scenarioCorruptionMeter] };
