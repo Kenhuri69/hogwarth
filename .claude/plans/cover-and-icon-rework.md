@@ -15,18 +15,19 @@ renvoie → je l'intègre.
    tout ratio OK ; reused dans psel-tile-aube + #title-screen bg) et le set
    d'icônes PWA (`img/icons/pwa/` : 192/512 + maskable + apple-touch-icon).
    → vérif : pas de contrainte de ratio dure ; carré établi pour l'icône.
-3. [ ] Rédiger + livrer le prompt (key art portrait + variante carré icône).
-   → vérif : prompt couvre les beats histoire, style maison.
-4. [ ] (après réception image) Intégrer :
-   - `title.jpg` : redimensionner/optimiser, remplacer.
-   - Icône : crop carré + cadre doré façon icône actuelle, regénérer les 5 PNG
-     (`tools/gen_pwa_icons.py` si possible) + `apple-touch-icon`.
-   → vérif : visuels nets, lisibles en petit.
-5. [ ] Bump cache PWA (skill `cache-bump`) : `title.jpg` n'a pas de `?v` (image,
-     stale-while-revalidate) mais `index.html` la référence ; les icônes PWA et
-     `manifest.json` peuvent nécessiter bump + `CACHE_VERSION`.
-     → vérif : `node tools/check_cache_versions.js --base origin/master`.
-6. [ ] Tests : `node tests/smoke.js` + `node tests/pwa-smoke.js`.
+3. [x] Prompt livré (key art portrait + variante carré icône). Utilisateur a
+   généré 2 images : portrait story art + carré château.
+4. [x] Intégré :
+   - `title.jpg` ← Image 1 (portrait 1024×1536, JPEG q82, 353 Ko).
+   - Source icône dédiée `title_icon.jpg` ← Image 2 (carré 1024²) ; généré
+     les 5 PNG via `tools/gen_pwa_icons.py` (SRC pointé vers title_icon.jpg,
+     crop central remontant le château). Cadre doré + studs conservés.
+5. [x] Bump cache PWA : icônes `?v=2`→`?v=3` (manifest×4, sw PRECACHE×2,
+   apple-touch index.html) ; `CACHE_VERSION` v197→v198 (refresh title.jpg
+   précachée) ; cascade sw.js → `SW_URL` v4→v5 (pwa.js) → pwa.js `?v` v4→v5
+   (index.html + sw PRECACHE). `check_cache_versions.js` → exit 0.
+6. [x] Tests : `node tests/pwa-smoke.js` (cache v198, 98 entrées, offline OK) +
+   `node tests/smoke.js title hub start visual` (loader + hub verts).
 7. [ ] Commit + push sur `claude/game-splash-icon-d7lqz3`.
 
 ## Notes

@@ -1,5 +1,5 @@
 """
-Génère les icônes PWA depuis img/scenes/title.jpg.
+Génère les icônes PWA depuis img/scenes/title_icon.jpg.
 
 Produit dans img/icons/pwa/ :
   - icon-192.png            (192x192, purpose=any)
@@ -8,12 +8,13 @@ Produit dans img/icons/pwa/ :
   - icon-512-maskable.png   (512x512, purpose=maskable)
   - apple-touch-icon.png    (180x180, fond opaque)
 
-Toutes les variantes appliquent un **recadrage serré** sur le château et
-gardent le **cartouche or à l'intérieur de la safe-zone 80 %**, pour
-survivre aux masques que les launchers Android appliquent (squircle,
-circle, rounded square, teardrop). Le fond pourpre du ciel s'étend
-jusqu'au bord (bleed-safe) — seul le ciel peut être croppé, pas le
-château ni le cadre.
+La source `title_icon.jpg` est une image CARRÉE dédiée (château centré,
+fissure runique en dessous) — distincte de l'image de garde portrait
+`title.jpg`. Un léger recadrage central remonte le château pour qu'il
+remplisse l'icône. Le **cartouche or** reste à l'intérieur de la
+safe-zone 80 %, pour survivre aux masques que les launchers Android
+appliquent (squircle, circle, rounded square, teardrop). Le fond pourpre
+du ciel s'étend jusqu'au bord (bleed-safe).
 
 Dépendance : pillow.
 
@@ -24,7 +25,7 @@ from PIL import Image, ImageDraw, ImageEnhance, ImageFilter
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-SRC = ROOT / "img" / "scenes" / "title.jpg"
+SRC = ROOT / "img" / "scenes" / "title_icon.jpg"
 OUT_DIR = ROOT / "img" / "icons" / "pwa"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -33,30 +34,26 @@ GOLD_OUTER = (201, 168, 76)    # theme_color (#c9a84c)
 GOLD_INNER = (236, 214, 146)   # accent doré clair
 GOLD_DARK = (132, 99, 20)      # ombre dorée
 
-# title.jpg : 1024x1024. Le château occupe approximativement la bande
-# verticale entre y=80 (sommet des tours) et y=620 (base des rochers).
-# On recadre sur cette zone pour que le château remplisse l'icône.
-CASTLE_CROP_BOX = (110, 60, 920, 690)   # (left, top, right, bottom)
+# title_icon.jpg : 1024x1024, château centré. On recadre légèrement vers
+# le haut (on rogne un peu de ciel et la base de la fissure) pour que le
+# château remplisse mieux l'icône à petite taille. Crop carré.
+CASTLE_CROP_BOX = (60, 30, 964, 934)   # (left, top, right, bottom) — carré 904²
 
 
 def load_castle_crop() -> Image.Image:
     """
-    Recadre title.jpg sur le château et boost contraste + saturation
+    Recadre title_icon.jpg sur le château et boost contraste + saturation
     pour que les détails restent lisibles à 48-72px.
     """
     im = Image.open(SRC).convert("RGB")
     crop = im.crop(CASTLE_CROP_BOX)
-    # Recadre en carré : le crop est ~810x630, on étend symétriquement
+    # Sécurité : forcer un carré si le crop ne l'est pas parfaitement.
     w, h = crop.size
-    if w > h:
-        pad = (w - h) // 2
-        crop = Image.new("RGB", (w, w), BG_COLOR)
-        crop.paste(im.crop(CASTLE_CROP_BOX), (0, pad))
-    elif h > w:
-        pad = (h - w) // 2
-        out = Image.new("RGB", (h, h), BG_COLOR)
-        out.paste(im.crop(CASTLE_CROP_BOX), (pad, 0))
-        crop = out
+    if w != h:
+        side = min(w, h)
+        left = (w - side) // 2
+        top = (h - side) // 2
+        crop = crop.crop((left, top, left + side, top + side))
 
     # Boost contraste + saturation pour rendre les flammes/fenêtres
     # dorées + le château plus lisibles à petite taille.
