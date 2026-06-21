@@ -1679,4 +1679,47 @@ async function scenarioLoopNpcQuests3() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioChainedQuest, scenarioHeadlessHunt, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioFarmingQuests, scenarioDelayedSearch, scenarioCleVoute, scenarioQuestFanfare, scenarioLoopNpcQuests, scenarioLoopNpcQuests2, scenarioLoopNpcQuests3] };
+// P2.5 — le journal marque les quêtes signature de Maison d'un chip dédié.
+async function scenarioSignatureQuestBadge() {
+  console.log('\n── Scénario : marquage des quêtes signature (P2.5) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : une quête signature injectée porte le chip « SIGNATURE ».
+  const t1 = await page.evaluate(() => {
+    const tpl  = QUEST_TEMPLATES.find(q => q.id === 'quest_signature_gryff');
+    const inst = JSON.parse(JSON.stringify(tpl));
+    inst.completed = false;
+    activeQuests.push(inst);
+    openQuestLog();
+    const list = document.getElementById('quest-list');
+    return {
+      isSigFn:  typeof _isSignatureQuest === 'function',
+      tplFlag:  !!(tpl && tpl.houseSignatureQuest),
+      hasBadge: !!(list && list.innerHTML.includes('SIGNATURE')),
+    };
+  });
+  console.log('  T1:', t1);
+  assert(t1.isSigFn, '_isSignatureQuest non exposée');
+  assert(t1.tplFlag, 'template signature sans flag houseSignatureQuest');
+  assert(t1.hasBadge, 'chip SIGNATURE absent du journal pour une quête signature');
+
+  // T2 (contrôle négatif) : sans quête signature, aucun chip.
+  const t2 = await page.evaluate(() => {
+    activeQuests = activeQuests.filter(q => q.id !== 'quest_signature_gryff');
+    openQuestLog();
+    const list = document.getElementById('quest-list');
+    return { hasBadge: !!(list && list.innerHTML.includes('SIGNATURE')) };
+  });
+  console.log('  T2 (négatif):', t2);
+  assert(!t2.hasBadge, 'le chip SIGNATURE ne doit pas apparaître sans quête signature');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (badge signature)`);
+  }
+  console.log('  ✅ Marquage des quêtes signature OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioChainedQuest, scenarioHeadlessHunt, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioFarmingQuests, scenarioDelayedSearch, scenarioCleVoute, scenarioQuestFanfare, scenarioLoopNpcQuests, scenarioLoopNpcQuests2, scenarioLoopNpcQuests3, scenarioSignatureQuestBadge] };

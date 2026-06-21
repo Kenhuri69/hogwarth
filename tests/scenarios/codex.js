@@ -39,6 +39,17 @@ async function scenarioCodexOpen() {
   assert(opened.visible, 'modale Codex non visible après openCodex()');
   assert(opened.cards > 0, 'aucune carte dans la section Histoire');
 
+  // P2.5 — compteur de complétion « ✨ X / N révélées » dans l'en-tête.
+  const progress = await page.evaluate(() => {
+    const el = document.getElementById('codex-progress');
+    const txt = el ? el.textContent.trim() : '';
+    const m = txt.match(/^✨ (\d+) \/ (\d+) révélées$/);
+    return { txt, ok: !!m, total: m ? parseInt(m[2], 10) : 0 };
+  });
+  console.log('  progress :', progress);
+  assert(progress.ok, 'compteur de complétion Codex absent ou mal formé');
+  assert(progress.total > 0, 'total Codex nul');
+
   // À l'étage 1, la Clé de Voûte est ouverte (veiled) → fiche cliquable.
   const detail = await page.evaluate(() => {
     showCodexEntry('cle_de_voute');

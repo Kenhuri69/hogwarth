@@ -128,6 +128,21 @@ function switchCodexSection(cat) {
 // ── Liste + filtres ──────────────────────────────────────────
 function filterCodex() { showCodexList(); }
 
+// Compteur de complétion : entrées révélées (state 'revealed'/'corrupted') sur
+// le total du Codex, tous onglets confondus. Donne un objectif de collection
+// (cf. plan polish RC P2.5). Défensif — no-op si les globals manquent.
+function _updateCodexProgress() {
+  const el = safeEl('codex-progress');
+  if (!el || typeof CODEX_ENTRIES === 'undefined' || typeof codexEntryState !== 'function') return;
+  const ctx = _codexContext();
+  let revealed = 0;
+  for (const e of CODEX_ENTRIES) {
+    const st = codexEntryState(e, ctx);
+    if (st === 'revealed' || st === 'corrupted') revealed++;
+  }
+  el.textContent = `✨ ${revealed} / ${CODEX_ENTRIES.length} révélées`;
+}
+
 function showCodexList() {
   const listPanel   = safeEl('codex-list-panel');
   const detailPanel = safeEl('codex-detail-panel');
@@ -136,6 +151,8 @@ function showCodexList() {
 
   const grid = safeEl('codex-grid');
   if (!grid) return;
+
+  _updateCodexProgress();
 
   const search    = (safeEl('codex-search')?.value || '').toLowerCase().trim();
   const stateFilt = safeEl('codex-state')?.value || '';
