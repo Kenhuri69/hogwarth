@@ -281,6 +281,11 @@ verts. ✅ **Atteint** : P1.1 + P1.4 (2026-06-21, PR #634), **P1.5 + P1.6
 
 ## Priorité 2 — Moyen terme : frustration & feedback
 
+> 📋 **Plan d'implémentation du reste** (P2.1/2.2/2.3/2.4/2.6 + Priorité 3) :
+> [`rc-polish-remaining.md`](./rc-polish-remaining.md) — étapes code-grounded,
+> critères de vérification, corrections d'état (P3.1 déjà livré ; grille combat
+> P2.3 fiabilisée par #640).
+
 | # | Axe | Tâche | Difficulté | Impact | Dépendances |
 |---|-----|-------|-----------|--------|-------------|
 | P2.1 | Immersion | **Thermomètre de corruption HUD** (indicateur ❄→❄❄❄❄+ déjà amorcé `floor-ambiance.js`) + clé Codex. | Moyenne | **Élevé** (descente ressentie) | cache-bump |
