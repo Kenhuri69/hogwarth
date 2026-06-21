@@ -36,10 +36,11 @@
    en voix (ton calqué + identité §05). `node --check` OK.
 3. ✅ **cache-bump** : `hero-barks.js?v=12→13` (index.html + sw.js),
    `CACHE_VERSION hogwarth-v213→v214`. pwa-smoke confirme cache « v214 ».
-4. 🔄 Critères de sortie : units (946 ✅) · pwa-smoke (✅) · check_doc_modules
-   (✅) · check_difficulty (✅) · check_cache_versions (✅, re-check après commit)
-   · **smoke (en cours)**.
-5. ⬜ Reporter dans `rc-polish-remaining.md` + `docs/playtest-3-boucles.md`.
+4. ✅ Critères de sortie **tous verts** : units (946) · smoke (**263/263**) ·
+   pwa-smoke (cache v214) · check_doc_modules (97) · check_difficulty (stable) ·
+   check_cache_versions (✅ post-commit, bump hero-barks v13 détecté).
+5. ✅ Reporté dans `rc-polish-remaining.md` (P3.5 → amorce variété) +
+   `docs/playtest-3-boucles.md` (encart §6).
 
 ## Risques / garde-fous
 - **Pré-empte légèrement** le playtest : assumé et borné — c'est le levier
