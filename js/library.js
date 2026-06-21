@@ -294,5 +294,6 @@ function openLibrary() {
   }).join('');
 
   modal.style.display = 'flex';
+  if (typeof maybeLibraryTour === 'function') maybeLibraryTour();   // P2.4 — mini-tour 1ʳᵉ ouverture
 }
 window.openLibrary = openLibrary;

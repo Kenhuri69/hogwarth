@@ -448,6 +448,7 @@ function openForge() {
   list.innerHTML = summaryHtml + equipHtml + dissolveHtml;
 
   modal.style.display = 'flex';
+  if (typeof maybeForgeTour === 'function') maybeForgeTour();   // P2.4 — mini-tour 1ʳᵉ ouverture
 }
 
 window.openForge = openForge;

@@ -162,7 +162,16 @@ clore, pas à refaire :
 
 ---
 
-## P2.4 — Mini-tours contextuels endgame  ⬜
+## P2.4 — Mini-tours contextuels endgame  ✅ Fait (2026-06-21)
+
+> **Livré** : 3 jeux d'étapes (`FORGE/LIBRARY/ATELIER_TOUR_STEPS`) + helper
+> `_maybeContextTour(flagKey, steps)` (one-shot localStorage, respecte l'opt-out
+> global, ne double pas un tour actif) dans `help-tour.js` ; `maybeForgeTour` /
+> `maybeLibraryTour` / `maybeAtelierTour` exposés et appelés à la 1ʳᵉ ouverture
+> (hook défensif dans `openForge`/`openLibrary`/`openAtelierVoyageur`). Réutilise
+> l'infra `startHelpTour`. Tests : scénario smoke `scenarioEndgameMiniTours`
+> (déclenche 1×, one-shot ensuite). cache-bump help-tour v4 / forge v7 /
+> library v5 / atelier-voyageur v5 / CACHE_VERSION v208.
 
 **Impact : Moyen** (découvrabilité) · **Difficulté : Moyenne**
 

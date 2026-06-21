@@ -1889,4 +1889,53 @@ async function scenarioNpcCreatureReaction() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioNpcIntegration, scenarioVendors, scenarioRandomLoreNpcs, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioHelpTour, scenarioGrimoirePages, scenarioGrimoireActe3, scenarioDumbledoreLux, scenarioOnboarding, scenarioCleVouteIntro, scenarioNpcEclatReaction, scenarioLoopDarkSuffix, scenarioNpcReputation, scenarioNpcPostVictory, scenarioNpcCreatureReaction] };
+// P2.4 — mini-tour contextuel one-shot à la 1ʳᵉ ouverture de la Forge.
+async function scenarioEndgameMiniTours() {
+  console.log('\n── Scénario : mini-tours endgame (P2.4) ──');
+  const { browser, page, errors } = await launchGame();
+  await page.evaluate(() => {
+    try {
+      localStorage.removeItem('hh_help_tour_optout');
+      localStorage.removeItem('hh_tour_forge_seen');
+    } catch (e) { /* noop */ }
+  });
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+  // Ferme le tour intro auto pour isoler le mini-tour.
+  await page.evaluate(() => { if (window._helpTourActive && typeof helpTourEnd === 'function') helpTourEnd(); });
+
+  // T1 : 1ʳᵉ ouverture Forge → mini-tour planifié (350 ms).
+  const t1 = await page.evaluate(() => {
+    try { localStorage.removeItem('hh_tour_forge_seen'); } catch (e) {}
+    const hasFn = typeof maybeForgeTour === 'function' && typeof openForge === 'function';
+    if (hasFn) openForge();
+    return { hasFn };
+  });
+  await page.waitForTimeout(550);
+  const t1b = await page.evaluate(() => ({
+    active:  window._helpTourActive === true,
+    overlay: document.getElementById('help-tour-overlay')?.style.display === 'block',
+    flag:    localStorage.getItem('hh_tour_forge_seen'),
+    title:   document.getElementById('help-tour-title')?.textContent || ''
+  }));
+  console.log('  T1:', t1, t1b);
+  assert(t1.hasFn, 'maybeForgeTour/openForge non exposés');
+  assert(t1b.active && t1b.overlay, 'mini-tour Forge non déclenché à la 1ʳᵉ ouverture');
+  assert(t1b.flag === '1', 'flag hh_tour_forge_seen non posé');
+  assert(/Forge/.test(t1b.title), 'titre du mini-tour Forge inattendu : ' + t1b.title);
+
+  // T2 : 2ᵉ ouverture → one-shot, pas de relance.
+  await page.evaluate(() => { if (typeof helpTourEnd === 'function') helpTourEnd(); if (typeof openForge === 'function') openForge(); });
+  await page.waitForTimeout(550);
+  const t2 = await page.evaluate(() => ({ active: window._helpTourActive === true }));
+  console.log('  T2 (one-shot):', t2);
+  assert(!t2.active, 'le mini-tour Forge ne doit pas se rejouer (one-shot)');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS (mini-tours endgame)`);
+  }
+  console.log('  ✅ Mini-tours endgame conformes');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioNpcIntegration, scenarioVendors, scenarioRandomLoreNpcs, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioHelpTour, scenarioGrimoirePages, scenarioGrimoireActe3, scenarioDumbledoreLux, scenarioOnboarding, scenarioCleVouteIntro, scenarioNpcEclatReaction, scenarioLoopDarkSuffix, scenarioNpcReputation, scenarioNpcPostVictory, scenarioNpcCreatureReaction, scenarioEndgameMiniTours] };
