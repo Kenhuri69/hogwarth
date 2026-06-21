@@ -384,6 +384,10 @@ function goDeeper() {
           && gardenStock < GARDEN_CAP) {
         gardenStock = Math.min(GARDEN_CAP, gardenStock + GARDEN_DESCENT_BONUS);
       }
+      // Ch.13 P4 — logger d'équilibrage opt-in (§13.9.H) : profondeur atteinte
+      // + temps de run de l'étage quitté (loopDepthMedian / averageClearTime).
+      // Défensif : no-op si le module/flag est absent.
+      if (window.BalanceLog) BalanceLog.record('descend', { prevFloor: currentFloor - 1 });
     },
     saveReason: 'floor-down',
     narrative: (floor) => `Le groupe descend au niveau ${floor} des donjons de Poudlard...`

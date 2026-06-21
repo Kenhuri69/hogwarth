@@ -117,6 +117,10 @@ function triggerDeath(msg) {
     _finishAstralCombat(false);
     return;
   }
+  // Ch.13 P4 — logger d'équilibrage opt-in (§13.9.H) : issue=death + cause +
+  // underLevelGap (calculé dans le module). Défensif, après le court-circuit
+  // astral (un écho n'est pas une vraie mort). No-op si flag/module absents.
+  if (window.BalanceLog) BalanceLog.record('death', { cause: msg });
   AudioSystem.playDeath();
   // Mode Ironman : la mort est définitive — écran de résultat chiffré
   // + soumission au Hall of Fame, pas de pétrification ni de résurrection.

@@ -1020,7 +1020,7 @@ bruit Monte-Carlo (SE de la différence ≈ 2.5 pts à N=800). Analogue à
 | **P1** ✅ | Toast d'entrée de Boucle + indicateur d'attrition (E) | UX cosmétique | Résout la frustration n°1 des sims (écart combat/clear, pivot endgame) — **sans toucher l'équilibrage**. **Implémenté** |
 | **P2** ✅ | XP passive de Boucle (`LOOP_PASSIVE_XP_FRAC`, axe additif — pas de nerf scaling) | Équilibrage | **Implémenté** — adoucit le mur ét. 19-21 sans trivialiser (`DIFFICULTY_STUDY.md §8.8`) |
 | **P3** ✅ (refuges) | Refuges de Maison (cosmétique, équité préservée) **implémenté** · `houseDifficultyModifier` non retenu (rompt l'équité) | Feature | Refuges : habillage par Maison, répit partiel uniforme (§13.4.3) |
-| **P4** 💡 ❓ | Logger `BALANCE_DEBUG` in-game (opt-in, local) — métriques réelles `synergyUsageRate`/`loopDepthMedian` (§13.9.H) | Tooling | **Uniquement si** playtest communautaire lancé (§13.9.J) ; la sim couvre déjà la non-régression |
+| **P4** ✅ | Logger `BALANCE_DEBUG` in-game (opt-in, local, anonyme) — `js/balance-log.js`, `window.BalanceLog` ; métriques réelles `synergyUsageRate`/`loopDepthMedian`/`deathRatePerFloor`/`averageClearTime` (§13.9.H) — **implémenté** | Tooling | Pont sim↔terrain pour le playtest communautaire (§13.9.J). NO-OP tant que le flag est off ; la sim reste la non-régression |
 | **Hors-scope V1** | `eclatPowerBoost`, héritage en Boucle (💡 ❓) | Feature | Déconseillé (§13.3.4, §13.4.4) |
 
 > ✅ **Ordre directeur** : *base scaling (déjà là → documenter) → garde-fou de
@@ -1050,16 +1050,18 @@ voir §H, aucune n'existe en jeu actuellement).
 > 💡 `synergyUsageRate`, `loopDepthMedian`, `deathRatePerFloor` *réel* exigent une
 > **télémétrie de playtest** qui n'existe pas encore (§H).
 
-## H. Intégration de logs de simulation / debug in-game (💡 proposition)
+## H. Intégration de logs de simulation / debug in-game (✅ implémenté, P4)
 
-> ⚠️ **État réel** : le jeu **n'a aucune télémétrie ni logger de debug**
-> (vérifié — aucun `window.DEBUG`, `simLog`, flag de trace). Tout ce qui suit est
-> une **proposition opt-in**, derrière un flag (modèle `MP_CONFIG`), **désactivée
-> par défaut** (zéro impact joueur, zéro réseau imposé).
+> ✅ **État réel** : implémenté (`js/balance-log.js`, `window.BalanceLog`). Logger
+> **opt-in, local, anonyme**, derrière un flag (modèle `MP_CONFIG`), **désactivé
+> par défaut** (zéro impact joueur, zéro réseau). `BalanceLog.record(...)` est un
+> **NO-OP total** tant que `localStorage.hogwarts_balance_debug !== '1'`.
+> Instrumentation **100 % additive** : aucune valeur d'équilibrage touchée.
 
-**Proposition `BALANCE_DEBUG` (local, opt-in)** — un logger léger qui, *quand
-activé en console* (`localStorage.hogwarts_balance_debug = '1'`), accumule en
-mémoire/`localStorage` des compteurs **anonymes et locaux** :
+**`BALANCE_DEBUG` (local, opt-in)** — quand *activé en console*
+(`localStorage.hogwarts_balance_debug = '1'`), accumule dans
+`localStorage['hogwarts_rpg_balance_log']` (schéma = colonnes sim §3 : étage,
+mode, niveau, tours, PV restants, issue) des compteurs **anonymes et locaux** :
 
 | Hook | Donnée logguée | Module |
 |------|----------------|--------|
@@ -1070,18 +1072,21 @@ mémoire/`localStorage` des compteurs **anonymes et locaux** :
 
 - ✅ **Réutilise les hooks existants** (`autoSave` est déjà branché sur ces mêmes
   points — §« Sauvegarde ») → **call-sites défensifs** `if (window.BalanceLog)`,
-  zéro régression si le module n'est pas chargé.
-- 💡 **Export** : un bouton debug *« Exporter mes logs d'équilibrage »* (JSON copié
-  presse-papiers) que les playtesters volontaires renvoient — **pas de collecte
-  automatique** (respect vie privée, cohérent avec le repli localStorage du HoF).
-- 💡 **Pont sim ↔ jeu** : le format de log exporté est **le même schéma** que la
+  zéro régression si le module n'est pas chargé. `underLevelGap` = niveau joueur −
+  niveau attendu (table figée `DIFFICULTY_REPORT.md §1`, calculé dans le module).
+- ✅ **Export** : `BalanceLog.export()` copie le JSON dans le presse-papiers et
+  affiche un **bouton debug flottant** *« ⚖️ Export logs »* (injecté uniquement si
+  le flag est on) — **pas de collecte automatique** (respect vie privée, cohérent
+  avec le repli localStorage du HoF). Les métriques dérivées (`synergyUsageRate`,
+  `loopDepthMedian`, `deathRatePerFloor`, `averageClearTime` — noms canoniques §G)
+  sont reconstruites par `BalanceLog.summary()` à l'export.
+- ✅ **Pont sim ↔ jeu** : le format de log exporté reprend **le même schéma** que la
   sortie `sim-difficulty.js §3` → on peut **superposer** courbe simulée et courbe
   réelle dans un même tableur pour valider que le modèle Monte-Carlo *prédit* le
   terrain. C'est le chaînon manquant entre théorie et playtest.
-- ❓ **À trancher** : implémenter `BALANCE_DEBUG` (utile pour le playtest
-  communautaire, §J) ou rester sur la sim seule (suffisante pour la non-régression).
-  **Recommandation : implémenter en P4** *si* un playtest communautaire est lancé —
-  inutile tant que la validation reste interne (la sim couvre déjà la non-régression).
+- ✅ **Tranché** : `BALANCE_DEBUG` **implémenté** (P4) — opt-in/local/anonyme, NO-OP
+  tant que le flag est off. La sim reste la non-régression ; le logger sert le
+  playtest communautaire (§J). Test : `tests/scenarios/misc.js — scenarioBalanceLog`.
 
 ## I. Processus itératif — Simulation → Playtest → Ajustement
 
@@ -1166,10 +1171,11 @@ D'après §13.5.2 (poids relatif mesuré), prioriser dans cet ordre :
 6. ✅ Garde-fou de sim en CI (`check_difficulty.js`) — **implémenté** (P1,
    §13.9.C/F). Le toast de pivot endgame + l'indicateur d'attrition (§13.9.E)
    sont aussi **implémentés**.
-7. ❓ Implémenter un logger d'équilibrage in-game `BALANCE_DEBUG` (opt-in, local,
-   anonyme) pour collecter `synergyUsageRate`/`loopDepthMedian`/`deathRatePerFloor`
-   réels ? *(Recommandation : P4, **uniquement si** un playtest communautaire est
-   lancé — la sim couvre déjà la non-régression — §13.9.H/J.)*
+7. ✅ Logger d'équilibrage in-game `BALANCE_DEBUG` (opt-in, local, anonyme) —
+   **tranché : implémenté** (P4, `js/balance-log.js`, `window.BalanceLog`).
+   Collecte `synergyUsageRate`/`loopDepthMedian`/`deathRatePerFloor`/
+   `averageClearTime` réels via 4 hooks défensifs. NO-OP tant que le flag est off ;
+   la sim reste la non-régression — §13.9.H/J.
 8. ❓ Atténuer le **cliff de palier de Boucle** (20→21) en répartissant `scalDelta`
    sur 2–3 étages plutôt qu'en bloc ? *(Recommandation : d'abord communication
    (toast pivot ✅) ; ne lisser qu'après playtest, sans baisser la puissance cible —

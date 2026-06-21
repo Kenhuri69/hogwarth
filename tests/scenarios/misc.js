@@ -767,4 +767,67 @@ async function scenarioFullJourneyDuo() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioStartup, scenarioLoader, scenarioIronman, scenarioIronmanConfirm, scenarioContentConsumablesTradeoffs, scenarioHeroBarks, scenarioFullJourneyDuo] };
+// Ch.13 P4 (§13.9.H) — logger d'équilibrage BALANCE_DEBUG opt-in/local/anonyme.
+// Vérifie : NO-OP sans flag, accumulation après activation (combat + sort
+// exploitant une faiblesse), métriques dérivées, export JSON non vide.
+async function scenarioBalanceLog() {
+  console.log('\n── Scénario : logger d\'équilibrage BALANCE_DEBUG (Ch.13 P4) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // 1. Flag absent → record() est un NO-OP total (zéro persistance).
+  const off = await page.evaluate(() => {
+    localStorage.removeItem('hogwarts_balance_debug');
+    localStorage.removeItem('hogwarts_rpg_balance_log');
+    BalanceLog.record('battle', { outcome: 'win' });
+    return { enabled: BalanceLog.enabled(), stored: localStorage.getItem('hogwarts_rpg_balance_log') };
+  });
+  assert(off.enabled === false, 'flag off → enabled() doit être false');
+  assert(off.stored === null, 'flag off → record() ne doit RIEN persister');
+
+  // 2. Table de niveau attendu (report §1) → underLevelGap.
+  const exp = await page.evaluate(() => ({
+    solo8: BalanceLog._expectedLevel(8, 'Solo'),
+    duo10: BalanceLog._expectedLevel(10, 'Duo'),
+  }));
+  assert(exp.solo8 === 9, `_expectedLevel(8,Solo) doit valoir 9 (obtenu ${exp.solo8})`);
+  assert(exp.duo10 === 11, `_expectedLevel(10,Duo) doit valoir 11 (obtenu ${exp.duo10})`);
+
+  // 3. Active le flag, combat réel : sort exploitant une faiblesse + victoire.
+  await page.evaluate(() => { localStorage.setItem('hogwarts_balance_debug', '1'); BalanceLog.clear(); });
+  await startDummyFight(page, { hp: 300 });
+  await page.evaluate(() => {
+    enemyGroup[0].weak = ['feu'];
+    const c = getActiveChar(); c.sp = 99;
+    castSpellInBattle('Incendio', 0);       // élément feu → exploite la faiblesse
+  });
+  await page.evaluate(() => { enemyGroup.forEach(e => { e.currentHp = 0; }); endBattle(true); });
+
+  const res = await page.evaluate(() => {
+    const store = JSON.parse(localStorage.getItem('hogwarts_rpg_balance_log'));
+    const sum = BalanceLog.summary();
+    const json = BalanceLog.export();
+    return {
+      battles: store.battles.length,
+      spellCasts: store.spellCasts,
+      weak: store.weaknessExploits,
+      synergy: sum.synergyUsageRate,
+      jsonLen: json.length,
+    };
+  });
+  console.log('  log    :', res);
+  assert(res.battles >= 1, 'au moins 1 combat doit être loggé');
+  assert(res.spellCasts >= 1, 'au moins 1 sort doit être loggé');
+  assert(res.weak >= 1, 'l\'exploitation de faiblesse doit être comptée');
+  assert(res.synergy > 0, 'synergyUsageRate dérivé doit être > 0');
+  assert(res.jsonLen > 0, 'export() doit produire un JSON non vide');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS (BALANCE_DEBUG)`);
+  }
+  console.log('  ✅ logger BALANCE_DEBUG : no-op sans flag, accumulation + export OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioStartup, scenarioLoader, scenarioIronman, scenarioIronmanConfirm, scenarioContentConsumablesTradeoffs, scenarioHeroBarks, scenarioFullJourneyDuo, scenarioBalanceLog] };

@@ -266,6 +266,9 @@ function endBattle(won) {
   // Effets de combat transient consommés à la sortie (Récolte Magique).
   recolteGoldBonus = false;
   updateUI();
+  // Ch.13 P4 — logger d'équilibrage opt-in (§13.9.H). Défensif : no-op si le
+  // module n'est pas chargé ou si le flag BALANCE_DEBUG est absent.
+  if (window.BalanceLog) BalanceLog.record('battle', { outcome: won ? 'win' : 'flee' });
   safeCall('autoSave', won ? 'battle-end' : 'battle-flee');
   safeCall('checkCodexUnlocks', won ? 'battle-end' : 'battle-flee');
 }

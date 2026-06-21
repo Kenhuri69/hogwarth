@@ -1625,6 +1625,15 @@ function castSpellInBattle(spellName, targetIdx, targetAllyIdx) {
     if (spell.premium) { CFX_safe.buffAura('ally'); CFX_safe.castFlash('ally', _el); }
   }
 
+  // Ch.13 P4 — logger d'équilibrage opt-in (§13.9.H) : alimente
+  // synergyUsageRate (exploitation d'une faiblesse élémentaire). Défensif :
+  // no-op si le module/flag est absent. 100 % observationnel.
+  if (window.BalanceLog) {
+    BalanceLog.record('spell', {
+      exploitedWeakness: !!(enemy && enemy.weak && spell.element && enemy.weak.includes(spell.element)),
+    });
+  }
+
   setBattleLog(msg);
   renderEnemyGroup();
   updateUI();

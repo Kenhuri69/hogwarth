@@ -484,6 +484,7 @@ window.UX_safe = new Proxy({}, {
     { name: 'showIntroScreen',    source: 'intro.js',        kind: 'fn',    optional: true },
     { name: 'getNpcById',         source: 'npcs-helpers.js', kind: 'fn',    optional: true },
     { name: 'Karaoke',            source: 'karaoke.js',      kind: 'obj',   optional: true },
+    { name: 'BalanceLog',         source: 'balance-log.js',  kind: 'obj',   optional: true },
     { name: 'PWA',                source: 'pwa.js',          kind: 'obj',   optional: true },
   ];
 

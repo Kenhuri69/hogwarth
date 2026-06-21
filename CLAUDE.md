@@ -238,6 +238,15 @@ js/
                       (cellule CELL.LIBRARY, endgame Tranche 2)
   help-tour.js     →  Tour guidé d'aide pour novices (spotlight + bulles sur
                       les vrais éléments de l'UI)
+  balance-log.js   →  window.BalanceLog — logger d'équilibrage `BALANCE_DEBUG`
+                      OPT-IN, LOCAL, ANONYME (Ch.13 P4, §13.9.H). NO-OP tant que
+                      `localStorage.hogwarts_balance_debug !== '1'`. record(event,
+                      payload) accumule des compteurs (battles/spells/loopDepths)
+                      dans `hogwarts_rpg_balance_log` (schéma = colonnes sim §3) ;
+                      export() → JSON presse-papiers + bouton debug flottant.
+                      Aucune collecte auto, aucun réseau. Hooks défensifs aux
+                      call-sites autoSave (endBattle/triggerDeath/castSpellInBattle/
+                      goDeeper). Chargé tard, défensif. APRÈS help-tour.js
   loader.js        →  Chargé EN AVANT-DERNIER. Vérifie ~55 globals attendus
                       (typeof entry.name), affiche bandeau rouge si critique
                       manquant. Exporte window.safeEl(id) + window.safeCall(fn,...args).

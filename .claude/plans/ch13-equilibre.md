@@ -67,3 +67,11 @@
   jeu de 6. Tous les chiffres proviennent du run de ce jour (N=600).
 - L'intégration de logs in-game reste 💡 (aucune télémétrie n'existe) ; le « vrai »
   pipeline de mesure reste `sim-difficulty.js` + `check_difficulty.js` en CI.
+
+## Suite — P4 (juin 2026)
+- **P4 ✅ implémenté** : logger `BALANCE_DEBUG` (`js/balance-log.js`,
+  `window.BalanceLog`), opt-in/local/anonyme, NO-OP tant que
+  `localStorage.hogwarts_balance_debug !== '1'`. 4 hooks défensifs
+  (endBattle/triggerDeath/castSpellInBattle/goDeeper). Détail et étapes dans
+  le plan dédié `.claude/plans/ch13-impl-p4-logger.md`. §13.9.F/§13.9.H/point 7
+  passés de 💡❓ à ✅. Instrumentation pure — aucune valeur d'équilibrage touchée.
