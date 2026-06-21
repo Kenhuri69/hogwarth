@@ -38,6 +38,39 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
+/* ── Indicateur d'autosave (C2, polish UX) — micro-toast non bloquant ──────
+   Apparaît en bas à droite à chaque sauvegarde auto réussie, puis s'efface.
+   pointer-events:none → ne masque jamais une commande (d-pad mobile inclus). */
+#autosave-toast {
+  position: fixed;
+  right: max(12px, env(safe-area-inset-right));
+  bottom: max(12px, env(safe-area-inset-bottom));
+  z-index: 700;
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 13px;
+  font-family: 'Cinzel', serif; font-size: 12px; letter-spacing: 0.5px;
+  color: var(--gold-light);
+  background: linear-gradient(180deg, rgba(26,15,5,0.95), rgba(18,10,3,0.96));
+  border: 1px solid var(--house-accent);
+  border-radius: 20px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.5), 0 0 10px var(--house-glow);
+  opacity: 0; transform: translateY(8px);
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+#autosave-toast.show { opacity: 1; transform: translateY(0); }
+#autosave-toast.show .autosave-toast-icon { animation: autosaveIconPulse 0.7s ease; }
+@keyframes autosaveIconPulse {
+  0%   { transform: scale(0.7);  opacity: 0.4; }
+  50%  { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1);    opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #autosave-toast { transition: opacity 0.2s ease; transform: none; }
+  #autosave-toast.show { transform: none; }
+  #autosave-toast.show .autosave-toast-icon { animation: none; }
+}
+
 /* Accessibilité clavier : repère de focus doré sur tout élément interactif.
    :focus-visible n'apparaît qu'au clavier (pas au clic souris), donc sans
    bruit visuel pour les joueurs à la souris/tactile. */

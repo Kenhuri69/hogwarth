@@ -364,6 +364,31 @@ function _updateHouseBadge() {
   if (crest) crest.style.display = 'none';
 }
 
+// Indicateur d'autosave (C2, polish UX) — micro-toast discret « 💾 Sauvegardé »
+// qui pulse ~1,7 s à chaque autoSave() réussi (appelé par save-slots.js, garde
+// `typeof`). Aucune interruption : pas de modale, pas de vol de focus, jamais
+// cliquable (pointer-events:none). `role="status"`/`aria-live="polite"` pour
+// l'annonce lecteur d'écran. Élément créé paresseusement, réutilisé ensuite.
+let _autosaveToastTimer = null;
+function _showAutosaveToast() {
+  if (!document.body) return;
+  let el = document.getElementById('autosave-toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'autosave-toast';
+    el.setAttribute('role', 'status');
+    el.setAttribute('aria-live', 'polite');
+    document.body.appendChild(el);
+  }
+  el.innerHTML = '<span class="autosave-toast-icon" aria-hidden="true">💾</span>Sauvegardé';
+  // Relance l'animation CSS même en cas de sauvegardes rapprochées.
+  el.classList.remove('show');
+  void el.offsetWidth;
+  el.classList.add('show');
+  if (_autosaveToastTimer) clearTimeout(_autosaveToastTimer);
+  _autosaveToastTimer = setTimeout(() => { el.classList.remove('show'); }, 1700);
+}
+
 // New Game+ (Chapitre 14 P5) — titre honorifique affiché dans le HUD pendant
 // une partie lancée en Nouvelle Partie+. Purement cosmétique (jamais lu par un
 // calcul). Masqué hors NG+ ou sans titre.

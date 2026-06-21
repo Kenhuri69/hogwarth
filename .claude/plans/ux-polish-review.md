@@ -327,6 +327,17 @@ Chaque lot est **livrable indépendamment** : la qualité perçue monte dès C1
   - Vérif : `node tests/smoke.js` vert + cache-bump (CSS/JS bumpés). Aucune
     régression ; effet nul tant qu'aucune Maison n'est choisie.
 
+- **2026-06-21 — C2 (Indicateur d'autosave) : ✅ livré.**
+  - `js/ui.js` : `_showAutosaveToast()` crée/réutilise un micro-toast
+    `#autosave-toast` (`role=status`, `aria-live=polite`), pulse ~1,7 s puis
+    s'efface. `js/save-slots.js` l'appelle (garde `typeof`) au succès de
+    `autoSave()`.
+  - `css/style.css` : style du toast (bas-droite, liseré teinté Maison réutilisant
+    `--house-accent`/`--house-glow`, `pointer-events:none` → ne masque jamais
+    une commande), variante `prefers-reduced-motion`.
+  - Test : scénario `AutoSave` étendu (T6 : toast affiché, aria-live, non
+    cliquable). `node tests/smoke.js` 263 verts + cache-bump (v218).
+
 ---
 
 ## Recommandation de démarrage

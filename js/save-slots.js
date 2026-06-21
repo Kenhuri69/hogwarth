@@ -171,6 +171,8 @@ function autoSave(reason) {
     state: _serializeState()
   };
   _writeStore(store);
+  // Retour visuel discret (C2) — défensif : no-op si ui.js n'a pas chargé.
+  if (typeof _showAutosaveToast === 'function') _showAutosaveToast();
   return true;
 }
 
