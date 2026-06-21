@@ -73,3 +73,10 @@ Incendio Majeur, Glacius Profond, Sanguini Vorace, Protego Diabolica.
     battle-spells.js v22, CACHE_VERSION v190.
   - Vérifs : units 897 ✓, smoke 249 ✓, pwa-smoke ✓.
   - Reste P4 : Serment du Blaireau (légendaire) + 6 non-légendaires + 8 variantes P3.
+- 2026-06-21 : **Lot 2 livré** (même PR #624) — 3 icônes + 3 splashes dédiés :
+  Serment du Blaireau (Pouf, légendaire, boucle le quatuor), Venin du Cachot
+  (Slyth), Savoir Interdit (Serd). `SPELL_ICON_REGISTRY` + `SPELL_SPLASH_REGISTRY`
+  mis à jour (slot déjà en place). cache-bump : item-icons.js v40, CACHE_VERSION
+  v191. Vérifs : units 897 ✓, smoke 249 ✓ (T5 = 6 splashes), pwa-smoke ✓.
+  - Reste P4 : Fardeau Partagé + Tempus Echo + Reliquae Temporis + Écho Fantôme
+    (4) + 8 variantes P3.

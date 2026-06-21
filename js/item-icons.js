@@ -553,8 +553,8 @@ const SPELL_ICON_REGISTRY = {
   'Soin du Blaireau':   'img/icons/spells/reparo.png',
   // ── Lot P4 — alias temporaires sur des PNG existants (art dédié reporté §2.8) ──
   'Flamme Dévorante':    'img/icons/spells/flamme_devorante.png',   // icône dédiée (lion de feu corrompu)
-  'Venin du Cachot':     'img/icons/spells/sanguini.png',          // venin/drain
-  'Savoir Interdit':     'img/icons/spells/maledictus.png',        // malédiction
+  'Venin du Cachot':     'img/icons/spells/venin_du_cachot.png',    // icône dédiée (cobra/venin, Serpentard)
+  'Savoir Interdit':     'img/icons/spells/savoir_interdit.png',    // icône dédiée (grimoire maudit, Serdaigle)
   'Fardeau Partagé':     'img/icons/spells/vulnera_sanentur.png',  // redistribution PV
   'Tempus Echo':         'img/icons/spells/teleportation.png',     // temporel
   'Reliquae Temporis':   'img/icons/spells/teleportation.png',     // temporel
@@ -562,7 +562,7 @@ const SPELL_ICON_REGISTRY = {
   'Cœur de Lion':        'img/icons/spells/coeur_de_lion.png',     // icône dédiée (lion de feu, Gryffondor)
   'Pacte du Serpent':    'img/icons/spells/pacte_du_serpent.png',  // icône dédiée (pacte serpentin, Serpentard)
   'Verbe de Rowena':     'img/icons/spells/verbe_de_rowena.png',   // icône dédiée (chœur runique, Serdaigle)
-  'Serment du Blaireau': 'img/icons/spells/reparo.png',            // relève un allié
+  'Serment du Blaireau': 'img/icons/spells/serment_du_blaireau.png', // icône dédiée (blaireau ailé, Poufsouffle)
   'Le Mot du Dormeur':   'img/icons/spells/le_mot_du_dormeur.png',  // icône dédiée (rune-stèle des Ruines)
   'Sanguini Vorace':     'img/icons/spells/sanguini.png',
   'Protego Diabolica':   'img/icons/spells/protego.png'
@@ -577,7 +577,10 @@ const SPELL_ICON_REGISTRY = {
 const SPELL_SPLASH_REGISTRY = {
   'Cœur de Lion':     'img/fx/spells/coeur_de_lion.png',     // éruption de feu ralliante
   'Pacte du Serpent': 'img/fx/spells/pacte_du_serpent.png',  // vortex sang/serpent
-  'Verbe de Rowena':  'img/fx/spells/verbe_de_rowena.png'    // chœur runique bleu/or
+  'Verbe de Rowena':  'img/fx/spells/verbe_de_rowena.png',   // chœur runique bleu/or
+  'Serment du Blaireau': 'img/fx/spells/serment_du_blaireau.png', // colonne d'or restauratrice
+  'Venin du Cachot':  'img/fx/spells/venin_du_cachot.png',   // explosion de venin vert
+  'Savoir Interdit':  'img/fx/spells/savoir_interdit.png'    // vortex d'œil maudit violet
 };
 
 // Résout le PNG de splash d'un sort (par nom), ou null si aucun.
