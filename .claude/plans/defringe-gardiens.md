@@ -24,6 +24,13 @@ Source brute Nano Banana absente du repo → on nettoie les PNG existants.
 4. décontamination couleur (nearest pixel intérieur) + replumage 1 px (α=140)
 5. sauvegarde 512² RGBA
 
+> ⚠️ RÉVISION (revue utilisateur sur fond noir GitHub) : le 1er passage ne
+> retirait QUE les blobs détachés. Restaient des carrés de damier ATTACHÉS à la
+> silhouette + un liseré clair cuit dans le RGB (~5500 px lion, ~3900 blaireau).
+> Algo v3 : ajoute la SUPPRESSION (alpha→0) du damier neutre-clair
+> (lum≥150 & sat≤42) dans l'anneau de bord `band=16`, avant la décontamination.
+> Résidu blanc 5463→0 (lion), 3911→0 (blaireau). Validé visuellement sur noir.
+
 ## Critères de vérification
 - [x] avant/après : frange claire (bord ≥200) chute de ~30-39 % à < 8 %
 - [x] semi-transp. remonte (lissage présent, plus binaire)
