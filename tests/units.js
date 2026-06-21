@@ -2220,7 +2220,23 @@ function loadModule(relPath, exportNames, globals = {}) {
   sandbox.currentFloor = 5;
   check('évol étage : Lumos Solem étage 5 → base', resolveSpellForm('Lumos Solem', {}).name === 'Lumos Solem');
   sandbox.currentFloor = 9;
-  check('évol étage : Lumos Solem étage 9 → Lux Aeterna', resolveSpellForm('Lumos Solem', {}).name === 'Lux Aeterna');
+  // La forme évoluée d'un sort MONO-CIBLE reste mono-cible (plus fort), JAMAIS
+  // de bascule vers du multi-cible (régression : était Lux Aeterna / aoe_wave).
+  const lumosEvo = resolveSpellForm('Lumos Solem', {});
+  check('évol étage : Lumos Solem étage 9 → Lumos Solem Ardent', lumosEvo.name === 'Lumos Solem Ardent');
+  check('évol Lumos Solem reste mono-cible (effect burn)', lumosEvo.effect === 'burn');
+  // Symétrie : un sort de zone évolue vers une forme PLUS FORTE mais TOUJOURS de zone.
+  // Déblocage PROGRESSIF, un sort par étage à partir de 14 (Glacius 14 … Lux 16).
+  sandbox.currentFloor = 14;
+  check('évol progressive : Glacius Tempête étage 14 → Glacius Cataclysme',
+    resolveSpellForm('Glacius Tempête', {}).name === 'Glacius Cataclysme');
+  check('évol progressive : Lux Aeterna étage 14 → base (pas encore débloqué)',
+    resolveSpellForm('Lux Aeterna', {}).name === 'Lux Aeterna');
+  sandbox.currentFloor = 16;
+  const luxEvo = resolveSpellForm('Lux Aeterna', {});
+  check('évol étage : Lux Aeterna étage 16 → Lux Suprema', luxEvo.name === 'Lux Suprema');
+  check('évol Lux Aeterna reste de zone (effect aoe_wave)', luxEvo.effect === 'aoe_wave');
+  check('évol AoE plus forte (power ↑)', luxEvo.power > getSpellByName('Lux Aeterna').power);
 
   // ── évolution par quête (Set mutable injecté) ──
   check('évol quête : Glacius sans quête → base', resolveSpellForm('Glacius', {}).name === 'Glacius');

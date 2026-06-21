@@ -338,7 +338,7 @@ const SPELLS = [
   // ── Sorts élémentaires (glace / foudre / lumière) ────────────
   { name:"Glacius",           icon:"❄️",   desc:"Givre mordant (14 dégâts, engelures)", cost:8,  effect:"stun",  element:"glace",    power:14, evolvesTo:"Glacius Profond", evolveCondition:{ type:"quest", value:"manon_grimoire" } },
   { name:"Fulgari",           icon:"⚡",   desc:"Foudre canalisée (16 dégâts)",         cost:9,  effect:"stun",  element:"foudre",   power:16 },
-  { name:"Lumos Solem",       icon:"☀️",   desc:"Lumière solaire — ravage les morts-vivants", cost:10, effect:"burn", element:"lumière", power:16, bonusVsUndead:1.5, evolvesTo:"Lux Aeterna", evolveCondition:{ type:"floor", value:9 } },
+  { name:"Lumos Solem",       icon:"☀️",   desc:"Lumière solaire — ravage les morts-vivants", cost:10, effect:"burn", element:"lumière", power:16, bonusVsUndead:1.5, evolvesTo:"Lumos Solem Ardent", evolveCondition:{ type:"floor", value:9 } },
   // ── Sort interdit (débloqué au niveau 9) ─────────────────────
   { name:"Avada...",          icon:"💚✨", desc:"Malédiction mortelle (50 dégâts)",   cost:20, effect:"instant", element:"ténèbres", power:50, locked:true },
   // ── Sort utilitaire — Téléportation (Portus) ─────────────────
@@ -384,12 +384,17 @@ const SPELLS = [
   // Dégâts : base = power + mag/magDiv + stat2/stat2Div (cf. aoeBaseDamage).
   // magDiv/stat2Div varient par sort pour l'équilibrage — un sort à gros
   // rider (gel, vol de vie) scale plus doucement. Défaut 3/3.
-  { name:"Glacius Tempête",   icon:"🌨️", desc:"Blizzard : dégâts de glace à tous les ennemis + gel",            cost:16, effect:"aoe_field",  element:"glace",    power:12, stat2:"int", magDiv:3, stat2Div:3 },
-  { name:"Fulgur Catena",     icon:"⚡",  desc:"Arc électrique : chaîne d'ennemi en ennemi (dégâts décroissants)", cost:15, effect:"aoe_chain",  element:"foudre",   power:18, stat2:"agi", magDiv:2, stat2Div:4 },
-  { name:"Lux Aeterna",       icon:"🌟",  desc:"Onde de lumière : frappe tous les ennemis (×1,5 morts-vivants)",  cost:17, effect:"aoe_wave",   element:"lumière",  power:15, bonusVsUndead:1.5, stat2:"int", magDiv:2, stat2Div:4 },
-  { name:"Nox Vorax",         icon:"🌑",  desc:"Vague obscure : dégâts à tous + draine la vie pour le lanceur",   cost:18, effect:"aoe_drain",  element:"ténèbres", power:14, stat2:"end", magDiv:3, stat2Div:3 },
-  { name:"Diffindo Maxima",   icon:"⚔️", desc:"Fauchage : tranche la cible et les ennemis adjacents",            cost:14, effect:"aoe_cleave", element:"physique", power:18, stat2:"str", magDiv:3, stat2Div:2 },
-  { name:"Vulnera Sanentur",  icon:"💗",  desc:"Chant de guérison : soigne tout le groupe",                       cost:16, effect:"heal_aoe",  power:22 },
+  // Chaque sort de zone possède une forme évoluée — plus PUISSANTE mais
+  // toujours de zone (jamais de bascule vers du mono-cible). Déblocage
+  // PROGRESSIF, un sort par étage à partir de la tranche D « Ruines Anciennes »
+  // (endgame/Boucle) : Glacius 14, Fulgur 15, Lux 16, Nox 17, Diffindo 18,
+  // Vulnera 19. Formes définies plus bas (bloc « formes AoE évoluées »).
+  { name:"Glacius Tempête",   icon:"🌨️", desc:"Blizzard : dégâts de glace à tous les ennemis + gel",            cost:16, effect:"aoe_field",  element:"glace",    power:12, stat2:"int", magDiv:3, stat2Div:3, evolvesTo:"Glacius Cataclysme", evolveCondition:{ type:"floor", value:14 } },
+  { name:"Fulgur Catena",     icon:"⚡",  desc:"Arc électrique : chaîne d'ennemi en ennemi (dégâts décroissants)", cost:15, effect:"aoe_chain",  element:"foudre",   power:18, stat2:"agi", magDiv:2, stat2Div:4, evolvesTo:"Fulgur Imperium", evolveCondition:{ type:"floor", value:15 } },
+  { name:"Lux Aeterna",       icon:"🌟",  desc:"Onde de lumière : frappe tous les ennemis (×1,5 morts-vivants)",  cost:17, effect:"aoe_wave",   element:"lumière",  power:15, bonusVsUndead:1.5, stat2:"int", magDiv:2, stat2Div:4, evolvesTo:"Lux Suprema", evolveCondition:{ type:"floor", value:16 } },
+  { name:"Nox Vorax",         icon:"🌑",  desc:"Vague obscure : dégâts à tous + draine la vie pour le lanceur",   cost:18, effect:"aoe_drain",  element:"ténèbres", power:14, stat2:"end", magDiv:3, stat2Div:3, evolvesTo:"Nox Devorans", evolveCondition:{ type:"floor", value:17 } },
+  { name:"Diffindo Maxima",   icon:"⚔️", desc:"Fauchage : tranche la cible et les ennemis adjacents",            cost:14, effect:"aoe_cleave", element:"physique", power:18, stat2:"str", magDiv:3, stat2Div:2, evolvesTo:"Diffindo Ultima", evolveCondition:{ type:"floor", value:18 } },
+  { name:"Vulnera Sanentur",  icon:"💗",  desc:"Chant de guérison : soigne tout le groupe",                       cost:16, effect:"heal_aoe",  power:22, evolvesTo:"Vulnera Maxima", evolveCondition:{ type:"floor", value:19 } },
   // ── Sort exclusif endgame (Grimoire Interdit, sinks A+E) ──────
   // Feu Maudit : flammes vivantes, dégâts massifs single-target,
   // brûlure persistante. Coût prohibitif → utilisation parcimonieuse.
@@ -418,6 +423,20 @@ const SPELLS = [
   // (réversible : déséquiper l'artefact / quitter l'étage ré-affiche la base).
   { name:"Incendio Majeur",   icon:"🔥",  desc:"Incendio amplifié par le Bâton ancestral (24 dégâts + éclaboussure)", cost:11, effect:"burn",  element:"feu",   power:24, splash:true },
   { name:"Glacius Profond",   icon:"❄️",  desc:"Givre des profondeurs (20 dégâts, engelures renforcées)",          cost:12, effect:"stun",  element:"glace", power:20 },
+  // Forme évoluée MONO-CIBLE de Lumos Solem (étage 9) : un sort de lumière
+  // plus puissant — surtout PAS une bascule vers du multi-cible. Garde
+  // l'élément lumière + le bonus ×1,5 contre les morts-vivants.
+  { name:"Lumos Solem Ardent",icon:"☀️",  desc:"Brasier solaire concentré (26 dégâts, ×1,5 morts-vivants)",        cost:12, effect:"burn",  element:"lumière", power:26, bonusVsUndead:1.5 },
+  // ── Formes AoE évoluées (étage 14, tranche D) — restent de ZONE ───────
+  // Évolution des 6 sorts de zone : plus puissantes mais TOUJOURS multi-cible
+  // (même effect/element/stat2/magDiv/stat2Div que la base, power ↑). Renvoyées
+  // par resolveSpellForm quand la base atteint l'étage 14 (endgame/Boucle).
+  { name:"Glacius Cataclysme",icon:"🌨️", desc:"Cataclysme de givre : ravage tous les ennemis + gel renforcé",     cost:20, effect:"aoe_field",  element:"glace",    power:18, stat2:"int", magDiv:3, stat2Div:3 },
+  { name:"Fulgur Imperium",   icon:"⚡",  desc:"Tempête électrique : chaîne dévastatrice d'ennemi en ennemi",       cost:19, effect:"aoe_chain",  element:"foudre",   power:27, stat2:"agi", magDiv:2, stat2Div:4 },
+  { name:"Lux Suprema",       icon:"🌟",  desc:"Déluge de lumière : frappe tous les ennemis (×1,5 morts-vivants)",  cost:21, effect:"aoe_wave",   element:"lumière",  power:23, bonusVsUndead:1.5, stat2:"int", magDiv:2, stat2Div:4 },
+  { name:"Nox Devorans",      icon:"🌑",  desc:"Marée obscure : dégâts à tous + gros drain de vie pour le lanceur", cost:22, effect:"aoe_drain",  element:"ténèbres", power:21, stat2:"end", magDiv:3, stat2Div:3 },
+  { name:"Diffindo Ultima",   icon:"⚔️", desc:"Fauchage absolu : tranche la cible et les ennemis adjacents",       cost:18, effect:"aoe_cleave", element:"physique", power:27, stat2:"str", magDiv:3, stat2Div:2 },
+  { name:"Vulnera Maxima",    icon:"💗",  desc:"Grand chant de guérison : restaure pleinement tout le groupe",      cost:20, effect:"heal_aoe",  power:33 },
   // Variantes Premium signature (1/Maison, §1.5) — sort de base recoloré +
   // boosté (power = base × SPELL_PREMIUM_MULT['rare'] = ×1,20, pré-cuit), offert
   // EN PLUS au palier Apothéose de la Maison affine. `premium`/`premiumOf`/
@@ -645,6 +664,15 @@ const SPELL_META = {
   // ── Lot P3 : formes évoluées + variantes Premium signature (§1.5/§1.6) ──
   'Incendio Majeur':     ['combat',    'maître', 'rare', null],
   'Glacius Profond':     ['combat',    'maître', 'rare', null],
+  // Forme mono-cible évoluée de Lumos Solem (ne bascule plus en AoE).
+  'Lumos Solem Ardent':  ['combat',    'maître', 'rare', null],
+  // Formes AoE évoluées (restent de zone) — pendant des 6 sorts de zone.
+  'Glacius Cataclysme':  ['combat',    'maître', 'epic', null],
+  'Fulgur Imperium':     ['combat',    'maître', 'epic', null],
+  'Lux Suprema':         ['combat',    'maître', 'epic', null],
+  'Nox Devorans':        ['combat',    'maître', 'epic', null],
+  'Diffindo Ultima':     ['combat',    'maître', 'epic', null],
+  'Vulnera Maxima':      ['defense',   'maître', 'epic', null],
   'Incendio Royal':      ['signature', 'maître', 'rare', 'Gryffondor'],
   "Morsure d'Émeraude":  ['signature', 'maître', 'rare', 'Serpentard'],
   'Givre de Rowena':     ['signature', 'maître', 'rare', 'Serdaigle'],
