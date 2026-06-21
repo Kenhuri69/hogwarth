@@ -2371,6 +2371,57 @@ function loadModule(relPath, exportNames, globals = {}) {
 })();
 
 // ============================================================
+// P. forge.js — Enchantement rerollable (Piste D, gold-sink)
+// ============================================================
+(function testEnchantReroll() {
+  const { _enchantTotals, _rollEnchant, _enchantCost, ENCHANT_POOL, ENCHANT_KEYS } =
+    loadModule('js/forge.js',
+      ['_enchantTotals', '_rollEnchant', '_enchantCost', 'ENCHANT_POOL', 'ENCHANT_KEYS'],
+      { window: {} });
+
+  // Coût par rareté (or pur).
+  check('enchant coût rare 500',      _enchantCost({ rarity: 'rare' }) === 500);
+  check('enchant coût legendary 1500', _enchantCost({ rarity: 'legendary' }) === 1500);
+  check('enchant coût défaut 500',    _enchantCost({}) === 500);
+
+  // _rollEnchant : toujours une clé du pool + valeur > 0.
+  let allValid = true, sawFrac = false;
+  for (let i = 0; i < 400; i++) {
+    const e = _rollEnchant({ rarity: 'common' });
+    if (!ENCHANT_KEYS.includes(e.key) || !(e.value > 0) || !e.disp) allValid = false;
+    if (e.key === 'bonusCritDamage') { sawFrac = true; if (!(e.value <= 0.3)) allValid = false; }
+  }
+  check('rollEnchant : clé du pool + valeur > 0 + disp', allValid);
+  check('rollEnchant : bonusCritDamage en fraction', sawFrac);
+
+  // Rareté : legendary (×1.5) ne descend jamais sous le min commun.
+  let legOk = true;
+  for (let i = 0; i < 200; i++) {
+    const e = _rollEnchant({ rarity: 'legendary' });
+    if (e.value <= 0) legOk = false;
+  }
+  check('rollEnchant legendary borné > 0', legOk);
+
+  // _enchantTotals : agrège les affixes équipés sur les bonnes clés.
+  const equipped = {
+    wand:  { enchant: { key: 'bonusCritChance', value: 6 } },
+    body:  { enchant: { key: 'bonusCritChance', value: 4 } },
+    head:  { enchant: { key: 'bonusAtk', value: 2 } },
+    ring1: { /* pas d'enchant */ },
+    ring2: null,
+  };
+  const t = _enchantTotals(equipped);
+  check('enchantTotals : cumul même clé', t.bonusCritChance === 10);
+  check('enchantTotals : clé distincte', t.bonusAtk === 2);
+  check('enchantTotals : clé absente = 0', t.bonusFortune === 0);
+  check('enchantTotals : equipped null → tout 0',
+    ENCHANT_KEYS.every(k => _enchantTotals(null)[k] === 0));
+  // Clé hors-pool ignorée (garde anti-injection).
+  check('enchantTotals : clé hors-pool ignorée',
+    _enchantTotals({ x: { enchant: { key: 'bonusEvil', value: 99 } } }).bonusAtk === 0);
+})();
+
+// ============================================================
 // Rapport
 // ============================================================
 if (failures.length) {

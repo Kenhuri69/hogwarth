@@ -1234,4 +1234,85 @@ async function scenarioForgeDissolve() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioPartyEquipRow, scenarioTryAddItem, scenarioConsumableStacking, scenarioEquipmentAndStatusIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioEquipmentPhase3bQuests, scenarioCritDodgeFromEquip, scenarioDeathlyHallows, scenarioVoiceRelics, scenarioShopLimits, scenarioRefusalFeedback, scenarioForgeDissolve] };
+async function scenarioForgeEnchant() {
+  console.log('\n── Scénario : enchantement rerollable Forge (gold-sink Piste D) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : enchanter un item équipé débite l'or, pose item.enchant, et le bonus
+  //      passe dans recalculateStats (ex. crit dérivé).
+  const t1 = await page.evaluate(() => {
+    const c = party[0];
+    // Équipe une baguette commune neuve (sans bonus dérivé) sur un slot propre.
+    c.equipped = c.equipped || {};
+    c.equipped.wand = { id: 'wand_test', name: 'Baguette test', rarity: 'rare', slot: 'wand', bonusMag: 1 };
+    player.gold = 5000;
+    recalculateStats();
+    const critBefore = c.critChance;
+    // Force un affixe déterministe (crit) pour une assertion stable.
+    c.equipped.wand.enchant = { key: 'bonusCritChance', value: 7, label: '% Crit', disp: '+7%' };
+    recalculateStats();
+    return {
+      hasFn:      typeof enchantItemAtForge === 'function',
+      critBefore, critAfter: c.critChance,
+    };
+  });
+  console.log('  T1:', t1);
+  assert(t1.hasFn, 'enchantItemAtForge doit être exposé');
+  assert(t1.critAfter === t1.critBefore + 7, 'l\'affixe crit doit s\'ajouter au crit dérivé');
+
+  // T2 : enchantItemAtForge débite l'or + (re)pose un affixe valide du pool.
+  const t2 = await page.evaluate(() => {
+    const c = party[0];
+    player.gold = 5000;
+    const goldBefore = player.gold;
+    const ok = enchantItemAtForge(0, 'wand');
+    const e = c.equipped.wand.enchant;
+    const cost = _enchantCost(c.equipped.wand);
+    return {
+      ok, cost,
+      spent:   goldBefore - player.gold,
+      hasEnch: !!(e && e.key && e.value > 0),
+      validKey: !!(e && ENCHANT_KEYS.includes(e.key)),
+    };
+  });
+  console.log('  T2:', t2);
+  assert(t2.ok,                 'l\'enchantement doit réussir avec assez d\'or');
+  assert(t2.spent === t2.cost,  'l\'or débité = coût par rareté (gold-sink pur)');
+  assert(t2.hasEnch && t2.validKey, 'un affixe valide du pool doit être posé');
+
+  // T3 : or insuffisant → refus, pas de débit, affixe inchangé.
+  const t3 = await page.evaluate(() => {
+    const c = party[0];
+    player.gold = 10;
+    const before = JSON.stringify(c.equipped.wand.enchant);
+    const ok = enchantItemAtForge(0, 'wand');
+    return { ok, goldAfter: player.gold, unchanged: JSON.stringify(c.equipped.wand.enchant) === before };
+  });
+  console.log('  T3:', t3);
+  assert(t3.ok === false,   'enchant refusé si or insuffisant');
+  assert(t3.goldAfter === 10, 'aucun or débité sur refus');
+  assert(t3.unchanged,      'l\'affixe ne change pas sur refus');
+
+  // T4 : l'affixe survit au round-trip de sauvegarde.
+  const t4 = await page.evaluate(() => {
+    const c = party[0];
+    c.equipped.wand.enchant = { key: 'bonusFortune', value: 5, label: 'Fortune', disp: '+5' };
+    const snap = JSON.parse(JSON.stringify(_serializeState()));
+    c.equipped.wand.enchant = null;
+    _applyState(snap);
+    const e = party[0].equipped.wand.enchant;
+    return { restored: !!(e && e.key === 'bonusFortune' && e.value === 5) };
+  });
+  console.log('  T4:', t4);
+  assert(t4.restored, 'item.enchant sérialisé/restauré (save round-trip)');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Enchantement Forge OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioPartyEquipRow, scenarioTryAddItem, scenarioConsumableStacking, scenarioEquipmentAndStatusIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioEquipmentPhase3bQuests, scenarioCritDodgeFromEquip, scenarioDeathlyHallows, scenarioVoiceRelics, scenarioShopLimits, scenarioRefusalFeedback, scenarioForgeDissolve, scenarioForgeEnchant] };

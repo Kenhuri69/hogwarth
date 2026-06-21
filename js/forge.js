@@ -52,6 +52,77 @@ function _consumePrimordiale(n) {
   return _consumeMaterial('essence_primordiale', n);
 }
 
+// ── Enchantement rerollable (gold-sink endgame, Piste D) ─────
+// Affixe aléatoire `item.enchant = {key,value,label,disp}` posé/re-tiré contre
+// or pur. Confiné ici ; `recalculateStats` consomme `_enchantTotals` via un
+// hook gardé. Cf. .claude/plans/endgame-enchant-reroll.md.
+const ENCHANT_POOL = [
+  { key: 'bonusAtk',             min: 1, max: 3, label: 'ATK' },
+  { key: 'bonusDef',             min: 1, max: 3, label: 'DEF' },
+  { key: 'bonusMag',             min: 1, max: 3, label: 'MAG' },
+  { key: 'bonusLck',             min: 1, max: 3, label: 'Chance' },
+  { key: 'bonusCritChance',      min: 3, max: 8, label: '% Crit',      pct: true },
+  { key: 'bonusSpellCritChance', min: 3, max: 8, label: '% Crit sort', pct: true },
+  { key: 'bonusDodgeChance',     min: 2, max: 6, label: '% Esquive',   pct: true },
+  { key: 'bonusCritDamage',      min: 5, max: 15, label: '% Dégâts crit', frac: true },
+  { key: 'bonusFortune',         min: 3, max: 8, label: 'Fortune' },
+  { key: 'bonusCelerite',        min: 3, max: 8, label: 'Célérité' },
+];
+// Clés agrégeables (source de vérité partagée avec recalculateStats).
+const ENCHANT_KEYS = ENCHANT_POOL.map(p => p.key);
+const ENCHANT_RARITY_MULT = { common: 1, uncommon: 1, rare: 1, epic: 1.25, legendary: 1.5 };
+const ENCHANT_COSTS = { common: 250, uncommon: 350, rare: 500, epic: 900, legendary: 1500, default: 500 };
+
+function _enchantCost(item) {
+  return ENCHANT_COSTS[item && item.rarity] || ENCHANT_COSTS.default;
+}
+
+// Tire un affixe du pool, mis à l'échelle par la rareté de l'item.
+function _rollEnchant(item) {
+  const pick = ENCHANT_POOL[Math.floor(Math.random() * ENCHANT_POOL.length)];
+  const mult = ENCHANT_RARITY_MULT[item && item.rarity] || 1;
+  let raw = pick.min + Math.floor(Math.random() * (pick.max - pick.min + 1));
+  raw = Math.max(1, Math.round(raw * mult));
+  if (pick.frac) {
+    return { key: pick.key, value: +(raw / 100).toFixed(2), label: pick.label, disp: '+' + raw + '%' };
+  }
+  return { key: pick.key, value: raw, label: pick.label, disp: (pick.pct ? '+' + raw + '%' : '+' + raw) };
+}
+
+// Agrège les affixes des items équipés en { bonusAtk, bonusCritChance, … }
+// (clés du pool, 0 par défaut). Consommé par recalculateStats (hook gardé).
+function _enchantTotals(equipped) {
+  const t = {};
+  ENCHANT_KEYS.forEach(k => { t[k] = 0; });
+  if (!equipped) return t;
+  for (const item of Object.values(equipped)) {
+    const e = item && item.enchant;
+    if (e && e.key && Object.prototype.hasOwnProperty.call(t, e.key)) t[e.key] += e.value || 0;
+  }
+  return t;
+}
+
+// Action UI : enchante (ou ré-enchante) l'item équipé du slot contre or pur.
+function enchantItemAtForge(charIdx, slot) {
+  const c = party[charIdx];
+  if (!c || !c.equipped) return false;
+  const item = c.equipped[slot];
+  if (!item) return false;
+  const cost = _enchantCost(item);
+  if ((player.gold | 0) < cost) {
+    addMsg(`Enchantement : ${cost} Gallions requis (vous en avez ${player.gold | 0}).`, 'bad');
+    return false;
+  }
+  player.gold -= cost;
+  item.enchant = _rollEnchant(item);
+  if (typeof recalculateStats === 'function') recalculateStats();
+  addMsg(`✨ ${item.name} enchanté : ${item.enchant.label} ${item.enchant.disp}.`, 'good');
+  if (typeof updateUI === 'function') updateUI();
+  openForge();
+  if (typeof autoSave === 'function') autoSave('forge-enchant');
+  return true;
+}
+
 // Détermine la stat principale d'un item à forger.
 // Priorité 1 : la plus élevée parmi bonusAtk/Def/Mag/Lck (compat descendante).
 // Priorité 2 : si aucun primaire, la plus élevée parmi les bonus dérivés
@@ -327,15 +398,24 @@ function openForge() {
         btn = `<button class="forge-upgrade-btn ${dis}" ${dis}
                  onclick="upgradeItemAtForge(${charIdx}, '${slot}')">Améliorer (${voieLbl})</button>`;
       }
+      // Enchantement rerollable (Piste D) — disponible sur tout item équipé.
+      const enchCost   = _enchantCost(item);
+      const enchAfford = (player.gold | 0) >= enchCost;
+      const enchDis    = enchAfford ? '' : 'disabled';
+      const enchLine   = item.enchant
+        ? `<div class="forge-enchant-cur">✨ ${item.enchant.label} ${item.enchant.disp}</div>` : '';
+      const enchBtn = `<button class="forge-enchant-btn ${enchDis}" ${enchDis}
+                 onclick="enchantItemAtForge(${charIdx}, '${slot}')">✨ ${item.enchant ? 'Re-enchanter' : 'Enchanter'} (${enchCost}g)</button>`;
       return `
         <div class="forge-item">
           <div class="forge-item-icon">${iconHtml}${lvlBadge}</div>
           <div class="forge-item-text">
             <div class="forge-item-name">${item.name} <span class="forge-item-slot">(${heroName} · ${slot})</span></div>
             ${previewLine}
+            ${enchLine}
             ${costLine}
           </div>
-          ${btn}
+          <div class="forge-item-actions">${btn}${enchBtn}</div>
         </div>`;
     }).join('');
   }

@@ -128,7 +128,12 @@ function _renderItemTooltip(item, slotLabel, action) {
     bonuses.push(`<img class="ui-icon ui-icon-md" src="img/icons/items/potion_m.png" alt=""> ${p < 0 ? 'Fiole diluée' : 'Brassage maison'} : ${pct} d'effet`);
   }
 
-  const bonusLines = bonuses.map(b => `<span class="tt-bonus">${b}</span>`).join('');
+  // Enchantement rerollable (Piste D) — affixe posé à la Forge.
+  const enchLine = (item.enchant && item.enchant.label)
+    ? `<span class="tt-bonus" style="color:var(--gold-light)">✨ Enchantement : ${item.enchant.disp || ''} ${item.enchant.label}</span>`
+    : '';
+
+  const bonusLines = bonuses.map(b => `<span class="tt-bonus">${b}</span>`).join('') + enchLine;
   const desc = item.desc ? `<span class="tt-desc">${item.desc}</span>` : '';
   const actionLine = action ? `<span class="tt-action">→ ${action}</span>` : '';
 
