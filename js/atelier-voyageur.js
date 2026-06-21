@@ -211,6 +211,7 @@
         <div class="atelier-tabbody">${body}</div>
       </div>`;
     modal.style.display = 'flex';
+    if (typeof maybeAtelierTour === 'function') maybeAtelierTour();   // P2.4 — mini-tour 1ʳᵉ ouverture
   }
 
   function _renderAtelierSetTab() {
