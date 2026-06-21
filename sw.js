@@ -124,7 +124,7 @@ const PRECACHE_URLS = [
   './js/library.js?v=5',
   './js/help-tour.js?v=4',
   './js/balance-log.js?v=1',
-  './js/loader.js?v=56',
+  './js/loader.js?v=57',
   './js/pwa.js?v=6',
 
   // Icônes PWA + premier écran
