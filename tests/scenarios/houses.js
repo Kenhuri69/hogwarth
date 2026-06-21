@@ -16,6 +16,17 @@ async function scenarioHouseCrests() {
     { id: 'poufsouffle-logo',src: 'img/houses/poufsouffle.png', house: 'Poufsouffle' }
   ];
 
+  // Les blasons sont `loading="lazy"` (perf P3.4 : hors-viewport au démarrage).
+  // En jeu, l'écran de sélection est affiché avant le clic → l'image charge.
+  // On force le décodage ici pour valider l'asset (decode() rejette sur 404 /
+  // alpha vide), ce qui reproduit fidèlement l'état au moment du choix.
+  await page.evaluate((ids) => Promise.all(ids.map((id) => {
+    const el = document.getElementById(id);
+    if (!el) return null;
+    el.loading = 'eager';
+    return el.decode().catch(() => {});
+  })), expected.map((e) => e.id));
+
   for (const e of expected) {
     const t = await page.evaluate(({ eid, src }) => {
       const el = document.getElementById(eid);

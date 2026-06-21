@@ -54,7 +54,7 @@
   <svg class="title-edge-star top" viewBox="-8 -8 16 16" xmlns="http://www.w3.org/2000/svg"><path d="M 0 -7 L 1.5 -1.5 L 7 0 L 1.5 1.5 L 0 7 L -1.5 1.5 L -7 0 L -1.5 -1.5 Z" fill="currentColor"/></svg>
   <svg class="title-edge-star bottom" viewBox="-8 -8 16 16" xmlns="http://www.w3.org/2000/svg"><path d="M 0 -7 L 1.5 -1.5 L 7 0 L 1.5 1.5 L 0 7 L -1.5 1.5 L -7 0 L -1.5 -1.5 Z" fill="currentColor"/></svg>
   <div class="castle-art">
-    <img src="img/scenes/title.jpg" alt="Château de Poudlard nocturne">
+    <img src="img/scenes/title.jpg" alt="Château de Poudlard nocturne" fetchpriority="high" decoding="async">
   </div>
   <div class="title-logo">Poudlard & Magie</div>
   <div class="title-sub">LES SECRETS DE POUDLARD</div>
@@ -124,28 +124,28 @@
     <!-- Gryffondor -->
     <button class="house-btn" onclick="chooseHouse('Gryffondor')" style="--hc:#740001;--ha:#D3A625">
       <img id="gryffondor-logo" src="img/houses/gryffondor.png" alt="Blason Gryffondor"
-           width="105" height="105" style="object-fit:contain;display:block">
+           width="105" height="105" loading="lazy" decoding="async" style="object-fit:contain;display:block">
       <div class="house-btn-desc">Bravoure · Courage<br><span id="house-bonus-gryffondor" class="house-bonus-line" style="color:#D3A625;font-size:10px">+ATK par palier</span></div>
     </button>
 
     <!-- Serpentard -->
     <button class="house-btn" onclick="chooseHouse('Serpentard')" style="--hc:#1A472A;--ha:#AAAAAA">
       <img id="serpentard-logo" src="img/houses/serpentard.png" alt="Blason Serpentard"
-           width="105" height="105" style="object-fit:contain;display:block">
+           width="105" height="105" loading="lazy" decoding="async" style="object-fit:contain;display:block">
       <div class="house-btn-desc">Ambition · Ruse<br><span id="house-bonus-serpentard" class="house-bonus-line" style="color:#AAAAAA;font-size:10px">+MAG par palier</span></div>
     </button>
 
     <!-- Serdaigle -->
     <button class="house-btn" onclick="chooseHouse('Serdaigle')" style="--hc:#0E1A40;--ha:#946B2D">
       <img id="serdaigle-logo" src="img/houses/serdaigle.png" alt="Blason Serdaigle"
-           width="105" height="105" style="object-fit:contain;display:block">
+           width="105" height="105" loading="lazy" decoding="async" style="object-fit:contain;display:block">
       <div class="house-btn-desc">Sagesse · Intelligence<br><span id="house-bonus-serdaigle" class="house-bonus-line" style="color:#946B2D;font-size:10px">+MAG par palier</span></div>
     </button>
 
     <!-- Poufsouffle -->
     <button class="house-btn" onclick="chooseHouse('Poufsouffle')" style="--hc:#3a2a00;--ha:#F0C75E">
       <img id="poufsouffle-logo" src="img/houses/poufsouffle.png" alt="Blason Poufsouffle"
-           width="105" height="105" style="object-fit:contain;display:block">
+           width="105" height="105" loading="lazy" decoding="async" style="object-fit:contain;display:block">
       <div class="house-btn-desc">Loyauté · Travail<br><span id="house-bonus-poufsouffle" class="house-bonus-line" style="color:#F0C75E;font-size:10px">+DEF par palier</span></div>
     </button>
 
@@ -252,7 +252,7 @@
     <div class="hero-grid">
       <button class="hero-card" data-key="harry" onclick="toggleHero('harry')">
         <div class="hero-portrait-wrap">
-          <img src="img/harry.png" alt="Harry">
+          <img src="img/harry.png" alt="Harry" loading="lazy" decoding="async">
           <div class="hero-badge">1</div>
         </div>
         <div class="hero-name">Harry Potter</div>
@@ -261,7 +261,7 @@
       </button>
       <button class="hero-card" data-key="hermione" onclick="toggleHero('hermione')">
         <div class="hero-portrait-wrap">
-          <img src="img/hermione.png" alt="Hermione">
+          <img src="img/hermione.png" alt="Hermione" loading="lazy" decoding="async">
           <div class="hero-badge">2</div>
         </div>
         <div class="hero-name">Hermione Granger</div>
@@ -270,7 +270,7 @@
       </button>
       <button class="hero-card" data-key="draco" onclick="toggleHero('draco')">
         <div class="hero-portrait-wrap">
-          <img src="img/draco.png" alt="Drago">
+          <img src="img/draco.png" alt="Drago" loading="lazy" decoding="async">
           <div class="hero-badge">3</div>
         </div>
         <div class="hero-name">Drago Malefoy</div>
@@ -279,7 +279,7 @@
       </button>
       <button class="hero-card" data-key="cho" onclick="toggleHero('cho')">
         <div class="hero-portrait-wrap">
-          <img src="img/cho.png" alt="Cho">
+          <img src="img/cho.png" alt="Cho" loading="lazy" decoding="async">
           <div class="hero-badge">4</div>
         </div>
         <div class="hero-name">Cho Chang</div>
@@ -288,7 +288,7 @@
       </button>
       <button class="hero-card" data-key="cedric" onclick="toggleHero('cedric')">
         <div class="hero-portrait-wrap">
-          <img src="img/cedric.png" alt="Cedric">
+          <img src="img/cedric.png" alt="Cedric" loading="lazy" decoding="async">
           <div class="hero-badge">5</div>
         </div>
         <div class="hero-name">Cedric Diggory</div>
@@ -303,7 +303,7 @@
     <div class="hero-grid">
       <button class="hero-card" data-key="celeste" onclick="toggleHero('celeste')">
         <div class="hero-portrait-wrap">
-          <img src="img/celeste.png" alt="Céleste">
+          <img src="img/celeste.png" alt="Céleste" loading="lazy" decoding="async">
           <div class="hero-badge">3</div>
         </div>
         <div class="hero-name">Céleste Luneclair</div>
@@ -312,7 +312,7 @@
       </button>
       <button class="hero-card" data-key="iris" onclick="toggleHero('iris')">
         <div class="hero-portrait-wrap">
-          <img src="img/iris.png" alt="Iris">
+          <img src="img/iris.png" alt="Iris" loading="lazy" decoding="async">
           <div class="hero-badge">4</div>
         </div>
         <div class="hero-name">Iris Prismara</div>
@@ -321,7 +321,7 @@
       </button>
       <button class="hero-card" data-key="maxence" onclick="toggleHero('maxence')">
         <div class="hero-portrait-wrap">
-          <img src="img/maxence.png" alt="Maxence">
+          <img src="img/maxence.png" alt="Maxence" loading="lazy" decoding="async">
           <div class="hero-badge">5</div>
         </div>
         <div class="hero-name">Maxence Ravenwood</div>
@@ -330,7 +330,7 @@
       </button>
       <button class="hero-card" data-key="anastasia" onclick="toggleHero('anastasia')">
         <div class="hero-portrait-wrap">
-          <img src="img/anastasia.png" alt="Anastasia">
+          <img src="img/anastasia.png" alt="Anastasia" loading="lazy" decoding="async">
           <div class="hero-badge">6</div>
         </div>
         <div class="hero-name">Anastasia Moonveil</div>
@@ -339,7 +339,7 @@
       </button>
       <button class="hero-card" data-key="louis" onclick="toggleHero('louis')">
         <div class="hero-portrait-wrap">
-          <img src="img/louis.png" alt="Louis">
+          <img src="img/louis.png" alt="Louis" loading="lazy" decoding="async">
           <div class="hero-badge">7</div>
         </div>
         <div class="hero-name">Louis Dragonflamme</div>
@@ -348,7 +348,7 @@
       </button>
       <button class="hero-card" data-key="jeanne" onclick="toggleHero('jeanne')">
         <div class="hero-portrait-wrap">
-          <img src="img/jeanne.png" alt="Jeanne">
+          <img src="img/jeanne.png" alt="Jeanne" loading="lazy" decoding="async">
           <div class="hero-badge">8</div>
         </div>
         <div class="hero-name">Jeanne d'Argenciel</div>
@@ -357,7 +357,7 @@
       </button>
       <button class="hero-card" data-key="margaux" onclick="toggleHero('margaux')">
         <div class="hero-portrait-wrap">
-          <img src="img/margaux.png" alt="Margaux">
+          <img src="img/margaux.png" alt="Margaux" loading="lazy" decoding="async">
           <div class="hero-badge">9</div>
         </div>
         <div class="hero-name">Margaux Aiglebrume</div>
@@ -372,7 +372,7 @@
     <div class="hero-grid">
       <button class="hero-card" data-key="agathe" onclick="toggleHero('agathe')">
         <div class="hero-portrait-wrap">
-          <img src="img/agathe.png" alt="Agathe">
+          <img src="img/agathe.png" alt="Agathe" loading="lazy" decoding="async">
           <div class="hero-badge">1</div>
         </div>
         <div class="hero-name">Agathe Lumiflore</div>
@@ -381,7 +381,7 @@
       </button>
       <button class="hero-card" data-key="olivier" onclick="toggleHero('olivier')">
         <div class="hero-portrait-wrap">
-          <img src="img/olivier.png" alt="Olivier">
+          <img src="img/olivier.png" alt="Olivier" loading="lazy" decoding="async">
           <div class="hero-badge">2</div>
         </div>
         <div class="hero-name">Olivier de Clairval</div>
@@ -390,7 +390,7 @@
       </button>
       <button class="hero-card" data-key="nathalie" onclick="toggleHero('nathalie')">
         <div class="hero-portrait-wrap">
-          <img src="img/nathalie.png" alt="Nathalie">
+          <img src="img/nathalie.png" alt="Nathalie" loading="lazy" decoding="async">
           <div class="hero-badge">3</div>
         </div>
         <div class="hero-name">Nathalie Finch</div>
@@ -399,7 +399,7 @@
       </button>
       <button class="hero-card" data-key="chatillon" onclick="toggleHero('chatillon')">
         <div class="hero-portrait-wrap">
-          <img src="img/chatillon.png" alt="Olivier De Châtillon">
+          <img src="img/chatillon.png" alt="Olivier De Châtillon" loading="lazy" decoding="async">
           <div class="hero-badge">4</div>
         </div>
         <div class="hero-name">Olivier De Châtillon</div>
@@ -1258,7 +1258,7 @@
 </div>
 
 <div id="death-screen" style="display:none;flex-direction:column;align-items:center;justify-content:center">
-  <img class="death-art" src="img/scenes/death.jpg" alt="Couloir pétrifié de Poudlard">
+  <img class="death-art" src="img/scenes/death.jpg" alt="Couloir pétrifié de Poudlard" loading="lazy" decoding="async">
   <div class="death-title">✝ Pétrification ✝</div>
   <div class="death-sub" id="death-msg">Le regard du Basilic vous a pétrifié...</div>
   <button class="cmd-btn" style="margin-top:24px; font-size:14px; padding:10px 28px; border-color:var(--danger); color:var(--danger)" onclick="resurrect()">Revenir à la Vie</button>
