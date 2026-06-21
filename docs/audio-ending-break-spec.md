@@ -82,8 +82,20 @@ ténèbres de la Boucle.
 
 ## Statut
 
-⏳ **Bloqué sur production audio** (hors-code). La cible est figée et
-actionnable ; le repli procédural `playVictory()` garantit qu'aucune
-régression n'existe tant que le fichier n'est pas livré. Dès dépôt du `.ogg`,
-l'activation est automatique.
+✅ **Livré (2026-06-21)**. Le blocage « pas d'encodeur OGG » a été levé :
+`pip install soundfile` fournit libsndfile 1.2.2 avec encodeur **Vorbis**, ce
+qui permet de **produire l'asset *in situ* par synthèse procédurale**.
+
+- **Générateur reproductible** : [`tools/gen_ending_break.py`](../tools/gen_ending_break.py)
+  (numpy + soundfile, seed fixe). Nappe additive Fa majeur add9 (couleur
+  lydienne) + couche de cordes douce-amère + scintillements cloche/harpe épars
+  + réverb FFT légère ; fade-in 2,5 s / fade-out 5 s.
+- **Asset produit** : `audio/ending_break.ogg` — OGG/Vorbis stéréo 44,1 kHz,
+  **48,0 s**, **264 Ko**, RMS −20 dBFS, true-peak −6,6 dBFS (≤ −1). Conforme au
+  cahier des charges ci-dessus.
+- **Activation** : automatique (chemin `_ENDING_SAMPLE` inchangé, zéro code
+  modifié). Inventaire audio à jour ([`audio-inventory.md`](./audio-inventory.md) :
+  0 manquant).
+- **Remplaçable** : un sample DAW / banque déposé au même chemin écrase le rendu
+  procédural sans autre action.
 </content>
