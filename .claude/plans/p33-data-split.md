@@ -273,4 +273,36 @@ Vérif locale (6 étapes CI) — **toutes vertes** : units 946 · smoke 263 ·
 pwa-smoke (v211) · check_cache · check_doc (95 modules) · check_difficulty.
 
 **Reste : Lot C (`npcs.js`)** — à faire ensuite (même demande utilisateur).
+
+---
+
+## ✅ Journal d'exécution — Lot C (`npcs.js`) — 2026-06-21
+
+Lancé dans la foulée du Lot B (même demande utilisateur). 1 PR dédiée, branche
+`claude/p33-npcs-split-lot-c` depuis `origin/master` (post-Lot B).
+
+**Pattern `push`, ordre PRÉSERVÉ** :
+
+| Fichier | Lignes source | Contenu |
+|---------|---------------|---------|
+| `npcs.js` (socle, 50 l.) | header 1-49 | doc + `const NPCS = []` |
+| `npcs-a.js` | 51-1098 | `NPCS.push(…)` — PNJ nommés (écoles & quêtes), 18 entrées |
+| `npcs-b.js` | 1099-1858 | `NPCS.push(…)` — ambiants/aléatoires & endgame/Boucle, 19 entrées |
+
+Vérif d'identité : registre **deep-égal au `master`** (37 PNJ, ordre identique).
+
+Câblage : `index.html` (2 `<script defer>` + `npcs.js?v=43`), `sw.js` (2 URLs +
+`CACHE_VERSION` v211→v212), `CLAUDE.md` (Structure + section « Modèle de PNJ »),
+`tests/units.js` (helper `loadNpcs()`), `tests/test-map.js` (2 entrées). Pas de
+skill à toucher (`add-playable-character` = CHARACTERS/data.js, pas NPCS).
+
+Vérif locale (6 étapes CI) — **toutes vertes** : units 946 · smoke 263 ·
+pwa-smoke (v212) · check_cache · check_doc (97 modules) · check_difficulty.
+
+### Bilan P3.3 — les 3 lots livrés
+`data.js` (Lot A, PR #654) + `monsters.js` (Lot B, PR #656) + `npcs.js`
+(Lot C) découpés. Les 3 gros fichiers multi-/mono-concern sont segmentés ;
+zéro call-site métier touché ; registres reconstitués deep-égaux. La reco
+initiale (différer B/C) a été **outrepassée sur demande explicite** — exécution
+sûre grâce au filet des 263 scénarios + identité deep-JSON vérifiée.
 </content>

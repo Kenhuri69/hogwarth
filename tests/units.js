@@ -58,6 +58,17 @@ function loadMonsters() {
   return sandbox.exports;
 }
 
+// npcs.js est découpé (Lot C P3.3) : socle `const NPCS = []` + 2 fichiers
+// push (npcs-a/b.js). Lire npcs.js seul donne un registre VIDE → concaténer.
+function loadNpcs() {
+  const files = ['js/npcs.js', 'js/npcs-a.js', 'js/npcs-b.js'];
+  const src = files.map(f => fs.readFileSync(path.join(ROOT, f), 'utf8')).join('\n');
+  const sandbox = { console, exports: {} };
+  vm.createContext(sandbox);
+  vm.runInContext(src + '\n;exports.NPCS = NPCS;', sandbox, { filename: 'npcs-combined.js' });
+  return sandbox.exports;
+}
+
 // ============================================================
 // 1. floor-themes.js — getFloorTheme
 // ============================================================
@@ -1720,7 +1731,7 @@ function loadMonsters() {
     !!q && q.repeatable && q.repeatable.everyLevels === 2);
 
   // Le Gardien de la Boucle donne ET reçoit la nouvelle purge.
-  const { NPCS } = loadModule('js/npcs.js', ['NPCS']);
+  const { NPCS } = loadNpcs();
   const g = NPCS.find(n => n.id === 'gardien_boucle');
   check('gardien: donne purge_moremplis', !!g && g.questsGiven.includes('purge_moremplis'));
   check('gardien: reçoit purge_moremplis', !!g && g.questsTurnedIn.includes('purge_moremplis'));
