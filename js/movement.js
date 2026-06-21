@@ -351,6 +351,12 @@ function _visitorExploreDescriptors() {
       desc:  `Les pages refusent de tourner pour toi — ce grimoire ne se livre qu'à ${hostName}.`,
       btns:  close
     },
+    [CELL.CAULDRON]: {
+      icon:  SCENE_ICONS.cauldron,
+      title: 'Chaudron des Ruines',
+      desc:  `Le breuvage frémit pour ${hostName} — ses vapeurs t'ignorent, voyageur.`,
+      btns:  close
+    },
     [CELL.STELE]: {
       icon:  SCENE_ICONS.stele,
       title: 'Stèle Runique',
@@ -507,6 +513,16 @@ function _exploreDescriptors() {
       btns:  `<button class="explore-btn" onclick="openLibrary();_hideExploreOverlay()">Étudier</button>
               <button class="explore-btn secondary" onclick="_hideExploreOverlay()">S'éloigner</button>`
     },
+    // Chaudron des Ruines (Potions 2.0 — Lot P11) : atelier d'alchimie endgame.
+    // Réemploie #brewing-modal via openBrewingModal({ workshop:"ruines" }) — pas
+    // de nouvelle UI, juste un filtre de recettes + en-tête contextuel.
+    [CELL.CAULDRON]: {
+      icon:  SCENE_ICONS.cauldron,
+      title: 'Chaudron des Ruines',
+      desc:  "Un chaudron de fer noir sommeille sur des braises runiques, hérité d'alchimistes oubliés. On y distille des breuvages que Slughorn n'oserait jamais enseigner.",
+      btns:  `<button class="explore-btn" onclick="openBrewingModal({ workshop:'ruines' });_hideExploreOverlay()">Brasser aux Ruines</button>
+              <button class="explore-btn secondary" onclick="_hideExploreOverlay()">S'éloigner</button>`
+    },
     // Enrichissement V2 §3 — Stèle d'énigme : devinette gardant un coffre.
     [CELL.STELE]: {
       icon:  SCENE_ICONS.stele,
@@ -611,6 +627,7 @@ function handleCellEntry(cell) {
       cell === CELL.FOUNTAIN || cell === CELL.ALTAR    ||
       cell === CELL.REFUGE   ||
       cell === CELL.FORGE    || cell === CELL.LIBRARY  ||
+      cell === CELL.CAULDRON ||
       cell === CELL.REQUIREMENT ||
       (cell === CELL.GARDEN  && !gardenHidden)) {
     _showExploreOverlay(cell);

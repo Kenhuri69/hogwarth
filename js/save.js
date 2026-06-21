@@ -75,6 +75,7 @@ function _serializeState() {
     floorKillCount: Array.from(floorKillCount.entries()),
     corruptionLevel: spellCorruption,
     wardCharges,                              // Potions 2.0 P7 — charges d'Immunité
+    workshopLevel,                            // Potions 2.0 P11 — ateliers débloqués
 
     // Jardin d'herbes (Potions P6.b3) — jardins cachés + pool + éveil.
     hiddenGardens: Array.from(hiddenGardens),
@@ -500,6 +501,8 @@ function _applyState(gs) {
   spellCorruption = (typeof gs.corruptionLevel === 'number') ? gs.corruptionLevel : 0;
   // Charges d'Immunité (Potions 2.0 P7) — fallback 0 pour les saves antérieures.
   wardCharges = (typeof gs.wardCharges === 'number') ? gs.wardCharges : 0;
+  // Ateliers d'alchimie débloqués (Potions 2.0 P11) — fallback 0 (saves antérieures).
+  workshopLevel = (typeof gs.workshopLevel === 'number') ? gs.workshopLevel : 0;
   // Jardin d'herbes (Potions P6.b3) — jardins cachés + pool + éveil.
   hiddenGardens = new Set(gs.hiddenGardens || []);
   gardenStock = (typeof gs.gardenStock === 'number') ? gs.gardenStock : 0;

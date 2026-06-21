@@ -216,13 +216,38 @@ function _bestBrewerInt() {
   return best;
 }
 
+// Difficulté EFFECTIVE d'un brassage (Potions 2.0 — Lot P11 §1.9/§3.5) :
+// l'atelier supérieur (Chaudron des Ruines, workshopLevel >= 2) accorde un
+// bonus permanent de maîtrise → −1 difficulté. Plancher prudent à 1.
+function _effectiveBrewDifficulty(recipe) {
+  const bonus = (typeof workshopLevel === 'number' && workshopLevel >= 2) ? 1 : 0;
+  return Math.max(1, (recipe.difficulty || 0) - bonus);
+}
+
 // Probabilité de réussite (margin >= 0) en pourcentage entier.
-// margin = int + rand(1..20) - difficulty.
+// margin = int + rand(1..20) - difficulty effective.
 function _brewChance(recipe) {
-  const need = recipe.difficulty - _bestBrewerInt(); // rand requis >= need
+  const need = _effectiveBrewDifficulty(recipe) - _bestBrewerInt(); // rand requis >= need
   let fav = 21 - need;
   fav = Math.max(0, Math.min(20, fav));
   return Math.round(fav / 20 * 100);
+}
+
+// ── Ateliers (Potions 2.0 — Lot P11) ─────────────────────────
+// `_brewWorkshop` = atelier de la session de brassage courante :
+//   'slughorn' (défaut, Chaudron de Slughorn) | 'ruines' (Chaudron des Ruines).
+// Pilote le filtre des recettes affichées + l'en-tête + le garde-fou de
+// brassage. Réinitialisé à chaque openBrewingModal.
+let _brewWorkshop = 'slughorn';
+
+// Vrai si la recette est visible/brassable à l'atelier `ws`. Les recettes
+// `workshop:'ruines'` n'apparaissent qu'au Chaudron des Ruines ; Slughorn ne
+// montre que les `workshop:'any'`/`'slughorn'` (défaut = 'any'). Le Chaudron
+// des Ruines (atelier supérieur) brasse tout.
+function _recipeAtWorkshop(recipe, ws) {
+  const rw = (recipe && recipe.workshop) || 'any';
+  if (ws === 'ruines') return true;
+  return rw !== 'ruines';
 }
 
 // ── État local de la modale ──────────────────────────────────
@@ -316,6 +341,20 @@ function attemptBrew() {
 
   const recipe = _matchRecipe(_cauldronMix);
 
+  // Garde-fou d'atelier (P11) : un breuvage des Ruines exige le Chaudron des
+  // Ruines. Au Chaudron de Slughorn, le mélange tourne mal (ingrédients perdus
+  // comme un mélange inconnu) plutôt que de livrer la potion endgame.
+  if (recipe && !_recipeAtWorkshop(recipe, _brewWorkshop)) {
+    for (const id of ids) _consumeIngredient(id, _cauldronMix[id]);
+    _cauldronMix = {};
+    _brewResult = { cls: 'is-fail',
+      html: "Ce breuvage refuse de prendre ici — seul le Chaudron des Ruines en supporte la distillation." };
+    if (typeof addMsg === 'function') addMsg('Ce breuvage exige le Chaudron des Ruines.', 'bad');
+    if (typeof AudioSystem !== 'undefined' && AudioSystem.playDeath) AudioSystem.playDeath();
+    _renderBrewingModal();
+    return;
+  }
+
   // Les ingrédients sont TOUJOURS consommés (c'est le risque).
   for (const id of ids) _consumeIngredient(id, _cauldronMix[id]);
   _cauldronMix = {};
@@ -342,7 +381,7 @@ function attemptBrew() {
   // échoue produit désormais 1 fiole diluée (au lieu de 0) ; seul un mélange
   // sans recette (capté plus haut) ne donne rien.
   const roll   = 1 + Math.floor(Math.random() * 20);
-  const margin = _bestBrewerInt() + roll - recipe.difficulty;
+  const margin = _bestBrewerInt() + roll - _effectiveBrewDifficulty(recipe);
   let potions, kind;
   if (margin < 0)       { potions = 1; kind = 'fail'; }
   else if (margin < 12) { potions = 1; kind = 'success'; }
@@ -398,12 +437,36 @@ function attemptBrew() {
 
 // ── UI ───────────────────────────────────────────────────────
 
-function openBrewingModal() {
-  if (!_isBrewingUnlocked()) {
+function openBrewingModal(opts) {
+  opts = opts || {};
+  const ws = (opts.workshop === 'ruines') ? 'ruines' : 'slughorn';
+  // Chaudron de Slughorn : gardé par la quête de déverrouillage. Chaudron des
+  // Ruines : la cellule endgame EST le verrou (post-victoire) — pas de gate quête.
+  if (ws === 'slughorn' && !_isBrewingUnlocked()) {
     if (typeof addMsg === 'function') {
       addMsg("Slughorn ne t'a pas encore confié son chaudron.", 'bad');
     }
     return;
+  }
+  _brewWorkshop = ws;
+  // workshopLevel = max des ateliers ouverts (monotone). Ouvrir le Chaudron des
+  // Ruines débloque le palier 2 (bonus de jet permanent, §3.5).
+  if (typeof workshopLevel === 'number') {
+    workshopLevel = Math.max(workshopLevel, ws === 'ruines' ? 2 : 1);
+  }
+  // « Parchemin des Ruines » (learnRecipe §1.9.3 §4) : le chaudron ancestral
+  // révèle ses recettes endgame à la première visite (idempotent ensuite).
+  if (ws === 'ruines' && typeof POTION_RECIPES !== 'undefined') {
+    POTION_RECIPES.forEach(r => {
+      if (r.workshop === 'ruines') learnRecipe(r.id);
+    });
+  }
+  // En-tête contextuel (réemploi de #brewing-modal, aucune nouvelle UI).
+  const titleEl = document.getElementById('brewing-modal-title');
+  if (titleEl) {
+    titleEl.innerHTML = (ws === 'ruines')
+      ? '<img class="ui-icon ui-icon-xl" src="img/icons/items/potion_m.png" alt=""> Le Chaudron des Ruines'
+      : '<img class="ui-icon ui-icon-xl" src="img/icons/items/potion_m.png" alt=""> Le Chaudron de Slughorn';
   }
   _cauldronMix = {};
   _brewResult  = null;
@@ -488,7 +551,10 @@ function _renderBrewingModal() {
 
   // 5) Codex des recettes — connues (lisibles + « Préparer ») vs à découvrir
   //    (silhouette masquée + indice non-spoiler de palier/ingrédients). P6.a.
-  const allRecipes = (typeof POTION_RECIPES !== 'undefined') ? POTION_RECIPES : [];
+  // P11 — l'atelier courant filtre les recettes affichées (les `workshop:'ruines'`
+  // n'apparaissent qu'au Chaudron des Ruines ; le compteur suit les recettes visibles).
+  const allRecipes = (typeof POTION_RECIPES !== 'undefined' ? POTION_RECIPES : [])
+    .filter(r => _recipeAtWorkshop(r, _brewWorkshop));
   const knownSet   = new Set(player.knownRecipes || []);
   const discovered = allRecipes.filter(r => knownSet.has(r.id)).length;
   html += `<div class="brewing-section"><div class="brewing-section-label">Codex des recettes `

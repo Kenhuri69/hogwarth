@@ -349,6 +349,32 @@ function drawLibrarySprite(x, baseY, sz) {
   ctx.restore();
 }
 
+// ── Chaudron des Ruines (sprite de couloir, Potions 2.0 P11) ──
+// Chaudron de fer sur braises + halo vert alchimique + vapeur.
+function drawCauldronSprite(x, baseY, sz) {
+  ctx.save();
+  // Ombre au sol
+  ctx.fillStyle = 'rgba(0,0,0,0.45)';
+  ctx.beginPath(); ctx.ellipse(x, baseY, sz * 0.55, sz * 0.12, 0, 0, Math.PI * 2); ctx.fill();
+  // Halo vert alchimique
+  const glow = ctx.createRadialGradient(x, baseY - sz * 0.4, 0, x, baseY - sz * 0.4, sz * 0.95);
+  glow.addColorStop(0, 'rgba(95,208,112,0.4)');
+  glow.addColorStop(1, 'rgba(20,50,30,0)');
+  ctx.fillStyle = glow;
+  ctx.beginPath(); ctx.arc(x, baseY - sz * 0.4, sz * 0.95, 0, Math.PI * 2); ctx.fill();
+  // Visuel SVG du chaudron (viewBox 120×110) ; emoji en repli au chargement.
+  const entry = _getSceneSvgImg('cauldron', () => SCENE_ICONS.cauldron);
+  if (entry && entry.ready) {
+    const h = sz * 1.05, w = h * (120 / 110);
+    ctx.drawImage(entry.img, x - w / 2, baseY - h, w, h);
+  } else {
+    ctx.font = `${Math.floor(sz * 1.1)}px serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillText('🧪', x, baseY);
+  }
+  ctx.restore();
+}
+
 // ── Autel Ancien (sprite de couloir, enrichissement §2.B) ────
 // Dalle runique sur socle, halo violet-or pulsé.
 function drawAltarSprite(x, baseY, sz) {

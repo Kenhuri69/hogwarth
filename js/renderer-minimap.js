@@ -89,6 +89,7 @@ function _buildMinimapCells(mm, cellSize) {
         else if (c === CELL.REQUIREMENT)                      div.classList.add('map-requirement');
         else if (c === CELL.FORGE)                            div.classList.add('map-forge');
         else if (c === CELL.LIBRARY)                          div.classList.add('map-library');
+        else if (c === CELL.CAULDRON)                         div.classList.add('map-cauldron');
         else if (c === CELL.ALTAR)                            div.classList.add('map-altar');
         else if (c === CELL.RUNE) {
           // Dalle-rune : teinte distincte selon l'état allumé/éteint.

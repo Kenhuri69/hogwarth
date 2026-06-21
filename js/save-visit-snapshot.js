@@ -64,7 +64,7 @@ function _visitFindAdjacentSpawn(grid, x, y) {
     || cell === CELL.STAIRS_D || cell === CELL.STAIRS_U
     || cell === CELL.SHOP || cell === CELL.CHEST
     || cell === CELL.FOUNTAIN || cell === CELL.FORGE
-    || cell === CELL.LIBRARY || cell === CELL.ALTAR;
+    || cell === CELL.LIBRARY || cell === CELL.CAULDRON || cell === CELL.ALTAR;
   // Préférences : sud, nord, est, ouest (cohérent avec la convention DIRECTIONS)
   const offsets = [
     { dx: 0, dy: 1,  dir: 'n' },

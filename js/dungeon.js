@@ -452,8 +452,12 @@ function generateDungeon(floor) {
   // Bibliothèque interdite garantie aux floors 12, 15, 18 (cadence offset
   // pour ne pas overlap avec la Forge). Voir ENDGAME_PLAN.md §7.5 / §7.6.
   // Ne s'affichent qu'en post-victoire (utilisent les matériaux Ténèbres).
+  // Chaudron des Ruines (Potions 2.0 — Lot P11) garanti aux floors 13, 16, 19 :
+  // cadence intercalée entre Forge et Bibliothèque pour ne pas overlap (11 forge,
+  // 12 biblio, 13 chaudron, 14 forge, …). Post-victoire uniquement (atelier endgame).
   const forgeFloors    = [11, 14, 17, 20];
   const libraryFloors  = [12, 15, 18];
+  const cauldronFloors = [13, 16, 19];
   if (typeof victoryAchieved !== 'undefined' && victoryAchieved && rooms.length >= 3) {
     const intermediate = rooms.slice(1, rooms.length - 1);
     if (forgeFloors.includes(floor)) {
@@ -462,6 +466,9 @@ function generateDungeon(floor) {
     } else if (libraryFloors.includes(floor)) {
       const room = intermediate[Math.floor(Math.random() * intermediate.length)];
       dungeon[room.cy][room.cx] = CELL.LIBRARY;
+    } else if (cauldronFloors.includes(floor)) {
+      const room = intermediate[Math.floor(Math.random() * intermediate.length)];
+      dungeon[room.cy][room.cx] = CELL.CAULDRON;
     }
   }
 

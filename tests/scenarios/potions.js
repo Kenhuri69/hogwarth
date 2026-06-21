@@ -220,6 +220,8 @@ async function scenarioRecipeCodex() {
     return {
       unlocked: _isBrewingUnlocked(),
       total: POTION_RECIPES.length,
+      // P11 — au Chaudron de Slughorn, les recettes workshop:"ruines" sont masquées.
+      visibleTotal: POTION_RECIPES.filter(r => (r.workshop || 'any') !== 'ruines').length,
       rows: body.querySelectorAll('.brew-recipe-row').length,
       locked: body.querySelectorAll('.brew-recipe-locked').length,
       countText: (body.querySelector('.brew-codex-count') || {}).textContent || '',
@@ -228,10 +230,10 @@ async function scenarioRecipeCodex() {
   });
   console.log('  T1 codex complet →', t0);
   assert(t0.unlocked, 'le chaudron doit être déverrouillé');
-  assert(t0.rows === t0.total, `le codex doit lister les ${t0.total} recettes (obtenu ${t0.rows})`);
+  assert(t0.rows === t0.visibleTotal, `le codex Slughorn doit lister les ${t0.visibleTotal} recettes visibles (obtenu ${t0.rows})`);
   const discovered0 = t0.rows - t0.locked;
-  assert(t0.locked === t0.total - discovered0, 'masquées = total − découvertes');
-  assert(t0.countText === `${discovered0}/${t0.total} découvertes`, `compteur attendu "${discovered0}/${t0.total} découvertes" (obtenu "${t0.countText}")`);
+  assert(t0.locked === t0.visibleTotal - discovered0, 'masquées = visibles − découvertes');
+  assert(t0.countText === `${discovered0}/${t0.visibleTotal} découvertes`, `compteur attendu "${discovered0}/${t0.visibleTotal} découvertes" (obtenu "${t0.countText}")`);
   assert(t0.knownNames.some(n => /Potion de Soin/.test(n)), 'la Potion de Soin (de base) doit être lisible');
   assert(t0.knownNames.every(n => !/\?/.test(n)), 'aucune recette lisible ne doit porter de silhouette');
 
@@ -287,7 +289,7 @@ async function scenarioRecipeCodex() {
   assert(t4.wasKnown === false, 'brew_potion_force ne doit pas être connu d\'avance');
   assert(t4.nowKnown === true, 'le brassage doit révéler brew_potion_force');
   assert(t4.after === t4.before + 1, 'le compteur de découvertes doit augmenter de 1');
-  assert(t4.countText === `${t4.after}/${t0.total} découvertes`, 'le compteur du codex doit refléter la nouvelle découverte');
+  assert(t4.countText === `${t4.after}/${t0.visibleTotal} découvertes`, 'le compteur du codex doit refléter la nouvelle découverte');
 
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
@@ -1782,4 +1784,137 @@ async function scenarioPotionSideEffects() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioBrewing, scenarioRecipeCodex, scenarioRareHerb, scenarioSlugClub, scenarioPotionBuff, scenarioPotionResistance, scenarioThrowablePotions, scenarioPotionUpgradeCraft, scenarioHerbGarden, scenarioGardenQuest, scenarioHerbEconomy, scenarioPotionAoeAndEnemyUse, scenarioAntiCorruption, scenarioPotionEvolve, scenarioHouseResilience, scenarioPremiumPotions, scenarioPotionSideEffects] };
+async function scenarioRuinsCauldron() {
+  console.log('\n── Scénario : Chaudron des Ruines + workshopLevel (Potions 2.0 — Lot P11) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Serpentard' });
+
+  // T1 — données : cellule + helpers + globals + recettes Ruines.
+  const t1 = await page.evaluate(() => {
+    return {
+      cell: CELL.CAULDRON,
+      hasWorkshopLevel: typeof workshopLevel === 'number',
+      hasEffDiff: typeof _effectiveBrewDifficulty === 'function',
+      hasAtWorkshop: typeof _recipeAtWorkshop === 'function',
+      ruinesRecipes: POTION_RECIPES.filter(r => r.workshop === 'ruines').map(r => r.id),
+      total: POTION_RECIPES.length,
+    };
+  });
+  console.log('  T1 données →', t1);
+  assert(t1.cell === 18, 'CELL.CAULDRON === 18');
+  assert(t1.hasWorkshopLevel, 'workshopLevel défini (number)');
+  assert(t1.hasEffDiff && t1.hasAtWorkshop, '_effectiveBrewDifficulty / _recipeAtWorkshop définis');
+  assert(t1.ruinesRecipes.includes('brew_elixir_lucidite')
+      && t1.ruinesRecipes.includes('brew_potion_corruption_ctrl'),
+      'les 2 recettes Ruines portent workshop:"ruines"');
+  assert(t1.total === 32, `POTION_RECIPES doit compter 32 recettes (obtenu ${t1.total})`);
+
+  // T2 — génération : cellule garantie en Boucle (étage 13 post-victoire),
+  // jamais hors victoire.
+  const t2 = await page.evaluate(() => {
+    const scan = () => {
+      let found = false;
+      for (let y = 0; y < dungeon.length; y++)
+        for (let x = 0; x < dungeon[y].length; x++)
+          if (dungeon[y][x] === CELL.CAULDRON) found = true;
+      return found;
+    };
+    // Hors victoire : aucun chaudron.
+    victoryAchieved = false;
+    generateDungeon(13);
+    const preVictory = scan();
+    // Post-victoire : présent (placement garanti si rooms>=3 ; on retente).
+    victoryAchieved = true;
+    let postVictory = false;
+    for (let i = 0; i < 10 && !postVictory; i++) {
+      generateDungeon(13);
+      postVictory = scan();
+    }
+    // Étage non-Boucle (5) post-victoire : pas de chaudron (cadence 13/16/19).
+    generateDungeon(5);
+    const wrongFloor = scan();
+    return { preVictory, postVictory, wrongFloor };
+  });
+  console.log('  T2 génération →', t2);
+  assert(!t2.preVictory, 'aucun Chaudron des Ruines hors victoire');
+  assert(t2.postVictory, 'Chaudron des Ruines garanti en Boucle (étage 13 post-victoire)');
+  assert(!t2.wrongFloor, 'pas de Chaudron hors de la cadence 13/16/19');
+
+  // T3 — ouverture Ruines : bypass du verrou Slughorn, workshopLevel→2,
+  // recettes Ruines enseignées, en-tête contextuel.
+  const t3 = await page.evaluate(() => {
+    workshopLevel = 0;
+    player.knownRecipes = [];
+    // Pas de quête Slughorn remise : le Chaudron des Ruines doit quand même ouvrir.
+    const unlocked = (typeof _isBrewingUnlocked === 'function') ? _isBrewingUnlocked() : false;
+    openBrewingModal({ workshop: 'ruines' });
+    const shown = document.getElementById('brewing-modal').style.display === 'flex';
+    const title = document.getElementById('brewing-modal-title').textContent;
+    return {
+      slughornUnlocked: unlocked,
+      shown,
+      level: workshopLevel,
+      knows: (player.knownRecipes || []).slice(),
+      ruinesTitle: /Ruines/.test(title),
+    };
+  });
+  console.log('  T3 ouverture Ruines →', t3);
+  assert(t3.slughornUnlocked === false, 'Slughorn reste verrouillé (quête non remise)');
+  assert(t3.shown, 'le Chaudron des Ruines ouvre la modale sans la quête Slughorn');
+  assert(t3.level === 2, 'ouvrir les Ruines porte workshopLevel à 2');
+  assert(t3.knows.includes('brew_elixir_lucidite')
+      && t3.knows.includes('brew_potion_corruption_ctrl'),
+      'le Chaudron des Ruines enseigne ses recettes (learnRecipe)');
+  assert(t3.ruinesTitle, 'en-tête contextuel « Chaudron des Ruines »');
+
+  // T4 — bonus d'atelier : workshopLevel>=2 → −1 difficulté effective.
+  const t4 = await page.evaluate(() => {
+    const rec = POTION_RECIPES.find(r => r.id === 'brew_potion_corruption_ctrl');
+    workshopLevel = 0; const base = _effectiveBrewDifficulty(rec);
+    workshopLevel = 2; const boosted = _effectiveBrewDifficulty(rec);
+    return { base, boosted, raw: rec.difficulty };
+  });
+  console.log('  T4 bonus atelier →', t4);
+  assert(t4.base === t4.raw, 'sans atelier supérieur : difficulté = brute');
+  assert(t4.boosted === t4.raw - 1, 'workshopLevel 2 → −1 difficulté effective');
+
+  // T5 — filtre + garde-fou : recette Ruines invisible/non-brassable à Slughorn.
+  const t5 = await page.evaluate(() => {
+    const ruinesRec = POTION_RECIPES.find(r => r.id === 'brew_elixir_lucidite');
+    const slughornRec = POTION_RECIPES.find(r => r.id === 'brew_baume_patronus');
+    const visAtSlug = _recipeAtWorkshop(ruinesRec, 'slughorn');
+    const visAtRuins = _recipeAtWorkshop(ruinesRec, 'ruines');
+    const slugAtSlug = _recipeAtWorkshop(slughornRec, 'slughorn');
+    // Garde-fou de brassage : Lucidité (Ruines) tentée au Chaudron de Slughorn.
+    _brewWorkshop = 'slughorn';
+    party[0].int = 100;
+    player.herbs = { herbe_dictame: 2, herbe_asphodele_noire: 1 };
+    player.inventory = [];
+    _cauldronMix = { herbe_dictame: 2, herbe_asphodele_noire: 1 };
+    attemptBrew();
+    const madeAtSlughorn = player.inventory.filter(it => it && it.id === 'elixir_lucidite').length;
+    // Même mélange au Chaudron des Ruines : réussit.
+    _brewWorkshop = 'ruines';
+    player.herbs = { herbe_dictame: 2, herbe_asphodele_noire: 1 };
+    player.inventory = [];
+    _cauldronMix = { herbe_dictame: 2, herbe_asphodele_noire: 1 };
+    attemptBrew();
+    const madeAtRuins = player.inventory.filter(it => it && it.id === 'elixir_lucidite').length;
+    return { visAtSlug, visAtRuins, slugAtSlug, madeAtSlughorn, madeAtRuins };
+  });
+  console.log('  T5 filtre + garde-fou →', t5);
+  assert(!t5.visAtSlug, 'recette Ruines masquée au Chaudron de Slughorn');
+  assert(t5.visAtRuins, 'recette Ruines visible au Chaudron des Ruines');
+  assert(t5.slugAtSlug, 'recette Slughorn visible à Slughorn');
+  assert(t5.madeAtSlughorn === 0, 'garde-fou : breuvage des Ruines refusé à Slughorn');
+  assert(t5.madeAtRuins >= 1, 'le même breuvage réussit au Chaudron des Ruines');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (Chaudron des Ruines P11)`);
+  }
+  console.log('  ✅ Chaudron des Ruines OK (cellule, workshopLevel, filtre, bonus, garde-fou)');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioBrewing, scenarioRecipeCodex, scenarioRareHerb, scenarioSlugClub, scenarioPotionBuff, scenarioPotionResistance, scenarioThrowablePotions, scenarioPotionUpgradeCraft, scenarioHerbGarden, scenarioGardenQuest, scenarioHerbEconomy, scenarioPotionAoeAndEnemyUse, scenarioAntiCorruption, scenarioPotionEvolve, scenarioHouseResilience, scenarioPremiumPotions, scenarioPotionSideEffects, scenarioRuinsCauldron] };
