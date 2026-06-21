@@ -1608,6 +1608,16 @@ function castSpellInBattle(spellName, targetIdx, targetAllyIdx) {
     } else if (_buff.has(spell.effect)) {
       CFX_safe.buffAura('ally');  // B1 — halo doré de protection
     }
+    // P4 — splash key-art dédié (si le sort en possède un). Composité sur la
+    // cible (héros pour soin/buff, ennemi sinon) en complément du FX procédural.
+    const _splashSrc = (typeof spellSplashSrc === 'function') ? spellSplashSrc(spell.name) : null;
+    if (_splashSrc) {
+      const _isAllyFx = _heal.has(spell.effect) || _buff.has(spell.effect);
+      const _st = _isAllyFx
+        ? 'ally'
+        : `enemy:${(targetIdx >= 0) ? targetIdx : enemyGroup.indexOf(enemy)}`;
+      CFX_safe.spellSplash(_st, _splashSrc);
+    }
     // Crit de sort (suffixe 💥CRIT dans le message) → secousse légère.
     if (typeof msg === 'string' && msg.indexOf('CRIT') >= 0) CFX_safe.shake('light');
     // P3 — fioriture Premium : un sort de Maison Premium ajoute un halo teinté

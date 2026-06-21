@@ -553,20 +553,44 @@ const SPELL_ICON_REGISTRY = {
   'Soin du Blaireau':   'img/icons/spells/reparo.png',
   // ── Lot P4 — alias temporaires sur des PNG existants (art dédié reporté §2.8) ──
   'Flamme Dévorante':    'img/icons/spells/flamme_devorante.png',   // icône dédiée (lion de feu corrompu)
-  'Venin du Cachot':     'img/icons/spells/sanguini.png',          // venin/drain
-  'Savoir Interdit':     'img/icons/spells/maledictus.png',        // malédiction
-  'Fardeau Partagé':     'img/icons/spells/vulnera_sanentur.png',  // redistribution PV
-  'Tempus Echo':         'img/icons/spells/teleportation.png',     // temporel
-  'Reliquae Temporis':   'img/icons/spells/teleportation.png',     // temporel
-  'Écho Fantôme':        'img/icons/spells/nox_vorax.png',         // écho ténèbres
-  'Cœur de Lion':        'img/icons/spells/patronum.png',          // ralliement
-  'Pacte du Serpent':    'img/icons/spells/morsmordre.png',        // pacte sombre
-  'Verbe de Rowena':     'img/icons/spells/lux_aeterna.png',       // chœur de lumière
-  'Serment du Blaireau': 'img/icons/spells/reparo.png',            // relève un allié
+  'Venin du Cachot':     'img/icons/spells/venin_du_cachot.png',    // icône dédiée (cobra/venin, Serpentard)
+  'Savoir Interdit':     'img/icons/spells/savoir_interdit.png',    // icône dédiée (grimoire maudit, Serdaigle)
+  'Fardeau Partagé':     'img/icons/spells/fardeau_partage.png',    // icône dédiée (cœurs liés, Poufsouffle)
+  'Tempus Echo':         'img/icons/spells/tempus_echo.png',        // icône dédiée (sablier rituel)
+  'Reliquae Temporis':   'img/icons/spells/reliquae_temporis.png',  // icône dédiée (retourneur corrompu)
+  'Écho Fantôme':        'img/icons/spells/echo_fantome.png',       // icône dédiée (double spectral)
+  'Cœur de Lion':        'img/icons/spells/coeur_de_lion.png',     // icône dédiée (lion de feu, Gryffondor)
+  'Pacte du Serpent':    'img/icons/spells/pacte_du_serpent.png',  // icône dédiée (pacte serpentin, Serpentard)
+  'Verbe de Rowena':     'img/icons/spells/verbe_de_rowena.png',   // icône dédiée (chœur runique, Serdaigle)
+  'Serment du Blaireau': 'img/icons/spells/serment_du_blaireau.png', // icône dédiée (blaireau ailé, Poufsouffle)
   'Le Mot du Dormeur':   'img/icons/spells/le_mot_du_dormeur.png',  // icône dédiée (rune-stèle des Ruines)
   'Sanguini Vorace':     'img/icons/spells/sanguini.png',
   'Protego Diabolica':   'img/icons/spells/protego.png'
 };
+
+// ── Registre de SPLASHES de sorts (key-art d'effet en combat) ────
+// Clé = nom exact du sort (SPELLS). Valeur = PNG 256² RGBA transparent
+// dans img/fx/spells/, composité par-dessus la cible via
+// CombatFX.spellSplash() (js/combat-fx.js) à la résolution du sort.
+// Optionnel et défensif : un sort sans entrée ici garde uniquement le FX
+// procédural (spellBurst/healBurst/buffAura). Art dédié au fil des lots P4/P3.
+const SPELL_SPLASH_REGISTRY = {
+  'Cœur de Lion':     'img/fx/spells/coeur_de_lion.png',     // éruption de feu ralliante
+  'Pacte du Serpent': 'img/fx/spells/pacte_du_serpent.png',  // vortex sang/serpent
+  'Verbe de Rowena':  'img/fx/spells/verbe_de_rowena.png',   // chœur runique bleu/or
+  'Serment du Blaireau': 'img/fx/spells/serment_du_blaireau.png', // colonne d'or restauratrice
+  'Venin du Cachot':  'img/fx/spells/venin_du_cachot.png',   // explosion de venin vert
+  'Savoir Interdit':  'img/fx/spells/savoir_interdit.png',   // vortex d'œil maudit violet
+  'Fardeau Partagé':  'img/fx/spells/fardeau_partage.png',   // arc d'or redistributeur
+  'Tempus Echo':      'img/fx/spells/tempus_echo.png',       // anneaux d'horloge or/cyan
+  'Reliquae Temporis':'img/fx/spells/reliquae_temporis.png', // éclat d'horlogerie corrompu
+  'Écho Fantôme':     'img/fx/spells/echo_fantome.png'       // silhouette spectrale scindée
+};
+
+// Résout le PNG de splash d'un sort (par nom), ou null si aucun.
+function spellSplashSrc(spellName) {
+  return SPELL_SPLASH_REGISTRY[spellName] || null;
+}
 
 // ── Registre d'icônes SVG inline (herbes + potions) ──────────
 // Voir .claude/plans/farming-potion-system.md. Consulté EN PREMIER

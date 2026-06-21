@@ -356,6 +356,28 @@
     }, dur);
   }
 
+  // ── Splash de sort : key-art d'effet composité sur la cible ──
+  // Overlay image (PNG transparent de img/fx/spells/) au-dessus de la
+  // cible, scale-in + fade ~760 ms, puis retrait. Complète les FX
+  // procéduraux (spellBurst…) pour les sorts dotés d'un art dédié.
+  // `src` fourni par spellSplashSrc() (item-icons.js) ; no-op si absent.
+  // reduced-motion : fade sans dilatation (géré en CSS).
+  function spellSplash(targetKey, src) {
+    if (!src) return;
+    const layer = ensureFxLayer();
+    if (!layer) return;
+    const pos = anchorFor(targetKey);
+    if (!pos) return;
+    const img = document.createElement('img');
+    img.className = 'cfx-spell-splash';
+    img.alt = '';
+    img.src = src;
+    img.style.left = pos.x + 'px';
+    img.style.top  = pos.y + 'px';
+    layer.appendChild(img);
+    setTimeout(() => img.remove(), 780);
+  }
+
   // ── Secousse globale de l'overlay ─────────────────────────────
   // intensity : 'light' | 'heavy' (défaut 'light'). No-op en reduced-motion
   // (la règle CSS neutralise l'animation, mais on évite aussi le reflow).
@@ -514,7 +536,7 @@
     return DUR;
   }
 
-  window.CombatFX = { spellBurst, premiumCast, deathDissolve, castFlash, lootPop, healBurst, buffAura, shake, bossIntro, combatStart, hurtFlash, statusFlash, telegraph, petrify };
+  window.CombatFX = { spellBurst, premiumCast, deathDissolve, castFlash, lootPop, healBurst, buffAura, spellSplash, shake, bossIntro, combatStart, hurtFlash, statusFlash, telegraph, petrify };
 })();
 
 // Helper défensif (calqué sur UX_safe) : CFX_safe.foo(...) appelle
