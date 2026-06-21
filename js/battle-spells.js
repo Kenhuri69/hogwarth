@@ -1409,6 +1409,14 @@ function _spellForCaster(spell, char) {
 }
 window._spellForCaster = _spellForCaster;
 
+// Retour « action refusée » (C3, polish UX) — bip sourd + micro-secousse de la
+// barre d'action, quand un sort ne peut être lancé (PM insuffisant…). Défensif.
+function _spellDeniedFeedback() {
+  if (typeof AudioSystem !== 'undefined' && AudioSystem.playDenied) AudioSystem.playDenied();
+  const bar = document.querySelector('.battle-actions');
+  if (bar) { bar.classList.remove('deny-shake'); void bar.offsetWidth; bar.classList.add('deny-shake'); }
+}
+
 function castSpellInBattle(spellName, targetIdx, targetAllyIdx) {
   const char     = getActiveChar();
   const baseSpell = SPELLS.find(s => s.name === spellName);
@@ -1420,7 +1428,7 @@ function castSpellInBattle(spellName, targetIdx, targetAllyIdx) {
   // Wrapping Bibliothèque : applique les upgrades du caster. `let` : P4 clone
   // et majore le power des sorts corrompus selon corruptionLevel (plus bas).
   let spell      = _spellForCaster(formSpell, char);
-  if (!spell || char.sp < _spellSpCost(spell)) { addMsg("Pas assez de magie !", 'bad'); return; }
+  if (!spell || char.sp < _spellSpCost(spell)) { _spellDeniedFeedback(); addMsg("Pas assez de magie !", 'bad'); return; }
 
   // P2 — sorts d'Éclats : refus AVANT débit PM / consommation de tour si le
   // joueur n'a pas assez d'Éclats de la Clé de Voûte (eclatProgress réutilisé).

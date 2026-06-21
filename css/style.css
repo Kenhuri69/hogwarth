@@ -533,6 +533,20 @@ body {
 }
 .enemy-bars { width: 200px; }
 
+/* Action refusée (C3, polish UX) — micro-secousse de la barre d'action quand
+   un sort ne peut être lancé (couplée au son playDenied). */
+.battle-actions.deny-shake { animation: denyShake 0.32s ease; }
+@keyframes denyShake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-5px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(2px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .battle-actions.deny-shake { animation: none; }
+}
+
 .battle-log {
   background: rgba(0,0,0,0.6);
   border: 1px solid var(--gold-dark);

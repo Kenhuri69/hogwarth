@@ -457,6 +457,12 @@ function _applyTempStatBuff(target, stat, amount, turns) {
 // Applique l'effet d'un consommable sur la cible (hp/sp). No-op si
 // l'effet n'est pas un effet de restauration reconnu.
 function _applyConsumableEffect(item, target) {
+  // Retour audio/haptique (C3, polish UX) — gorgée de potion, jusqu'ici
+  // silencieuse. Défensif : no-op si les modules audio/haptique n'ont pas
+  // chargé. (Les variantes premium gardent leur stinger propre par-dessus.)
+  if (typeof AudioSystem !== 'undefined' && AudioSystem.playPotionDrink) AudioSystem.playPotionDrink();
+  if (window.HAPTICS_safe) HAPTICS_safe.cast();
+
   // C5/P1 — « Brassage maison » : une potion brassée porte une potency bakée
   // (`brewPotency`, cf. potions.js) qui module les effets chiffrés (heal /
   // restore_sp / both). Fallback legacy : flag `brewed` seul → BREW_POTENCY_BONUS.

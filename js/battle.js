@@ -1223,6 +1223,9 @@ function throwItemAtEnemy(invIdx, enemyIdx) {
   if (typeof AudioSystem !== 'undefined' && AudioSystem.playSpellCast) {
     AudioSystem.playSpellCast(item.element === 'feu' ? 'Incendio' : (item.element === 'glace' ? 'Glacius' : 'Diffindo'));
   }
+  // Parité visuelle (C3) — un flacon jeté a désormais son burst élémentaire,
+  // comme le sort équivalent (un Incendio en fiole produit du feu).
+  CFX_safe.spellBurst(`enemy:${enemyIdx}`, item.element || 'physique');
   setBattleLog(`🧪 ${char.name} lance ${item.name} sur ${enemy.name} : ${dmg} dégâts${suffix}${statusTxt} !`);
   addMsg(`${char.name} lance ${item.name} (${dmg} dégâts).`, 'good');
   UX_safe.floatDmg(`enemy:${enemyIdx}`, dmg, 'dmg');

@@ -493,6 +493,42 @@ Object.assign(AudioSystem, {
     });
   },
 
+  // ── Gorgée de potion (C3) ────────────────────────────────────
+  // Petit « glou » liquide montant + scintillement : identité sonore des
+  // consommables bus (auparavant silencieux). Distinct de playChestOpen.
+  playPotionDrink() {
+    if (this.isMuted) return;
+    this.init();
+    const now = this.ctx.currentTime;
+    // Deux glouglous graves (sine montante courte) …
+    [[180, 0], [240, 0.12]].forEach(([freq, delay]) => {
+      this._playTone({
+        freq, type: 'sine', start: now + delay, peak: 0.22, attack: 0.02,
+        decayAt: now + delay + 0.16, stop: now + delay + 0.2,
+      });
+    });
+    // … puis une étincelle aiguë « effet magique ».
+    this._playTone({
+      freq: 880, type: 'triangle', start: now + 0.26, peak: 0.16, attack: 0.01,
+      decayAt: now + 0.5, stop: now + 0.55,
+    });
+  },
+
+  // ── Refus d'action (C3) ──────────────────────────────────────
+  // Bip sourd descendant « denied » : pas assez de PM, sort verrouillé,
+  // action impossible. Court, non agressif.
+  playDenied() {
+    if (this.isMuted) return;
+    this.init();
+    const now = this.ctx.currentTime;
+    [[300, 0], [200, 0.1]].forEach(([freq, delay]) => {
+      this._playTone({
+        freq, type: 'square', start: now + delay, peak: 0.14, attack: 0.005,
+        decayAt: now + delay + 0.1, stop: now + delay + 0.13,
+      });
+    });
+  },
+
   // ── Voix des sortilèges ──────────────────────────────────────
   // Mapping nom de sort (SPELLS[].name) → clé OGG (_VOICE_SAMPLES).
   // Les sorts absents de cette table retombent sur SpeechSynthesis.
