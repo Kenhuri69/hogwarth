@@ -60,3 +60,16 @@ Incendio Majeur, Glacius Profond, Sanguini Vorace, Protego Diabolica.
 ## Journal
 - 2026-06-21 : plan créé. Prompts légendaires Cœur de Lion / Pacte du Serpent /
   Verbe de Rowena fournis. Décisions A (slot splash) + B (P3 inclus) validées.
+- 2026-06-21 : **Lot 1 livré** — 3 légendaires (symbole + splash).
+  - Slot splash construit (fait une fois) : `SPELL_SPLASH_REGISTRY` +
+    `spellSplashSrc()` (item-icons.js), `CombatFX.spellSplash()` (combat-fx.js)
+    + CSS `.cfx-spell-splash` (combat-fx.css, scale-in/fade + reduced-motion),
+    hook défensif dans `castSpellInBattle` (battle-spells.js). Assets dans
+    `img/fx/spells/` (256² RGBA).
+  - Icônes dédiées : `SPELL_ICON_REGISTRY` → coeur_de_lion / pacte_du_serpent /
+    verbe_de_rowena (128² dans img/icons/spells/).
+  - Smoke `SpellIcons` étendu (T5 : registre splash + helper + FX + PNG + noms).
+  - cache-bump : combat-fx.css v12, combat-fx.js v11, item-icons.js v39,
+    battle-spells.js v22, CACHE_VERSION v190.
+  - Vérifs : units 897 ✓, smoke 249 ✓, pwa-smoke ✓.
+  - Reste P4 : Serment du Blaireau (légendaire) + 6 non-légendaires + 8 variantes P3.

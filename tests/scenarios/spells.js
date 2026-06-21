@@ -87,6 +87,39 @@ async function scenarioSpellIcons() {
   console.log('  T4 setBattleLog →', t4);
   assert(t4.hasBold, 'setBattleLog doit rendre le HTML (innerHTML), pas l\'échapper');
 
+  // T5 : slot SPLASH de sort (P4) — registre + helper + hook CombatFX + PNG
+  const t5 = await page.evaluate(async () => {
+    const out = {
+      hasRegistry: typeof SPELL_SPLASH_REGISTRY === 'object',
+      hasHelper:   typeof spellSplashSrc === 'function',
+      hasFx:       typeof CombatFX === 'object' && typeof CombatFX.spellSplash === 'function',
+      noneForUnknown: (typeof spellSplashSrc === 'function') ? spellSplashSrc('SortInconnu') : 'NOHELPER',
+      count:       Object.keys(SPELL_SPLASH_REGISTRY || {}).length,
+    };
+    // Toutes les valeurs du registre pointent vers img/fx/spells/ et chargent
+    const tries = await Promise.all(Object.values(SPELL_SPLASH_REGISTRY || {}).map(src =>
+      new Promise(resolve => {
+        const im = new Image();
+        im.onload = () => resolve({ src, ok: im.naturalWidth > 0 });
+        im.onerror = () => resolve({ src, ok: false });
+        im.src = src;
+      })
+    ));
+    out.allLoaded = tries.every(t => t.ok);
+    out.failedSrcs = tries.filter(t => !t.ok).map(t => t.src);
+    // Chaque sort doté d'un splash doit aussi exister dans SPELLS (nom exact)
+    out.unknownNames = Object.keys(SPELL_SPLASH_REGISTRY || {})
+      .filter(n => !SPELLS.some(s => s.name === n));
+    return out;
+  });
+  console.log('  T5 splash →', t5);
+  assert(t5.hasRegistry && t5.hasHelper, 'SPELL_SPLASH_REGISTRY + spellSplashSrc requis');
+  assert(t5.hasFx,                       'CombatFX.spellSplash requis');
+  assert(t5.noneForUnknown === null,     'spellSplashSrc doit retourner null pour un sort inconnu');
+  assert(t5.count >= 3,                  `≥3 splashes attendus, vu ${t5.count}`);
+  assert(t5.allLoaded === true,          `PNG splash manquants : ${t5.failedSrcs.join(', ')}`);
+  assert(t5.unknownNames.length === 0,   `splash mappé sur un sort inexistant : ${t5.unknownNames.join(', ')}`);
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées`);
