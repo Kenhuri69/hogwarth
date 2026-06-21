@@ -417,8 +417,17 @@ Nouveaux (tous **sérialisés** dans `_serializeState`/`_applyState`, save.js) :
     --endgame`) pour calibrer l'impact des mutations graduées — les chances sont volontairement
     basses (0.15-0.22) mais une boucle 5+ cumule 4 capacités. Items neufs P1 (`cristal_givre`,
     `etendard_godric`) non inclus (icônes requises).
-- **Prochaine étape** : valider les ❓ avec l'utilisateur, puis implémenter la tranche **P0**
-  (données-only) dans un commit, test smoke, cache-bump.
+- **2026-06-21 (P1b — items/quête Boucle)** — Reste de la P1 :
+  - ✅ **`cristal_givre`** (matériau, drop `spectre_givre` 0.35) + **`essence_chaleur`** (potion
+    soin +60) + **Q2 `givre_pomfresh`** (Pomfresh, collecte cristal ×3, repeatable everyLevels:2,
+    `minFloor:11`) + câblage `dialoguesByQuest`. Icônes : **SVG inline** dans
+    `ITEM_ICON_SVG_REGISTRY` (pipeline Python PIL/cairosvg indisponible → SVG, pas de PNG painterly).
+  - ⏭️ **Q4 / `etendard_godric` ABANDONNÉ (doublon)** : l'Étendard existe DÉJÀ sous
+    `banniere_godric` (trinket légendaire, `fearImmune`, ATK+2), rewardé par la quête EXISTANTE
+    `quest_signature_gryff` (« L'Étendard de Godric ») dont le récit (brasiers + Tour + Déchu)
+    EST exactement celui de Q4. Donneur dédié `chevalier_godric` (« Chevalier Fantôme ») déjà en
+    place. → Aucun ajout (guidelines §3, anti-doublon). Le plan listait « nouveau ou existant ✅ ».
+  - ✅ **Tests** : `units.js` 946 ✅, `smoke.js` 263 ✅ (couverture icônes 202 items), cache bumpé.
 
 - **2026-06-21 (SIMS mises à jour + correctif mutations + P1 events)** —
   - **Sim** : `tools/sim-difficulty.js` mire désormais `_loopVariantAbilities`
