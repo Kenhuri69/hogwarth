@@ -1,0 +1,322 @@
+# Polish UX / Interface & Feedback Visuel — Revue & Plan
+
+> Statut : **Étape 1 (revue) + Étape 2 (plan)** rédigées le 2026-06-21.
+> Branche : `claude/hogwarth-ux-polish-y92oau`.
+> Objectif : passer d'un jeu « fonctionnel » à « agréable, clair, immersif »
+> **sans régression** et en respectant l'architecture vanilla zéro-build.
+
+Ce document est une **spécification + plan priorisé**. Aucune ligne de jeu
+n'est modifiée par sa rédaction. L'implémentation se fait par lots (voir
+Étape 2), chacun avec son propre passage `cache-bump` + `tests/smoke.js`.
+
+---
+
+## Méthode
+
+Revue grounded sur le code réel (pas d'hypothèses) :
+- `css/style.css` (5044 l.) + 12 CSS satellites, `index.html` (1418 l.).
+- Couche feedback : `ux-improvements.js`, `combat-fx.js`, `dungeon-fx.js`,
+  `cinematics.js`, `haptics.js`, `battle-ui.js`.
+- Structure UI : `ui.js`, `save-ui.js`, `inventory.js`, `ui-character-sheet.js`,
+  `keybindings.js`, `help-tour.js`, `modal-a11y.js`.
+
+**Constat transversal majeur** : la fondation est déjà solide (16 variables
+CSS, 4 polices thématiques, 30+ keyframes toutes gardées par
+`prefers-reduced-motion`, focus-trap + `inert` sur 16 modales, haptics, FX
+défensifs via proxies `*_safe`). Le travail de polish est donc surtout de
+**combler des trous de cohérence** et **d'étendre l'existant**, pas de bâtir
+un système neuf. C'est une bonne nouvelle : ROI élevé, risque faible.
+
+---
+
+# ÉTAPE 1 — Revue & Spécifications UX
+
+Légende : ✅ point fort · ⚠️ faiblesse/friction · 💡 proposition.
+
+## Axe A — Menus & Interfaces principales
+
+✅ **Forces**
+- 16 modales avec focus-trap + `inert` du fond (`modal-a11y.js`), via
+  `MutationObserver` sur `display` — aucun call-site à toucher.
+- Hub de démarrage structuré (`#start-hub-screen`) : slots illustrés
+  (portraits, niveau, étage, Maison, difficulté, horodatage), import,
+  Codex du Sorcier, Hall of Fame.
+- Catalogue boutique progressif par étage avec garde-fous anti-blank.
+- Raccourcis clavier configurables (`I`/`P`/`C`/`F`/`R`) + remap persistant.
+
+⚠️ **Frictions**
+- **Navigation inter-modales en cul-de-sac** : chaque modale est isolée.
+  Aller inventaire → fiche → codex = fermer + rouvrir (≥ 2 actions par saut).
+  Aucune barre d'onglets ni « modale suivante ».
+- **Inventaire 16 slots fixes, sans tri ni pagination** : en endgame, « sac
+  plein » récurrent, drop manuel. Pas de tri (rareté/type), pas de compare.
+- **Settings fourre-tout** : son + save/load + difficulté + keybindings dans
+  une seule modale longue → scroll pénible sur mobile.
+- **Pas de compare d'équipement** : la paper-doll n'offre pas de diff
+  côte-à-côte avec une alternative du sac (hover-tooltip manuel uniquement).
+
+💡 **Propositions**
+1. **Barre d'onglets « Grimoire »** : un conteneur unique
+   `#hero-codex-tabs` regroupant Fiche / Sac / Sorts / Bestiaire / Codex /
+   Quêtes en onglets latéraux. Réutilise les `open*()` existants (chacun
+   peuple déjà son innerHTML) ; on ajoute juste un ruban d'onglets cliquables
+   en tête de `#character-modal` / conteneurs partagés. **Zéro refonte de
+   logique**, surcouche de navigation.
+2. **Tri + filtre du sac** : boutons chips (Tout / Équipable / Consommable /
+   Rareté) au-dessus de la grille `inventory.js`. Tri pur côté affichage,
+   l'ordre de stockage ne bouge pas.
+3. **Compare au survol** : étendre `_renderItemTooltip()` pour, sur un item
+   du sac équipable, afficher un mini-diff `+X/−Y` vs l'item actuellement
+   équipé dans le slot cible (les deltas sont déjà calculables via
+   `recalculateStats` mental — afficher `bonusX(candidat) − bonusX(équipé)`).
+4. **Sectionner Settings** : accordéon (déjà la mécanique `.section-toggle`
+   existe pour la fiche perso) — réutiliser pour grouper Son / Jeu /
+   Touches / Données.
+
+## Axe B — Feedback Combat & Actions
+
+✅ **Forces (déjà excellent)**
+- `window.UX` : dégâts flottants typés (`dmg/heal/mana/crit/miss/shield`),
+  log de combat scrollable, **timeline d'initiative**, tooltips riches,
+  réactions de carte (`flash-heal`, `card-react-crit`), bannières
+  (`synergy/artifact/tenaille/rune`), tick animé des compteurs.
+- `window.CombatFX` : 15 effets (spellBurst élémentaire 6 couleurs,
+  **premiumCast house-keyed**, deathDissolve, healBurst, buffAura, lootPop,
+  spellSplash PNG, shake, bossIntro souls-like, hurtFlash, statusFlash,
+  telegraph ennemi, petrify). Tous gardés `prefers-reduced-motion`.
+- Trinité **audio + visuel + haptique** complète sur Attaque et Sort.
+- Indicateur de **corruption** déjà présent (classe `corruption-N` sur
+  `enemy-card`, teinte froide ≥ 2).
+
+⚠️ **Trous de cohérence identifiés** (le feedback est inégal selon l'action)
+- **Boire une potion** : pas de son dédié, pas d'haptique, visuel variable
+  (seul le premium flashe). Contraste avec l'attaque ultra-feedbackée.
+- **Équiper (non-premium)** : silencieux. Seul le premium a un stinger.
+- **Lancer une potion (`throwItemAtEnemy`)** : pas de burst visuel — un
+  flacon d'Incendio jeté n'a aucun feu, alors que le sort Incendio oui.
+- **Refus de sort** (PM insuffisant / verrouillé / risque corruption) :
+  texte seul, aucun son « denied » ni shake de bouton.
+- **Corruption** : indicateur statique, pas de fanfare/son à la montée de
+  palier ; le joueur peut ne pas remarquer qu'il bascule.
+- **Initiative** : la timeline existe mais reste discrète ; pas de surbrillance
+  marquée du combattant actif au-delà du portrait.
+
+💡 **Propositions** (toutes = extension des modules existants, surface minime)
+1. `AudioSystem.playPotionDrink()` (gorgée + pétillement) appelé dans
+   `_applyConsumableEffect`. Variante optionnelle par type (heal/mana/buff).
+2. **Parité potion lancée ↔ sort** : appeler `CFX_safe.spellBurst(target,
+   element)` dans `throwItemAtEnemy` selon l'élément du flacon.
+3. **Son + micro-shake de refus** : `AudioSystem.playDenied()` + classe
+   `cmd-btn--denied` (shake CSS 200 ms) quand `castSpellInBattle` refuse.
+4. **Feedback de corruption** : `CFX_safe.statusFlash` ténébreux + bark/son
+   sourd au franchissement d'un palier de corruption (hook existant côté
+   données). Renforcer la classe `corruption-N` avec un liseré pulsé.
+5. **Stinger d'équipement léger** pour tous (réutiliser un son court
+   existant) — cohérence tier premium/normal.
+6. **Haptique consommable** : `HAPTICS_safe.cast()` (micro-tap) sur potion.
+
+## Axe C — Lisibilité & Immersion
+
+✅ **Forces**
+- 4 polices thématiques (UnifrakturMaguntia titres, Cinzel UI, Crimson Text
+  narratif) — hiérarchie typographique claire.
+- House-skin sur cartes ennemies (overlays radiaux par Maison).
+- Variantes premium **house-keyed** (FX dorés/verts/glace/ambre).
+- Tranches d'étages thématisées (textures + ambiance + couleur).
+- Bestiaire enrichi (lore, habitat, anecdote, danger 1-11 coloré).
+
+⚠️ **Frictions**
+- **Le thème de Maison n'irrigue PAS l'UI persistante** : les couleurs de
+  Maison existent en `:root` (`--gryffindor-red`, etc.) mais ne colorent que
+  les cartes ennemies en combat. Le HUD, les cadres de modales, les accents
+  d'or restent identiques quelle que soit la Maison du joueur. **Opportunité
+  d'immersion la plus forte du projet, et la moins coûteuse.**
+- **Corruption peu lisible hors combat** : pas de jauge persistante claire
+  dans le HUD d'exploration (seulement en combat sur les ennemis).
+- Densité de texte : certaines descriptions (artefacts, sorts) manquent de
+  hiérarchie (effet chiffré noyé dans la prose).
+
+💡 **Propositions**
+1. **Système de thème de Maison (flag `currentHouseTheme`)** — *la mesure
+   phare*. Au choix de Maison, poser `data-house="gryffondor"` sur `<html>`
+   ou `#game-container`. Définir des **variables de thème** dérivées :
+   ```css
+   :root[data-house="gryffondor"] { --house-primary:#740001; --house-accent:#D3A625; }
+   :root[data-house="serpentard"] { --house-primary:#1A472A; --house-accent:#AAAAAA; }
+   :root[data-house="serdaigle"]  { --house-primary:#0E1A40; --house-accent:#946B2D; }
+   :root[data-house="poufsouffle"]{ --house-primary:#3a2a00; --house-accent:#F0C75E; }
+   ```
+   Puis repeindre **avec parcimonie** : liseré supérieur des modales, glow du
+   blason HUD, surbrillance des onglets, bordure de la barre d'action. L'or
+   `--gold` reste la couleur « monde » ; `--house-accent` devient la couleur
+   « toi ». Réversible (retrait de l'attribut = thème actuel inchangé).
+2. **Mini-jauge de corruption persistante** dans le HUD quand corruption > 0
+   (réutilise `#corruption-meter` déjà présent en `role="status"`).
+3. **Hiérarchie des descriptions** : helper d'affichage qui isole l'effet
+   chiffré (gras + couleur élément) de la prose lore, dans tooltips et fiches.
+
+## Axe D — Accessibilité & Responsive
+
+✅ **Forces (déjà au-dessus de la moyenne)**
+- `:focus-visible` doré sur tous les interactifs (clavier only).
+- `prefers-reduced-motion` respecté partout (cosmétique coupé, transitions
+  réduites au fondu).
+- Cibles tactiles ≥ 44 px (boutons, close, accordéon), `100dvh`,
+  `env(safe-area-inset-*)` iOS, `touch-action:none` sur le canvas.
+- `.sr-only`, `role="dialog"`/`aria-modal`, `aria-live` sur log & corruption.
+- 7+ breakpoints, minimap coin mobile, accordéon fiche perso ≤ 700px.
+
+⚠️ **Frictions**
+- **Pas de réglage de taille de texte** ni de mode contraste élevé — le
+  texte Crimson Text en taille narrative peut être petit sur mobile.
+- **Bulles du help-tour** peuvent masquer la cible sur petit écran.
+- Tooltips riches au **survol** : inaccessibles au tactile (pas de tap-hold).
+- Pas de `prefers-contrast` exploité.
+
+💡 **Propositions**
+1. **Échelle de texte** : variable `--ui-font-scale` (3 crans : Petit/Normal/
+   Grand) dans Settings, appliquée sur `:root` via `font-size`. `clamp()`
+   existant compose proprement.
+2. **Tooltips tactiles** : sur `pointer:coarse`, déclencher le tooltip riche
+   au tap (premier tap = info, second = action), ou bouton ⓘ.
+3. **Mode contraste élevé** opt-in (`data-contrast="high"`) renforçant
+   bordures et `--label-muted`.
+4. Garde-fou positionnement bulles help-tour ≤ 480px (flip auto).
+
+## Axe E — Améliorations globales d'UX (friction)
+
+✅ **Forces**
+- Autosave throttlé (2 s) sur étage/combat/level-up/quête.
+- Tour guidé 15 étapes + 4 sections + tutos contextuels (Forge/Biblio/Atelier).
+- Keybindings remappables.
+
+⚠️ **Frictions**
+- **Autosave invisible** : aucun toast/indicateur. Le joueur ne sait jamais
+  si sa progression est sûre après un boss → anxiété. (friction #1 réelle)
+- **Sorts de combat sans hotkey numérique** : sélection souris/tap obligatoire.
+- **Pas de confirmation de déséquipement** ni d'undo.
+- Tooltips quasi absents hors fiche perso (~10 % de couverture).
+
+💡 **Propositions**
+1. **Indicateur d'autosave discret** : petite icône 💾 qui pulse 1 s en coin
+   de HUD à chaque `autoSave()` réussi (`aria-live="polite"` « Progression
+   sauvegardée »). Zéro modale, zéro interruption.
+2. **Hotkeys 1-4 en combat** pour sorts/cibles (via `keybindings.js`,
+   catalogue combat déjà présent).
+3. **Étendre les tooltips riches** aux slots d'équipement du HUD gauche, aux
+   boutons d'action combat, aux effets de potion du sac.
+
+---
+
+# ÉTAPE 2 — Plan de Mise en Œuvre
+
+## Principes techniques
+
+- **Surcouche, pas refonte.** On étend les modules `*_safe` (UX/CFX/DFX/
+  Haptics) et les variables CSS `:root`. Tout call-site reste gardé.
+- **Thème par attribut data** (`data-house`, `data-contrast`,
+  `--ui-font-scale`) — aucune duplication de feuille de style, réversible.
+- **Chaque lot = un commit autonome** : plan à jour → `node tests/smoke.js`
+  → `cache-bump` (tout JS/CSS servi bumpé : `?v` dans `index.html` +
+  `PRECACHE_URLS` de `sw.js` + `CACHE_VERSION`) → vérif PR avant push.
+- **Pas de dépendance, pas de build.** Particules = CSS/canvas léger réutilisant
+  les patterns existants.
+
+## Flags & variables proposés (centralisés)
+
+| Flag / var | Emplacement | Rôle | Défaut |
+|------------|-------------|------|--------|
+| `currentHouseTheme` (via `data-house`) | `<html>` / `state.js` | thème UI de Maison | Maison choisie |
+| `uiFontScale` (`--ui-font-scale`) | Settings + localStorage | échelle texte | `1` |
+| `uiHighContrast` (`data-contrast`) | Settings + localStorage | contraste élevé | off |
+| `uiFeedbackLevel` | Settings + localStorage | intensité FX (Plein/Sobre/Minimal) | Plein |
+| `premiumVisuals` | déjà implicite (`item.premiumFx`) | FX premium house-keyed | on |
+| `autosaveToastEnabled` | Settings | indicateur autosave | on |
+
+> `uiFeedbackLevel` se compose **au-dessus** de `prefers-reduced-motion`
+> (l'accessibilité reste prioritaire) : « Minimal » force le comportement
+> reduced-motion même sans préférence système.
+
+## Lots priorisés
+
+### 🔴 CRITIQUE (qualité perçue immédiate, risque faible)
+
+| # | Tâche | Fichiers | Diff. | Est. |
+|---|-------|----------|-------|------|
+| C1 | **Thème de Maison UI** (`data-house` + vars `--house-*`, repeinte parcimonieuse modales/HUD/blason/onglets) | `css/style.css`, `state.js`, `main.js`, `ui.js` | M | 0.5-1 j |
+| C2 | **Indicateur autosave** (toast 💾 pulse + `aria-live`) | `save-slots.js`, `ui.js`, `css/style.css` | S | 2-3 h |
+| C3 | **Parité feedback consommables** : son potion + haptique + burst potion lancée + son/shake refus de sort | `audio-sfx.js`, `inventory.js`, `battle.js`, `battle-spells.js`, `css` | M | 0.5 j |
+
+### 🟠 HAUTE (immersion + lisibilité)
+
+| # | Tâche | Fichiers | Diff. | Est. |
+|---|-------|----------|-------|------|
+| H1 | **Échelle de texte + contraste élevé** (Settings) | `css/style.css`, `ui-settings.js`, `index.html` | M | 0.5 j |
+| H2 | **Tooltips tactiles + extension de couverture** (slots HUD, boutons combat, effets potion) | `ux-improvements.js`, `inventory.js`, `css` | M | 0.5 j |
+| H3 | **Feedback de corruption** (jauge HUD persistante + flash/son montée de palier) | `ui.js`, `battle-ui.js`, `combat-fx.js`, `css` | M | 0.5 j |
+| H4 | **Réglage `uiFeedbackLevel`** (Plein/Sobre/Minimal) | `ui-settings.js`, modules FX | S | 3-4 h |
+
+### 🟡 MOYENNE (navigation & confort)
+
+| # | Tâche | Fichiers | Diff. | Est. |
+|---|-------|----------|-------|------|
+| M1 | **Barre d'onglets Grimoire** (Fiche/Sac/Sorts/Bestiaire/Codex/Quêtes sans cul-de-sac) | `ui.js`, `index.html`, `css` | L | 1 j |
+| M2 | **Tri + filtre du sac** (chips rareté/type) | `inventory.js`, `css` | M | 0.5 j |
+| M3 | **Compare d'équipement au survol** (mini-diff vs slot équipé) | `ui-character-sheet.js` | M | 0.5 j |
+| M4 | **Hotkeys 1-4 sorts/cibles en combat** | `keybindings.js`, `battle-ui.js` | S | 3 h |
+| M5 | **Sectionner Settings** (accordéon réutilisé) | `ui-settings.js`, `css` | S | 3 h |
+
+## Structure CSS recommandée
+
+- **Pas de SCSS** (zéro build). Rester en CSS natif + variables.
+- Introduire un bloc **« thème »** en tête de `style.css` : les
+  `:root[data-house="…"]` et `:root[data-contrast="high"]`, plus
+  `--ui-font-scale`. Tout le reste consomme `var(--house-accent)` /
+  `var(--house-primary)` là où on veut l'identité de Maison, en **laissant
+  `--gold` comme couleur du monde**.
+- Réutiliser les `@keyframes` existants (déjà 30+) ; n'ajouter que :
+  `autosavePulse`, `denyShake`, `corruptionRise`.
+- Particules : réutiliser le moteur canvas de `cinematics.js`/`dungeon-fx.js`
+  (déjà DPR-aware + reduced-motion). Aucune lib.
+
+## Suggestions d'assets
+
+- **Sons** (procéduraux WebAudio comme l'existant, pas de fichiers lourds) :
+  `playPotionDrink`, `playDenied`, `playEquip`, `playCorruptionRise`.
+- **Icônes** : 💾 autosave (réutiliser glyphe), ⓘ info tactile (CSS).
+- **CSS only** : liserés de Maison, shake de refus, pulse autosave/corruption.
+- Aucun PNG nouveau requis pour le cœur du polish (les FX premium house-keyed
+  existent déjà).
+
+## Checklist de tests UX (playtest)
+
+- [ ] **Desktop** : thème de Maison cohérent sur HUD/modales/onglets pour les 4 Maisons.
+- [ ] **Mobile ≤ 700px** : tooltips déclenchables au tap ; bulles help-tour ne masquent pas la cible ; échelle de texte « Grand » ne casse aucun layout.
+- [ ] **Combat** : potion (son+haptique), potion lancée (burst), refus de sort (son+shake), montée de corruption (flash+son) — chaque action a un retour clair.
+- [ ] **Autosave** : toast visible après boss/level-up/étage ; `aria-live` annoncé.
+- [ ] **Navigation** : Grimoire permet Fiche→Sac→Codex sans fermer/rouvrir.
+- [ ] **Accessibilité** : `prefers-reduced-motion` + `uiFeedbackLevel=Minimal` coupent bien les FX ; focus-trap intact ; contraste élevé lisible.
+- [ ] **Non-régression** : `node tests/smoke.js` vert ; `node tests/units.js` vert.
+- [ ] **PWA** : `node tools/check_cache_versions.js --base origin/master` exit 0 ; `node tests/pwa-smoke.js` vert.
+
+## Estimation globale
+
+| Phase | Lots | Estimation |
+|-------|------|-----------|
+| Critique | C1-C3 | ~1.5-2 j |
+| Haute | H1-H4 | ~2 j |
+| Moyenne | M1-M5 | ~2.5-3 j |
+| **Total** | 12 lots | **~6-7 j** (incrémental, déployable lot par lot) |
+
+Chaque lot est **livrable indépendamment** : la qualité perçue monte dès C1
+(thème de Maison) sans attendre le reste.
+
+---
+
+## Recommandation de démarrage
+
+Commencer par **C1 (thème de Maison)** : c'est l'amélioration au plus fort
+ratio immersion/effort, elle s'appuie sur des variables déjà définies, et elle
+est entièrement réversible (retrait de `data-house`). Enchaîner C2 (autosave)
+et C3 (parité feedback) qui suppriment les deux frustrations les plus
+concrètes. Valider chaque lot en playtest desktop + mobile avant le suivant.
