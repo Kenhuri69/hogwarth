@@ -1462,4 +1462,49 @@ async function scenarioInventoryFilterSort() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioPartyEquipRow, scenarioRichTooltipCoverage, scenarioInventoryFilterSort, scenarioTryAddItem, scenarioConsumableStacking, scenarioEquipmentAndStatusIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioEquipmentPhase3bQuests, scenarioCritDodgeFromEquip, scenarioDeathlyHallows, scenarioVoiceRelics, scenarioShopLimits, scenarioRefusalFeedback, scenarioForgeDissolve, scenarioForgeEnchant] };
+// M3 (polish UX) — mini-diff d'équipement dans le tooltip du sac de la fiche :
+// deltas +/− vs l'item équipé dans le slot cible du perso courant.
+async function scenarioEquipCompareTooltip() {
+  console.log('\n── Scénario : compare d\'équipement au survol (M3) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  const r = await page.evaluate(() => {
+    party[0].equipped.wand = { id: 'w_old', name: 'Vieille Baguette', type: 'wand', slot: 'wand', bonusAtk: 2, bonusMag: 1 };
+    if (typeof recalculateStats === 'function') recalculateStats();
+    player.inventory = [
+      { id: 'w_new', name: 'Baguette de Sureau', type: 'wand', slot: 'wand', rarity: 'rare', bonusAtk: 5, bonusMag: 0, desc: 'd' },
+      { id: 'amul',  name: 'Amulette Neuve',     type: 'acc',  slot: 'amulet', bonusDef: 3, desc: 'd' },
+      { id: 'pot',   name: 'Potion',             type: 'consumable', power: 20, desc: 'd' },
+    ];
+    openCharacter();
+    const sacSlots = [...document.querySelectorAll('.section-inv .inv-slot.has-item')];
+    const cmp = (i) => {
+      const el = sacSlots[i] ? sacSlots[i].querySelector('.item-tooltip .tt-compare') : null;
+      return el ? el.textContent : null;
+    };
+    return {
+      wand: cmp(0),
+      wandUp:   !!(sacSlots[0] && sacSlots[0].querySelector('.tt-cmp-up')),
+      wandDown: !!(sacSlots[0] && sacSlots[0].querySelector('.tt-cmp-down')),
+      amul: cmp(1),
+      potionHasCompare: !!(sacSlots[2] && sacSlots[2].querySelector('.tt-compare')),
+    };
+  });
+  console.log('  result:', r);
+  assert(/Vieille Baguette/.test(r.wand || ''), 'le diff doit citer l\'item équipé comparé');
+  assert(/ATK \+3/.test(r.wand || ''), 'le diff doit montrer ATK +3 (5−2)');
+  assert(/MAG -1/.test(r.wand || ''),  'le diff doit montrer MAG −1 (0−1)');
+  assert(r.wandUp && r.wandDown, 'le diff doit colorer hausse ET baisse');
+  assert(/DEF \+3/.test(r.amul || ''), 'sur slot libre, le diff doit montrer le bonus complet (DEF +3)');
+  assert(!r.potionHasCompare, 'un consommable ne doit PAS afficher de diff d\'équipement');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS (compare équipement)`);
+  }
+  console.log('  ✅ Mini-diff d\'équipement au survol conforme');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioPartyEquipRow, scenarioRichTooltipCoverage, scenarioInventoryFilterSort, scenarioEquipCompareTooltip, scenarioTryAddItem, scenarioConsumableStacking, scenarioEquipmentAndStatusIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioEquipmentPhase3bQuests, scenarioCritDodgeFromEquip, scenarioDeathlyHallows, scenarioVoiceRelics, scenarioShopLimits, scenarioRefusalFeedback, scenarioForgeDissolve, scenarioForgeEnchant] };
