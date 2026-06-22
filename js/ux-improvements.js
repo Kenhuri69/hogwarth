@@ -186,73 +186,134 @@
       `<div class="tt-flavor">${m.d}</div>`;
   }
 
-  // Délégation globale du hover
+  // Tooltip riche pour un bouton d'action de combat (#battle-actions .cmd-btn).
+  // Descriptions statiques + rappel de la touche clavier. La clé d'action est
+  // lue depuis l'attribut onclick (`battleAction('X')`). (H2 — couverture combat.)
+  const ACTION_TIPS = {
+    attack:   { icon: '⚔️', name: 'Attaquer',  tag: 'Action', key: 'A', desc: 'Frappe physique : ATK + 0–3 contre la Défense ennemie. Peut faire un coup critique selon la Chance.' },
+    spell:    { icon: '✨', name: 'Sortilège', tag: 'Action', key: 'S', desc: 'Ouvre ta liste de sorts. Coûte des PM selon le sort choisi.' },
+    guard:    { icon: '🛡️', name: 'Garde',     tag: 'Action', key: 'G', desc: 'Réduit de 50 % les coups physiques, restitue des PM et peut riposter. Cumulable (Double-Garde).' },
+    item:     { icon: '🧪', name: 'Objet',     tag: 'Action', key: 'O', desc: 'Utiliser un consommable (potion, etc.) sans quitter le combat.' },
+    flee:     { icon: '💨', name: 'Fuir',      tag: 'Action', key: 'F', desc: 'Tente de fuir le combat. Réussite selon ton Agilité ; garantie avec un Balai.' },
+    artifact: { icon: '🏺', name: 'Artefact',  tag: 'Action', key: '',  desc: "Déclenche l'effet de charge de l'artefact équipé (1×/combat)." },
+    posture:  { icon: '🔄', name: 'Posture',   tag: 'Duo',    key: '',  desc: 'Bascule la posture du Duo : Phalange (défensif) ↔ Tenaille (focus-fire). Gratuit 1×/combat.' },
+    env:      { icon: '🌿', name: 'Rune',      tag: 'Environnement', key: '', desc: "Active la rune de la zone : étourdit l'ennemi le plus proche (1×/combat)." }
+  };
+  function actionButtonTooltip(btn) {
+    const oc = btn.getAttribute('onclick') || '';
+    const m = oc.match(/battleAction\(['"](\w+)['"]\)/);
+    const t = m && ACTION_TIPS[m[1]];
+    if (!t) return '';
+    const tag = t.key ? `${t.tag} · touche ${t.key}` : t.tag;
+    return header(t.icon, t.name, tag) + `<div class="tt-flavor">${t.desc}</div>`;
+  }
+
+  // Résolution unique d'un tooltip pour un élément (partagée par le survol
+  // souris ET l'appui long tactile). Renvoie le HTML ou '' si aucune cible.
+  function tooltipHtmlForTarget(target) {
+    if (!target || !target.closest) return '';
+    let el;
+
+    // SORTS — par .spell-item
+    if ((el = target.closest('.spell-item'))) {
+      const spellName = el.querySelector('.spell-name')?.textContent;
+      if (!spellName || typeof SPELLS === 'undefined') return '';
+      const spell = SPELLS.find(s => s.name === spellName);
+      if (!spell) return '';
+      const charIdx = (typeof currentBattleChar !== 'undefined' && typeof inBattle !== 'undefined' && inBattle) ? currentBattleChar : 0;
+      return spellTooltip(spell, charIdx);
+    }
+    // OBJETS INVENTAIRE (effets de potion inclus) — par .inv-slot
+    if ((el = target.closest('.inv-slot.has-item'))) {
+      const idx = Array.from(el.parentElement.children).indexOf(el);
+      const item = (typeof player !== 'undefined') ? player.inventory[idx] : null;
+      return item ? itemTooltip(item) : '';
+    }
+    // BOUTIQUE — par .shop-item
+    if ((el = target.closest('.shop-item')) && el.dataset.itemId) {
+      const item = (typeof ITEMS !== 'undefined') ? ITEMS.find(i => i.id === el.dataset.itemId) : null;
+      return item ? itemTooltip(item) : '';
+    }
+    // STATS — par .stat-item (avec data-stat)
+    if ((el = target.closest('.stat-item[data-stat]'))) {
+      return statTooltip(el.dataset.stat);
+    }
+    // MINI-ÉQUIPEMENT party-card (HUD gauche) — par .party-equip-slot
+    if ((el = target.closest('.party-equip-slot'))) {
+      const rowEl = el.closest('.party-equip-row');
+      const charIdx = rowEl ? parseInt((rowEl.id || 'equip-row-0').replace('equip-row-', ''), 10) || 0 : 0;
+      const slotName = el.dataset.slot;
+      const c = (typeof party !== 'undefined') ? party[charIdx] : null;
+      const item = c && c.equipped && c.equipped[slotName];
+      return item ? itemTooltip(item) : emptySlotTooltip(slotName);
+    }
+    // BOUTONS D'ACTION DE COMBAT (H2) — par .battle-actions .cmd-btn
+    if ((el = target.closest('.battle-actions .cmd-btn'))) {
+      return actionButtonTooltip(el);
+    }
+    return '';
+  }
+
+  // Sélecteur unifié des cibles de tooltip (survol + appui long).
+  const TT_SELECTOR =
+    '.spell-item, .inv-slot.has-item, .shop-item, .stat-item[data-stat], ' +
+    '.party-equip-slot, .battle-actions .cmd-btn';
+
+  // Délégation globale du hover (souris) + appui long (tactile).
   function attachTooltipDelegation() {
     document.addEventListener('mousemove', (ev) => {
       if (tooltipEl && tooltipEl.classList.contains('visible')) positionTooltip(ev);
     });
 
-    // SORTS — détection par .spell-item
     document.addEventListener('mouseover', (ev) => {
-      const spellEl = ev.target.closest('.spell-item');
-      if (spellEl) {
-        const spellName = spellEl.querySelector('.spell-name')?.textContent;
-        if (!spellName || typeof SPELLS === 'undefined') return;
-        const spell = SPELLS.find(s => s.name === spellName);
-        if (!spell) return;
-        // Devine quel personnage : si openBattleSpells, currentBattleChar ; sinon onglet courant
-        let charIdx = (typeof currentBattleChar !== 'undefined' && typeof inBattle !== 'undefined' && inBattle) ? currentBattleChar : 0;
-        showTooltip(spellTooltip(spell, charIdx), ev);
-        return;
-      }
-
-      // OBJETS INVENTAIRE — par .inv-slot
-      const invEl = ev.target.closest('.inv-slot.has-item');
-      if (invEl) {
-        const idx = Array.from(invEl.parentElement.children).indexOf(invEl);
-        const item = (typeof player !== 'undefined') ? player.inventory[idx] : null;
-        if (item) showTooltip(itemTooltip(item), ev);
-        return;
-      }
-
-      // BOUTIQUE — par .shop-item
-      const shopEl = ev.target.closest('.shop-item');
-      if (shopEl && shopEl.dataset.itemId) {
-        const item = (typeof ITEMS !== 'undefined') ? ITEMS.find(i => i.id === shopEl.dataset.itemId) : null;
-        if (item) showTooltip(itemTooltip(item), ev);
-        return;
-      }
-
-      // STATS — par .stat-item (avec data-stat)
-      const statEl = ev.target.closest('.stat-item[data-stat]');
-      if (statEl) {
-        showTooltip(statTooltip(statEl.dataset.stat), ev);
-        return;
-      }
-
-      // MINI-ÉQUIPEMENT party-card (Vague D) — par .party-equip-slot
-      const equipEl = ev.target.closest('.party-equip-slot');
-      if (equipEl) {
-        const row = equipEl.closest('.party-equip-row');
-        const charIdx = row ? parseInt((row.id || 'equip-row-0').replace('equip-row-', ''), 10) || 0 : 0;
-        const slotName = equipEl.dataset.slot;
-        const c = (typeof party !== 'undefined') ? party[charIdx] : null;
-        const item = c && c.equipped && c.equipped[slotName];
-        if (item) {
-          showTooltip(itemTooltip(item), ev);
-        } else {
-          showTooltip(emptySlotTooltip(slotName), ev);
-        }
-        return;
-      }
+      const html = tooltipHtmlForTarget(ev.target);
+      if (html) showTooltip(html, ev);
     });
 
     document.addEventListener('mouseout', (ev) => {
-      if (ev.target.closest('.spell-item, .inv-slot, .shop-item, .stat-item')) hideTooltip();
+      if (ev.target.closest(TT_SELECTOR)) hideTooltip();
     });
-    // Cache au scroll/click
+
+    // ── Appui long tactile (H2) — ~450 ms montre le tooltip riche sans
+    // déclencher l'action de l'élément (le clic synthétique qui suit est
+    // supprimé). Aligné sur le pattern d'info-monstre (battle-ui.js). ──
+    let lpTimer = null, lpFired = false, touchHideTimer = null;
+    const clearLp = () => { if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; } };
+
+    document.addEventListener('touchstart', (ev) => {
+      if (ev.touches && ev.touches.length > 1) { clearLp(); return; }
+      const target = ev.target.closest(TT_SELECTOR);
+      if (!target) return;
+      const touch = ev.touches[0];
+      const pt = { clientX: touch.clientX, clientY: touch.clientY };
+      clearLp();
+      lpTimer = setTimeout(() => {
+        lpTimer = null;
+        const html = tooltipHtmlForTarget(target);
+        if (!html) return;
+        lpFired = true;
+        showTooltip(html, pt);
+        if (touchHideTimer) clearTimeout(touchHideTimer);
+        touchHideTimer = setTimeout(hideTooltip, 4000);
+      }, 450);
+    }, { passive: true });
+    document.addEventListener('touchmove',   clearLp, { passive: true });
+    document.addEventListener('touchend',    clearLp, { passive: true });
+    document.addEventListener('touchcancel', clearLp, { passive: true });
+
+    // Cache au scroll. Le clic ferme le tooltip — sauf juste après un appui
+    // long, où il faut AU CONTRAIRE supprimer le clic synthétique (sinon
+    // l'action de l'élément se déclencherait) et garder le tooltip affiché.
     document.addEventListener('scroll', hideTooltip, true);
-    document.addEventListener('click', hideTooltip, true);
+    document.addEventListener('click', (ev) => {
+      if (lpFired) {
+        lpFired = false;
+        ev.preventDefault();
+        ev.stopImmediatePropagation();
+        return;
+      }
+      hideTooltip();
+    }, true);
   }
 
   // ─────────────────────────────────────────────────────────

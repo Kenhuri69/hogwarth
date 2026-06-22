@@ -377,6 +377,27 @@ Chaque lot est **livrable indépendamment** : la qualité perçue monte dès C1
     ui-settings.js v5, `CACHE_VERSION` v220). Effet neutre tant qu'aucun
     réglage n'est touché (échelle 1, pas d'attribut contraste).
 
+- **2026-06-22 — H2 (Tooltips tactiles + extension de couverture) : ✅ livré.**
+  - `js/ux-improvements.js` : résolution unique `tooltipHtmlForTarget(el)`
+    partagée par le survol souris ET le tactile (refactor sans changement de
+    comportement desktop). **Nouvelle couverture** : boutons d'action de combat
+    (`.battle-actions .cmd-btn`) → `actionButtonTooltip()` (descriptions
+    statiques + rappel de la touche clavier, clé d'action lue dans `onclick`).
+    Les slots d'équipement du HUD gauche (`.party-equip-slot`) et les effets de
+    potion du sac (`.inv-slot.has-item` via `itemTooltip`) étaient déjà résolus
+    — désormais accessibles au **tactile**.
+  - **Appui long tactile** (~450 ms, aligné sur le pattern info-monstre de
+    `battle-ui.js`) : montre le tooltip riche, auto-masqué après 4 s, et
+    **supprime le clic synthétique** qui suit (capture click →
+    `stopImmediatePropagation` + `preventDefault`) pour ne pas déclencher
+    l'action de l'élément. Un **tap court** laisse passer le clic (action
+    normale préservée). Garde-fous multi-touch / `touchmove` annulent le timer.
+  - Aucun changement HTML/CSS : `#ux-tooltip` est déjà `pointer-events:none`.
+  - Test : scénario `scenarioRichTooltipCoverage` (inventory.js) — survol bouton
+    d'action, appui long (tooltip affiché + action NON déclenchée), tap court
+    (action déclenchée). `node tests/smoke.js` 265 verts + cache-bump
+    (ux-improvements.js v8, `CACHE_VERSION` v221).
+
 ---
 
 ## Recommandation de démarrage
