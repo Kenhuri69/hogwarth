@@ -22,7 +22,12 @@ let _dungeonFxTimer = null;
 (function () {
   'use strict';
 
+  // Gate des effets ambiants (boucle de scintillement, poussière, secousses).
+  // Niveau de feedback (H4) : `particlesOff()` vrai en Sobre ET Minimal/
+  // reduced-motion. Repli matchMedia si UIFeedback pas encore défini.
   function prefersReducedMotion() {
+    if (window.UIFeedback && typeof window.UIFeedback.particlesOff === 'function')
+      return window.UIFeedback.particlesOff();
     return window.matchMedia
       && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   }
@@ -57,6 +62,9 @@ let _dungeonFxTimer = null;
     if (_dungeonFxTimer) return;
     if (prefersReducedMotion()) return;
     _dungeonFxTimer = setInterval(() => {
+      // Bascule de niveau de feedback en cours de session (H4) : si on passe en
+      // Sobre/Minimal alors que la boucle tourne, elle s'inhibe d'elle-même.
+      if (prefersReducedMotion()) return;
       if (!_fxDrawable()) return;
       _dungeonFxPhase = performance.now() / 1000;
       if (typeof drawDungeon === 'function') drawDungeon();
@@ -233,7 +241,8 @@ const _RUNE_PULSE_MAX = 0.12;   // alpha crête du glow (discret)
 // Alpha du glow rune pour un niveau de profondeur donné. Pur sur la phase FX.
 // Retourne 0 sous prefers-reduced-motion ou tant que la boucle n'a pas tourné.
 function _runePulseAlpha(depthIndex) {
-  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return 0;
+  if (window.UIFeedback ? window.UIFeedback.particlesOff()
+      : (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) return 0;
   const phase = (typeof _dungeonFxPhase !== 'undefined') ? _dungeonFxPhase : 0;
   if (phase === 0) return 0;
   const di = (typeof depthIndex === 'number') ? depthIndex : 0;
@@ -302,7 +311,8 @@ const _DUST_TINTS = {
 };
 function drawDungeonDust() {
   if (typeof ctx === 'undefined' || typeof canvas === 'undefined') return;
-  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (window.UIFeedback ? window.UIFeedback.particlesOff()
+      : (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
   const phase = (typeof _dungeonFxPhase !== 'undefined') ? _dungeonFxPhase : 0;
   if (phase === 0) return; // boucle pas encore tournée → pas de poussière statique
   let tint = _DUST_TINTS.intro;

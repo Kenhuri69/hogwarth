@@ -18,7 +18,11 @@
 (function () {
   'use strict';
 
+  // Gate des particules de cinématique. Niveau de feedback (H4) :
+  // `particlesOff()` vrai en Sobre ET Minimal/reduced-motion. Repli matchMedia.
   function prefersReducedMotion() {
+    if (window.UIFeedback && typeof window.UIFeedback.particlesOff === 'function')
+      return window.UIFeedback.particlesOff();
     return window.matchMedia
       && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   }

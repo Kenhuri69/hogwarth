@@ -19,7 +19,12 @@
 
   const overlay = () => document.getElementById('encounter-overlay');
 
+  // Gate des effets décoratifs (particules, gerbes). Respecte le niveau de
+  // feedback (H4) : `particlesOff()` est vrai en Sobre ET Minimal/reduced-motion.
+  // Repli matchMedia si UIFeedback pas encore défini.
   function prefersReducedMotion() {
+    if (window.UIFeedback && typeof window.UIFeedback.particlesOff === 'function')
+      return window.UIFeedback.particlesOff();
     return window.matchMedia
       && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   }

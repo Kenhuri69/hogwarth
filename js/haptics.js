@@ -19,7 +19,11 @@
 (function () {
   'use strict';
 
+  // La vibration est une « motion » : coupée sous reduced-motion ET en niveau
+  // de feedback Minimal (H4). Sobre la conserve. Repli matchMedia.
   function prefersReducedMotion() {
+    if (window.UIFeedback && typeof window.UIFeedback.reduced === 'function')
+      return window.UIFeedback.reduced();
     return window.matchMedia
       && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   }

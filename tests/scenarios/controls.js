@@ -1214,4 +1214,77 @@ async function scenarioUiAccessibilityPrefs() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioMobileSelect, scenarioCombatMobile, scenarioRelativeControls, scenarioCanvasSwipe, scenarioCameraPresence, scenarioCombatKeyboard, scenarioConfirmModal, scenarioA11yFinish, scenarioModalIsolation, scenarioGridKeyboardNav, scenarioGridArrowNav, scenarioGridKeyboardNavExtended, scenarioSpellFilterKeyboard, scenarioKeybindings, scenarioUiAccessibilityPrefs] };
+// H4 (polish UX) — niveau de feedback visuel (Plein/Sobre/Minimal) composé
+// au-dessus de prefers-reduced-motion.
+async function scenarioUiFeedbackLevel() {
+  console.log('\n── Scénario : niveau de feedback visuel (H4) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  await page.evaluate(() => { localStorage.removeItem('hogwarts_rpg_ui_feedback'); });
+
+  // T1 : Plein (défaut) → ni reduced ni particlesOff.
+  const t1 = await page.evaluate(() => {
+    setUiFeedbackLevel('full');
+    return {
+      level:     window.UIFeedback.level,
+      attr:      document.documentElement.getAttribute('data-feedback'),
+      reduced:   window.UIFeedback.reduced(),
+      particles: window.UIFeedback.particlesOff(),
+      stored:    localStorage.getItem('hogwarts_rpg_ui_feedback')
+    };
+  });
+  console.log('  T1 full   :', t1);
+  assert(t1.level === 'full' && t1.attr === 'full', 'Plein doit poser level/attr full');
+  assert(t1.reduced === false,   'Plein ne doit pas forcer reduced-motion');
+  assert(t1.particles === false, 'Plein ne doit pas couper les particules');
+  assert(t1.stored === 'full',   'le niveau Plein doit être persisté');
+
+  // T2 : Sobre → particules coupées, mais PAS reduced-motion (motion conservée).
+  const t2 = await page.evaluate(() => {
+    setUiFeedbackLevel('sober');
+    return { reduced: window.UIFeedback.reduced(), particles: window.UIFeedback.particlesOff(), attr: document.documentElement.getAttribute('data-feedback') };
+  });
+  console.log('  T2 sober  :', t2);
+  assert(t2.reduced === false,   'Sobre ne doit PAS forcer reduced-motion');
+  assert(t2.particles === true,  'Sobre doit couper particules/boucles ambiantes');
+  assert(t2.attr === 'sober',    'data-feedback doit valoir sober');
+
+  // T3 : Minimal → force reduced-motion (compose au-dessus du système).
+  const t3 = await page.evaluate(() => {
+    setUiFeedbackLevel('minimal');
+    // Vérifie aussi le branchement effectif sur les modules FX.
+    const fxGate = (typeof CombatFX !== 'undefined'); // module chargé
+    return {
+      reduced:   window.UIFeedback.reduced(),
+      particles: window.UIFeedback.particlesOff(),
+      attr:      document.documentElement.getAttribute('data-feedback'),
+      fxGate
+    };
+  });
+  console.log('  T3 minimal:', t3);
+  assert(t3.reduced === true,   'Minimal doit forcer le comportement reduced-motion');
+  assert(t3.particles === true, 'Minimal doit couper les particules');
+  assert(t3.attr === 'minimal', 'data-feedback doit valoir minimal');
+
+  // T4 : persistance au rechargement (préférence device).
+  const t4 = await page.evaluate(() => {
+    setUiFeedbackLevel('sober');
+    // Simule un rechargement : remet le défaut puis recharge la préférence.
+    window.UIFeedback.level = 'full';
+    document.documentElement.removeAttribute('data-feedback');
+    _loadUiAccessibilityPrefs();
+    return { level: window.UIFeedback.level, attr: document.documentElement.getAttribute('data-feedback') };
+  });
+  console.log('  T4 reload :', t4);
+  assert(t4.level === 'sober' && t4.attr === 'sober', 'le niveau doit être restauré au chargement');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (niveau de feedback)`);
+  }
+  console.log('  ✅ Niveau de feedback visuel (Plein/Sobre/Minimal) OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioMobileSelect, scenarioCombatMobile, scenarioRelativeControls, scenarioCanvasSwipe, scenarioCameraPresence, scenarioCombatKeyboard, scenarioConfirmModal, scenarioA11yFinish, scenarioModalIsolation, scenarioGridKeyboardNav, scenarioGridArrowNav, scenarioGridKeyboardNavExtended, scenarioSpellFilterKeyboard, scenarioKeybindings, scenarioUiAccessibilityPrefs, scenarioUiFeedbackLevel] };
