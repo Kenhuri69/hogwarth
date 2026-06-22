@@ -2529,6 +2529,17 @@ body {
 .item-tooltip .tt-rarity.rarity-epic      { color: #c89cdc; }
 .item-tooltip .tt-rarity.rarity-legendary { color: var(--gold); }
 .item-tooltip .tt-bonus  { color: #6cd96c; font-weight: 600; }
+/* Mini-diff d'équipement (M3) — deltas vs l'item équipé dans le slot cible. */
+.item-tooltip .tt-compare {
+  display: flex; flex-wrap: wrap; gap: 4px 8px;
+  margin-top: 5px; padding-top: 5px;
+  border-top: 1px dashed var(--gold-dark);
+  font-size: 10.5px;
+}
+.item-tooltip .tt-cmp-head { width: 100%; color: var(--label-muted); font-style: italic; }
+.item-tooltip .tt-cmp-up   { color: #6cd96c; font-weight: 600; }
+.item-tooltip .tt-cmp-down { color: #d9706c; font-weight: 600; }
+.item-tooltip .tt-cmp-same { color: var(--label-muted); }
 .item-tooltip .tt-desc   { color: var(--parchment-dark); font-style: italic; margin-top: 4px; font-size: 11px; line-height: 1.4; }
 .item-tooltip .tt-action { color: var(--gold-light); margin-top: 4px; font-size: 11px; }
 /* Slots du bas du paper-doll (wand/belt/trinket) → tooltip dessous */

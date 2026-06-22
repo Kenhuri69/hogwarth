@@ -483,6 +483,22 @@ Chaque lot est **livrable indépendamment** : la qualité perçue monte dès C1
     brut en combat. `node tests/smoke.js` 268 verts + cache-bump (style.css v57,
     inventory.js v29, `CACHE_VERSION` v225).
 
+- **2026-06-22 — M3 (Compare d'équipement au survol) : ✅ livré.**
+  - `js/ui-character-sheet.js` : helper pur `_equipCompareLines(item,
+    compareChar)` + 4ᵉ param optionnel `compareChar` sur `_renderItemTooltip`.
+    Pour un item ÉQUIPABLE du sac, calcule le delta de chaque bonus (ATK/DEF/
+    MAG/LCK/FOR/INT/AGI/END) vs l'item équipé dans le slot cible (`_resolveSlotForItem`,
+    gère ring1/ring2), affiché `+vert` / `−rouge` ; « slot libre » si vide,
+    « aucun gain de stat » si équivalent. `_renderInvSlot` passe `party[charIdx]`
+    → le diff n'apparaît que dans le sac de la **fiche** (par perso). Les autres
+    appelants (sac modale, paper-doll, boutique) n'envoient pas `compareChar` →
+    inchangés. Consommables/livres exclus.
+  - `css/style.css` : `.tt-compare` / `.tt-cmp-up|down|same|head`.
+  - Test : `scenarioEquipCompareTooltip` (inventory.js) — ATK +3 / MAG −1 vs
+    baguette équipée (couleurs hausse+baisse), DEF +3 sur slot libre,
+    consommable sans diff. `node tests/smoke.js` 269 verts + cache-bump
+    (style.css v58, ui-character-sheet.js v16, `CACHE_VERSION` v226).
+
 ---
 
 ## Recommandation de démarrage

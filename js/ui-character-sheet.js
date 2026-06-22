@@ -89,7 +89,9 @@ function _renderInvSlot(item, idx, charIdx) {
     ? `onclick="useItemFromChar(${idx}, ${charIdx})"`
     : '';
   const focusAttr = onclick ? 'tabindex="0"' : ''; // atteignable au clavier si cliquable
-  const tooltipHtml = _renderItemTooltip(item, null, `cliquer pour ${actionHint}`);
+  // M3 — mini-diff vs l'équipement courant du perso de la fiche (sac équipable).
+  const compareChar = (Number.isInteger(charIdx) && typeof party !== 'undefined') ? party[charIdx] : null;
+  const tooltipHtml = _renderItemTooltip(item, null, `cliquer pour ${actionHint}`, compareChar);
   const qty = (typeof _itemQty === 'function') ? _itemQty(item) : (item.qty || 1);
   const qtyBadge = qty > 1 ? `<span class="inv-qty-badge">×${qty}</span>` : '';
   return `<div class="inv-slot has-item ${rarityCls}" title="${titleAttr}" ${focusAttr} ${onclick}>${icon}${qtyBadge}${tooltipHtml}</div>`;
@@ -98,7 +100,43 @@ function _renderInvSlot(item, idx, charIdx) {
 // Tooltip riche affiché au hover sur un slot rempli (paper-doll OU sac).
 // Affiche : nom (coloré selon rareté), type/slot, bonus, regen, grantsSpell,
 // description, prix. Tout est calculé depuis les champs de l'item.
-function _renderItemTooltip(item, slotLabel, action) {
+// ── Mini-diff d'équipement (M3, polish UX) ───────────────────
+// Pour un item ÉQUIPABLE du sac, compare ses bonus à ceux de l'item
+// actuellement équipé dans le slot cible de `compareChar` et renvoie un bloc
+// de deltas (+vert / −rouge). Pur, défensif : '' si non équipable / pas de
+// personnage de référence.
+const _EQUIP_CMP_STATS = [
+  ['bonusAtk', 'ATK'], ['bonusDef', 'DEF'], ['bonusMag', 'MAG'], ['bonusLck', 'LCK'],
+  ['bonusStr', 'FOR'], ['bonusInt', 'INT'], ['bonusAgi', 'AGI'], ['bonusEnd', 'END'],
+];
+function _equipCompareLines(item, compareChar) {
+  if (!item || !compareChar || !compareChar.equipped) return '';
+  const equipable = ['wand', 'armor', 'acc'].includes(item.type) || !!item.slot;
+  if (!equipable || item.type === 'consumable' || item.type === 'spellbook') return '';
+  const slot = (typeof _resolveSlotForItem === 'function')
+    ? _resolveSlotForItem(item, compareChar)
+    : (item.slot || 'amulet');
+  const cur = compareChar.equipped[slot] || null;
+  const lines = [];
+  for (const [k, lbl] of _EQUIP_CMP_STATS) {
+    const d = (item[k] || 0) - (cur ? (cur[k] || 0) : 0);
+    if (d === 0) continue;
+    const cls = d > 0 ? 'tt-cmp-up' : 'tt-cmp-down';
+    lines.push(`<span class="${cls}">${lbl} ${d > 0 ? '+' : ''}${d}</span>`);
+  }
+  const slotName = EQUIP_SLOT_LABELS_MAP[slot] || slot;
+  const head = cur ? `vs ${cur.name}` : `${slotName} (libre)`;
+  if (!lines.length) {
+    // Slot occupé sans écart chiffré : signaler l'équivalence ; slot libre
+    // sans bonus : rien d'utile à montrer.
+    return cur
+      ? `<span class="tt-compare"><span class="tt-cmp-head">vs ${cur.name}</span><span class="tt-cmp-same">aucun gain de stat</span></span>`
+      : '';
+  }
+  return `<span class="tt-compare"><span class="tt-cmp-head">${head}</span>${lines.join('')}</span>`;
+}
+
+function _renderItemTooltip(item, slotLabel, action, compareChar) {
   if (!item) return '';
   const rarity = item.rarity || 'common';
   const rarityLabel = { common:'Commun', rare:'Rare', epic:'Épique', legendary:'Légendaire' }[rarity] || rarity;
@@ -160,6 +198,7 @@ function _renderItemTooltip(item, slotLabel, action) {
     : '';
 
   const bonusLines = premiumLine + bonuses.map(b => `<span class="tt-bonus">${b}</span>`).join('') + enchLine;
+  const compareLines = _equipCompareLines(item, compareChar);
   const desc = item.desc ? `<span class="tt-desc">${item.desc}</span>` : '';
   const actionLine = action ? `<span class="tt-action">→ ${action}</span>` : '';
 
@@ -167,6 +206,7 @@ function _renderItemTooltip(item, slotLabel, action) {
     <span class="tt-name">${item.name}</span>
     <span class="tt-rarity rarity-${rarity}">${rarityLabel}${slotName ? ' · ' + slotName : ''}</span>
     ${bonusLines}
+    ${compareLines}
     ${desc}
     ${actionLine}
   </div>`;
