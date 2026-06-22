@@ -35,7 +35,7 @@ aucun moteur neuf.
 4. [x] Bump cache : `npcs.js` v20, `npc-dialog.js` v14, `CACHE_VERSION` v80.
    `check_cache_versions.js` exit 0.
 5. [x] `units.js` (139) + `pwa-smoke.js` verts ; `smoke.js` en cours.
-6. [ ] Commit + push + PR (après smoke vert).
+6. [x] Commit + push + PR (après smoke vert).
 
 ## Journal
 - 2026-06-08 : branche créée post-merge #426 ; conception arrêtée.

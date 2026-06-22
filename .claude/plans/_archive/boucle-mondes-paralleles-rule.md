@@ -54,7 +54,7 @@ de la Boucle ne se propage** au visiteur. Aucune interaction *spéciale* conçue
 6. [x] Roadmap : marquer ✅ Fait (date) dans §1.3, §1.5 et table Phase 1.
    → verify : statut ✅ + date.
 7. [x] `node tools/check_doc_modules.js` reste vert (exit 0).
-8. [ ] Commit → push → PR → CI verte → squash-merge.
+8. [x] Commit → push → PR → CI verte → squash-merge.
 
 ## Garde-fous
 

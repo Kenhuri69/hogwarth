@@ -27,7 +27,7 @@
 5. [x] check_cache_versions + pwa-smoke + check_doc_modules verts.
 6. [x] smoke `bark boss combat` (13 scénarios) vert.
 7. [x] Doc : 11 §11.9.2 ✅ + roadmap Phase 3 row ✅.
-8. [ ] Commit → push → PR → CI verte → squash-merge.
+8. [x] Commit → push → PR → CI verte → squash-merge.
 
 ## Garde-fous
 

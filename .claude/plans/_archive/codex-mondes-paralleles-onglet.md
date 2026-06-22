@@ -31,7 +31,7 @@ Glossaire (+ Objets pour le Set Voyageur), pas de 8ᵉ onglet. → pas d'AskUser
 3. [x] 12 « Points à trancher » (l.759-760) : item 1 `❓`→`✅`.
 4. [x] Roadmap §1.3 : ligne « Codex ↔ Mondes Parallèles » → ✅ Résolu (date).
 5. [x] `node tools/check_doc_modules.js` reste vert (exit 0). **OK.**
-6. [ ] Commit → push → PR → CI verte → squash-merge.
+6. [x] Commit → push → PR → CI verte → squash-merge.
 
 ## Garde-fous
 

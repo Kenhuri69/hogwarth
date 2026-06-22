@@ -34,7 +34,7 @@ Suit la skill `add-playable-character` + règle normative `docs/histoire/05-pers
 7. [x] `docs/histoire/05-personnages-jouables.md` — table §5.0, §5.0.1, profils §5.2, recap (13→15)
 8. [x] Cache PWA — bump `?v` data.js/renderer-entities.js/hero-barks.js/audio-sfx.js + `CACHE_VERSION` 126→127
 9. [x] `node tests/units.js` (555 ✅), `node tests/smoke.js` (212 ✅), `node tests/pwa-smoke.js` ✅, check_cache_versions ✅
-10. [ ] Commit + push branche `claude/new-players-serpentard-guard-rts955`
+10. [x] Commit + push branche `claude/new-players-serpentard-guard-rts955`
 
 ## Écarts / notes
 - **Compteurs héros 13→15 disséminés** : au-delà de la skill, 4 assertions de tests

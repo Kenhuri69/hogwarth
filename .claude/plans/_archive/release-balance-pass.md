@@ -29,7 +29,7 @@ baseline + fiabiliser le gate.**
    legacy↔rework, §7 floor-run) = instantanés antérieurs, non re-simulés.
 5. [x] Gate strict local (`--base origin/master`) vert + `check_doc_modules` vert.
 6. [x] Roadmap Phase 4 ligne « Pass d'équilibrage » close (2026-06-19).
-7. [ ] Commit + push + PR ; doc-only (DIFFICULTY_REPORT.md) → pas de cache-bump,
+7. [x] Commit + push + PR ; doc-only (DIFFICULTY_REPORT.md) → pas de cache-bump,
    smoke non requis (§7/§8). CI « Smoke + PWA » doit être verte (gate inclus).
 
 ## Hors-scope (signalé)

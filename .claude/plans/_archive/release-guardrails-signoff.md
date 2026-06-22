@@ -26,7 +26,7 @@ les PR #576/#577/#578.
 2. [x] Roadmap : ligne « Garde-fous release » close + **sign-off release** daté
    (Phases 3 & 4 closes ; restent uniquement des tâches d'art séparées :
    PNG boss-gardiens, pass d'assets de fin, impl. biais Maison V2).
-3. [ ] Commit + push + PR ; doc-only → pas de cache-bump, smoke non requis
+3. [x] Commit + push + PR ; doc-only → pas de cache-bump, smoke non requis
    (§7/§8 ; mais la CI les ré-exécute de toute façon).
 
 ## Note

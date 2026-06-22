@@ -29,7 +29,7 @@ contient déjà l'étage 1).
    (gate victoire, one-shot, sérialisation) — vert.
 6. [x] Cache-bump (state32 floor-ambiance10 save37 loader43 ; CACHE_VERSION v124).
 7. [x] Docs : Ch.14 §14.3.2 (💡→✅) + Points à trancher #2 (tranché).
-8. [ ] Commit + push + PR + merge.
+8. [x] Commit + push + PR + merge.
 
 ## Suivi / écarts
 - Réutilisation totale du système de beats existant (aucun nouvel overlay/modal) :

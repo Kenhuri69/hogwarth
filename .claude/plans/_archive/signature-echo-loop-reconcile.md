@@ -26,7 +26,7 @@ done/undone/pact/defiance, gating floor). `units` 682 verts.
    /echo_signature/units).
 2. [x] Roadmap Phase 3 : ligne « Suites de signature en Boucle » → ✅ Fait.
 3. [x] `node tools/check_doc_modules.js` exit 0.
-4. [ ] Commit → push → PR → CI verte → squash-merge.
+4. [x] Commit → push → PR → CI verte → squash-merge.
 
 ## Garde-fous
 
