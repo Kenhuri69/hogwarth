@@ -201,6 +201,16 @@ if (typeof document !== 'undefined') {
 // Ouvre la modale Réglages (son, voyageur, partie). Resynchronise au
 // passage les icônes des boutons audio + accueil pour refléter l'état
 // courant (utile après un chargement de save).
+// Accordéon des Réglages (M5) — plie/déplie une section. Réutilise la mécanique
+// `.collapsed` de la fiche perso ; la règle CSS de masquage est scopée ≤700px
+// (desktop : tout reste visible, le clic ne fait que basculer un attribut inerte).
+function _toggleSettingsSection(label) {
+  const section = (label && label.closest) ? label.closest('.settings-section') : null;
+  if (!section) return;
+  const collapsed = section.classList.toggle('collapsed');
+  label.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+}
+
 function openSettingsModal() {
   if (typeof AudioSystem !== 'undefined' && AudioSystem.refreshButtons) {
     AudioSystem.refreshButtons();

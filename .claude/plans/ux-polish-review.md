@@ -518,6 +518,26 @@ Chaque lot est **livrable indépendamment** : la qualité perçue monte dès C1
     `node tests/smoke.js` 269 verts + cache-bump (style.css v59,
     inventory-spells.js v13, main.js v36, `CACHE_VERSION` v227).
 
+- **2026-06-22 — M5 (Sectionner Settings) : ✅ livré.**
+  - `index.html` : les 5 groupes de `#settings-modal` (Son / Voyageur / Partie /
+    Affichage / Touches) sont enveloppés dans des `.settings-section`, le label
+    devenant un en-tête `role=button` (clavier Entrée/Espace + `aria-expanded`).
+  - `js/ui-settings.js` : `_toggleSettingsSection(label)` bascule `.collapsed`
+    sur la section + met à jour `aria-expanded` (réutilise la mécanique
+    `.collapsed` de la fiche).
+  - `css/style.css` : règle de masquage + caret **scopée ≤700px**
+    (`#settings-modal .settings-section.collapsed > *:not(.settings-section-label)`)
+    → **desktop inchangé** (tout visible), mobile repliable (cible ≥44px,
+    label toujours visible). Marge inter-sections ajustée (labels désormais
+    nichés).
+  - Test : `scenarioSettingsAccordion` (controls.js) — 5 sections + libellés,
+    keybind-list dans une section, boutons existants préservés, toggle =
+    `.collapsed`+aria, contenu visible en desktop, re-toggle redéplie. Vérif
+    manuelle mobile (contenu masqué, label conservé). `node tests/smoke.js`
+    270 verts + cache-bump (style.css v60, ui-settings.js v7, `CACHE_VERSION`
+    v228). **Phase Moyenne (M1-M5) terminée — les 12 lots du chantier sont
+    livrés.**
+
 ---
 
 ## Recommandation de démarrage
