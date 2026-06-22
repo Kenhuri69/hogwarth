@@ -21,7 +21,7 @@
 <meta name="twitter:title" content="Poudlard & Magie : Les Secrets de Poudlard">
 <meta name="twitter:description" content="RPG dungeon-crawler en tour par tour dans l'univers de Poudlard, jouable dans le navigateur.">
 <meta name="twitter:image" content="https://kenhuri69.github.io/hogwarth/img/scenes/title.jpg">
-<link rel="stylesheet" href="css/style.css?v=59">
+<link rel="stylesheet" href="css/style.css?v=60">
 <link rel="stylesheet" href="css/ux-improvements.css?v=5">
 <link rel="stylesheet" href="css/save-ui.css?v=5">
 <link rel="stylesheet" href="css/ornaments.css?v=1">
@@ -852,44 +852,54 @@
     <div class="modal-title" id="settings-modal-title"><img class="ui-icon ui-icon-xl" src="img/icons/gear.png" alt=""> Réglages</div>
     <span class="modal-close" onclick="closeModal('settings-modal')" role="button" title="Fermer (Échap)" aria-label="Fermer (Échap)" tabindex="0">✕</span>
 
-    <div class="settings-section-label">Son</div>
-    <div class="settings-grid">
-      <button id="btn-music" class="cmd-btn" data-group="audio" onclick="AudioSystem.toggleMute()" title="Musique On/Off"><span class="btn-icon"><img src="img/icons/music_on.png" alt="Musique"></span><span class="btn-label">Musique</span></button>
-      <button id="btn-voice" class="cmd-btn" data-group="audio" onclick="AudioSystem.toggleVoice()" title="Voix des sorts On/Off"><span class="btn-icon"><img src="img/icons/voice_on.png" alt="Voix"></span><span class="btn-label">Voix</span></button>
-      <button id="btn-barks" class="cmd-btn" data-group="audio" onclick="toggleBarks()" title="Voix des héros On/Off"><span class="btn-icon">💬</span><span class="btn-label">Héros</span></button>
+    <div class="settings-section">
+      <div class="settings-section-label" role="button" tabindex="0" aria-expanded="true" onclick="_toggleSettingsSection(this)" onkeydown="if(event.key==='Enter'||event.key===' '){this.click();event.preventDefault();}">Son</div>
+      <div class="settings-grid">
+        <button id="btn-music" class="cmd-btn" data-group="audio" onclick="AudioSystem.toggleMute()" title="Musique On/Off"><span class="btn-icon"><img src="img/icons/music_on.png" alt="Musique"></span><span class="btn-label">Musique</span></button>
+        <button id="btn-voice" class="cmd-btn" data-group="audio" onclick="AudioSystem.toggleVoice()" title="Voix des sorts On/Off"><span class="btn-icon"><img src="img/icons/voice_on.png" alt="Voix"></span><span class="btn-label">Voix</span></button>
+        <button id="btn-barks" class="cmd-btn" data-group="audio" onclick="toggleBarks()" title="Voix des héros On/Off"><span class="btn-icon">💬</span><span class="btn-label">Héros</span></button>
+      </div>
     </div>
 
-    <div class="settings-section-label">Voyageur</div>
-    <div class="settings-grid">
-      <button id="btn-visits" class="cmd-btn" data-group="audio" onclick="toggleVisitsClosed()" title="Accueil des voyageurs"><span class="btn-icon"><img src="img/icons/door.png" alt="Portes"></span><span class="btn-label">Portes</span></button>
-      <button id="btn-atelier" class="cmd-btn" data-group="audio" onclick="openAtelierVoyageur()" title="Atelier du Voyageur"><span class="btn-icon"><img src="img/icons/atelier.png" alt="Atelier"></span><span class="btn-label">Atelier</span></button>
+    <div class="settings-section">
+      <div class="settings-section-label" role="button" tabindex="0" aria-expanded="true" onclick="_toggleSettingsSection(this)" onkeydown="if(event.key==='Enter'||event.key===' '){this.click();event.preventDefault();}">Voyageur</div>
+      <div class="settings-grid">
+        <button id="btn-visits" class="cmd-btn" data-group="audio" onclick="toggleVisitsClosed()" title="Accueil des voyageurs"><span class="btn-icon"><img src="img/icons/door.png" alt="Portes"></span><span class="btn-label">Portes</span></button>
+        <button id="btn-atelier" class="cmd-btn" data-group="audio" onclick="openAtelierVoyageur()" title="Atelier du Voyageur"><span class="btn-icon"><img src="img/icons/atelier.png" alt="Atelier"></span><span class="btn-label">Atelier</span></button>
+      </div>
     </div>
 
-    <div class="settings-section-label">Partie</div>
-    <div class="settings-grid">
-      <button class="cmd-btn" data-group="system" onclick="openSaveDialog()" title="Sauvegarder la partie"><span class="btn-icon"><img src="img/icons/save.png" alt="Sauver"></span><span class="btn-label">Sauver</span></button>
-      <button class="cmd-btn" data-group="system" onclick="openLoadDialog()" title="Charger une sauvegarde"><span class="btn-icon"><img src="img/icons/load.png" alt="Charger"></span><span class="btn-label">Charger</span></button>
-      <button class="cmd-btn" data-group="system" onclick="changeDifficulty()" title="Changer la difficulté"><span class="btn-icon"><img src="img/icons/gear.png" alt="Diff."></span><span class="btn-label">Diff.</span></button>
-      <button class="cmd-btn" data-group="system" onclick="openHelpMenu()" title="Aide / Tutoriel"><span class="btn-icon"><img src="img/icons/spellbook.png" alt="Aide"></span><span class="btn-label">Aide</span></button>
+    <div class="settings-section">
+      <div class="settings-section-label" role="button" tabindex="0" aria-expanded="true" onclick="_toggleSettingsSection(this)" onkeydown="if(event.key==='Enter'||event.key===' '){this.click();event.preventDefault();}">Partie</div>
+      <div class="settings-grid">
+        <button class="cmd-btn" data-group="system" onclick="openSaveDialog()" title="Sauvegarder la partie"><span class="btn-icon"><img src="img/icons/save.png" alt="Sauver"></span><span class="btn-label">Sauver</span></button>
+        <button class="cmd-btn" data-group="system" onclick="openLoadDialog()" title="Charger une sauvegarde"><span class="btn-icon"><img src="img/icons/load.png" alt="Charger"></span><span class="btn-label">Charger</span></button>
+        <button class="cmd-btn" data-group="system" onclick="changeDifficulty()" title="Changer la difficulté"><span class="btn-icon"><img src="img/icons/gear.png" alt="Diff."></span><span class="btn-label">Diff.</span></button>
+        <button class="cmd-btn" data-group="system" onclick="openHelpMenu()" title="Aide / Tutoriel"><span class="btn-icon"><img src="img/icons/spellbook.png" alt="Aide"></span><span class="btn-label">Aide</span></button>
+      </div>
     </div>
 
-    <div class="settings-section-label">Affichage</div>
-    <div class="settings-grid" id="ui-fontscale-group" role="group" aria-label="Taille du texte des fenêtres">
-      <button id="btn-fontscale-small" class="cmd-btn" data-group="display" onclick="setUiFontScale('small')" title="Texte plus petit"><span class="btn-icon">A<small>−</small></span><span class="btn-label">Petit</span></button>
-      <button id="btn-fontscale-normal" class="cmd-btn" data-group="display" onclick="setUiFontScale('normal')" title="Taille normale"><span class="btn-icon">A</span><span class="btn-label">Normal</span></button>
-      <button id="btn-fontscale-large" class="cmd-btn" data-group="display" onclick="setUiFontScale('large')" title="Texte plus grand"><span class="btn-icon">A<small>＋</small></span><span class="btn-label">Grand</span></button>
-    </div>
-    <div class="settings-grid">
-      <button id="btn-contrast" class="cmd-btn" data-group="display" onclick="toggleHighContrast()" title="Contraste élevé On/Off" aria-pressed="false"><span class="btn-icon">◐</span><span class="btn-label">Contraste</span></button>
-    </div>
-    <div class="settings-grid" id="ui-feedback-group" role="group" aria-label="Intensité des effets visuels">
-      <button id="btn-feedback-full" class="cmd-btn" data-group="display" onclick="setUiFeedbackLevel('full')" title="Effets visuels complets"><span class="btn-icon">✨</span><span class="btn-label">Plein</span></button>
-      <button id="btn-feedback-sober" class="cmd-btn" data-group="display" onclick="setUiFeedbackLevel('sober')" title="Effets visuels réduits (sans particules)"><span class="btn-icon">🌙</span><span class="btn-label">Sobre</span></button>
-      <button id="btn-feedback-minimal" class="cmd-btn" data-group="display" onclick="setUiFeedbackLevel('minimal')" title="Effets minimaux (force le mode mouvement réduit)"><span class="btn-icon">○</span><span class="btn-label">Minimal</span></button>
+    <div class="settings-section">
+      <div class="settings-section-label" role="button" tabindex="0" aria-expanded="true" onclick="_toggleSettingsSection(this)" onkeydown="if(event.key==='Enter'||event.key===' '){this.click();event.preventDefault();}">Affichage</div>
+      <div class="settings-grid" id="ui-fontscale-group" role="group" aria-label="Taille du texte des fenêtres">
+        <button id="btn-fontscale-small" class="cmd-btn" data-group="display" onclick="setUiFontScale('small')" title="Texte plus petit"><span class="btn-icon">A<small>−</small></span><span class="btn-label">Petit</span></button>
+        <button id="btn-fontscale-normal" class="cmd-btn" data-group="display" onclick="setUiFontScale('normal')" title="Taille normale"><span class="btn-icon">A</span><span class="btn-label">Normal</span></button>
+        <button id="btn-fontscale-large" class="cmd-btn" data-group="display" onclick="setUiFontScale('large')" title="Texte plus grand"><span class="btn-icon">A<small>＋</small></span><span class="btn-label">Grand</span></button>
+      </div>
+      <div class="settings-grid">
+        <button id="btn-contrast" class="cmd-btn" data-group="display" onclick="toggleHighContrast()" title="Contraste élevé On/Off" aria-pressed="false"><span class="btn-icon">◐</span><span class="btn-label">Contraste</span></button>
+      </div>
+      <div class="settings-grid" id="ui-feedback-group" role="group" aria-label="Intensité des effets visuels">
+        <button id="btn-feedback-full" class="cmd-btn" data-group="display" onclick="setUiFeedbackLevel('full')" title="Effets visuels complets"><span class="btn-icon">✨</span><span class="btn-label">Plein</span></button>
+        <button id="btn-feedback-sober" class="cmd-btn" data-group="display" onclick="setUiFeedbackLevel('sober')" title="Effets visuels réduits (sans particules)"><span class="btn-icon">🌙</span><span class="btn-label">Sobre</span></button>
+        <button id="btn-feedback-minimal" class="cmd-btn" data-group="display" onclick="setUiFeedbackLevel('minimal')" title="Effets minimaux (force le mode mouvement réduit)"><span class="btn-icon">○</span><span class="btn-label">Minimal</span></button>
+      </div>
     </div>
 
-    <div class="settings-section-label">Touches</div>
-    <div id="keybind-list" class="keybind-list"></div>
+    <div class="settings-section">
+      <div class="settings-section-label" role="button" tabindex="0" aria-expanded="true" onclick="_toggleSettingsSection(this)" onkeydown="if(event.key==='Enter'||event.key===' '){this.click();event.preventDefault();}">Touches</div>
+      <div id="keybind-list" class="keybind-list"></div>
+    </div>
   </div>
 </div>
 
@@ -1389,7 +1399,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="js/ui.js?v=25"></script>
 <script defer src="js/modal-a11y.js?v=2"></script>
 <script defer src="js/ui-character-sheet.js?v=16"></script>
-<script defer src="js/ui-settings.js?v=6"></script>
+<script defer src="js/ui-settings.js?v=7"></script>
 <script defer src="js/keybindings.js?v=1"></script>
 <script defer src="js/ui-bestiary.js?v=7"></script>
 <script defer src="js/ui-codex.js?v=11"></script>

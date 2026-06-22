@@ -1317,4 +1317,60 @@ async function scenarioUiFeedbackLevel() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioMobileSelect, scenarioCombatMobile, scenarioRelativeControls, scenarioCanvasSwipe, scenarioCameraPresence, scenarioCombatKeyboard, scenarioConfirmModal, scenarioA11yFinish, scenarioModalIsolation, scenarioGridKeyboardNav, scenarioGridArrowNav, scenarioGridKeyboardNavExtended, scenarioSpellFilterKeyboard, scenarioKeybindings, scenarioUiAccessibilityPrefs, scenarioUiFeedbackLevel] };
+// M5 (polish UX) — Réglages en accordéon : chaque groupe est une section
+// pliable (desktop : tout visible ; ≤700px : repliable via le label).
+async function scenarioSettingsAccordion() {
+  console.log('\n── Scénario : Réglages en accordéon (M5) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 (desktop) : 5 sections, labels attendus, keybind-list dans une section.
+  const t1 = await page.evaluate(() => {
+    openSettingsModal();
+    const secs   = document.querySelectorAll('#settings-modal .settings-section');
+    const labels = [...document.querySelectorAll('#settings-modal .settings-section-label')].map(l => l.textContent.trim());
+    const kb     = document.getElementById('keybind-list');
+    return {
+      count: secs.length, labels,
+      kbInSection: !!(kb && kb.closest('.settings-section')),
+      btnsResolved: !!document.getElementById('btn-music') && !!document.getElementById('btn-feedback-full'),
+    };
+  });
+  console.log('  T1:', t1);
+  assert(t1.count === 5, '5 sections de réglages attendues');
+  assert(JSON.stringify(t1.labels) === JSON.stringify(['Son', 'Voyageur', 'Partie', 'Affichage', 'Touches']),
+    'libellés de sections inattendus');
+  assert(t1.kbInSection, 'la liste des touches doit vivre dans une section');
+  assert(t1.btnsResolved, 'les boutons existants (audio/affichage) doivent rester présents');
+
+  // T2 : toggle → classe .collapsed + aria-expanded basculés ; desktop garde
+  //      le contenu visible (règle de masquage scopée ≤700px).
+  const t2 = await page.evaluate(() => {
+    const first = document.querySelector('#settings-modal .settings-section');
+    const lbl   = first.querySelector('.settings-section-label');
+    const grid  = first.querySelector('.settings-grid');
+    _toggleSettingsSection(lbl);
+    const out = {
+      collapsed: first.classList.contains('collapsed'),
+      aria: lbl.getAttribute('aria-expanded'),
+      gridVisibleDesktop: getComputedStyle(grid).display !== 'none',
+    };
+    _toggleSettingsSection(lbl);   // re-déplie
+    out.reExpanded = !first.classList.contains('collapsed') && lbl.getAttribute('aria-expanded') === 'true';
+    return out;
+  });
+  console.log('  T2:', t2);
+  assert(t2.collapsed,          'le toggle doit ajouter .collapsed');
+  assert(t2.aria === 'false',   'aria-expanded doit passer à false une fois replié');
+  assert(t2.gridVisibleDesktop, 'en desktop le contenu reste visible (masquage scopé mobile)');
+  assert(t2.reExpanded,         're-toggle doit déplier et remettre aria-expanded=true');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (réglages accordéon)`);
+  }
+  console.log('  ✅ Réglages en accordéon conformes');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioMobileSelect, scenarioCombatMobile, scenarioRelativeControls, scenarioCanvasSwipe, scenarioCameraPresence, scenarioCombatKeyboard, scenarioConfirmModal, scenarioA11yFinish, scenarioModalIsolation, scenarioGridKeyboardNav, scenarioGridArrowNav, scenarioGridKeyboardNavExtended, scenarioSpellFilterKeyboard, scenarioKeybindings, scenarioUiAccessibilityPrefs, scenarioUiFeedbackLevel, scenarioSettingsAccordion] };
