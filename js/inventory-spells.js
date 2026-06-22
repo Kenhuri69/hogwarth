@@ -604,6 +604,10 @@ function openBattleSpells() {
       ${c.icon} SORTS DE ${c.name.toUpperCase().split(' ')[0]}
     </div>` + _spellFilterBarHtml(c.spells, 'battle', 0);
 
+  // M4 — compteur de raccourcis 1-9 attribués aux sorts lançables (dans
+  // l'ordre d'affichage). Un badge numéroté est posé sur chaque sort lançable.
+  let _hotkeyN = 0;
+
   for (const sName of c.spells) {
     const baseSp = SPELLS.find(s => s.name === sName);
     // P3 — forme effective (évolution réversible) ; P1 — surcharge signature.
@@ -653,6 +657,17 @@ function openBattleSpells() {
 
     if (canCast) {
       div.tabIndex = 0; // sort lançable atteignable au clavier
+      // M4 — raccourci numérique 1-9 (badge + data-hotkey, consommé par le
+      // handler keydown de main.js quand la modale est ouverte en combat).
+      _hotkeyN++;
+      if (_hotkeyN <= 9) {
+        div.dataset.hotkey = String(_hotkeyN);
+        const kb = document.createElement('span');
+        kb.className = 'spell-hotkey';
+        kb.textContent = String(_hotkeyN);
+        kb.setAttribute('aria-hidden', 'true');
+        div.appendChild(kb);
+      }
       div.onclick = () => {
         closeModal('spell-modal');
         // Portus gère son propre flow (overlay A/B) — court-circuite la

@@ -2674,8 +2674,19 @@ body {
   padding: 8px 12px;
   display: flex; align-items: center; gap: 10px;
   cursor: pointer; transition: all 0.2s;
+  position: relative;
 }
 .spell-item:hover { border-color: var(--gold-dark); background: #120a03; }
+/* M4 — pastille de raccourci numérique (combat), posée sur les sorts lançables. */
+.spell-item .spell-hotkey {
+  position: absolute; top: 4px; right: 6px;
+  min-width: 15px; height: 15px; padding: 0 3px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: 'Cinzel', serif; font-size: 9px; font-weight: 700; line-height: 1;
+  color: var(--gold-light);
+  background: rgba(20,12,4,0.9); border: 1px solid var(--house-accent);
+  border-radius: 8px;
+}
 .spell-icon { font-size: 24px; }
 .spell-info { flex: 1; }
 .spell-name { font-family: 'Cinzel', serif; font-size: 13px; color: var(--gold-light); }

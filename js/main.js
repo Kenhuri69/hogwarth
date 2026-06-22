@@ -799,8 +799,19 @@ document.addEventListener('keydown',e=>{
       }
       return;
     }
-    // Ne pas agir derrière une sous-modale de combat (sorts / objets).
-    const subOpen = ['spell-modal', 'inventory-modal'].some(id => {
+    // Sous-modale de SORTS ouverte (M4) → 1-9 lance le Nème sort lançable
+    // (badge data-hotkey posé par openBattleSpells sur les seuls sorts castables).
+    const spellModal = document.getElementById('spell-modal');
+    if (spellModal && spellModal.style.display !== 'none') {
+      if (k >= '1' && k <= '9') {
+        const items = document.querySelectorAll('#spell-list .spell-item[data-hotkey]');
+        const i = parseInt(k, 10) - 1;
+        if (items[i]) { items[i].click(); e.preventDefault(); }
+      }
+      return;
+    }
+    // Ne pas agir derrière une sous-modale de combat (objets).
+    const subOpen = ['inventory-modal'].some(id => {
       const el = document.getElementById(id);
       return el && el.style.display !== 'none';
     });

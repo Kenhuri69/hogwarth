@@ -639,11 +639,41 @@ async function scenarioCombatKeyboard() {
   assert(hit.hidden,    'la sélection doit se fermer après le choix clavier');
   assert(hit.hp < hp0,  `la cible 1 doit subir des dégâts (avant ${hp0}, après ${hit.hp})`);
 
+  // 2d) M4 — raccourcis numériques de SORTS : openBattleSpells pose un badge
+  //     data-hotkey sur chaque sort lançable ; la touche 1 lance le 1ᵉ.
+  const spellHotkeys = await page.evaluate(() => {
+    party[currentBattleChar].sp = party[currentBattleChar].spMax;
+    openBattleSpells();
+    const withHotkey = [...document.querySelectorAll('#spell-list .spell-item[data-hotkey]')];
+    const badges = [...document.querySelectorAll('#spell-list .spell-hotkey')].map(b => b.textContent);
+    // Espionne les deux issues possibles du clic sur le 1ᵉ sort : lancement
+    // direct (1 cible) OU ouverture de la sélection de cible (plusieurs cibles).
+    let casted = null;
+    const origCast = window.castSpellInBattle;
+    const origSel  = window.showTargetSelection;
+    let targetOpened = false;
+    window.castSpellInBattle   = (name) => { casted = name; };
+    window.showTargetSelection = () => { targetOpened = true; };
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: '1', bubbles: true }));
+    window.castSpellInBattle   = origCast;
+    window.showTargetSelection = origSel;
+    return {
+      hotkeyCount: withHotkey.length,
+      firstBadge: badges[0],
+      modalClosed: getComputedStyle(document.getElementById('spell-modal')).display === 'none',
+      activated: casted !== null || targetOpened
+    };
+  });
+  assert(spellHotkeys.hotkeyCount >= 1, 'au moins un sort lançable doit porter un raccourci');
+  assert(spellHotkeys.firstBadge === '1', 'le 1ᵉ sort lançable doit porter le badge « 1 »');
+  assert(spellHotkeys.modalClosed, 'la touche 1 doit refermer la modale de sorts');
+  assert(spellHotkeys.activated, 'la touche 1 doit activer le 1ᵉ sort (lancement ou sélection de cible)');
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées (clavier combat)`);
   }
-  console.log('  ✅ Ergonomie clavier (Échap modale + raccourcis combat + ciblage) OK');
+  console.log('  ✅ Ergonomie clavier (Échap modale + raccourcis combat + ciblage + sorts 1-9) OK');
   await browser.close();
 }
 

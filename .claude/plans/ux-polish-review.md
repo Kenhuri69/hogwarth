@@ -499,6 +499,25 @@ Chaque lot est **livrable indépendamment** : la qualité perçue monte dès C1
     consommable sans diff. `node tests/smoke.js` 269 verts + cache-bump
     (style.css v58, ui-character-sheet.js v16, `CACHE_VERSION` v226).
 
+- **2026-06-22 — M4 (Hotkeys 1-4 sorts/cibles en combat) : ✅ livré.**
+  - **Cibles déjà couvertes** : la sélection de cible affiche `« N. … »` et les
+    touches 1-9 cliquent la cible (main.js, préexistant). M4 ajoute le volet
+    **sorts**.
+  - `js/inventory-spells.js` : `openBattleSpells` numérote les sorts **lançables**
+    (compteur `_hotkeyN`) → `data-hotkey` + pastille `.spell-hotkey` (1-9).
+  - `js/main.js` : dans le handler keydown en combat, quand `#spell-modal` est
+    ouvert, 1-9 clique le Nème `.spell-item[data-hotkey]` (les sorts non
+    lançables sont sautés → la numérotation suit l'actionnable). Le bloc est
+    placé avant le `return` des sous-modales ; hors combat (`openSpells`),
+    aucun badge n'est posé et les chiffres ne déclenchent rien.
+  - `css/style.css` : `.spell-hotkey` (pastille coin haut-droit, bord teinté
+    Maison).
+  - Test : `scenarioCombatKeyboard` (controls.js) étendu — badges sur les sorts
+    lançables, badge « 1 » sur le 1ᵉ, touche 1 referme la modale et active le
+    sort (lancement direct OU sélection de cible selon le nombre d'ennemis).
+    `node tests/smoke.js` 269 verts + cache-bump (style.css v59,
+    inventory-spells.js v13, main.js v36, `CACHE_VERSION` v227).
+
 ---
 
 ## Recommandation de démarrage
