@@ -15,8 +15,15 @@ encore des cases `[ ]`. Suite de la convention `plans-archiving-workflow.md`.
     spécifiée » = cadre de spec non implémenté ; gardé actif par l'ancien
     workflow). → **30 archivés**.
 - **Ouverts (laissés)** : tout plan avec ≥1 case `[ ]` (ex. doc-status-banners,
-  ch13-impl-*, code-review-improvements, audit-polish-rc, ux-polish-review,
+  code-review-improvements, audit-polish-rc, ux-polish-review,
   parallel-worlds, founder-chamber-guardians, etc.).
+
+> **Suivi 2 (2026-06-22, demande « go ch13-impl-* ») :** les 4 `ch13-impl-*`
+> (p1/p2-xp-loop/p3-refuges/p4-logger) n'avaient qu'une case ouverte — le
+> « Commit + push » final, factuellement accompli (livrés & mergés : P2
+> `LOOP_PASSIVE_XP_FRAC`, P3 `drawRefugeSprite`, P4 #629 `balance-log.js`).
+> Case cochée (reflet du réel) → **4 archivés**. Lien `ch13-equilibre.md`
+> (resté actif) repointé vers `_archive/`.
 - **Sans cases (`0/0`, non trackés)** : ~27 docs de spec/référence/prompts
   (combat-system-synthesis, spells-magic-system, nano-banana-prompts-*,
   reliquats-backlog…). **Non archivés** : pas d'étapes à évaluer → décision
