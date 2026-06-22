@@ -100,6 +100,85 @@ async function scenarioPartyEquipRow() {
   await browser.close();
 }
 
+// H2 (polish UX) — extension de couverture des tooltips riches (boutons
+// d'action de combat) + déclenchement par appui long tactile.
+async function scenarioRichTooltipCoverage() {
+  console.log('\n── Scénario : tooltips riches — couverture combat + tactile (H2) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : survol souris d'un bouton d'action de combat → tooltip riche décrivant
+  //      l'action + la touche clavier (texte statique, hors combat suffisant).
+  const t1 = await page.evaluate(async () => {
+    const btn = document.querySelector('.battle-actions .cmd-btn[onclick*="attack"]');
+    const r = btn.getBoundingClientRect();
+    btn.dispatchEvent(new MouseEvent('mouseover', {
+      bubbles: true, cancelable: true,
+      clientX: r.left + r.width / 2, clientY: r.top + r.height / 2
+    }));
+    await new Promise(res => setTimeout(res, 60));
+    const tt = document.getElementById('ux-tooltip');
+    return tt && tt.classList.contains('visible') ? tt.innerHTML : null;
+  });
+  console.log('  T1 hover action btn:', { shown: !!t1 });
+  assert(t1, 'survol d\'un bouton d\'action doit montrer un tooltip riche');
+  assert(/Attaquer/.test(t1 || ''), 'le tooltip doit nommer l\'action (Attaquer)');
+  assert(/touche A/.test(t1 || ''), 'le tooltip doit rappeler la touche clavier');
+
+  // T2 : appui long tactile (~450 ms) sur le bouton Garde → tooltip affiché,
+  //      et le clic synthétique qui suit est supprimé (pas d'action déclenchée).
+  const t2 = await page.evaluate(async () => {
+    const btn = document.querySelector('.battle-actions .cmd-btn[onclick*="guard"]');
+    const r = btn.getBoundingClientRect();
+    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    const t = new Touch({ identifier: 1, target: btn, clientX: cx, clientY: cy });
+    btn.dispatchEvent(new TouchEvent('touchstart', {
+      bubbles: true, cancelable: true, touches: [t], targetTouches: [t], changedTouches: [t]
+    }));
+    await new Promise(res => setTimeout(res, 550));
+    const tt = document.getElementById('ux-tooltip');
+    const shown = !!(tt && tt.classList.contains('visible'));
+    const html = shown ? tt.innerHTML : '';
+    // Le clic synthétique post-appui-long doit être neutralisé.
+    let actionFired = false;
+    const orig = window.battleAction;
+    window.battleAction = () => { actionFired = true; };
+    btn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    window.battleAction = orig;
+    return { shown, html, actionFired };
+  });
+  console.log('  T2 long-press tactile:', { shown: t2.shown, actionFired: t2.actionFired });
+  assert(t2.shown, 'l\'appui long tactile doit afficher le tooltip riche');
+  assert(/Garde/.test(t2.html || ''), 'le tooltip tactile doit nommer l\'action (Garde)');
+  assert(t2.actionFired === false, 'le clic suivant un appui long ne doit PAS déclencher l\'action');
+
+  // T3 : un tap court (touchstart + touchend rapide) NE supprime PAS le clic.
+  const t3 = await page.evaluate(async () => {
+    const btn = document.querySelector('.battle-actions .cmd-btn[onclick*="spell"]');
+    const r = btn.getBoundingClientRect();
+    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    const t = new Touch({ identifier: 1, target: btn, clientX: cx, clientY: cy });
+    btn.dispatchEvent(new TouchEvent('touchstart', { bubbles: true, cancelable: true, touches: [t], targetTouches: [t], changedTouches: [t] }));
+    await new Promise(res => setTimeout(res, 80));
+    btn.dispatchEvent(new TouchEvent('touchend', { bubbles: true, cancelable: true, touches: [], targetTouches: [], changedTouches: [t] }));
+    let actionFired = false;
+    const orig = window.battleAction;
+    window.battleAction = () => { actionFired = true; };
+    btn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    window.battleAction = orig;
+    return { actionFired };
+  });
+  console.log('  T3 tap court:', t3);
+  assert(t3.actionFired === true, 'un tap court doit laisser passer le clic (action déclenchée)');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (tooltips H2)`);
+  }
+  console.log('  ✅ Couverture tooltips combat + appui long tactile OK');
+  await browser.close();
+}
+
 async function scenarioTryAddItem() {
   console.log('\n── Scénario 13b : tryAddItem ──');
   const { browser, page, errors } = await launchGame();
@@ -1315,4 +1394,4 @@ async function scenarioForgeEnchant() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioPartyEquipRow, scenarioTryAddItem, scenarioConsumableStacking, scenarioEquipmentAndStatusIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioEquipmentPhase3bQuests, scenarioCritDodgeFromEquip, scenarioDeathlyHallows, scenarioVoiceRelics, scenarioShopLimits, scenarioRefusalFeedback, scenarioForgeDissolve, scenarioForgeEnchant] };
+module.exports = { scenarios: [scenarioPartyEquipRow, scenarioRichTooltipCoverage, scenarioTryAddItem, scenarioConsumableStacking, scenarioEquipmentAndStatusIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioEquipmentPhase3bQuests, scenarioCritDodgeFromEquip, scenarioDeathlyHallows, scenarioVoiceRelics, scenarioShopLimits, scenarioRefusalFeedback, scenarioForgeDissolve, scenarioForgeEnchant] };
