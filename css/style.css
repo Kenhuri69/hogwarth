@@ -29,12 +29,48 @@
      L'or `--gold` reste la couleur « du monde » (interactions, focus). */
   --house-accent: var(--gold);
   --house-glow: rgba(201,168,76,0.22);
+  /* ── Échelle de texte (H1, polish UX / accessibilité) ─────────────────────
+     Réglée dans #settings-modal (setUiFontScale, ui-settings.js), persistée en
+     localStorage. Le CSS du jeu étant massivement en px (pas de rem/em),
+     l'échelle est appliquée via `zoom` sur les surfaces de lecture dense
+     (.modal-box + dialogue PNJ) — centrées, auto-contraintes (max-height +
+     scroll), sans interaction avec le canvas 3D. Défaut 1 → aucun changement. */
+  --ui-font-scale: 1;
 }
 
 :root[data-house="gryffondor"]  { --house-accent: #D3A625; --house-glow: rgba(180,30,30,0.35); }
 :root[data-house="serpentard"]  { --house-accent: #cfd3d6; --house-glow: rgba(46,140,86,0.32); }
 :root[data-house="serdaigle"]   { --house-accent: #7fb2e8; --house-glow: rgba(74,144,217,0.32); }
 :root[data-house="poufsouffle"] { --house-accent: #f0c75e; --house-glow: rgba(240,199,94,0.34); }
+
+/* ── Mode contraste élevé (H1) — opt-in via data-contrast="high" sur <html> ──
+   Renforce les bordures des surfaces et éclaircit le texte de label atténué
+   pour les joueurs malvoyants. Surcouche réversible : sans l'attribut, rien
+   ne change. */
+:root[data-contrast="high"] {
+  --label-muted: #e8d9b0;
+}
+:root[data-contrast="high"] .modal-box,
+:root[data-contrast="high"] .bestiary-modal-box {
+  border-color: var(--gold-light);
+  box-shadow: 0 0 0 1px var(--gold-light), 0 0 40px var(--house-glow);
+}
+:root[data-contrast="high"] .cmd-btn,
+:root[data-contrast="high"] .shop-tab,
+:root[data-contrast="high"] .party-card {
+  border-color: var(--gold-light);
+}
+:root[data-contrast="high"] .panel-title {
+  color: var(--gold-light);
+}
+
+/* Échelle de texte appliquée aux surfaces de lecture dense. `zoom` agrandit
+   le texte px sans toucher au cadre de jeu fixe ni au canvas. */
+.modal-box,
+.bestiary-modal-box,
+#npc-dialog-overlay .npc-dialog-panel {
+  zoom: var(--ui-font-scale, 1);
+}
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 

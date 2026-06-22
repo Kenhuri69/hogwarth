@@ -1144,4 +1144,74 @@ async function scenarioKeybindings() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioMobileSelect, scenarioCombatMobile, scenarioRelativeControls, scenarioCanvasSwipe, scenarioCameraPresence, scenarioCombatKeyboard, scenarioConfirmModal, scenarioA11yFinish, scenarioModalIsolation, scenarioGridKeyboardNav, scenarioGridArrowNav, scenarioGridKeyboardNavExtended, scenarioSpellFilterKeyboard, scenarioKeybindings] };
+// H1 (polish UX) — échelle de texte + mode contraste élevé (réglages Affichage).
+async function scenarioUiAccessibilityPrefs() {
+  console.log('\n── Scénario : accessibilité d\'affichage (échelle texte + contraste) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // Partir d'un état propre.
+  await page.evaluate(() => {
+    localStorage.removeItem('hogwarts_rpg_ui_font_scale');
+    localStorage.removeItem('hogwarts_rpg_ui_contrast');
+  });
+
+  // T1 : échelle « Grand » → variable CSS + persistance + bouton actif.
+  const t1 = await page.evaluate(() => {
+    setUiFontScale('large');
+    return {
+      cssVar:    getComputedStyle(document.documentElement).getPropertyValue('--ui-font-scale').trim(),
+      stored:    localStorage.getItem('hogwarts_rpg_ui_font_scale'),
+      btnActive: document.getElementById('btn-fontscale-large').classList.contains('active-toggle'),
+      pressed:   document.getElementById('btn-fontscale-large').getAttribute('aria-pressed')
+    };
+  });
+  console.log('  T1 large   :', t1);
+  assert(t1.cssVar === '1.12',    '--ui-font-scale doit valoir 1.12 en cran « Grand »');
+  assert(t1.stored === 'large',   'le cran d\'échelle doit être persisté');
+  assert(t1.btnActive,            'le bouton « Grand » doit être actif');
+  assert(t1.pressed === 'true',   'aria-pressed du bouton actif doit valoir true');
+
+  // T2 : retour « Normal » → variable revenue à 1.
+  const t2 = await page.evaluate(() => {
+    setUiFontScale('normal');
+    return getComputedStyle(document.documentElement).getPropertyValue('--ui-font-scale').trim();
+  });
+  console.log('  T2 normal  :', t2);
+  assert(t2 === '1', '--ui-font-scale doit revenir à 1 en cran « Normal »');
+
+  // T3 : contraste élevé → data-contrast="high" + persistance.
+  const t3 = await page.evaluate(() => {
+    toggleHighContrast();
+    return {
+      attr:   document.documentElement.getAttribute('data-contrast'),
+      stored: localStorage.getItem('hogwarts_rpg_ui_contrast'),
+      active: document.getElementById('btn-contrast').classList.contains('active-toggle')
+    };
+  });
+  console.log('  T3 contrast:', t3);
+  assert(t3.attr === 'high', 'data-contrast doit valoir "high" une fois activé');
+  assert(t3.stored === '1',  'le contraste élevé doit être persisté');
+  assert(t3.active,          'le bouton Contraste doit être actif');
+
+  // T4 : re-bascule → attribut retiré.
+  const t4 = await page.evaluate(() => {
+    toggleHighContrast();
+    return {
+      attr:   document.documentElement.getAttribute('data-contrast'),
+      stored: localStorage.getItem('hogwarts_rpg_ui_contrast')
+    };
+  });
+  console.log('  T4 off     :', t4);
+  assert(!t4.attr,          'data-contrast doit être retiré une fois désactivé');
+  assert(t4.stored === '0', 'la désactivation du contraste doit être persistée');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (accessibilité affichage)`);
+  }
+  console.log('  ✅ Échelle de texte + contraste élevé OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioMobileSelect, scenarioCombatMobile, scenarioRelativeControls, scenarioCanvasSwipe, scenarioCameraPresence, scenarioCombatKeyboard, scenarioConfirmModal, scenarioA11yFinish, scenarioModalIsolation, scenarioGridKeyboardNav, scenarioGridArrowNav, scenarioGridKeyboardNavExtended, scenarioSpellFilterKeyboard, scenarioKeybindings, scenarioUiAccessibilityPrefs] };
