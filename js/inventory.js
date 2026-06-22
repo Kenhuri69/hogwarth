@@ -146,53 +146,119 @@ function _handleInvTap(slotEl, action) {
 }
 
 // ── Rendu de la grille d'inventaire ─────────────────────────
+// ── Filtre + tri du sac (M2, polish UX) ──────────────────────
+// Filtre/tri PUREMENT d'affichage : l'ordre de stockage de player.inventory
+// ne bouge JAMAIS — chaque cellule conserve son index réel pour les actions.
+// État de session (non persisté). Inactif en combat (barre masquée).
+let _invFilter = 'tous';        // 'tous' | 'equip' | 'conso'
+let _invSortRarity = false;
+const _INV_RARITY_RANK = { legendary: 4, epic: 3, rare: 2, common: 1 };
+
+function _invMatchesFilter(item) {
+  if (_invFilter === 'equip') return ['wand', 'armor', 'acc'].includes(item.type);
+  if (_invFilter === 'conso') return item.type === 'consumable';
+  return true;
+}
+
+// entries : [{item, idx}] (idx = index réel dans player.inventory).
+function _applyInvFilterSort(entries) {
+  let out = entries.filter(e => _invMatchesFilter(e.item));
+  if (_invSortRarity) {
+    out = out.slice().sort((a, b) => {
+      const ra = _INV_RARITY_RANK[a.item.rarity] || 0;
+      const rb = _INV_RARITY_RANK[b.item.rarity] || 0;
+      if (rb !== ra) return rb - ra;
+      return a.idx - b.idx;             // stable par index réel
+    });
+  }
+  return out;
+}
+
+function setInvFilter(f) {
+  _invFilter = ['tous', 'equip', 'conso'].includes(f) ? f : 'tous';
+  renderInventory(false);
+}
+function toggleInvSort() {
+  _invSortRarity = !_invSortRarity;
+  renderInventory(false);
+}
+function _updateInvFilterBar() {
+  ['tous', 'equip', 'conso'].forEach(f => {
+    const b = document.getElementById('inv-filter-' + f);
+    if (b) b.classList.toggle('active', _invFilter === f);
+  });
+  const s = document.getElementById('inv-sort-rarity');
+  if (s) {
+    s.classList.toggle('active', _invSortRarity);
+    s.setAttribute('aria-pressed', _invSortRarity ? 'true' : 'false');
+  }
+}
+
+// Construit une cellule d'inventaire pour `item` à l'index réel `i`.
+function _renderInvSlotEl(item, i, battleMode) {
+  const div = document.createElement('div');
+  div.className = 'inv-slot has-item';
+  const isEquip     = ['wand', 'armor', 'acc'].includes(item.type);
+  const isSpellbook = item.type === 'spellbook';
+  // Bordure de rareté — voir .claude/plans/equipment-extended.md §2.6.
+  // common (par défaut, gris-or) / rare (bleu) / epic (violet) / legendary (or).
+  if (item.rarity) div.classList.add(`rarity-${item.rarity}`);
+  // Étiquette de type — préfère `item.slot` (plus précis : head, ring,
+  // trinket…) puis `item.type` en fallback. Le resolver tombe sur
+  // accessory.png pour tous les nouveaux slots tant que les sprites
+  // dédiés Phase 4 ne sont pas livrés.
+  const slotKey = (isEquip && item.slot) ? item.slot : item.type;
+  const typeIcon = (isEquip || isSpellbook)
+    ? getEquipmentSlotIconHtml(slotKey, 'ui-icon-sm')
+    : '';
+  const typeLabel = (isEquip || isSpellbook)
+    ? `<div class="inv-type-badge" style="font-size:9px;color:${isSpellbook ? '#8060c0' : '#b08040'};margin-top:1px">${typeIcon}</div>`
+    : '';
+  const ttHtml = (typeof _renderItemTooltip === 'function')
+    ? _renderItemTooltip(item, null, battleMode && !isEquip ? 'cliquer pour utiliser' : (isEquip ? 'cliquer pour équiper' : (isSpellbook ? 'cliquer pour apprendre' : 'cliquer pour utiliser')))
+    : '';
+  div.title = item.name; // fallback natif si tooltip riche indispo
+  // Compteur de quantité pour les consommables empilés (×N).
+  const qty = (typeof _itemQty === 'function') ? _itemQty(item) : (item.qty || 1);
+  const qtyBadge = qty > 1 ? `<span class="inv-qty-badge">×${qty}</span>` : '';
+  div.innerHTML = `<div class="item-icon">${getItemIconHtml(item, 'ui-icon-xl')}</div><div class="item-name">${item.name}</div>${typeLabel}${qtyBadge}${ttHtml}`;
+
+  if (battleMode && isEquip) {
+    // Équipements non utilisables en combat — grisés
+    div.style.opacity = '0.45';
+    div.style.cursor  = 'default';
+    div.title         = 'Non utilisable en combat';
+  } else {
+    div.tabIndex = 0; // cellule atteignable au clavier (Tab + Entrée/Espace)
+    div.onclick = () => _handleInvTap(div, () => useItem(i, battleMode));
+  }
+  return div;
+}
+
 function renderInventory(battleMode) {
   const grid = document.getElementById('inv-grid');
   grid.innerHTML = '';
   const slots = 16;
-  for (let i = 0; i < slots; i++) {
-    const div  = document.createElement('div');
-    div.className = 'inv-slot';
-    const item = player.inventory[i]; // inventaire partagé sur Harry
-    if (item) {
-      div.classList.add('has-item');
-      const isEquip    = ['wand','armor','acc'].includes(item.type);
-      const isSpellbook = item.type === 'spellbook';
-      // Bordure de rareté — voir .claude/plans/equipment-extended.md §2.6.
-      // common (par défaut, gris-or) / rare (bleu) / epic (violet) / legendary (or).
-      if (item.rarity) div.classList.add(`rarity-${item.rarity}`);
-      // Étiquette de type — préfère `item.slot` (plus précis : head, ring,
-      // trinket…) puis `item.type` en fallback. Le resolver tombe sur
-      // accessory.png pour tous les nouveaux slots tant que les sprites
-      // dédiés Phase 4 ne sont pas livrés.
-      const slotKey = (isEquip && item.slot) ? item.slot : item.type;
-      const typeIcon = (isEquip || isSpellbook)
-        ? getEquipmentSlotIconHtml(slotKey, 'ui-icon-sm')
-        : '';
-      const typeLabel = (isEquip || isSpellbook)
-        ? `<div class="inv-type-badge" style="font-size:9px;color:${isSpellbook ? '#8060c0' : '#b08040'};margin-top:1px">${typeIcon}</div>`
-        : '';
-      const ttHtml = (typeof _renderItemTooltip === 'function')
-        ? _renderItemTooltip(item, null, battleMode && !isEquip ? 'cliquer pour utiliser' : (isEquip ? 'cliquer pour équiper' : (isSpellbook ? 'cliquer pour apprendre' : 'cliquer pour utiliser')))
-        : '';
-      div.title = item.name; // fallback natif si tooltip riche indispo
-      // Compteur de quantité pour les consommables empilés (×N).
-      const qty = (typeof _itemQty === 'function') ? _itemQty(item) : (item.qty || 1);
-      const qtyBadge = qty > 1 ? `<span class="inv-qty-badge">×${qty}</span>` : '';
-      div.innerHTML = `<div class="item-icon">${getItemIconHtml(item, 'ui-icon-xl')}</div><div class="item-name">${item.name}</div>${typeLabel}${qtyBadge}${ttHtml}`;
 
-      if (battleMode && isEquip) {
-        // Équipements non utilisables en combat — grisés
-        div.style.opacity = '0.45';
-        div.style.cursor  = 'default';
-        div.title         = 'Non utilisable en combat';
-      } else {
-        div.tabIndex = 0; // cellule atteignable au clavier (Tab + Entrée/Espace)
-        div.onclick = () => _handleInvTap(div, () => useItem(i, battleMode));
-      }
-    } else {
-      div.innerHTML = '<div class="inv-empty-slot">—</div>';
-    }
+  // Barre de filtre/tri (M2) — hors combat uniquement.
+  const filterBar = document.getElementById('inv-filter-bar');
+  if (filterBar) filterBar.style.display = battleMode ? 'none' : 'flex';
+
+  // Liste affichée. En combat : ordre brut (comportement historique). Hors
+  // combat : filtre + tri d'affichage, l'index réel `idx` étant conservé.
+  let entries = player.inventory.map((item, idx) => ({ item, idx }));
+  if (!battleMode) {
+    entries = _applyInvFilterSort(entries);
+    _updateInvFilterBar();
+  }
+
+  entries.forEach(({ item, idx }) => grid.appendChild(_renderInvSlotEl(item, idx, battleMode)));
+
+  // Emplacements vides pour conserver la grille 4×4 (look stable).
+  for (let k = entries.length; k < slots; k++) {
+    const div = document.createElement('div');
+    div.className = 'inv-slot';
+    div.innerHTML = '<div class="inv-empty-slot">—</div>';
     grid.appendChild(div);
   }
 }

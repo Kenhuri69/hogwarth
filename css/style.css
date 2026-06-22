@@ -2013,6 +2013,28 @@ body {
 }
 .modal-close:hover { color: var(--gold); }
 
+/* ── Barre de filtre/tri du sac (M2) — chips d'affichage ──────────────────────
+   Filtre PUREMENT d'affichage (l'ordre de stockage ne bouge pas). Chip actif
+   teinté par la Maison (--house-accent / --house-glow, cf. H1). */
+.inv-filter-bar {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  margin-bottom: 10px;
+}
+.inv-chip {
+  font-family: 'Cinzel', serif; font-size: 10.5px; letter-spacing: 0.5px;
+  padding: 5px 11px; border-radius: 14px;
+  background: linear-gradient(180deg, rgba(40,28,12,0.7) 0%, rgba(20,12,4,0.85) 100%);
+  border: 1px solid var(--gold-dark); color: var(--gold-dark);
+  cursor: pointer; transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.inv-chip:hover { color: var(--gold-light); border-color: var(--gold); }
+.inv-chip.active {
+  background: linear-gradient(180deg, rgba(80,55,20,0.65) 0%, rgba(50,32,10,0.8) 100%);
+  border-color: var(--house-accent); color: var(--gold-light);
+  box-shadow: 0 0 7px var(--house-glow);
+}
+.inv-chip-sort { margin-left: auto; }
+
 .inv-grid {
   display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
 }
