@@ -59,6 +59,17 @@ encore des cases `[ ]`. Suite de la convention `plans-archiving-workflow.md`.
 > **Exclu** : `house-generation-bias-v2-rooms` (case ouverte = « cache-bump +
 > tests » = gate technique, pas process → gardé actif par prudence).
 
+> **Suivi 5 (2026-06-22, finition) :** 2 plans récents (base master était très
+> en retard) finis & livrés → archivés : `mobile-endgame-chips`
+> (`#hud-endgame-chips` index.html:502 + css/style.css:4578) et
+> `doc-status-banners-index` (seule case = process ; bandeaux ×11 + index README
+> livrés). **Tri par statut épuisé** : les 39 plans restants ont du vrai travail
+> non livré (audit-polish-rc, perf-optimization, ux-polish-review,
+> code-review-improvements, loop-npc-quests-suivi3, nano-banana-prompts-boucle-bosses,
+> spell-filter-chips-keyboard…) ou sont des specs/backlogs/roadmaps vivants
+> (combat-system-synthesis, spells-magic-system, parallel-worlds, reliquats-backlog,
+> roadmap-phase-3-4-closure…) — laissés actifs à dessein.
+
 ## 30 plans archivés
 
 align-ch11-briser-cycle · artifact-balance-analysis · artifact-remediation ·

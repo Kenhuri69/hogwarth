@@ -30,7 +30,7 @@ Mapping chapitre → modules (grounded CLAUDE.md + roadmap §1.2) :
    (table 14 lignes : chapitre · statut réel · modules js/).
    → verify : table présente, liens corrects.
 3. [x] `node tools/check_doc_modules.js` reste vert (exit 0).
-4. [ ] Commit → push → PR → CI verte → squash-merge.
+4. [x] Commit → push → PR → CI verte → squash-merge. → livré & mergé (bandeaux ×11 + index README).
 
 ## Garde-fous
 
