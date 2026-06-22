@@ -85,7 +85,7 @@ const PRECACHE_URLS = [
   './js/dungeon-spawning.js?v=2',
   './js/textures.js?v=1',
   './js/renderer.js?v=17',
-  './js/renderer-effects.js?v=12',
+  './js/renderer-effects.js?v=13',
   './js/dungeon-fx.js?v=9',
   './js/cinematics.js?v=3',
   './js/renderer-sprites.js?v=7',
@@ -130,7 +130,7 @@ const PRECACHE_URLS = [
   './js/help-tour.js?v=4',
   './js/balance-log.js?v=1',
   './js/loader.js?v=57',
-  './js/pwa.js?v=6',
+  './js/pwa.js?v=7',
 
   // Icônes PWA + premier écran
   './img/icons/pwa/icon-192.png?v=4',
@@ -212,7 +212,13 @@ async function staleWhileRevalidate(request) {
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_VERSION).then((cache) => cache.addAll(PRECACHE_URLS))
+    caches.open(CACHE_VERSION).then((cache) =>
+      // Précache TOLÉRANT : `addAll` est atomique — une seule URL morte (asset
+      // oublié au bump du `?v`) ferait échouer toute l'install, donc plus de
+      // mode offline. On précache par URL via `Promise.allSettled` : une URL en
+      // échec est ignorée, le reste du shell est mis en cache normalement.
+      Promise.allSettled(PRECACHE_URLS.map((url) => cache.add(url)))
+    )
   );
 });
 
