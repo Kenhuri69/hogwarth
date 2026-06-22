@@ -21,7 +21,7 @@
 <meta name="twitter:title" content="Poudlard & Magie : Les Secrets de Poudlard">
 <meta name="twitter:description" content="RPG dungeon-crawler en tour par tour dans l'univers de Poudlard, jouable dans le navigateur.">
 <meta name="twitter:image" content="https://kenhuri69.github.io/hogwarth/img/scenes/title.jpg">
-<link rel="stylesheet" href="css/style.css?v=53">
+<link rel="stylesheet" href="css/style.css?v=54">
 <link rel="stylesheet" href="css/ux-improvements.css?v=5">
 <link rel="stylesheet" href="css/save-ui.css?v=5">
 <link rel="stylesheet" href="css/ornaments.css?v=1">
@@ -861,6 +861,16 @@
       <button class="cmd-btn" data-group="system" onclick="openHelpMenu()" title="Aide / Tutoriel"><span class="btn-icon"><img src="img/icons/spellbook.png" alt="Aide"></span><span class="btn-label">Aide</span></button>
     </div>
 
+    <div class="settings-section-label">Affichage</div>
+    <div class="settings-grid" id="ui-fontscale-group" role="group" aria-label="Taille du texte des fenêtres">
+      <button id="btn-fontscale-small" class="cmd-btn" data-group="display" onclick="setUiFontScale('small')" title="Texte plus petit"><span class="btn-icon">A<small>−</small></span><span class="btn-label">Petit</span></button>
+      <button id="btn-fontscale-normal" class="cmd-btn" data-group="display" onclick="setUiFontScale('normal')" title="Taille normale"><span class="btn-icon">A</span><span class="btn-label">Normal</span></button>
+      <button id="btn-fontscale-large" class="cmd-btn" data-group="display" onclick="setUiFontScale('large')" title="Texte plus grand"><span class="btn-icon">A<small>＋</small></span><span class="btn-label">Grand</span></button>
+    </div>
+    <div class="settings-grid">
+      <button id="btn-contrast" class="cmd-btn" data-group="display" onclick="toggleHighContrast()" title="Contraste élevé On/Off" aria-pressed="false"><span class="btn-icon">◐</span><span class="btn-label">Contraste</span></button>
+    </div>
+
     <div class="settings-section-label">Touches</div>
     <div id="keybind-list" class="keybind-list"></div>
   </div>
@@ -1351,7 +1361,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="js/ui.js?v=23"></script>
 <script defer src="js/modal-a11y.js?v=2"></script>
 <script defer src="js/ui-character-sheet.js?v=14"></script>
-<script defer src="js/ui-settings.js?v=4"></script>
+<script defer src="js/ui-settings.js?v=5"></script>
 <script defer src="js/keybindings.js?v=1"></script>
 <script defer src="js/ui-bestiary.js?v=6"></script>
 <script defer src="js/ui-codex.js?v=10"></script>

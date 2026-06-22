@@ -351,6 +351,32 @@ Chaque lot est **livrable indépendamment** : la qualité perçue monte dès C1
   - Tous les call-sites défensifs. `node tests/smoke.js` 263 verts +
     cache-bump (v219). **Phase Critique (C1-C3) terminée.**
 
+- **2026-06-22 — H1 (Échelle de texte + contraste élevé) : ✅ livré.**
+  - `css/style.css` : variable `--ui-font-scale` (défaut 1) au `:root`. Le CSS
+    du jeu étant massivement en px (308 `font-size:px`, 0 rem/em), l'échelle
+    est appliquée via `zoom: var(--ui-font-scale)` sur les **surfaces de
+    lecture dense** (`.modal-box`, `.bestiary-modal-box`,
+    `#npc-dialog-overlay .npc-dialog-panel`) — centrées, auto-contraintes
+    (`max-height` + scroll), **sans toucher** au cadre de jeu fixe ni au
+    canvas 3D (`resizeCanvas` lit `clientWidth` → rendu pixel-stable, zéro
+    régression). Bloc `:root[data-contrast="high"]` : `--label-muted` éclairci
+    + bordures renforcées (`.modal-box`, `.cmd-btn`, `.shop-tab`,
+    `.party-card`, `.panel-title`).
+  - `index.html` : section « Affichage » dans `#settings-modal` — 3 boutons
+    d'échelle (Petit/Normal/Grand) + 1 bouton Contraste.
+  - `js/ui-settings.js` : `setUiFontScale(step)` (small=0.9/normal=1/large=1.12),
+    `toggleHighContrast()`, `_updateUiAccessibilityBtns()` (surbrillance
+    `active-toggle` + `aria-pressed`, appelé par `openSettingsModal`),
+    `_loadUiAccessibilityPrefs()` (DOMContentLoaded). Préférences **device**
+    persistées en localStorage (`hogwarts_rpg_ui_font_scale`/`_ui_contrast`),
+    hors save — comme les barks ; appliquées dès le démarrage.
+  - Flags : `uiFontScale` + `uiHighContrast` (cf. tableau « Flags & variables »).
+  - Test : scénario `scenarioUiAccessibilityPrefs` (controls.js) — variable CSS,
+    `data-contrast`, persistance, état des boutons. `node tests/smoke.js` 265
+    verts + `node tests/units.js` vert + cache-bump (style.css v54,
+    ui-settings.js v5, `CACHE_VERSION` v220). Effet neutre tant qu'aucun
+    réglage n'est touché (échelle 1, pas d'attribut contraste).
+
 ---
 
 ## Recommandation de démarrage

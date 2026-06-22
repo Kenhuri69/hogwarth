@@ -83,6 +83,72 @@ if (typeof document !== 'undefined') {
   document.addEventListener('DOMContentLoaded', _loadBarksPref);
 }
 
+// ── Accessibilité d'affichage (H1, polish UX) ────────────────────────────────
+// Échelle de texte des fenêtres (--ui-font-scale) + mode contraste élevé
+// (data-contrast="high"). Préférences device persistées en localStorage
+// (comme les barks) — indépendantes des sauvegardes de partie, appliquées dès
+// le DOMContentLoaded pour couvrir les écrans de démarrage.
+const _UI_FONTSCALE_KEY = 'hogwarts_rpg_ui_font_scale';
+const _UI_CONTRAST_KEY  = 'hogwarts_rpg_ui_contrast';
+const _UI_FONTSCALE_VALUES = { small: 0.9, normal: 1, large: 1.12 };
+
+// Applique un cran d'échelle ('small'|'normal'|'large') et le persiste.
+function setUiFontScale(step) {
+  if (!_UI_FONTSCALE_VALUES[step]) step = 'normal';
+  try { document.documentElement.style.setProperty('--ui-font-scale', String(_UI_FONTSCALE_VALUES[step])); } catch (_) { /* indispo */ }
+  try { localStorage.setItem(_UI_FONTSCALE_KEY, step); } catch (_) { /* indispo */ }
+  _updateUiAccessibilityBtns();
+}
+
+// Bascule le mode contraste élevé et le persiste.
+function toggleHighContrast() {
+  const root = document.documentElement;
+  const on = root.getAttribute('data-contrast') === 'high';
+  if (on) root.removeAttribute('data-contrast');
+  else root.setAttribute('data-contrast', 'high');
+  try { localStorage.setItem(_UI_CONTRAST_KEY, on ? '0' : '1'); } catch (_) { /* indispo */ }
+  if (typeof addMsg === 'function') {
+    addMsg(on ? 'Contraste élevé désactivé.' : '🔆 Contraste élevé activé.', on ? '' : 'good');
+  }
+  _updateUiAccessibilityBtns();
+}
+
+// Reflète l'état courant sur les boutons de la section Affichage (surbrillance
+// du cran actif, aria-pressed du contraste). Défensif : no-op si modale absente.
+function _updateUiAccessibilityBtns() {
+  let step = 'normal';
+  try { step = localStorage.getItem(_UI_FONTSCALE_KEY) || 'normal'; } catch (_) { /* défaut */ }
+  if (!_UI_FONTSCALE_VALUES[step]) step = 'normal';
+  ['small', 'normal', 'large'].forEach(s => {
+    const btn = document.getElementById('btn-fontscale-' + s);
+    if (!btn) return;
+    const active = s === step;
+    btn.classList.toggle('active-toggle', active);
+    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+  });
+  const cbtn = document.getElementById('btn-contrast');
+  if (cbtn) {
+    const on = document.documentElement.getAttribute('data-contrast') === 'high';
+    cbtn.classList.toggle('active-toggle', on);
+    cbtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  }
+}
+
+// Restaure les préférences d'affichage au chargement. Appelé au DOMContentLoaded.
+function _loadUiAccessibilityPrefs() {
+  let step = 'normal', contrast = false;
+  try { step = localStorage.getItem(_UI_FONTSCALE_KEY) || 'normal'; } catch (_) { /* défaut */ }
+  try { contrast = localStorage.getItem(_UI_CONTRAST_KEY) === '1'; } catch (_) { /* défaut */ }
+  if (!_UI_FONTSCALE_VALUES[step]) step = 'normal';
+  try { document.documentElement.style.setProperty('--ui-font-scale', String(_UI_FONTSCALE_VALUES[step])); } catch (_) { /* indispo */ }
+  if (contrast) document.documentElement.setAttribute('data-contrast', 'high');
+  _updateUiAccessibilityBtns();
+}
+
+if (typeof document !== 'undefined') {
+  document.addEventListener('DOMContentLoaded', _loadUiAccessibilityPrefs);
+}
+
 // Ouvre la modale Réglages (son, voyageur, partie). Resynchronise au
 // passage les icônes des boutons audio + accueil pour refléter l'état
 // courant (utile après un chargement de save).
@@ -92,6 +158,7 @@ function openSettingsModal() {
   }
   _updateVisitsBtn();
   _updateBarksBtn();
+  _updateUiAccessibilityBtns();
   if (typeof kbRenderSettings === 'function') kbRenderSettings();
   const modal = document.getElementById('settings-modal');
   if (modal) modal.style.display = 'flex';
