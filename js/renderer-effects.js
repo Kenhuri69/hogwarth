@@ -20,6 +20,9 @@ let _npcAnimTimer = null;
 function startNpcAnimLoop() {
   if (_npcAnimTimer) return;
   _npcAnimTimer = setInterval(() => {
+    // Pause en arrière-plan (parité avec la boucle dungeon-fx) : onglet caché
+    // → aucun redraw, économie CPU/batterie mobile.
+    if (typeof document !== 'undefined' && document.hidden) return;
     const hasNpc   = typeof npcPlacements !== 'undefined' && npcPlacements.size > 0;
     const hasGhost = typeof ghostPlacements !== 'undefined' && ghostPlacements.size > 0;
     const hasMsg   = typeof messagePlacements !== 'undefined' && messagePlacements.size > 0;

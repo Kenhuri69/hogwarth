@@ -329,7 +329,30 @@ aucune collecte réseau) :
 
 ## Journal d'avancement
 
-- **2026-06-22** — Plan créé. Diagnostic mesuré (baseline §0). Aucune
-  implémentation encore : ce document est livré seul pour validation des
-  priorités avant exécution.
+- **2026-06-22** — Plan créé. Diagnostic mesuré (baseline §0). Livré et mergé
+  (PR #676).
+- **2026-06-22** — Lot P1 (partiel) implémenté :
+  - **P1-6 ✅** — SW : `addAll` (atomique) remplacé par
+    `Promise.allSettled(cache.add)` par URL. Une URL morte au bump n'empêche
+    plus l'install offline. Vérifié par `pwa-smoke` (SW v226, 107 entrées,
+    offline OK).
+  - **P1-5 (ciblé) ✅** — `startNpcAnimLoop` reçoit la garde `document.hidden`
+    (parité avec `dungeon-fx` qui l'avait déjà) → 0 redraw en arrière-plan.
+    Constat : la **fusion complète** des 2 boucles en un tick rAF unique est
+    reportée (refactor inter-modules, risque > bénéfice immédiat) — le gap réel
+    était la boucle PNJ sans garde, désormais comblé.
+  - Bumps cache : `renderer-effects.js v12→v13`, SW_URL `v6→v7`,
+    `pwa.js v6→v7`, `CACHE_VERSION v225→v226`. `check_cache_versions` ✅.
+  - Tests : `units` (946) ✅ · `pwa-smoke` ✅ · `smoke` filtré (18 scénarios
+    npc/dungeon/control/visual) ✅.
+- **⚠️ Non réalisable dans l'environnement web actuel** (outillage absent :
+  `pngquant`/`oxipng`/`PIL`/`convert`) :
+  - **P1-1** (compression `img/`), **P1-2** (resize rosmerta/mundungus),
+    **P1-7** (compression `title.jpg`) — c'est le plus gros gain joueur
+    (~45 Mo → ~20-25 Mo). Nécessite un environnement avec outillage image (ou
+    un `tools/optimize_images.py` exécuté localement). À planifier hors session.
+  - **P1-3 / P1-4** (purge planches `_ingame*` ~1,8 Mo + doublon `houses/v2`
+    ~1,5 Mo) : confirmés non référencés au runtime (grep), mais suppression
+    d'assets non créés par cette session → laissée en attente d'aval explicite
+    (gain = poids repo uniquement, jamais téléchargés par les joueurs).
 - _(à compléter à chaque lot : mesure avant/après, écarts, décisions)_
