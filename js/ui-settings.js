@@ -90,7 +90,44 @@ if (typeof document !== 'undefined') {
 // le DOMContentLoaded pour couvrir les écrans de démarrage.
 const _UI_FONTSCALE_KEY = 'hogwarts_rpg_ui_font_scale';
 const _UI_CONTRAST_KEY  = 'hogwarts_rpg_ui_contrast';
+const _UI_FEEDBACK_KEY   = 'hogwarts_rpg_ui_feedback';
 const _UI_FONTSCALE_VALUES = { small: 0.9, normal: 1, large: 1.12 };
+const _UI_FEEDBACK_LEVELS  = ['full', 'sober', 'minimal'];
+
+// ── Intensité du feedback visuel (H4) ────────────────────────────────────────
+// Niveau Plein / Sobre / Minimal, composé AU-DESSUS de prefers-reduced-motion
+// (l'accessibilité reste prioritaire). Source de vérité consultée par les
+// modules FX (combat-fx, dungeon-fx, cinematics, haptics, ux-improvements) via
+// `window.UIFeedback`. Défini ici (défensif côté FX : repli matchMedia si absent).
+//   • reduced()      = pref système OU niveau Minimal  → comportement reduced-motion
+//   • particlesOff() = reduced() OU niveau Sobre        → coupe particules & boucles ambiantes
+window.UIFeedback = {
+  level: 'full',
+  _systemRM() {
+    return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  },
+  reduced() { return this._systemRM() || this.level === 'minimal'; },
+  particlesOff() { return this.reduced() || this.level === 'sober'; }
+};
+
+// Applique un niveau de feedback et le persiste. Pose `data-feedback` sur <html>
+// (le CSS coupe les animations en Minimal) et relance la boucle FX ambiante si
+// on repasse en Plein.
+function setUiFeedbackLevel(level) {
+  if (!_UI_FEEDBACK_LEVELS.includes(level)) level = 'full';
+  window.UIFeedback.level = level;
+  try { document.documentElement.setAttribute('data-feedback', level); } catch (_) { /* indispo */ }
+  try { localStorage.setItem(_UI_FEEDBACK_KEY, level); } catch (_) { /* indispo */ }
+  // Repasser en Plein doit pouvoir redémarrer la boucle ambiante (idempotent).
+  if (!window.UIFeedback.particlesOff() && typeof startDungeonFxLoop === 'function') {
+    startDungeonFxLoop();
+  }
+  if (typeof addMsg === 'function') {
+    const lbl = { full: 'Plein', sober: 'Sobre', minimal: 'Minimal' }[level];
+    addMsg('🎚️ Effets visuels : ' + lbl + '.', level === 'full' ? 'good' : '');
+  }
+  _updateUiAccessibilityBtns();
+}
 
 // Applique un cran d'échelle ('small'|'normal'|'large') et le persiste.
 function setUiFontScale(step) {
@@ -132,16 +169,28 @@ function _updateUiAccessibilityBtns() {
     cbtn.classList.toggle('active-toggle', on);
     cbtn.setAttribute('aria-pressed', on ? 'true' : 'false');
   }
+  const lvl = (window.UIFeedback && window.UIFeedback.level) || 'full';
+  _UI_FEEDBACK_LEVELS.forEach(l => {
+    const btn = document.getElementById('btn-feedback-' + l);
+    if (!btn) return;
+    const active = l === lvl;
+    btn.classList.toggle('active-toggle', active);
+    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+  });
 }
 
 // Restaure les préférences d'affichage au chargement. Appelé au DOMContentLoaded.
 function _loadUiAccessibilityPrefs() {
-  let step = 'normal', contrast = false;
+  let step = 'normal', contrast = false, feedback = 'full';
   try { step = localStorage.getItem(_UI_FONTSCALE_KEY) || 'normal'; } catch (_) { /* défaut */ }
   try { contrast = localStorage.getItem(_UI_CONTRAST_KEY) === '1'; } catch (_) { /* défaut */ }
+  try { feedback = localStorage.getItem(_UI_FEEDBACK_KEY) || 'full'; } catch (_) { /* défaut */ }
   if (!_UI_FONTSCALE_VALUES[step]) step = 'normal';
+  if (!_UI_FEEDBACK_LEVELS.includes(feedback)) feedback = 'full';
   try { document.documentElement.style.setProperty('--ui-font-scale', String(_UI_FONTSCALE_VALUES[step])); } catch (_) { /* indispo */ }
   if (contrast) document.documentElement.setAttribute('data-contrast', 'high');
+  window.UIFeedback.level = feedback;
+  try { document.documentElement.setAttribute('data-feedback', feedback); } catch (_) { /* indispo */ }
   _updateUiAccessibilityBtns();
 }
 

@@ -72,6 +72,19 @@
   zoom: var(--ui-font-scale, 1);
 }
 
+/* ── Niveau de feedback « Minimal » (H4) — force le comportement reduced-motion ─
+   Réduit toutes les animations/transitions CSS à un instant, comme la
+   préférence système. Le JS coupe en plus particules/haptique (UIFeedback).
+   Sobre ne déclenche PAS cette règle (il garde les micro-animations CSS). */
+:root[data-feedback="minimal"] *,
+:root[data-feedback="minimal"] *::before,
+:root[data-feedback="minimal"] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 /* ── Indicateur d'autosave (C2, polish UX) — micro-toast non bloquant ──────

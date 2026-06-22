@@ -21,7 +21,7 @@
 <meta name="twitter:title" content="Poudlard & Magie : Les Secrets de Poudlard">
 <meta name="twitter:description" content="RPG dungeon-crawler en tour par tour dans l'univers de Poudlard, jouable dans le navigateur.">
 <meta name="twitter:image" content="https://kenhuri69.github.io/hogwarth/img/scenes/title.jpg">
-<link rel="stylesheet" href="css/style.css?v=54">
+<link rel="stylesheet" href="css/style.css?v=55">
 <link rel="stylesheet" href="css/ux-improvements.css?v=5">
 <link rel="stylesheet" href="css/save-ui.css?v=5">
 <link rel="stylesheet" href="css/ornaments.css?v=1">
@@ -870,6 +870,11 @@
     <div class="settings-grid">
       <button id="btn-contrast" class="cmd-btn" data-group="display" onclick="toggleHighContrast()" title="Contraste élevé On/Off" aria-pressed="false"><span class="btn-icon">◐</span><span class="btn-label">Contraste</span></button>
     </div>
+    <div class="settings-grid" id="ui-feedback-group" role="group" aria-label="Intensité des effets visuels">
+      <button id="btn-feedback-full" class="cmd-btn" data-group="display" onclick="setUiFeedbackLevel('full')" title="Effets visuels complets"><span class="btn-icon">✨</span><span class="btn-label">Plein</span></button>
+      <button id="btn-feedback-sober" class="cmd-btn" data-group="display" onclick="setUiFeedbackLevel('sober')" title="Effets visuels réduits (sans particules)"><span class="btn-icon">🌙</span><span class="btn-label">Sobre</span></button>
+      <button id="btn-feedback-minimal" class="cmd-btn" data-group="display" onclick="setUiFeedbackLevel('minimal')" title="Effets minimaux (force le mode mouvement réduit)"><span class="btn-icon">○</span><span class="btn-label">Minimal</span></button>
+    </div>
 
     <div class="settings-section-label">Touches</div>
     <div id="keybind-list" class="keybind-list"></div>
@@ -1327,9 +1332,9 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 <script defer src="js/html-escape.js?v=1"></script>
-<script defer src="js/ux-improvements.js?v=8"></script>
-<script defer src="js/combat-fx.js?v=12"></script>
-<script defer src="js/haptics.js?v=2"></script>
+<script defer src="js/ux-improvements.js?v=9"></script>
+<script defer src="js/combat-fx.js?v=13"></script>
+<script defer src="js/haptics.js?v=3"></script>
 <script defer src="js/audio.js?v=2"></script>
 <script defer src="js/audio-music.js?v=7"></script>
 <script defer src="js/audio-sfx.js?v=19"></script>
@@ -1361,7 +1366,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="js/ui.js?v=23"></script>
 <script defer src="js/modal-a11y.js?v=2"></script>
 <script defer src="js/ui-character-sheet.js?v=14"></script>
-<script defer src="js/ui-settings.js?v=5"></script>
+<script defer src="js/ui-settings.js?v=6"></script>
 <script defer src="js/keybindings.js?v=1"></script>
 <script defer src="js/ui-bestiary.js?v=6"></script>
 <script defer src="js/ui-codex.js?v=10"></script>
@@ -1371,8 +1376,8 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="js/textures.js?v=1"></script>
 <script defer src="js/renderer.js?v=17"></script>
 <script defer src="js/renderer-effects.js?v=12"></script>
-<script defer src="js/dungeon-fx.js?v=8"></script>
-<script defer src="js/cinematics.js?v=2"></script>
+<script defer src="js/dungeon-fx.js?v=9"></script>
+<script defer src="js/cinematics.js?v=3"></script>
 <script defer src="js/renderer-sprites.js?v=7"></script>
 <script defer src="js/renderer-entities.js?v=8"></script>
 <script defer src="js/renderer-minimap.js?v=9"></script>

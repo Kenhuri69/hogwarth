@@ -616,6 +616,8 @@
   // permet de préserver une icône autour du nombre. Auto-annulé si rappelé sur
   // le même élément (anti-empilement). reduced-motion → écrit `to` directement.
   function _tickReduced() {
+    if (window.UIFeedback && typeof window.UIFeedback.reduced === 'function')
+      return window.UIFeedback.reduced();
     return !!(window.matchMedia
       && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   }

@@ -421,6 +421,29 @@ Chaque lot est **livrable indépendamment** : la qualité perçue monte dès C1
     (frost.css v3, audio-sfx.js v19, floor-ambiance.js v18, save.js v47,
     `CACHE_VERSION` v222).
 
+- **2026-06-22 — H4 (Réglage `uiFeedbackLevel`) : ✅ livré.**
+  - `js/ui-settings.js` : source de vérité `window.UIFeedback` (niveau
+    `full|sober|minimal` + helpers purs `reduced()` = pref système OU Minimal,
+    `particlesOff()` = `reduced()` OU Sobre). `setUiFeedbackLevel()` /
+    `_loadUiAccessibilityPrefs()` étendus, préférence device persistée
+    (`hogwarts_rpg_ui_feedback`), `data-feedback` posé sur `<html>`.
+  - **Composition au-dessus de prefers-reduced-motion** : chaque module FX
+    délègue son gate à `UIFeedback` (repli `matchMedia` si absent) —
+    `combat-fx`/`dungeon-fx`/`cinematics` → `particlesOff()` (Sobre coupe
+    particules + boucle ambiante, garde les flashes/CSS) ; `haptics` +
+    `ux-improvements._tickReduced` → `reduced()` (Minimal seul les coupe).
+    La boucle ambiante `dungeon-fx` s'auto-inhibe si on bascule en cours de
+    partie. **Minimal** pose en plus une règle CSS
+    `:root[data-feedback="minimal"] *` qui réduit animations/transitions à
+    l'instant → vrai comportement reduced-motion forcé.
+  - `index.html` : 3 boutons (Plein/Sobre/Minimal) dans la section « Affichage ».
+  - Test : `scenarioUiFeedbackLevel` (controls.js) — Plein (rien coupé), Sobre
+    (particules off, motion gardée), Minimal (reduced forcé), persistance au
+    rechargement. `node tests/smoke.js` 266 verts + `node tests/pwa-smoke.js`
+    vert + cache-bump (style.css v55, ui-settings.js v6, combat-fx.js v13,
+    haptics.js v3, dungeon-fx.js v9, cinematics.js v3, ux-improvements.js v9,
+    `CACHE_VERSION` v223). **Phase Haute (H1-H4) terminée.**
+
 ---
 
 ## Recommandation de démarrage
