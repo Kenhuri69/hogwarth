@@ -1394,4 +1394,72 @@ async function scenarioForgeEnchant() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioPartyEquipRow, scenarioRichTooltipCoverage, scenarioTryAddItem, scenarioConsumableStacking, scenarioEquipmentAndStatusIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioEquipmentPhase3bQuests, scenarioCritDodgeFromEquip, scenarioDeathlyHallows, scenarioVoiceRelics, scenarioShopLimits, scenarioRefusalFeedback, scenarioForgeDissolve, scenarioForgeEnchant] };
+// M2 (polish UX) — filtre + tri du sac (chips), PUREMENT d'affichage :
+// l'ordre de stockage et les index réels des actions ne changent jamais.
+async function scenarioInventoryFilterSort() {
+  console.log('\n── Scénario : filtre + tri du sac (M2) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  const r = await page.evaluate(() => {
+    const mk = (over) => Object.assign({ name: 'X', type: 'consumable', icon: '🧪', desc: 'd' }, over);
+    player.inventory = [
+      mk({ id: 'p1', name: 'Potion',   type: 'consumable' }),
+      mk({ id: 'w1', name: 'Baguette', type: 'wand', rarity: 'common' }),
+      mk({ id: 'a1', name: 'Relique',  type: 'acc',  rarity: 'legendary' }),
+      mk({ id: 'a2', name: 'Anneau',   type: 'acc',  rarity: 'rare' }),
+    ];
+    openInventory();
+    const names = () => [...document.querySelectorAll('#inv-grid .inv-slot.has-item')].map(s => s.querySelector('.item-name').textContent);
+    const out = {};
+    out.barVisible = getComputedStyle(document.getElementById('inv-filter-bar')).display !== 'none';
+
+    setInvFilter('equip');
+    out.equip = names();
+    out.equipChipActive = document.getElementById('inv-filter-equip').classList.contains('active');
+
+    setInvFilter('conso');
+    out.conso = names();
+
+    setInvFilter('tous'); toggleInvSort();
+    out.sorted = names();
+    out.sortChipActive = document.getElementById('inv-sort-rarity').classList.contains('active');
+    out.storage = player.inventory.map(i => i.name);   // doit rester inchangé
+
+    // Clic sur le 1er item trié (Relique légendaire) → useItem(index réel 2).
+    let usedIdx = null;
+    const orig = window.useItem; window.useItem = (i) => { usedIdx = i; };
+    document.querySelector('#inv-grid .inv-slot.has-item').click();
+    window.useItem = orig;
+    out.clickedRealIdx = usedIdx;
+
+    // En combat : la barre est masquée et l'ordre brut est conservé.
+    toggleInvSort(); setInvFilter('tous');     // reset
+    renderInventory(true);
+    out.barHiddenInBattle = getComputedStyle(document.getElementById('inv-filter-bar')).display === 'none';
+    out.battleOrder = names();
+    return out;
+  });
+  console.log('  result:', r);
+  assert(r.barVisible, 'la barre de filtre doit être visible hors combat');
+  assert(r.equip.length === 3 && !r.equip.includes('Potion'), 'filtre Équipement doit exclure les consommables');
+  assert(r.equipChipActive, 'le chip Équipement actif doit être surligné');
+  assert(r.conso.length === 1 && r.conso[0] === 'Potion', 'filtre Consommables doit ne montrer que la potion');
+  assert(r.sorted[0] === 'Relique', 'tri par rareté → légendaire en tête');
+  assert(r.sortChipActive, 'le chip de tri actif doit être surligné');
+  assert(JSON.stringify(r.storage) === JSON.stringify(['Potion', 'Baguette', 'Relique', 'Anneau']),
+    'l\'ordre de stockage NE doit PAS changer (tri d\'affichage seul)');
+  assert(r.clickedRealIdx === 2, 'le clic sur l\'item trié doit cibler son index RÉEL (2)');
+  assert(r.barHiddenInBattle, 'la barre de filtre doit être masquée en combat');
+  assert(JSON.stringify(r.battleOrder) === JSON.stringify(['Potion', 'Baguette', 'Relique', 'Anneau']),
+    'en combat, l\'ordre brut du sac doit être conservé');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS (filtre sac)`);
+  }
+  console.log('  ✅ Filtre + tri du sac conforme (affichage seul, index réels préservés)');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioPartyEquipRow, scenarioRichTooltipCoverage, scenarioInventoryFilterSort, scenarioTryAddItem, scenarioConsumableStacking, scenarioEquipmentAndStatusIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioEquipmentPhase3bQuests, scenarioCritDodgeFromEquip, scenarioDeathlyHallows, scenarioVoiceRelics, scenarioShopLimits, scenarioRefusalFeedback, scenarioForgeDissolve, scenarioForgeEnchant] };

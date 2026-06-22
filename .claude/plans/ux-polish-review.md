@@ -466,6 +466,23 @@ Chaque lot est **livrable indépendamment** : la qualité perçue monte dès C1
     ui-bestiary v7, ui-codex v11, inventory v28, inventory-spells v12, quests
     v21, `CACHE_VERSION` v224).
 
+- **2026-06-22 — M2 (Tri + filtre du sac) : ✅ livré.**
+  - `js/inventory.js` : barre de chips **Tout / Équipement / Consommables** +
+    bascule **Rareté** (tri). `setInvFilter()` / `toggleInvSort()` +
+    `_applyInvFilterSort(entries)` + extraction `_renderInvSlotEl(item, idx,
+    battleMode)`. **Filtre/tri PUREMENT d'affichage** : `renderInventory`
+    construit `entries = inventory.map((item, idx) => …)` et conserve l'**index
+    réel** pour `useItem(idx)` — l'ordre de stockage de `player.inventory` ne
+    bouge jamais. Barre **masquée en combat** (`battleMode`), où l'ordre brut
+    et le comportement historique sont conservés (zéro régression).
+  - `index.html` : `#inv-filter-bar` (chips) dans `#inv-pane-sac`.
+  - `css/style.css` : `.inv-filter-bar` / `.inv-chip` (chip actif teinté Maison).
+  - Test : `scenarioInventoryFilterSort` (inventory.js) — filtres Équipement/
+    Consommables, tri rareté (légendaire en tête), **ordre de stockage
+    inchangé**, **clic sur item trié → index RÉEL** (2), barre masquée + ordre
+    brut en combat. `node tests/smoke.js` 268 verts + cache-bump (style.css v57,
+    inventory.js v29, `CACHE_VERSION` v225).
+
 ---
 
 ## Recommandation de démarrage

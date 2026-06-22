@@ -21,7 +21,7 @@
 <meta name="twitter:title" content="Poudlard & Magie : Les Secrets de Poudlard">
 <meta name="twitter:description" content="RPG dungeon-crawler en tour par tour dans l'univers de Poudlard, jouable dans le navigateur.">
 <meta name="twitter:image" content="https://kenhuri69.github.io/hogwarth/img/scenes/title.jpg">
-<link rel="stylesheet" href="css/style.css?v=56">
+<link rel="stylesheet" href="css/style.css?v=57">
 <link rel="stylesheet" href="css/ux-improvements.css?v=5">
 <link rel="stylesheet" href="css/save-ui.css?v=5">
 <link rel="stylesheet" href="css/ornaments.css?v=1">
@@ -923,6 +923,12 @@
       <button type="button" class="shop-tab" id="inv-tab-grimoire" onclick="switchInvTab('grimoire')" style="display:none"><img class="ui-icon ui-icon-md" src="img/icons/spellbook.png" alt=""> Grimoire</button>
     </div>
     <div id="inv-pane-sac">
+      <div class="inv-filter-bar" id="inv-filter-bar" role="group" aria-label="Filtrer et trier le sac">
+        <button type="button" class="inv-chip active" id="inv-filter-tous" onclick="setInvFilter('tous')">Tout</button>
+        <button type="button" class="inv-chip" id="inv-filter-equip" onclick="setInvFilter('equip')">Équipement</button>
+        <button type="button" class="inv-chip" id="inv-filter-conso" onclick="setInvFilter('conso')">Consommables</button>
+        <button type="button" class="inv-chip inv-chip-sort" id="inv-sort-rarity" onclick="toggleInvSort()" aria-pressed="false" title="Trier par rareté (affichage seul)">⭐ Rareté</button>
+      </div>
       <div class="inv-grid" id="inv-grid"></div>
       <div id="inv-hint" style="margin-top:12px; font-size:11px; color:#6a5030; text-align:center;">Cliquez sur un objet pour l'utiliser</div>
     </div>
@@ -1397,7 +1403,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="js/battle-spells.js?v=25"></script>
 <script defer src="js/battle-ui.js?v=10"></script>
 <script defer src="js/inventory-core.js?v=9"></script>
-<script defer src="js/inventory.js?v=28"></script>
+<script defer src="js/inventory.js?v=29"></script>
 <script defer src="js/inventory-spells.js?v=12"></script>
 <script defer src="js/potions.js?v=8"></script>
 <script defer src="js/quests-templates.js?v=21"></script>
