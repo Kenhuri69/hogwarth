@@ -578,6 +578,9 @@ function _applyState(gs) {
     generateDungeon(currentFloor || 1);
   }
 
+  // Chargement = saut d'étage non naturel : éviter un faux franchissement de
+  // palier de corruption (H3). Le prochain updateUI mémorisera sans déclencher.
+  if (typeof _resetCorruptionTierTracking === 'function') _resetCorruptionTierTracking();
   updateUI();
   updateCompass();
   renderMinimap();

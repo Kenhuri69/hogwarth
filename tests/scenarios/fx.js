@@ -1140,11 +1140,54 @@ async function scenarioCorruptionMeter() {
   assert(r.floor14Flakes === 5, 'étage 14 doit saturer à 5 flocons');
   assert(r.loopFlakes === 5, 'Boucle doit rester bornée à 5 flocons');
 
+  // H3 — feedback de franchissement de palier (flash + son), une seule fois.
+  const r2 = await page.evaluate(() => {
+    const out = {};
+    const el = document.getElementById('corruption-meter');
+    let plays = 0;
+    const orig = (typeof AudioSystem !== 'undefined') ? AudioSystem.playCorruptionRise : null;
+    if (typeof AudioSystem !== 'undefined') AudioSystem.playCorruptionRise = () => { plays++; };
+
+    // Repart d'un état propre : surface (palier 0), pas de déclenchement.
+    if (typeof _resetCorruptionTierTracking === 'function') _resetCorruptionTierTracking();
+    currentFloor = 1; victoryAchieved = false; _updateCorruptionMeter();
+    out.playsAfterReset = plays;          // 0 — premier affichage ne déclenche pas
+    el.classList.remove('corruption-rise');
+
+    // Descente franchissant plusieurs paliers d'un coup → 1 seul feedback.
+    currentFloor = 12; _updateCorruptionMeter();
+    out.classOnRise = el.classList.contains('corruption-rise');
+    out.playsAfterRise = plays;
+
+    // Re-rendu au même étage (updateUI répété) → pas de re-déclenchement.
+    _updateCorruptionMeter();
+    out.playsStable = plays;
+
+    // Remontée (palier qui baisse) → pas de feedback.
+    currentFloor = 1; _updateCorruptionMeter();
+    out.playsAfterUp = plays;
+
+    // Chargement d'une save profonde (reset puis update) → pas de faux trigger.
+    if (typeof _resetCorruptionTierTracking === 'function') _resetCorruptionTierTracking();
+    currentFloor = 14; _updateCorruptionMeter();
+    out.playsAfterLoad = plays;
+
+    if (typeof AudioSystem !== 'undefined') AudioSystem.playCorruptionRise = orig;
+    return out;
+  });
+  console.log('  H3 feedback:', r2);
+  assert(r2.playsAfterReset === 0,  'premier affichage ne doit PAS déclencher le feedback');
+  assert(r2.classOnRise,            'la montée de palier doit ajouter .corruption-rise');
+  assert(r2.playsAfterRise === 1,   'la montée de palier doit jouer le son une fois');
+  assert(r2.playsStable === 1,      'un re-rendu au même étage ne doit pas re-déclencher');
+  assert(r2.playsAfterUp === 1,     'remonter (palier qui baisse) ne doit pas déclencher');
+  assert(r2.playsAfterLoad === 1,   'un chargement de save profonde ne doit pas déclencher (reset)');
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS (thermomètre corruption)`);
   }
-  console.log('  ✅ Thermomètre de corruption conforme');
+  console.log('  ✅ Thermomètre de corruption + feedback de palier (H3) conforme');
   await browser.close();
 }
 

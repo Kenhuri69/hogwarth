@@ -529,6 +529,27 @@ Object.assign(AudioSystem, {
     });
   },
 
+  // ── Montée de palier de corruption (H3) ──────────────────────
+  // Grondement grave, sourd et descendant : signale le franchissement d'un
+  // palier de corruption (l'étage devient plus hostile). Discret, jamais
+  // agressif — joué une seule fois par franchissement.
+  playCorruptionRise() {
+    if (this.isMuted) return;
+    this.init();
+    const now = this.ctx.currentTime;
+    // Deux nappes graves descendantes (sine) + une dissonance sourde (triangle).
+    [[150, 0, 0.16], [98, 0.18, 0.18]].forEach(([freq, delay, peak]) => {
+      this._playTone({
+        freq, type: 'sine', start: now + delay, peak, attack: 0.04,
+        decayAt: now + delay + 0.45, stop: now + delay + 0.55,
+      });
+    });
+    this._playTone({
+      freq: 73, type: 'triangle', start: now + 0.05, peak: 0.1, attack: 0.05,
+      decayAt: now + 0.6, stop: now + 0.7,
+    });
+  },
+
   // ── Voix des sortilèges ──────────────────────────────────────
   // Mapping nom de sort (SPELLS[].name) → clé OGG (_VOICE_SAMPLES).
   // Les sorts absents de cette table retombent sur SpeechSynthesis.
