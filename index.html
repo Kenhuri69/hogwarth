@@ -21,7 +21,7 @@
 <meta name="twitter:title" content="Poudlard & Magie : Les Secrets de Poudlard">
 <meta name="twitter:description" content="RPG dungeon-crawler en tour par tour dans l'univers de Poudlard, jouable dans le navigateur.">
 <meta name="twitter:image" content="https://kenhuri69.github.io/hogwarth/img/scenes/title.jpg">
-<link rel="stylesheet" href="css/style.css?v=55">
+<link rel="stylesheet" href="css/style.css?v=56">
 <link rel="stylesheet" href="css/ux-improvements.css?v=5">
 <link rel="stylesheet" href="css/save-ui.css?v=5">
 <link rel="stylesheet" href="css/ornaments.css?v=1">
@@ -916,6 +916,7 @@
   <div class="modal-box">
     <div class="modal-title" id="inventory-modal-title"><img class="ui-icon ui-icon-xl" src="img/icons/backpack.png" alt=""> Sac de Moldu</div>
     <span class="modal-close" onclick="closeModal('inventory-modal')" role="button" title="Fermer (Échap)" aria-label="Fermer (Échap)" tabindex="0">✕</span>
+    <div class="grimoire-tabs" data-grimoire-tabs role="tablist" aria-label="Navigation du Grimoire"></div>
     <div class="shop-tabs" id="inv-tabs">
       <button type="button" class="shop-tab active" id="inv-tab-sac" onclick="switchInvTab('sac')"><img class="ui-icon ui-icon-md" src="img/icons/backpack.png" alt=""> Sac</button>
       <button type="button" class="shop-tab" id="inv-tab-besace" onclick="switchInvTab('besace')"><img class="ui-icon ui-icon-md" src="img/icons/besace.png" alt=""> Besace</button>
@@ -934,6 +935,7 @@
   <div class="modal-box">
     <div class="modal-title" id="spell-modal-title"><img class="ui-icon ui-icon-xl" src="img/icons/spellbook.png" alt=""> Livre des Sortilèges</div>
     <span class="modal-close" onclick="closeModal('spell-modal')" role="button" title="Fermer (Échap)" aria-label="Fermer (Échap)" tabindex="0">✕</span>
+    <div class="grimoire-tabs" data-grimoire-tabs role="tablist" aria-label="Navigation du Grimoire"></div>
     <div class="spell-list" id="spell-list"></div>
   </div>
 </div>
@@ -997,6 +999,7 @@
   <div class="modal-box">
     <div class="modal-title" id="character-modal-title"><img class="ui-icon ui-icon-xl" src="img/icons/scroll.png" alt=""> Fiche de Personnage</div>
     <span class="modal-close" onclick="closeModal('character-modal')" role="button" title="Fermer (Échap)" aria-label="Fermer (Échap)" tabindex="0">✕</span>
+    <div class="grimoire-tabs" data-grimoire-tabs role="tablist" aria-label="Navigation du Grimoire"></div>
     <div id="char-detail"></div>
   </div>
 </div>
@@ -1042,6 +1045,7 @@
       <span class="bestiary-title" id="bestiary-modal-title"><img class="ui-icon ui-icon-xl" src="img/icons/bestiary.png" alt=""> Bestiaire de Poudlard</span>
       <span class="modal-close" onclick="closeBestiary()" role="button" title="Fermer (Échap)" aria-label="Fermer (Échap)" tabindex="0">✕</span>
     </div>
+    <div class="grimoire-tabs" data-grimoire-tabs role="tablist" aria-label="Navigation du Grimoire"></div>
 
     <!-- Onglets Codex : Bestiaire / Mémoire des Ruines (P-D5) -->
     <div class="codex-tabs">
@@ -1124,6 +1128,7 @@
             style="margin-left:auto;margin-right:10px;font-family:'Cinzel',serif;font-size:11px;letter-spacing:1px;color:var(--gold-light);white-space:nowrap"></span>
       <span class="modal-close" onclick="closeCodex()" role="button" title="Fermer (Échap)" aria-label="Fermer (Échap)" tabindex="0">✕</span>
     </div>
+    <div class="grimoire-tabs" data-grimoire-tabs role="tablist" aria-label="Navigation du Grimoire"></div>
 
     <!-- Onglets de section (§12.2). Bestiaire délègue à openBestiary(). -->
     <div class="codex-tabs codex-section-tabs">
@@ -1363,13 +1368,13 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="js/item-icons.js?v=47"></script>
 <script defer src="js/state.js?v=44"></script>
 <script defer src="js/hero-barks.js?v=13"></script>
-<script defer src="js/ui.js?v=23"></script>
+<script defer src="js/ui.js?v=24"></script>
 <script defer src="js/modal-a11y.js?v=2"></script>
-<script defer src="js/ui-character-sheet.js?v=14"></script>
+<script defer src="js/ui-character-sheet.js?v=15"></script>
 <script defer src="js/ui-settings.js?v=6"></script>
 <script defer src="js/keybindings.js?v=1"></script>
-<script defer src="js/ui-bestiary.js?v=6"></script>
-<script defer src="js/ui-codex.js?v=10"></script>
+<script defer src="js/ui-bestiary.js?v=7"></script>
+<script defer src="js/ui-codex.js?v=11"></script>
 <script defer src="js/dungeon-scaling.js?v=9"></script>
 <script defer src="js/dungeon.js?v=21"></script>
 <script defer src="js/dungeon-spawning.js?v=2"></script>
@@ -1392,11 +1397,11 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="js/battle-spells.js?v=25"></script>
 <script defer src="js/battle-ui.js?v=10"></script>
 <script defer src="js/inventory-core.js?v=9"></script>
-<script defer src="js/inventory.js?v=27"></script>
-<script defer src="js/inventory-spells.js?v=11"></script>
+<script defer src="js/inventory.js?v=28"></script>
+<script defer src="js/inventory-spells.js?v=12"></script>
 <script defer src="js/potions.js?v=8"></script>
 <script defer src="js/quests-templates.js?v=21"></script>
-<script defer src="js/quests.js?v=20"></script>
+<script defer src="js/quests.js?v=21"></script>
 <script defer src="js/quests-riddles.js?v=3"></script>
 <script defer src="js/npc-dialog.js?v=22"></script>
 <script defer src="js/house-donation.js?v=2"></script>

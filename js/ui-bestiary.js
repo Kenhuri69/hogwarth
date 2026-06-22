@@ -33,6 +33,7 @@ function _codexTier(monster) {
 
 function openBestiary() {
   document.getElementById('bestiary-modal').style.display = 'flex';
+  if (typeof _mountGrimoireTabs === 'function') _mountGrimoireTabs('bestiaire');
   // Toujours rouvrir sur l'onglet Bestiaire (panneau liste).
   switchCodexTab('bestiary');
 }

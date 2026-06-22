@@ -102,6 +102,7 @@ function openCodex() {
   const modal = safeEl('codex-modal');
   if (!modal) return;
   modal.style.display = 'flex';
+  if (typeof _mountGrimoireTabs === 'function') _mountGrimoireTabs('codex');
   switchCodexSection(_codexSection || 'histoire');
 }
 

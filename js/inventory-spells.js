@@ -181,6 +181,7 @@ function openSpells(charIdx = 0) {
     list.appendChild(div);
   }
   document.getElementById('spell-modal').style.display = 'flex';
+  if (typeof _mountGrimoireTabs === 'function') _mountGrimoireTabs('sorts');
 }
 
 // Sorts utilisables hors combat. Inscrits via SPELL_OOC_HANDLERS pour

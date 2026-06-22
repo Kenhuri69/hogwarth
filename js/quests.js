@@ -457,6 +457,7 @@ function openQuestLog() {
   if (typeof setCharacterModalTitle === 'function')
     setCharacterModalTitle('img/icons/quest.png', 'Journal des Quêtes');
   document.getElementById('character-modal').style.display = 'flex';
+  if (typeof _mountGrimoireTabs === 'function') _mountGrimoireTabs('quetes');
   renderQuestList();
 }
 

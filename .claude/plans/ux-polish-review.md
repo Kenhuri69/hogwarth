@@ -444,6 +444,28 @@ Chaque lot est **livrable indépendamment** : la qualité perçue monte dès C1
     haptics.js v3, dungeon-fx.js v9, cinematics.js v3, ux-improvements.js v9,
     `CACHE_VERSION` v223). **Phase Haute (H1-H4) terminée.**
 
+- **2026-06-22 — M1 (Barre d'onglets Grimoire) : ✅ livré.**
+  - `js/ui.js` : `_GRIMOIRE_TABS` (Fiche/Sac/Sorts/Bestiaire/Codex/Quêtes) +
+    `grimoireTabsHtml(active)` + `_mountGrimoireTabs(active)` (remplit tous les
+    points de montage `[data-grimoire-tabs]`) + `grimoireGoto(key)` (ferme les
+    autres modales Grimoire puis ouvre la cible via l'open*() existant — une
+    seule modale visible, plus de cul-de-sac). Surcouche de navigation PURE.
+  - `index.html` : `<div class="grimoire-tabs" data-grimoire-tabs>` injecté en
+    tête de 5 modales (character / inventory / spell / bestiary / codex).
+  - 6 hooks `_mountGrimoireTabs('<key>')` (défensifs) en fin des open*() :
+    `openCharacter` (fiche), `openQuestLog` (quetes — partage character-modal),
+    `openInventory` (sac), `openSpells` (sorts), `openBestiary` (bestiaire),
+    `openCodex` (codex).
+  - `css/style.css` : `.grimoire-tabs` / `.grimoire-tab` (ruban compact, onglet
+    actif teinté Maison `--house-accent`/`--house-glow`, labels masqués ≤ 600px,
+    `transform` neutralisé sous reduced-motion).
+  - Test : `scenarioGrimoireTabs` (misc.js) — montage 6 onglets + actif/aria,
+    bascule 1 clic, une seule modale visible, Quêtes réutilise character-modal.
+    Vérif visuelle desktop + mobile (aucun débordement). `node tests/smoke.js`
+    267 verts + cache-bump (style.css v56, ui.js v24, ui-character-sheet v15,
+    ui-bestiary v7, ui-codex v11, inventory v28, inventory-spells v12, quests
+    v21, `CACHE_VERSION` v224).
+
 ---
 
 ## Recommandation de démarrage

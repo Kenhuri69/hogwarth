@@ -3177,6 +3177,39 @@ button.shop-tab.active {
   border-color: var(--gold);
   color: var(--gold);
 }
+/* ── Barre d'onglets « Grimoire » (M1) — navigation inter-vues ────────────────
+   Ruban compact en tête des modales partagées. L'onglet actif est teinté par
+   la Maison (--house-accent / --house-glow, cf. H1) ; l'or reste la couleur
+   « du monde ». Wrap sur petits écrans, labels masqués ≤ 600px (icônes seules). */
+.grimoire-tabs {
+  display: flex; flex-wrap: wrap; gap: 5px;
+  margin: 0 0 12px; padding-bottom: 9px;
+  border-bottom: 1px solid var(--gold-dark);
+}
+.grimoire-tab {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 0.5px;
+  padding: 6px 10px; border-radius: 5px;
+  background: linear-gradient(180deg, rgba(40,28,12,0.7) 0%, rgba(20,12,4,0.85) 100%);
+  border: 1px solid var(--gold-dark); color: var(--gold-dark);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s, transform 0.15s;
+}
+.grimoire-tab img { width: 16px; height: 16px; flex-shrink: 0; }
+.grimoire-tab:hover { color: var(--gold-light); border-color: var(--gold); transform: translateY(-1px); }
+.grimoire-tab.active {
+  background: linear-gradient(180deg, rgba(80,55,20,0.65) 0%, rgba(50,32,10,0.8) 100%);
+  border-color: var(--house-accent); color: var(--gold-light);
+  box-shadow: 0 0 8px var(--house-glow);
+}
+@media (prefers-reduced-motion: reduce) {
+  .grimoire-tab:hover { transform: none; }
+}
+@media (max-width: 600px) {
+  .grimoire-tab-label { display: none; }
+  .grimoire-tab { padding: 8px 10px; }
+}
+
 .shop-grid { display: flex; flex-direction: column; gap: 8px; }
 .shop-item {
   background: #0a0705; border: 1px solid #2a1a08; border-radius: 4px;

@@ -674,3 +674,47 @@ function setCharacterModalTitle(iconSrc, label) {
   t.innerHTML = `<img class="ui-icon ui-icon-xl" src="${iconSrc}" alt=""> ${label}`;
 }
 
+// ── Barre d'onglets « Grimoire » (M1, polish UX) ─────────────────────────────
+// Ruban de navigation injecté en tête des modales partagées (Fiche / Sac /
+// Sorts / Bestiaire / Codex / Quêtes). Un clic bascule d'une vue à l'autre sans
+// fermer puis rouvrir — supprime le cul-de-sac inter-modales. Surcouche de
+// navigation PURE : réutilise les open*() existants, aucune refonte de logique.
+const _GRIMOIRE_TABS = [
+  { key: 'fiche',     label: 'Fiche',     icon: 'img/icons/scroll.png',       open: 'openCharacter' },
+  { key: 'sac',       label: 'Sac',       icon: 'img/icons/backpack.png',     open: 'openInventory' },
+  { key: 'sorts',     label: 'Sorts',     icon: 'img/icons/spellbook.png',    open: 'openSpells' },
+  { key: 'bestiaire', label: 'Bestiaire', icon: 'img/icons/bestiary.png',     open: 'openBestiary' },
+  { key: 'codex',     label: 'Codex',     icon: 'img/icons/codex_wizard.png', open: 'openCodex' },
+  { key: 'quetes',    label: 'Quêtes',    icon: 'img/icons/quest.png',        open: 'openQuestLog' },
+];
+const _GRIMOIRE_MODAL_IDS = ['character-modal', 'inventory-modal', 'spell-modal', 'bestiary-modal', 'codex-modal'];
+
+function grimoireTabsHtml(activeKey) {
+  return _GRIMOIRE_TABS.map(t => {
+    const active = t.key === activeKey;
+    return `<button type="button" class="grimoire-tab${active ? ' active' : ''}"`
+      + ` onclick="grimoireGoto('${t.key}')"${active ? ' aria-current="page"' : ''}`
+      + ` title="${t.label}"><img class="ui-icon ui-icon-md" src="${t.icon}" alt="">`
+      + `<span class="grimoire-tab-label">${t.label}</span></button>`;
+  }).join('');
+}
+
+// Remplit tous les points de montage [data-grimoire-tabs] avec le ruban, en
+// marquant l'onglet `activeKey`. Appelé à la fin de chaque open*() concerné.
+function _mountGrimoireTabs(activeKey) {
+  const html = grimoireTabsHtml(activeKey);
+  document.querySelectorAll('[data-grimoire-tabs]').forEach(el => { el.innerHTML = html; });
+}
+
+// Bascule vers une vue : ferme les autres modales Grimoire puis ouvre la cible
+// via sa fonction open*() existante (une seule modale visible à la fois).
+function grimoireGoto(key) {
+  const def = _GRIMOIRE_TABS.find(t => t.key === key);
+  if (!def) return;
+  _GRIMOIRE_MODAL_IDS.forEach(id => {
+    const m = document.getElementById(id);
+    if (m) m.style.display = 'none';
+  });
+  if (typeof window[def.open] === 'function') window[def.open]();
+}
+

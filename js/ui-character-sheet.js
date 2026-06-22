@@ -523,6 +523,7 @@ function openCharacter(charIdx = 0) {
   if (typeof setCharacterModalTitle === 'function')
     setCharacterModalTitle('img/icons/scroll.png', 'Fiche de Personnage');
   document.getElementById('character-modal').style.display = 'flex';
+  if (typeof _mountGrimoireTabs === 'function') _mountGrimoireTabs('fiche');
 }
 
 // Mondes parallèles Phase H §6.10 — sous-section Carnet de Voyage de
