@@ -16,7 +16,7 @@
 //     individuel suffit pour eux.
 // =======================================================================
 
-const CACHE_VERSION = 'hogwarth-v221';
+const CACHE_VERSION = 'hogwarth-v222';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Précache minimal (~1 Mo) : shell HTML/CSS/JS + premier visuel.
@@ -36,7 +36,7 @@ const PRECACHE_URLS = [
   './css/combat-fx.css?v=13',
   './css/dungeon-fx.css?v=5',
   './css/cinematics.css?v=1',
-  './css/frost.css?v=2',
+  './css/frost.css?v=3',
   './css/codex.css?v=5',
 
   // JS — ordre identique à index.html (sans incidence pour le cache,
@@ -47,7 +47,7 @@ const PRECACHE_URLS = [
   './js/haptics.js?v=2',
   './js/audio.js?v=2',
   './js/audio-music.js?v=7',
-  './js/audio-sfx.js?v=18',
+  './js/audio-sfx.js?v=19',
   './js/icons.js?v=1',
   './js/scene-icons.js?v=8',
   './js/monsters.js?v=24',
@@ -67,7 +67,7 @@ const PRECACHE_URLS = [
   './js/data-world.js?v=1',
   './js/data-icon-recipes.js?v=1',
   './js/floor-themes.js?v=2',
-  './js/floor-ambiance.js?v=17',
+  './js/floor-ambiance.js?v=18',
   './js/floor-events.js?v=2',
   './js/room-flavor.js?v=1',
   './js/item-icons.js?v=47',
@@ -113,7 +113,7 @@ const PRECACHE_URLS = [
   './js/intro.js?v=3',
   './js/shop.js?v=19',
   './js/save-slots.js?v=4',
-  './js/save.js?v=46',
+  './js/save.js?v=47',
   './js/save-visit-snapshot.js?v=2',
   './js/profile.js?v=3',
   './js/save-ui.js?v=9',

@@ -398,6 +398,29 @@ Chaque lot est **livrable indépendamment** : la qualité perçue monte dès C1
     (action déclenchée). `node tests/smoke.js` 265 verts + cache-bump
     (ux-improvements.js v8, `CACHE_VERSION` v221).
 
+- **2026-06-22 — H3 (Feedback de corruption) : ✅ livré.**
+  - La **mini-jauge persistante** (`#corruption-meter`) existait déjà (P2.1) ;
+    H3 ajoute le **feedback de franchissement de palier**. `js/floor-ambiance.js` :
+    `_updateCorruptionMeter` mémorise le dernier palier (`_lastCorruptionTier`)
+    et, sur une **montée** de palier, appelle `_onCorruptionTierRise(tier)` :
+    pulse CSS `.corruption-rise` du thermomètre + pic de givre
+    (`pulseFrostOverlay`, réutilisé) + `AudioSystem.playCorruptionRise()` (SFX
+    procédural grave) + `HAPTICS_safe.cast()` + ligne de journal discrète.
+    Ne se déclenche **pas** au premier affichage, ni en remontant, ni sur un
+    re-rendu au même étage.
+  - `js/save.js` : `_resetCorruptionTierTracking()` appelé dans `_applyState`
+    (avant `updateUI`) — un chargement de save profonde n'est pas un
+    franchissement naturel, donc pas de faux déclenchement.
+  - `js/audio-sfx.js` : `playCorruptionRise()` (grondement sourd descendant,
+    discret, gardé par `isMuted`).
+  - `css/frost.css` : keyframes `corruptionRise` (halo + gonflement) +
+    variante `prefers-reduced-motion` (flash d'opacité seul).
+  - Test : `scenarioCorruptionMeter` (fx.js) étendu — premier affichage muet,
+    montée multi-paliers = 1 seul son + classe, re-rendu stable, remontée muette,
+    chargement profond muet (reset). `node tests/smoke.js` 265 verts + cache-bump
+    (frost.css v3, audio-sfx.js v19, floor-ambiance.js v18, save.js v47,
+    `CACHE_VERSION` v222).
+
 ---
 
 ## Recommandation de démarrage

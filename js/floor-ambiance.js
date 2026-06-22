@@ -212,6 +212,37 @@ function corruptionThermometerHtml(level) {
          '<span class="corruption-label">Corruption ' + label + '</span>';
 }
 
+// Dernier palier de corruption affiché — sert à détecter un FRANCHISSEMENT
+// (montée de palier) pour déclencher le feedback (H3). `null` = pas encore
+// initialisé (premier affichage : on mémorise sans déclencher).
+let _lastCorruptionTier = null;
+
+// Réinitialise le suivi de palier (le prochain affichage mémorisera sans
+// déclencher). À appeler quand l'étage courant change SANS descente naturelle
+// — chargement d'une sauvegarde profonde — pour éviter un faux franchissement.
+function _resetCorruptionTierTracking() { _lastCorruptionTier = null; }
+
+// Feedback de franchissement de palier (H3) : pic de givre + grondement sourd
+// + pulse du thermomètre + ligne de journal discrète. Tout est défensif.
+function _onCorruptionTierRise(tier) {
+  const el = (typeof safeEl === 'function') ? safeEl('corruption-meter') : document.getElementById('corruption-meter');
+  if (el) {
+    el.classList.remove('corruption-rise');
+    void el.offsetWidth;            // reflow → rejoue l'animation si rappelée vite
+    el.classList.add('corruption-rise');
+    setTimeout(() => el && el.classList.remove('corruption-rise'), 1200);
+  }
+  if (typeof pulseFrostOverlay === 'function') pulseFrostOverlay();
+  if (typeof AudioSystem !== 'undefined' && AudioSystem.playCorruptionRise) {
+    AudioSystem.playCorruptionRise();
+  }
+  if (window.HAPTICS_safe) HAPTICS_safe.cast();
+  const label = _CORRUPTION_TIER_LABELS[tier] || '';
+  if (typeof addMsg === 'function' && label) {
+    addMsg('🌑 La corruption s’épaissit — elle devient ' + label + '.', '');
+  }
+}
+
 // Met à jour le thermomètre HUD #corruption-meter. Défensif (no-op si DOM
 // absent — file:// smoke). Masqué au palier 0.
 function _updateCorruptionMeter(floor) {
@@ -220,8 +251,15 @@ function _updateCorruptionMeter(floor) {
   const va = (typeof victoryAchieved !== 'undefined') ? victoryAchieved : false;
   const f  = (typeof floor === 'number' && floor > 0)
     ? floor : ((typeof currentFloor !== 'undefined') ? currentFloor : 1);
-  const c  = corruptionLevel(f, va);
-  if (corruptionTier(c) === 0) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  const c    = corruptionLevel(f, va);
+  const tier = corruptionTier(c);
+  // Franchissement d'un palier vers le HAUT (pas au tout premier affichage,
+  // ni en remontant) → feedback flash + son.
+  if (_lastCorruptionTier !== null && tier > _lastCorruptionTier) {
+    _onCorruptionTierRise(tier);
+  }
+  _lastCorruptionTier = tier;
+  if (tier === 0) { el.style.display = 'none'; el.innerHTML = ''; return; }
   el.innerHTML = corruptionThermometerHtml(c);
   el.style.display = 'block';
   el.setAttribute('title', 'Niveau de corruption de l’étage — il monte à mesure que tu descends');
