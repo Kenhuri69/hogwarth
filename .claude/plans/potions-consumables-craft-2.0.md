@@ -10,7 +10,7 @@
 > duplique pas les designs déjà livrés :
 > - socle craft archivé : [`_archive/farming-potion-system.md`](./_archive/farming-potion-system.md)
 > - enrichissement P0→P6 : [`potions-enrichment.md`](./potions-enrichment.md) (réf. permanente)
-> - pilier jumeau (modèle de structure) : [`artifacts-reliquary-system.md`](./artifacts-reliquary-system.md)
+> - pilier jumeau (modèle de structure) : [`artifacts-reliquary-system.md`](./_archive/artifacts-reliquary-system.md)
 > - sorts/corruption : [`spells-magic-system.md`](./spells-magic-system.md)
 >
 > **Canon de référence** : chapitres

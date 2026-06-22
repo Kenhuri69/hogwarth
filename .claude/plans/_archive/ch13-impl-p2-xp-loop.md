@@ -52,7 +52,7 @@ gagne une XP passive = `round(LOOP_PASSIVE_XP_FRAC × player.xpNext)`.
 6. [x] **Cache-bump** (data v28→29, movement-floors v14→15, CACHE_VERSION
    v118→v119). `check_cache_versions --working` + `pwa-smoke` verts. Amendé
    Ch.13 (§13.5 Sim 3 / §13.5.1 / §13.9.F P2 ✅ / §13.3.5 / point #5) + G3.
-7. [ ] Commit + push. PR seulement si demandé.
+7. [x] Commit + push. PR seulement si demandé. → livré & mergé (`LOOP_PASSIVE_XP_FRAC` en code).
 
 ## Exclusions (inchangées)
 Pas de `xpNext` adouci (l'autre option §8.7) — on choisit l'**axe additif**

@@ -51,7 +51,7 @@ inchangé ; impact = répit uniforme modéré, sans soin total. Aucun scaling to
    + `pwa-smoke` verts. Amendé Ch.13 §13.4.3/§13.9.F (P3 ✅)/point #3 + G7
    (cellule + section). **G4 : aucun changement** (le refuge n'est pas un bonus
    de Maison — équité — y ajouter une ligne induirait en erreur).
-9. [ ] Commit + push. PR si demandé.
+9. [x] Commit + push. PR si demandé. → livré & mergé (`drawRefugeSprite` + `scenarioRefuge`).
 
 ## Suivi / écarts
 - Le refuge **existait déjà** (Poufsouffle-only) : changement = élargir le gate

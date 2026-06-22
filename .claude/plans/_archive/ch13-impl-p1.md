@@ -68,7 +68,7 @@ P(|Δ| > 10) ≈ négligeable. Le seuil 10 pts absorbe le bruit.
   + G8 (indicateur d'attrition + toast pivot).
 - [x] `node tools/check_difficulty.js` vert (baseline stable, changements
   d'équilibrage = 0 — les modifs sont cosmétiques/tooling).
-- [ ] Commit + push ; **demander avant** d'ouvrir/merger une PR.
+- [x] Commit + push ; **demander avant** d'ouvrir/merger une PR. → livré & mergé.
 
 ## Suivi / écarts
 - `check_difficulty.js` : baseline = table §3 de DIFFICULTY_REPORT.md (pas de

@@ -34,7 +34,7 @@ exposé sur `window.BalanceLog`. 100 % additif et inerte tant que le flag est of
        → vérif : `node tests/smoke.js balanceLog`.
 8. [x] `node tests/units.js && node tests/smoke.js` complets.
 9. [x] Flip ligne P4 §13.9.F/§13.9.H + point 7 §résumé de 💡❓ → ✅ implémenté.
-10. [ ] commit-guard → commit + push + PR.
+10. [x] commit-guard → commit + push + PR. → livré & mergé (#629, `js/balance-log.js`).
 
 ## Écarts constatés
 - `expectedLevel` du logger est une **table statique** (report §1), pas le calcul

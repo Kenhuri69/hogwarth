@@ -73,5 +73,5 @@
   `window.BalanceLog`), opt-in/local/anonyme, NO-OP tant que
   `localStorage.hogwarts_balance_debug !== '1'`. 4 hooks défensifs
   (endBattle/triggerDeath/castSpellInBattle/goDeeper). Détail et étapes dans
-  le plan dédié `.claude/plans/ch13-impl-p4-logger.md`. §13.9.F/§13.9.H/point 7
+  le plan dédié `.claude/plans/_archive/ch13-impl-p4-logger.md`. §13.9.F/§13.9.H/point 7
   passés de 💡❓ à ✅. Instrumentation pure — aucune valeur d'équilibrage touchée.

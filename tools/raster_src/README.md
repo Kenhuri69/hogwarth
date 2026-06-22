@@ -37,4 +37,4 @@ icônes. Sortie : `img/icons_new/<id>_{16,24,32,48,64}.png` (mêmes chemins que
 > ⚠️ Si tu ne fournis pas de source pour un id, l'icône **painterly** existante
 > (recette `RECIPES`) reste la version livrée — c'est le repli.
 
-Prompts prêts à l'emploi : `.claude/plans/artifacts-p1-gemini-prompts.md`.
+Prompts prêts à l'emploi : `.claude/plans/_archive/artifacts-p1-gemini-prompts.md`.
