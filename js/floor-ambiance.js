@@ -265,6 +265,15 @@ function _updateCorruptionMeter(floor) {
   el.setAttribute('title', 'Niveau de corruption de l’étage — il monte à mesure que tu descends');
 }
 
+// Tap sur le thermomètre de corruption (HUD / chip mobile) → Codex, glossaire,
+// entrée « La Corruption qui monte ». Défensif (no-op si le Codex n'est pas chargé).
+function openCorruptionInfo() {
+  if (typeof openCodex !== 'function') return;
+  openCodex();
+  if (typeof switchCodexSection === 'function') switchCodexSection('glossaire');
+  if (typeof showCodexEntry === 'function') showCodexEntry('corruption_gradient');
+}
+
 // ── Variantes cosmétiques par Maison ────────────────────────
 // Une ligne occasionnelle (~1 entrée sur 4) selon chosenHouse.
 // Purement cosmétique, ne modifie pas la carte générée.

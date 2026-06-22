@@ -4569,6 +4569,47 @@ button.shop-tab.active {
   }
   .pcard-name { font-size: 11px; line-height: 1.15; margin-bottom: 2px; }
 
+  /* ── Indicateurs endgame (Boucle) en mini-chips empilés à gauche ──────
+     Avant : le badge Éclats et le thermomètre corruption étaient des items
+     flex pleine largeur qui écrasaient la carte perso. Désormais regroupés
+     dans #hud-endgame-chips : colonne étroite, chips icône+chiffre, libellés
+     masqués. Tap → info Codex. Sélecteurs `.left-panel #...` pour battre la
+     spécificité de frost.css (chargé après style.css). */
+  #hud-endgame-chips {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+    flex: 0 0 auto;
+    min-width: 0;
+  }
+  .left-panel .eclat-hud-badge,
+  .left-panel #corruption-meter {
+    margin: 0;
+    width: auto;
+    max-width: 58px;
+    padding: 2px 6px;
+    line-height: 1.15;
+    border-radius: 8px;
+    text-align: center;
+    box-sizing: border-box;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  /* Badge Éclats : on garde « ✦ N », on masque le mot. */
+  .left-panel .eclat-hud-badge .eclat-chip-lbl { display: none; }
+  .left-panel .eclat-hud-badge .eclat-chip-val { font-size: 10px; }
+  /* Thermomètre corruption en chip : encadré bleuté, libellé masqué,
+     on ne garde que les ❄ (palier). */
+  .left-panel #corruption-meter {
+    margin: 0;
+    border: 1px solid #5a7a9a;
+    background: linear-gradient(180deg, rgba(70,110,150,0.22), rgba(70,110,150,0.10));
+    white-space: nowrap;
+  }
+  .left-panel #corruption-meter .corruption-label { display: none; }
+  .left-panel #corruption-meter .corruption-flakes { margin-right: 0; font-size: 11px; }
+
   /* Viewport 3D occupe tout l'espace */
   .main-view { overflow: hidden; }
   #narrative-panel { font-size: 12px; min-height: 40px; max-height: 50px; padding: 4px 8px; }
