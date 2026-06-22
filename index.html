@@ -21,7 +21,7 @@
 <meta name="twitter:title" content="Poudlard & Magie : Les Secrets de Poudlard">
 <meta name="twitter:description" content="RPG dungeon-crawler en tour par tour dans l'univers de Poudlard, jouable dans le navigateur.">
 <meta name="twitter:image" content="https://kenhuri69.github.io/hogwarth/img/scenes/title.jpg">
-<link rel="stylesheet" href="css/style.css?v=57">
+<link rel="stylesheet" href="css/style.css?v=58">
 <link rel="stylesheet" href="css/ux-improvements.css?v=5">
 <link rel="stylesheet" href="css/save-ui.css?v=5">
 <link rel="stylesheet" href="css/ornaments.css?v=1">
@@ -495,8 +495,21 @@
     <div class="panel-title">Groupe</div>
     <!-- Ch.14 P5 — Titre New Game+ (cosmétique, rempli par updateUI si ngPlusRun) -->
     <div id="ngplus-hud-title" class="ngplus-hud-title" style="display:none"></div>
-    <!-- Ch.11 P0 — Badge Porteur d'Éclats (cosmétique, rempli par updateUI en Boucle) -->
-    <div id="eclat-hud-badge" class="eclat-hud-badge eclat-aura-0" style="display:none"></div>
+    <!-- Indicateurs endgame (Boucle) groupés — chips compacts cliquables sur mobile.
+         Le thermomètre de corruption est rapatrié ici (cf. plus bas l'ancienne
+         position sous les cartes) pour former une colonne de mini-badges à gauche
+         du bandeau de groupe sans écraser la carte perso. -->
+    <div id="hud-endgame-chips">
+      <!-- Ch.11 P0 — Badge Porteur d'Éclats (cosmétique, rempli par updateUI en Boucle) -->
+      <div id="eclat-hud-badge" class="eclat-hud-badge eclat-aura-0" style="display:none"
+           role="button" tabindex="0"
+           aria-label="Éclats portés — voir le Codex"
+           onclick="openEclatInfo()"></div>
+      <!-- Thermomètre de corruption (P2.1) — palier ❄ piloté par floor-ambiance.js -->
+      <div id="corruption-meter" role="status" aria-live="polite" tabindex="0"
+           aria-label="Corruption de l'étage — voir le Codex"
+           onclick="openCorruptionInfo()" style="display:none"></div>
+    </div>
 
     <!-- Harry -->
     <div class="party-card" id="char-card-0">
@@ -562,8 +575,7 @@
     <!-- Blason de la Maison (affiché après choix) -->
     <div id="house-crest" style="display:none;text-align:center;margin:4px 0 2px"></div>
 
-    <!-- Thermomètre de corruption (P2.1) — palier ❄ piloté par floor-ambiance.js -->
-    <div id="corruption-meter" role="status" aria-live="polite" style="display:none"></div>
+    <!-- (Thermomètre de corruption déplacé dans #hud-endgame-chips, plus haut.) -->
 
     <!-- Stats de Harry -->
     <div class="stats-grid">
@@ -1368,13 +1380,13 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="js/data-world.js?v=1"></script>
 <script defer src="js/data-icon-recipes.js?v=1"></script>
 <script defer src="js/floor-themes.js?v=2"></script>
-<script defer src="js/floor-ambiance.js?v=18"></script>
+<script defer src="js/floor-ambiance.js?v=19"></script>
 <script defer src="js/floor-events.js?v=2"></script>
 <script defer src="js/room-flavor.js?v=1"></script>
 <script defer src="js/item-icons.js?v=47"></script>
 <script defer src="js/state.js?v=44"></script>
 <script defer src="js/hero-barks.js?v=13"></script>
-<script defer src="js/ui.js?v=24"></script>
+<script defer src="js/ui.js?v=25"></script>
 <script defer src="js/modal-a11y.js?v=2"></script>
 <script defer src="js/ui-character-sheet.js?v=15"></script>
 <script defer src="js/ui-settings.js?v=6"></script>

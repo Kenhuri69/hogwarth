@@ -422,8 +422,13 @@ function _updateEclatBadge() {
       badge.style.display = 'none';
     } else {
       badge.style.display = 'block';
-      const label = `✦ ${e} Éclat${e > 1 ? 's' : ''}`;
-      if (badge.textContent !== label) badge.textContent = label;
+      // Icône + chiffre toujours visibles ; le mot « Éclat(s) » est isolé dans
+      // .eclat-chip-lbl pour pouvoir le masquer en mode chip compact (mobile).
+      if (badge.getAttribute('data-eclat') !== String(e)) {
+        const word = `Éclat${e > 1 ? 's' : ''}`;
+        badge.innerHTML = `<span class="eclat-chip-val">✦ ${e}</span> <span class="eclat-chip-lbl">${word}</span>`;
+        badge.setAttribute('data-eclat', String(e));
+      }
       badge.className = 'eclat-hud-badge eclat-aura-' + milestones;
     }
   }
@@ -437,6 +442,15 @@ function _updateEclatBadge() {
     crest.className = crest.className
       .replace(/\s*eclat-aura-\d/g, '').replace(/\s*eclat-cycle-broken/g, '') + tier;
   }
+}
+
+// Tap sur le badge Éclats (HUD / chip mobile) → Codex, section « Éclats & Voix »,
+// entrée « Porteur d'Éclats ». Défensif (no-op si le Codex n'est pas chargé).
+function openEclatInfo() {
+  if (typeof openCodex !== 'function') return;
+  openCodex();
+  if (typeof switchCodexSection === 'function') switchCodexSection('eclats');
+  if (typeof showCodexEntry === 'function') showCodexEntry('porteur_eclats');
 }
 
 function _updateCharBar(idx) {
