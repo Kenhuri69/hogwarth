@@ -27,7 +27,7 @@ Rien à coder. Réconciliation doc.
 2. [x] Roadmap Phase 2 : ligne « Variantes texte de fin (B) » → ✅ Fait (date),
    avec grounding (déjà dans la cinématique de victoire ; cinematics.js = visuel).
 3. [x] `node tools/check_doc_modules.js` exit 0.
-4. [ ] Commit → push → PR → CI verte → squash-merge.
+4. [x] Commit → push → PR → CI verte → squash-merge.
 
 ## Garde-fous
 

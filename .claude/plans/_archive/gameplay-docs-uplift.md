@@ -24,7 +24,7 @@ C'est une **réconciliation** + passe de cohérence, pas une réécriture.
 3. [x] docs/README.md (ligne statut global Gameplay) : refléter la couverture.
 4. [x] Roadmap Phase 4 : ligne « Mettre à niveau docs/gameplay » → ✅ Fait.
 5. [x] `node tools/check_doc_modules.js` exit 0.
-6. [ ] Commit → push → PR → CI verte → squash-merge.
+6. [x] Commit → push → PR → CI verte → squash-merge.
 
 ## Mapping chapitre → modules
 

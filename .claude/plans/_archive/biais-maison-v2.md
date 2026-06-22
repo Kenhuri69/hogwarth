@@ -36,7 +36,7 @@ Branche : `claude/biais-maison-v2`. Suite du chantier « biais Maison V2 »
 7. [x] cache-bump (floor-ambiance v13, state v35, movement v37, loader v51,
    CACHE_VERSION v170).
 8. [x] Doc : 10 §10.6 (levier perception livré), roadmap (ligne V2 + sign-off).
-9. [ ] smoke + pwa + doc-modules verts → commit → PR → merge.
+9. [x] smoke + pwa + doc-modules verts → commit → PR → merge.
 
 ## Hors-scope (différé, assumé)
 Levier **pondération de salles** (distribution des types de salle) : seul levier

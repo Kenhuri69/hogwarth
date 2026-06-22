@@ -105,7 +105,7 @@ au runtime → le hook gardé trouve la fonction. Feature 100 % confinée si
 9. [~] `node tests/smoke.js` complet (en cours).
 10. [x] cache-bump (forge v6, inventory-core v9, ui-character-sheet v10,
     loader v54, style.css v46, CACHE v186) + `check_cache_versions` OK.
-11. [ ] commit → push → PR.
+11. [x] commit → push → PR.
 
 ## Hors-scope (assumé)
 - **Piste C** (forge d'amélioration d'équipement légendaire) : la Forge fait

@@ -79,7 +79,7 @@ garde-fou anti-fuite d'état entre phases. Roadmap Phase 4 row ✅. Plan :
 - `node tools/check_difficulty.js` ✅ (0 dérive)
 - `node tests/smoke.js` ✅ **227 scénarios**
 Les 6 garde-fous tournent en CI à chaque PR. Plan :
-`.claude/plans/release-guardrails-signoff.md`.
+`.claude/plans/_archive/release-guardrails-signoff.md`.
 
 ---
 

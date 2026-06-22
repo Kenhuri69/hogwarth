@@ -25,7 +25,7 @@ encore (a)(c)(d) et defiance en `💡`. Réconciliation doc-only.
 3. [x] Ch.14 §14.2.2 : header + (a)(c)(d) `💡`→`✅` ; (e) defiance `💡`→`✅`.
 4. [x] Roadmap §1.4 💡6 + table Phase 1 → ✅ Fait (date).
 5. [x] `node tools/check_doc_modules.js` exit 0 ; `node tests/units.js` vert.
-6. [ ] Commit → push → PR → CI verte → squash-merge.
+6. [x] Commit → push → PR → CI verte → squash-merge.
 
 ## Garde-fous
 

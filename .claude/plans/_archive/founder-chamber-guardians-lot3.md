@@ -24,7 +24,7 @@
 4. [x] cache-bump battle.js + battle-rewards.js + CACHE_VERSION.
 5. [x] check_cache_versions + pwa-smoke + smoke + units + check_doc_modules.
 6. [x] Doc : 11 §11.9.2 (Lot 3 hooks ✅, art déféré) + roadmap Phase 3.
-7. [ ] Commit → push → PR → CI verte → squash-merge.
+7. [x] Commit → push → PR → CI verte → squash-merge.
 
 ## Garde-fous
 

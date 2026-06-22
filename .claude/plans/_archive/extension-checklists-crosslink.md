@@ -26,7 +26,7 @@ Moyenne) reste **optionnelle/hors-scope** — chirurgical d'abord.
 3. [x] 11 §11.11 : même bandeau → 09/10 (+05).
 4. [x] Roadmap : ⚠️7 + §1.3 ligne « 9/10/11 checklists » → ✅ Fait (date).
 5. [x] `node tools/check_doc_modules.js` exit 0.
-6. [ ] Commit → push → PR → CI verte → squash-merge.
+6. [x] Commit → push → PR → CI verte → squash-merge.
 
 ## Garde-fous
 

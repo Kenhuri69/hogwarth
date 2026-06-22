@@ -80,7 +80,7 @@ de zone) avec `power` ↑ ~+50 % et `cost` ↑.
 4. [x] Suivi retour joueur : déblocage AoE PROGRESSIF (1/étage, 14→19) au lieu de floor 14 uniforme
 5. [x] Tests units (test évolution = staggering verrouillé) + smoke
 6. [x] cache-bump (data.js, CACHE_VERSION) + check + pwa-smoke
-7. [ ] commit + push (suivi)
+7. [x] commit + push (suivi)
 
 ## Notes d'exécution
 

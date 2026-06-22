@@ -35,7 +35,7 @@ n'a **pas** de couche `corruptedBy` zone D. C'est exactement le livrable nommé.
 6. [x] `node tests/smoke.js` (ou sous-ensemble codex) vert.
 7. [x] `node tools/check_doc_modules.js` exit 0.
 8. [x] Roadmap Phase 2 : ligne « Échos temporels → Codex » → ✅ Fait (date).
-9. [ ] Commit → push → PR → CI verte → squash-merge.
+9. [x] Commit → push → PR → CI verte → squash-merge.
 
 ## Garde-fous
 

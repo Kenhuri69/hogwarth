@@ -44,6 +44,21 @@ encore des cases `[ ]`. Suite de la convention `plans-archiving-workflow.md`.
   reliquats-backlog…). **Non archivés** : pas d'étapes à évaluer → décision
   manuelle hors de ce critère. Listés en notes.
 
+> **Suivi 4 (2026-06-22, après merge #675, branche followup) :** 18 plans dont
+> la SEULE case ouverte était l'étape process (« Commit → push → PR → merge »),
+> tous marqués « déjà livré » et vérifiés livrés/mergés (code : 16 persos
+> `data-characters.js`, `forge.js` reroll, écho-codex…). Case process cochée
+> (reflet du réel) → **18 archivés** : biais-maison-v2, boucle-mondes-paralleles-rule,
+> ch09-npc-creature-dialogues, ch14-conditional-endings-reconcile,
+> ch14-impl-grande-salle, codex-mondes-paralleles-onglet, codex-temporal-echoes-corrupted,
+> dark-boss-barks, endgame-enchant-reroll, extension-checklists-crosslink,
+> founder-chamber-guardians-lot3, gameplay-docs-uplift, new-aube-heroes,
+> phase2-ending-variants-reconcile, release-balance-pass, release-guardrails-signoff,
+> signature-echo-loop-reconcile, single-target-spell-scaling. Liens repointés :
+> docs/REVUE-TRANSVERSALE-ET-ROADMAP ×2, roadmap-phase-3-4-closure ×1.
+> **Exclu** : `house-generation-bias-v2-rooms` (case ouverte = « cache-bump +
+> tests » = gate technique, pas process → gardé actif par prudence).
+
 ## 30 plans archivés
 
 align-ch11-briser-cycle · artifact-balance-analysis · artifact-remediation ·
