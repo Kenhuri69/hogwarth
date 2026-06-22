@@ -882,4 +882,77 @@ async function scenarioEndgameCompass() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioStartup, scenarioLoader, scenarioIronman, scenarioIronmanConfirm, scenarioContentConsumablesTradeoffs, scenarioHeroBarks, scenarioFullJourneyDuo, scenarioBalanceLog, scenarioEndgameCompass] };
+// M1 (polish UX) — barre d'onglets Grimoire : navigation inter-modales sans
+// cul-de-sac (Fiche / Sac / Sorts / Bestiaire / Codex / Quêtes).
+async function scenarioGrimoireTabs() {
+  console.log('\n── Scénario : barre d\'onglets Grimoire (M1) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : la fiche monte le ruban (6 onglets, actif = Fiche).
+  const t1 = await page.evaluate(() => {
+    openCharacter();
+    const mount = document.querySelector('#character-modal [data-grimoire-tabs]');
+    const tabs  = mount ? mount.querySelectorAll('.grimoire-tab').length : 0;
+    const active = mount ? mount.querySelector('.grimoire-tab.active') : null;
+    return {
+      visible: getComputedStyle(document.getElementById('character-modal')).display !== 'none',
+      tabs,
+      activeIsFiche: !!active && /Fiche/.test(active.textContent),
+      activeAria: !!(active && active.getAttribute('aria-current'))
+    };
+  });
+  console.log('  T1 fiche:', t1);
+  assert(t1.visible,        'la fiche doit être ouverte');
+  assert(t1.tabs === 6,     'le ruban doit compter 6 onglets');
+  assert(t1.activeIsFiche,  'l\'onglet actif doit être Fiche');
+  assert(t1.activeAria,     'l\'onglet actif doit porter aria-current');
+
+  // T2 : grimoireGoto('sac') ferme la fiche et ouvre le sac (1 clic, pas de
+  //      cul-de-sac), avec son propre ruban.
+  const t2 = await page.evaluate(() => {
+    grimoireGoto('sac');
+    return {
+      charHidden: getComputedStyle(document.getElementById('character-modal')).display === 'none',
+      invVisible: getComputedStyle(document.getElementById('inventory-modal')).display !== 'none',
+      invTabs:    document.querySelectorAll('#inventory-modal [data-grimoire-tabs] .grimoire-tab').length,
+      activeIsSac: !!document.querySelector('#inventory-modal [data-grimoire-tabs] .grimoire-tab.active')
+                   && /Sac/.test(document.querySelector('#inventory-modal [data-grimoire-tabs] .grimoire-tab.active').textContent)
+    };
+  });
+  console.log('  T2 → sac:', t2);
+  assert(t2.charHidden,  'la fiche doit se fermer en basculant vers le Sac');
+  assert(t2.invVisible,  'le Sac doit s\'ouvrir');
+  assert(t2.invTabs === 6, 'le Sac doit aussi porter le ruban (6 onglets)');
+  assert(t2.activeIsSac, 'l\'onglet actif du Sac doit être Sac');
+
+  // T3 : enchaîne Sorts → Bestiaire → Codex → Quêtes, une seule modale visible.
+  const t3 = await page.evaluate(() => {
+    const ids = ['character-modal', 'inventory-modal', 'spell-modal', 'bestiary-modal', 'codex-modal'];
+    const out = {};
+    const visibleCount = () => ids.filter(id => getComputedStyle(document.getElementById(id)).display !== 'none').length;
+    grimoireGoto('sorts');     out.spell   = getComputedStyle(document.getElementById('spell-modal')).display !== 'none';
+    grimoireGoto('bestiaire'); out.best    = getComputedStyle(document.getElementById('bestiary-modal')).display !== 'none';
+    grimoireGoto('codex');     out.codex   = getComputedStyle(document.getElementById('codex-modal')).display !== 'none';
+    out.singleVisible = visibleCount();      // codex seul (quêtes réutilise character-modal)
+    grimoireGoto('quetes');    out.quetes  = getComputedStyle(document.getElementById('character-modal')).display !== 'none';
+    out.questActive = !!document.querySelector('#character-modal [data-grimoire-tabs] .grimoire-tab.active')
+                      && /Quêtes/.test(document.querySelector('#character-modal [data-grimoire-tabs] .grimoire-tab.active').textContent);
+    out.afterQuetesVisible = visibleCount();
+    return out;
+  });
+  console.log('  T3 chaîne:', t3);
+  assert(t3.spell && t3.best && t3.codex, 'chaque onglet doit ouvrir sa modale');
+  assert(t3.singleVisible === 1, 'une seule modale Grimoire visible à la fois');
+  assert(t3.quetes && t3.questActive, 'Quêtes doit ouvrir la fiche avec l\'onglet Quêtes actif');
+  assert(t3.afterQuetesVisible === 1, 'Quêtes ne doit pas laisser deux modales ouvertes');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS (Grimoire tabs)`);
+  }
+  console.log('  ✅ Barre d\'onglets Grimoire conforme');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioStartup, scenarioLoader, scenarioIronman, scenarioIronmanConfirm, scenarioContentConsumablesTradeoffs, scenarioHeroBarks, scenarioFullJourneyDuo, scenarioBalanceLog, scenarioEndgameCompass, scenarioGrimoireTabs] };

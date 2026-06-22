@@ -112,6 +112,7 @@ function openInventory() {
   renderGrimoirePouch();
   _applyInvTab('sac', true);
   document.getElementById('inventory-modal').style.display = 'flex';
+  if (typeof _mountGrimoireTabs === 'function') _mountGrimoireTabs('sac');
 }
 
 // Tap-preview sur les cellules d'inventaire : sur un device pointer:fine
