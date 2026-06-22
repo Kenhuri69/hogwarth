@@ -5,7 +5,7 @@
 > **Périmètre** : les **102 items équipables** de `js/data.js` (anciens + lot
 > Artefacts 2.0 P1/P2/P3), tous slots, tous modes d'accès.
 > **Source du modèle** : table §1.6 de
-> [`artifacts-reliquary-system.md`](../.claude/plans/artifacts-reliquary-system.md).
+> [`artifacts-reliquary-system.md`](../.claude/plans/_archive/artifacts-reliquary-system.md).
 > **Reproductible** : `node tools/analyze_artifact_balance.js`
 > (`--csv` / `--by-slot`). Outil Node pur, lecture seule, non servi au navigateur.
 

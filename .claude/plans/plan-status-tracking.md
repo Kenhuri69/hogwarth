@@ -24,6 +24,21 @@ encore des cases `[ ]`. Suite de la convention `plans-archiving-workflow.md`.
 > `LOOP_PASSIVE_XP_FRAC`, P3 `drawRefugeSprite`, P4 #629 `balance-log.js`).
 > Case cochée (reflet du réel) → **4 archivés**. Lien `ch13-equilibre.md`
 > (resté actif) repointé vers `_archive/`.
+
+> **Suivi 3 (2026-06-22, « go » docs sans cases) :** tri des docs `0/0` (pas
+> de checkbox). **10 archivés** car clos/livrés (vérifiés code+assets) :
+> `artifacts-reliquary-system` (LOT clos), `artifacts-p1-gemini-prompts`
+> (consommé), `margaux-aiglebrume` (héros en code), `ergonomics-improvement`
+> (CLOS), `modal-isolation` (ModalA11y), `inventory-keyboard-nav` (Ph.1&2),
+> `baguette-if-boucle-png` (PNG présent), `player-medallion-images` (PNG),
+> `configurable-keybindings` (✅ livré #—), `codex-mobile-list-layout`
+> (css/codex.css:32). Liens transfrontières repointés : potions-2.0,
+> docs/artifact-balance-study, tools/ICON_SHEET_PROCEDURE, tools/raster_src/README.
+> **Gardés actifs** (specs vivantes / roadmaps / restes) : combat-system-synthesis,
+> spells-magic-system, potions-consumables-craft-2.0, content-replayability,
+> chapter-14-endings, house-gen-bias-2c, narrative-doc-reconciliation,
+> p35-darkloop-variants, spell-icons-p3/p4, immersion-suite-4, reliquats-backlog,
+> rc-polish-remaining, roadmap-phase-3-4-closure, balance-proposals-2026-05.
 - **Sans cases (`0/0`, non trackés)** : ~27 docs de spec/référence/prompts
   (combat-system-synthesis, spells-magic-system, nano-banana-prompts-*,
   reliquats-backlog…). **Non archivés** : pas d'étapes à évaluer → décision

@@ -31,7 +31,7 @@ Contraintes **non négociables** (sinon le découpage souffre) :
 - **Aucun cadre / halo / texte / ombre portée** dans l'image (ajoutés par le moteur).
 - 512 px utiles minimum par objet (planche ≥ 1024², idéalement ≥ 1254²).
 
-Prompts prêts : `.claude/plans/artifacts-p1-gemini-prompts.md`.
+Prompts prêts : `.claude/plans/_archive/artifacts-p1-gemini-prompts.md`.
 
 ## 2. Extraire (avec QC)
 
