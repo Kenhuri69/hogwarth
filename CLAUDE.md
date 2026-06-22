@@ -1663,7 +1663,7 @@ que la Boucle était trop facile pour un joueur suréquipé. Calibré par
 `node tools/sim-difficulty.js --endgame` (miroir fidèle de `ENDGAME_SCALING`,
 flags d'override `--endgame-scaldelta[-growth]` / `--endgame-basefix-mult`) ;
 cibles validées (joueur suréquipé Solo/Duo) : ét.25 ~57/76 %, ét.30 ~48/66 %,
-ét.40 ~18/28 %. Détail : `.claude/plans/dark-loop-scaling-review.md`.
+ét.40 ~18/28 %. Détail : `.claude/plans/_archive/dark-loop-scaling-review.md`.
 
 ---
 

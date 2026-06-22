@@ -122,7 +122,7 @@
   partagé avec la Forge, déjà vendu par l'Apothicaire Ténébreux). Règle de coût
   reprise des tables existantes (gold Biblio = 1,5 × Forge, pages = essence
   Forge, même Primordiale). Effet combat inchangé (`_spellForCaster` déjà
-  compatible 6-8). Plan [`library-t5.md`](./library-t5.md), smoke `library`/audit
+  compatible 6-8). Plan [`library-t5.md`](./_archive/library-t5.md), smoke `library`/audit
   étendus. **Hors-scope assumé** : nouveaux sorts *débloquables* à la Bibliothèque
   (elle amplifie, n'enseigne pas — l'apprentissage reste level-up/grimoires/
   `grantsSpell`) — feature distincte à rouvrir si désirée.
@@ -134,14 +134,14 @@
   écrans synchronisés sans lockstep ni RNG partagée). Module autonome
   `js/pvp-duel.js` + `css/pvp-duel.css`, lancé depuis une visite active
   (réutilise le canal `mp_visit_messages`). Plan
-  [`pvp-duel-live.md`](./pvp-duel-live.md). Smoke `scenarioPvpDuel`. Hors-scope
+  [`pvp-duel-live.md`](./_archive/pvp-duel-live.md). Smoke `scenarioPvpDuel`. Hors-scope
   V2 : garde/statuts en duel, objets, 2v2, défi hors visite, score/ELO.
 - ~~**2.1 Manon — dialogues définitifs de l'Acte III**~~ — ✅ livré 2026-06-13.
   Payoff `manon_acte3.questReady` enrichi (climax : réconciliation avec la mère
   morte, miroir du père aux Actes I-II) ; tous les commentaires « Textes
   provisoires » retirés (`npcs.js`, `data.js`, `npcs-helpers.js`,
   `quests-riddles.js`). Pages/rumeurs déjà abouties conservées. Plan dédié
-  [`manon-acte3-dialogues.md`](./manon-acte3-dialogues.md). Smoke npc/manon vert.
+  [`manon-acte3-dialogues.md`](./_archive/manon-acte3-dialogues.md). Smoke npc/manon vert.
 - ~~**1.1 Potions multi-cibles & usage ennemi**~~ — ✅ livré. Flacons AOE
   (`data.js` `aoe:true`, `throwItemAoe` dans `battle.js`) + potions ennemies à
   charges (`tryEnemyAbility case 'consumable'`). Plan

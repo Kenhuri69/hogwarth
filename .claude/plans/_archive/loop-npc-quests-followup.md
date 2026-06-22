@@ -1,6 +1,6 @@
 # Quêtes Boucle — suivi 2 (Pomfresh, Ollivander, Lockhart×Manon)
 
-Suite de `.claude/plans/level-11-npc-quests.md` (PR #587 mergée). Rallume 3 PNJ
+Suite de `.claude/plans/_archive/level-11-npc-quests.md` (PR #587 mergée). Rallume 3 PNJ
 lore recyclés en Boucle (Pomfresh f12, Ollivander f13, Lockhart f13, Manon f13).
 
 ## Décisions (AskUserQuestion)
