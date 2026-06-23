@@ -354,9 +354,15 @@ function generateDungeon(floor) {
   // (handleCellEntry) ou se désamorcent par la fouille (searchRoom).
   {
     const trapCells = [];
+    // Les centres de salle peuvent être ÉCRASÉS plus bas (escalier montant,
+    // fontaine, refuge de Maison forcés sur un centre) : les exclure garantit
+    // qu'un piège posé n'est jamais effacé ensuite (sinon « Étage piégé »
+    // descendait rarement sous son minimum). Cf. scénario FloorEvents.
+    const centerKeys = new Set(rooms.map(r => `${r.cx},${r.cy}`));
     for (let y = 0; y < MAP_H; y++) {
       for (let x = 0; x < MAP_W; x++) {
         if (dungeon[y][x] !== CELL.FLOOR) continue;
+        if (centerKeys.has(`${x},${y}`)) continue;
         if (Math.abs(x - rooms[0].cx) <= 1 && Math.abs(y - rooms[0].cy) <= 1) continue;
         trapCells.push([x, y]);
       }
