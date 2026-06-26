@@ -165,13 +165,74 @@ function renderStatusBadges(target) {
 }
 
 // ── Rendu du groupe d'ennemis ────────────────────────────────
+// Icône d'un ennemi (vivant) ou tuile « mort » partagée par la reconstruction
+// complète et la mise à jour en place (P2-2).
+function _enemyIconHtml(enemy, sizePx) {
+  const dead = enemy.currentHp <= 0;
+  return dead
+    ? `<div class="monster-icon variant-dead" style="width:${sizePx}px;height:${sizePx}px;display:flex;align-items:center;justify-content:center"><img src="img/icons/dead.png" alt="" style="width:${Math.floor(sizePx*0.7)}px;height:${Math.floor(sizePx*0.7)}px;image-rendering:pixelated"></div>`
+    : getMonsterIconHtml(enemy, sizePx);
+}
+
+const _VARIANT_TITLES = {
+  shiny: 'Chatoyant', ancient: 'Ancien', darkness: 'Ténébreux', fierce: 'Féroce'
+};
+function _enemyBadgeHtml(enemy) {
+  const variant = enemy.variant || 'normal';
+  return enemy.currentHp > 0 && variant !== 'normal'
+    ? `<span class="variant-badge variant-badge-${variant}" title="${_VARIANT_TITLES[variant] || ''}" aria-label="${_VARIANT_TITLES[variant] || ''}"></span>`
+    : '';
+}
+
+// Signature de composition : tant qu'elle est stable (mêmes ennemis/variantes,
+// même effectif), on mute les cartes en place au lieu de tout reconstruire à
+// chaque tick de PV/statut. Change à l'apparition d'une invocation ou au début
+// d'un combat.
+let _enemyGroupSig = null;
+function _enemyGroupSignature() {
+  if (!Array.isArray(enemyGroup)) return '';
+  return enemyGroup.length + '|' +
+    enemyGroup.map(e => (e.id || '') + '/' + (e.variant || 'normal') + '/' + (e.corruption || 0)).join(',');
+}
+
+// Met à jour une carte existante (PV, barre, statuts, transition vers « mort »).
+// Retourne false si une reconstruction complète est nécessaire (cas rare :
+// résurrection mort → vivant).
+function _updateEnemyCard(card, enemy, sizePx) {
+  const dead = enemy.currentHp <= 0;
+  if (!dead && card.classList.contains('enemy-dead')) return false; // rare : revive
+  // PV (barre animée par la transition CSS en mutant la largeur en place).
+  const pct = Math.max(0, (enemy.currentHp / enemy.hp) * 100);
+  const fill = card.querySelector('.hp-fill');
+  if (fill) fill.style.width = pct + '%';
+  const lbl = card.querySelector('.bar-label span:last-child');
+  if (lbl) lbl.textContent = `${Math.max(0, enemy.currentHp)}/${enemy.hp}`;
+  // Transition vivant → mort : échange l'icône (le badge de variante disparaît).
+  if (dead && !card.classList.contains('enemy-dead')) {
+    const iconWrap = card.querySelector('.enemy-icon-wrap');
+    if (iconWrap) iconWrap.innerHTML = _enemyIconHtml(enemy, sizePx);
+  }
+  card.classList.toggle('enemy-dead', dead);
+  // Statuts : remplace la rangée de badges dans .enemy-bars.
+  const bars = card.querySelector('.enemy-bars');
+  if (bars) {
+    const oldRow = bars.querySelector('.status-row');
+    if (oldRow) oldRow.remove();
+    if (!dead) {
+      const html = renderStatusBadges(enemy);
+      if (html) bars.insertAdjacentHTML('beforeend', html);
+    }
+  }
+  return true;
+}
+
 function renderEnemyGroup() {
   const container = document.getElementById('enemy-group');
   if (!container) return;
   // Désintégration (G1) : un ennemi qui vient de tomber joue sa dissolution
-  // UNE fois, AVANT que le conteneur ne soit reconstruit en état mort — on
-  // ancre l'effet sur la carte encore présente. `_dissolvePlayed` est un
-  // flag transient (jamais sérialisé). Purement visuel, via CFX_safe.
+  // UNE fois. L'effet est rendu sur une couche FX indépendante (ancre de
+  // position), il ne dépend pas de la persistance de la carte. `_dissolvePlayed`
+  // est un flag transient (jamais sérialisé). Purement visuel, via CFX_safe.
   if (typeof CFX_safe !== 'undefined' && Array.isArray(enemyGroup)) {
     enemyGroup.forEach((enemy, i) => {
       if (enemy && enemy.currentHp <= 0 && !enemy._dissolvePlayed) {
@@ -180,7 +241,6 @@ function renderEnemyGroup() {
       }
     });
   }
-  container.innerHTML = '';
   const count = enemyGroup.length;
 
   // Layout adaptatif : icônes/barres plus compactes au-delà de 3 ennemis
@@ -190,24 +250,27 @@ function renderEnemyGroup() {
   const nameFs  = count === 1 ? '15px' : (big ? '10px' : '11px');
   const barsW   = count === 1 ? '180px' : (big ? '96px' : '120px');
 
+  // P2-2 : si la composition n'a pas changé, on mute les cartes existantes en
+  // place (pas de reconstruction innerHTML de tout le groupe à chaque tick).
+  const sig = _enemyGroupSignature();
+  if (sig === _enemyGroupSig && container.childElementCount === count) {
+    let ok = true;
+    for (let i = 0; i < count && ok; i++) {
+      const card = container.children[i];
+      if (!card || !_updateEnemyCard(card, enemyGroup[i], sizePx)) ok = false;
+    }
+    if (ok) return;
+  }
+
+  // Reconstruction complète (1ᵉʳ rendu / changement de composition / revive).
+  container.innerHTML = '';
   enemyGroup.forEach((enemy, i) => {
     const dead    = enemy.currentHp <= 0;
     const pct     = Math.max(0, (enemy.currentHp / enemy.hp) * 100);
     const variant = enemy.variant || 'normal';
 
-    // Icône : SVG ou emoji via icons.js
-    const iconHtml = dead
-      ? `<div class="monster-icon variant-dead" style="width:${sizePx}px;height:${sizePx}px;display:flex;align-items:center;justify-content:center"><img src="img/icons/dead.png" alt="" style="width:${Math.floor(sizePx*0.7)}px;height:${Math.floor(sizePx*0.7)}px;image-rendering:pixelated"></div>`
-      : getMonsterIconHtml(enemy, sizePx);
-
-    // Badge de variante (shiny / féroce / ancien / ténébreux) — gemme CSS,
-    // la couleur/glow communique la variante (cf. .variant-badge-* du CSS).
-    const variantTitles = {
-      shiny: 'Chatoyant', ancient: 'Ancien', darkness: 'Ténébreux', fierce: 'Féroce'
-    };
-    const badge = !dead && variant !== 'normal'
-      ? `<span class="variant-badge variant-badge-${variant}" title="${variantTitles[variant] || ''}" aria-label="${variantTitles[variant] || ''}"></span>`
-      : '';
+    const iconHtml = _enemyIconHtml(enemy, sizePx);
+    const badge    = _enemyBadgeHtml(enemy);
 
     const card = document.createElement('div');
     // Surcouche corruption (Chapitre 09 §9.1.2) : teinte froide + givre via CSS
@@ -220,7 +283,7 @@ function renderEnemyGroup() {
     card.className = `enemy-card variant-${variant} corruption-${corr}${skin ? ' ' + skin : ''}${dead ? ' enemy-dead' : ''}`;
     card.id = `enemy-card-${i}`;
     card.innerHTML = `
-      <div style="position:relative;display:inline-block;animation:float 2s ease-in-out infinite alternate">
+      <div class="enemy-icon-wrap" style="position:relative;display:inline-block;animation:float 2s ease-in-out infinite alternate">
         ${iconHtml}
         ${badge}
       </div>
@@ -234,6 +297,7 @@ function renderEnemyGroup() {
     container.appendChild(card);
     _attachMonsterInfoHandlers(card, i);
   });
+  _enemyGroupSig = sig;
 }
 
 // ── Indicateur de tour ───────────────────────────────────────

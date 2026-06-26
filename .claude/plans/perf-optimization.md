@@ -355,4 +355,39 @@ aucune collecte réseau) :
     ~1,5 Mo) : confirmés non référencés au runtime (grep), mais suppression
     d'assets non créés par cette session → laissée en attente d'aval explicite
     (gain = poids repo uniquement, jamais téléchargés par les joueurs).
-- _(à compléter à chaque lot : mesure avant/après, écarts, décisions)_
+- **2026-06-24** — Lot P2 (code runtime) implémenté sur branche
+  `claude/perf-optimization-p2-v8zgza` :
+  - **P2-1 ✅** — Journal de combat borné. `UX.logCombat`/`logCombatTurn`
+    appendaient déjà (pas de réécriture `innerHTML`), mais sans limite → un
+    combat long faisait croître le DOM. Ajout d'un cap `COMBAT_LOG_MAX_LINES`
+    (120) qui retire les entrées les plus anciennes (`_trimCombatLog`).
+  - **P2-2 ✅** — Cartes ennemies mutées en place. `renderEnemyGroup` ne
+    reconstruit plus tout `#enemy-group` à chaque tick : signature de
+    composition (`_enemyGroupSignature` = effectif + ids/variantes/corruption).
+    Tant qu'elle est stable, `_updateEnemyCard` mute PV/barre (transition CSS
+    conservée)/statuts/transition « mort » en place ; reconstruction complète
+    seulement au 1ᵉʳ rendu, changement de composition (invocation) ou revive.
+    `startBattle` invalide la signature (`_enemyGroupSig = null`) pour ne jamais
+    réutiliser les cartes d'un combat précédent. Icône/badge factorisés
+    (`_enemyIconHtml`/`_enemyBadgeHtml`). La dissolution G1 (CFX_safe) est rendue
+    sur une couche FX indépendante → insensible à la persistance des cartes.
+  - **P2-3 ✅** — Cache d'étages LRU. `floorDungeons` est plafonné à
+    `FLOOR_CACHE_CAP` (6) : horloge `_lru` par entrée (sérialisée, inerte au
+    chargement), éviction des plus anciens dans `_saveFloorToCache`
+    (`_evictFloorCache`), l'étage courant jamais évincé, `_restoreFloorFromCache`
+    rafraîchit le `_lru`. Un étage évincé se régénère au retour (garde-fous de
+    re-spawn quête/PNJ déjà en place). Borne l'empreinte mémoire en session
+    longue / Boucle profonde.
+  - **P2-4 ✅** — Lazy-load des sprites du bestiaire. `getMonsterIconHtml(m, px,
+    lazy)` ajoute `loading="lazy" decoding="async"` quand `lazy` ; seul la
+    **liste** du bestiaire (jusqu'à ~78 PNG) le passe à `true`. Combat/détail
+    inchangés (sprite visible immédiatement).
+  - **P2-5 (concat JS) — en attente de validation explicite** (touche
+    `index.html` + `deploy.yml`, risque d'ordre de chargement). Voir note du
+    tableau P2.
+  - Bumps cache : `ux-improvements v9→10`, `movement-floors v19→20`,
+    `icons v1→2`, `ui-bestiary v7→8`, `battle-ui v10→11`, `battle v40→41`,
+    `CACHE_VERSION v229→230`. `check_cache_versions` (parité) ✅.
+  - Tests : `units` (946) ✅ · `pwa-smoke` (SW v230, 107 entrées, offline) ✅ ·
+    `smoke` filtré (combat ×10, visuals/dungeon/fx ×9) ✅ — dont le scénario
+    statut-en-combat qui exerce le chemin de mutation en place de P2-2.

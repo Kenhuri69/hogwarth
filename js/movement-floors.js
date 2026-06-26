@@ -6,6 +6,29 @@
 // movement.js. Dépend de generateDungeon (dungeon.js) et des garde-fous de
 // dungeon-spawning.js.
 // ============================================================
+// ── Plafond du cache d'étages (LRU, P2-3) ───────────────────
+// `floorDungeons` croissait avec l'exploration → empreinte mémoire qui montait
+// sur longue session / Boucle profonde. On borne le cache aux N étages les plus
+// récemment visités ; un étage évincé se régénère au retour (les garde-fous de
+// _restoreFloorFromCache re-spawnent quêtes/PNJ). L'horloge `_lru` est portée
+// par chaque entrée (sérialisée, inerte au chargement : défaut 0 = plus
+// ancienne). L'étage courant n'est jamais évincé.
+const FLOOR_CACHE_CAP = 6;
+let _floorCacheClock = 0;
+
+function _evictFloorCache(keepFloor) {
+  const keys = Object.keys(floorDungeons);
+  if (keys.length <= FLOOR_CACHE_CAP) return;
+  // Ordonne du plus ancien au plus récent (_lru croissant).
+  keys.sort((a, b) => (floorDungeons[a]._lru || 0) - (floorDungeons[b]._lru || 0));
+  let i = 0;
+  while (Object.keys(floorDungeons).length > FLOOR_CACHE_CAP && i < keys.length) {
+    const f = keys[i++];
+    if (Number(f) === keepFloor) continue;
+    delete floorDungeons[f];
+  }
+}
+
 // ── Sauvegarde / restauration d'un étage dans le cache ──────
 function _saveFloorToCache(floor) {
   floorDungeons[floor] = {
@@ -20,15 +43,18 @@ function _saveFloorToCache(floor) {
     litRunes: Array.from(litRunes),
     runeStele: runeStele ? JSON.parse(JSON.stringify(runeStele)) : null,
     searchedCells: Array.from(searchedCells),
-    npcPlacements: Array.from(npcPlacements.entries())
+    npcPlacements: Array.from(npcPlacements.entries()),
+    _lru: ++_floorCacheClock
     // Note : on n'archive PAS usedFountains : la fontaine se ré-active
     // à la prochaine visite (cf. règle d'usage 1×/visite).
   };
+  _evictFloorCache(floor);
 }
 
 function _restoreFloorFromCache(floor) {
   const c = floorDungeons[floor];
   if (!c) return false;
+  c._lru = ++_floorCacheClock;   // marque comme récemment utilisé (LRU)
   dungeon  = c.dungeon;
   visited  = c.visited;
   enemyMap = c.enemyMap;

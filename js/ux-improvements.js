@@ -322,6 +322,17 @@
 
   let combatLogTurn = 0;
 
+  // Borne le nombre de lignes du journal (P2-1) : un combat long (Boucle,
+  // groupes de 5) appendait sans limite → churn DOM croissant. On retire les
+  // entrées les plus anciennes au-delà de ce cap (l'utilisateur scrolle de
+  // toute façon vers le bas).
+  const COMBAT_LOG_MAX_LINES = 120;
+  function _trimCombatLog(list) {
+    while (list.childElementCount > COMBAT_LOG_MAX_LINES) {
+      list.removeChild(list.firstElementChild);
+    }
+  }
+
   function ensureCombatLog() {
     let panel = document.getElementById('combat-log-panel');
     if (panel) return panel;
@@ -372,6 +383,7 @@
     div.className = 'clp-entry clp-' + (type || 'info');
     div.innerHTML = (typeof iconizeCombatLog === 'function') ? iconizeCombatLog(text) : text;
     list.appendChild(div);
+    _trimCombatLog(list);
     list.scrollTop = list.scrollHeight;
   }
 
@@ -383,6 +395,7 @@
     div.className = 'clp-turn-divider';
     div.textContent = `── Tour ${n} ──`;
     list.appendChild(div);
+    _trimCombatLog(list);
     list.scrollTop = list.scrollHeight;
   }
 

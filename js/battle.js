@@ -686,6 +686,9 @@ function startBattle(baseEnemyData, opts) {
   if (inAstralCombat) document.body.classList.add('in-astral-combat');
   else                document.body.classList.remove('in-astral-combat');
   document.getElementById('target-selection').style.display  = 'none';
+  // Force une reconstruction propre des cartes ennemies (P2-2) : invalide la
+  // signature pour ne jamais réutiliser les cartes d'un combat précédent.
+  if (typeof _enemyGroupSig !== 'undefined') _enemyGroupSig = null;
   renderEnemyGroup();
   updateBattleCharIndicator();
   setBattleLog(`${size > 1 ? size + ' ennemis surgissent' : enemyGroup[0].desc} !`);

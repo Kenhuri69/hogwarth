@@ -1194,17 +1194,21 @@ const VARIANT_COLORS = {
 
 // ── Fonction principale ─────────────────────────────────────
 // Priorité d'affichage : monster.imgSrc (PNG/WebP) → SVG dédié → SVG catégorie → emoji
-function getMonsterIconHtml(monster, sizePx) {
+function getMonsterIconHtml(monster, sizePx, lazy) {
   _ensureMonsterDefs();
   const variant    = monster.variant || 'normal';
   const baseColor  = monster.color || MONSTER_BASE_COLORS[monster.category] || '#8a6840';
   const finalColor = VARIANT_COLORS[variant] || baseColor;
 
   if (monster.imgSrc) {
+    // P2-4 : en liste (bestiaire), `lazy` diffère le chargement des sprites
+    // hors-écran — sinon ouvrir le bestiaire tirait jusqu'à ~78 PNG d'un coup.
+    // En combat (défaut), le sprite doit être visible immédiatement.
+    const loadingAttr = lazy ? ' loading="lazy" decoding="async"' : '';
     return `<div class="monster-icon monster-img variant-${variant}"
                  data-cat="${monster.category || ''}"
                  style="width:${sizePx}px;height:${sizePx}px">
-              <img src="${monster.imgSrc}" alt="${monster.name || ''}"
+              <img src="${monster.imgSrc}" alt="${monster.name || ''}"${loadingAttr}
                    style="width:100%;height:100%;object-fit:contain;display:block">
             </div>`;
   }
