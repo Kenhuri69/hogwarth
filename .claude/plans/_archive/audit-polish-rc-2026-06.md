@@ -286,27 +286,28 @@ verts. ✅ **Atteint** : P1.1 + P1.4 (2026-06-21, PR #634), **P1.5 + P1.6
 > critères de vérification, corrections d'état (P3.1 déjà livré ; grille combat
 > P2.3 fiabilisée par #640).
 
-| # | Axe | Tâche | Difficulté | Impact | Dépendances |
-|---|-----|-------|-----------|--------|-------------|
-| P2.1 | Immersion | **Thermomètre de corruption HUD** (indicateur ❄→❄❄❄❄+ déjà amorcé `floor-ambiance.js`) + clé Codex. | Moyenne | **Élevé** (descente ressentie) | cache-bump |
-| P2.2 | Endgame | **Panneau « Boussole d'endgame »** post-victoire (destinations + déclencheurs). | Moyenne | Élevé (rejouabilité lisible) | — |
-| P2.3 | UX | **Hiérarchie d'action en combat** : mise en avant de l'action primaire (Attaquer), compactage des conditionnelles, surtout mobile. | Moyenne | Moyen (charge cognitive) | cache-bump |
-| P2.4 | UX | **Mini-tours contextuels endgame** (1ʳᵉ Forge/Biblio/Atelier) via infra `help-tour`. | Moyenne | Moyen (découvrabilité) | help-tour |
+| # | Axe | Tâche | Difficulté | Impact | Statut |
+|---|-----|-------|-----------|--------|--------|
+| P2.1 | Immersion | **Thermomètre de corruption HUD** (indicateur ❄→❄❄❄❄+ déjà amorcé `floor-ambiance.js`) + clé Codex. | Moyenne | **Élevé** (descente ressentie) | ✅ **Fait (2026-06-21)** — détail dans [`rc-polish-remaining.md`](./rc-polish-remaining.md) |
+| P2.2 | Endgame | **Panneau « Boussole d'endgame »** post-victoire (destinations + déclencheurs). | Moyenne | Élevé (rejouabilité lisible) | ✅ **Fait (2026-06-21)** — idem |
+| P2.3 | UX | **Hiérarchie d'action en combat** : mise en avant de l'action primaire (Attaquer), compactage des conditionnelles, surtout mobile. | Moyenne | Moyen (charge cognitive) | ✅ **Fait (2026-06-21)** — idem |
+| P2.4 | UX | **Mini-tours contextuels endgame** (1ʳᵉ Forge/Biblio/Atelier) via infra `help-tour`. | Moyenne | Moyen (découvrabilité) | ✅ **Fait (2026-06-21)** — idem |
 | P2.5 | Narratif | **Marquer les quêtes signature** dans le journal + **compteur Codex** (« X/N révélées »). | Faible | Moyen | ✅ **Fait (2026-06-21, Lot B)** : chip « ✦ SIGNATURE » sur les 4 quêtes `houseSignatureQuest` (carte active + section terminées) ; compteur « ✨ X / 51 révélées » dans l'en-tête Codex (rafraîchi à chaque rendu de liste). Le total réel est **51** (pas 36 — l'audit citait un compte périmé). 2 scénarios smoke ajoutés. cache-bump quests v20 / ui-codex v10 / CACHE_VERSION v202. |
-| P2.6 | Immersion | **Inventaire audio** (samples livrés vs synthétisés) → liste de gaps prioritaires à enregistrer. | Faible | Faible→Moyen | — |
+| P2.6 | Immersion | **Inventaire audio** (samples livrés vs synthétisés) → liste de gaps prioritaires à enregistrer. | Faible | Faible→Moyen | ✅ **Fait (2026-06-21)** — `tools/audio_inventory.js` + `docs/audio-inventory.md` |
 
 **Critère de sortie P2** : un joueur perçoit la corruption, sait où aller en
-endgame, et n'est pas noyé par l'UI de combat.
+endgame, et n'est pas noyé par l'UI de combat. ✅ **Atteint** (2026-06-21) —
+P2.1→P2.6 livrés & mergés. **Priorité 2 close.**
 
 ## Priorité 3 — Long terme : polish de luxe
 
-| # | Axe | Tâche | Difficulté | Impact | Dépendances |
-|---|-----|-------|-----------|--------|-------------|
-| P3.1 | Immersion | **Art PNG des 4 boss-gardiens** des Chambres (remplace fallback SVG ; prompts Nano Banana prêts). | Moyenne | Moyen | cache-bump |
-| P3.2 | Immersion | **Combler les gaps audio** identifiés en P2.6 (enregistrement/intégration OGG). | Haute | Moyen | P2.6 |
-| P3.3 | Technique | **Refactor de confort** des gros fichiers (`monsters.js`/`data.js`/`npcs.js`) en sous-fichiers de données — uniquement si la dette gêne. | Moyenne | Faible (dette) | check_doc_modules |
-| P3.4 | UX | **Pass Lighthouse** + micro-optimisations ciblées (lazy-load d'images de scène hors viewport, audio à la demande). | Haute | Moyen | P1.5 |
-| P3.5 | Endgame | **Variété de boucle** : playtest « 3 boucles » → ajuster cadence des beats house-aware si lassitude mesurée. | Haute | Moyen | playtest |
+| # | Axe | Tâche | Difficulté | Impact | Statut |
+|---|-----|-------|-----------|--------|--------|
+| P3.1 | Immersion | **Art PNG des 4 boss-gardiens** des Chambres (remplace fallback SVG ; prompts Nano Banana prêts). | Moyenne | Moyen | ✅ **Clos (2026-06-21)** : 4 PNG déjà livrés, wirés via `imgSrc`. Audit « fallback SVG » périmé. |
+| P3.2 | Immersion | **Combler les gaps audio** identifiés en P2.6 (enregistrement/intégration OGG). | Haute | Moyen | ✅ **Fait (2026-06-21)** : `audio/ending_break.ogg` généré (`tools/gen_ending_break.py`). Inventaire 1→0 gap. |
+| P3.3 | Technique | **Refactor de confort** des gros fichiers (`monsters.js`/`data.js`/`npcs.js`) en sous-fichiers de données — uniquement si la dette gêne. | Moyenne | Faible (dette) | ✅ **Fait (2026-06-21)** : 3 lots (PR #654/#656 + Lot C) → socle + sous-fichiers. |
+| P3.4 | UX | **Pass Lighthouse** + micro-optimisations ciblées (lazy-load d'images de scène hors viewport, audio à la demande). | Haute | Moyen | ✅ **Fait (2026-06-21)** : lazy-load images hors-viewport, LCP 29,7 s → 6,1 s. `docs/perf-lighthouse.md`. |
+| P3.5 | Endgame | **Variété de boucle** : playtest « 3 boucles » → ajuster cadence des beats house-aware si lassitude mesurée. | Haute | Moyen | 📝 **Amorce livrée** (2026-06-21) : beat `darkLoop` porté à 3 variantes/héros. **Playtest humain reste requis** (`docs/playtest-3-boucles.md`). |
 
 ---
 
@@ -387,7 +388,10 @@ Le tout **sans toucher** à l'équilibre validé ni à la personnalité du jeu :
 
 ---
 
-> **Statut de ce plan** : audit livré 2026-06-21. Aucune implémentation engagée —
-> ce document est la **proposition** soumise à arbitrage. Les tâches P1 sont
-> prêtes à démarrer (chacune indépendante, faible risque). À cocher au fil de
-> l'implémentation conformément aux guidelines §5 (plan vivant).
+> **Statut de ce plan** : ✅ **CLOS (2026-06-21)**. Audit livré le 2026-06-21,
+> **implémentation intégralement réalisée & mergée** : Priorité 1 (P1.1/P1.4/
+> P1.5/P1.6), Priorité 2 (P2.1→P2.6) et Priorité 3 (P3.1→P3.4) livrées ;
+> P3.5 = amorce livrée + playtest humain en attente (hors-code). Détail
+> d'implémentation par item dans [`rc-polish-remaining.md`](./rc-polish-remaining.md).
+> Seuls restent les **playtests humains** de la checklist (non automatisables).
+> Plan archivé dans `_archive/`.

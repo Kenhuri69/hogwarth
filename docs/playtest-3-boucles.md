@@ -1,6 +1,6 @@
 # Protocole de playtest — « 3 Boucles consécutives » (P3.5)
 
-> RC polish 2026-06 · plan [`rc-polish-remaining.md`](../.claude/plans/rc-polish-remaining.md) §P3.5.
+> RC polish 2026-06 · plan [`rc-polish-remaining.md`](../.claude/plans/_archive/rc-polish-remaining.md) §P3.5.
 > **Objectif** : mesurer la **lassitude** ressentie sur 3 Boucles Ténébreuses
 > enchaînées et décider, **données en main**, s'il faut **ajuster la cadence des
 > beats house-aware**. Ce document est un **protocole humain** — il ne contient

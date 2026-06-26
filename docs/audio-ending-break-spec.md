@@ -1,6 +1,6 @@
 # Spec cible — `audio/ending_break.ogg` (P3.2)
 
-> RC polish 2026-06 · plan [`rc-polish-remaining.md`](../.claude/plans/rc-polish-remaining.md) §P3.2.
+> RC polish 2026-06 · plan [`rc-polish-remaining.md`](../.claude/plans/_archive/rc-polish-remaining.md) §P3.2.
 > **Seul gap musical** restant de l'inventaire P2.6
 > ([`docs/audio-inventory.md`](./audio-inventory.md) : ambient 5/5, combat 5/5,
 > menu 1/1, voice 181/181 — manquant : `ending_break.ogg`).
