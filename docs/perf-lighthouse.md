@@ -1,6 +1,6 @@
 # Pass Lighthouse — première visite, cache vide (P3.4)
 
-> RC polish 2026-06 · plan [`rc-polish-remaining.md`](../.claude/plans/rc-polish-remaining.md) §P3.4.
+> RC polish 2026-06 · plan [`rc-polish-remaining.md`](../.claude/plans/_archive/rc-polish-remaining.md) §P3.4.
 > Mesures **réelles** (Lighthouse 13.4.0 + Chromium Playwright, `--only-categories=performance`,
 > throttling mobile par défaut, localhost, **cache vide**). Reproductible — voir « Protocole ».
 

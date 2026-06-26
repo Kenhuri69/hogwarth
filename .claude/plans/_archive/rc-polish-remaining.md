@@ -10,6 +10,10 @@
 > Date : 2026-06-21 · **Plan vivant** (guidelines §5) : cocher/amender au fil de
 > l'eau. Légende statut : ⬜ à faire · 🔄 en cours · ✅ fait · ❌ abandonné.
 >
+> ✅ **CLOS (2026-06-21)** : tous les items (P2.1→P2.6, P3.1→P3.4) sont livrés &
+> mergés ; P3.5 = amorce livrée + playtest humain en attente (hors-code). Plan
+> archivé.
+>
 > **Règle transverse** : tout changement `js/`/`css/`/`index.html` ⇒ skill
 > `cache-bump` + `node tests/units.js` + `node tests/smoke.js` +
 > `node tests/pwa-smoke.js` verts (et `check_cache_versions`, `check_doc_modules`,
