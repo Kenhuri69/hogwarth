@@ -139,7 +139,7 @@ function filterBestiary() {
     card.className = 'spell-item bestiary-card' + (seen ? ' bestiary-seen' : '');
     card.innerHTML = `
       <div class="bestiary-icon-wrap">
-        ${getMonsterIconHtml(monster, seen ? 72 : 56)}
+        ${getMonsterIconHtml(monster, seen ? 72 : 56, true)}
         ${seen
           ? '<span class="bestiary-seen-badge">VU</span>'
           : '<span class="bestiary-unseen-badge">?</span>'}

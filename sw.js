@@ -16,7 +16,7 @@
 //     individuel suffit pour eux.
 // =======================================================================
 
-const CACHE_VERSION = 'hogwarth-v229';
+const CACHE_VERSION = 'hogwarth-v230';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Précache minimal (~1 Mo) : shell HTML/CSS/JS + premier visuel.
@@ -42,13 +42,13 @@ const PRECACHE_URLS = [
   // JS — ordre identique à index.html (sans incidence pour le cache,
   // mais utile à la relecture)
   './js/html-escape.js?v=1',
-  './js/ux-improvements.js?v=9',
+  './js/ux-improvements.js?v=10',
   './js/combat-fx.js?v=13',
   './js/haptics.js?v=3',
   './js/audio.js?v=2',
   './js/audio-music.js?v=7',
   './js/audio-sfx.js?v=19',
-  './js/icons.js?v=1',
+  './js/icons.js?v=2',
   './js/scene-icons.js?v=8',
   './js/monsters.js?v=24',
   './js/monsters-low.js?v=1',
@@ -78,7 +78,7 @@ const PRECACHE_URLS = [
   './js/ui-character-sheet.js?v=16',
   './js/ui-settings.js?v=7',
   './js/keybindings.js?v=1',
-  './js/ui-bestiary.js?v=7',
+  './js/ui-bestiary.js?v=8',
   './js/ui-codex.js?v=11',
   './js/dungeon-scaling.js?v=9',
   './js/dungeon.js?v=22',
@@ -92,15 +92,15 @@ const PRECACHE_URLS = [
   './js/renderer-entities.js?v=8',
   './js/renderer-minimap.js?v=9',
   './js/movement.js?v=39',
-  './js/movement-floors.js?v=19',
+  './js/movement-floors.js?v=20',
   './js/movement-interactions.js?v=21',
   './js/swipe-canvas.js?v=4',
-  './js/battle.js?v=40',
+  './js/battle.js?v=41',
   './js/battle-rewards.js?v=12',
   './js/battle-death.js?v=4',
   './js/teleport.js?v=2',
   './js/battle-spells.js?v=25',
-  './js/battle-ui.js?v=10',
+  './js/battle-ui.js?v=11',
   './js/inventory-core.js?v=9',
   './js/inventory.js?v=29',
   './js/inventory-spells.js?v=13',
