@@ -49,10 +49,10 @@ no text, no watermark, no signature, no border frame
    si on touche un `js`/`css`.
 5. `node tests/smoke.js`.
 
-## Critères d'acceptation (§12.5)
+## Critères d'acceptation (§12.5) — ✅ LIVRÉ (2026-06-27)
 
-- [ ] **256×256 exact**, RGB.
-- [ ] **Photoréaliste** (cohérent avec `dumbledore.png`, `sir_nicolas.png`), pas painterly.
-- [ ] Buste 3/4, fantôme translucide nacré, fond runique sombre flou.
-- [ ] Poids < **150 KB**.
-- [ ] En jeu : visage du Gardien clairement lisible dans la modale `#npc-dialog`.
+- [x] **256×256 exact**, RGB. → resize Lanczos depuis la source 1024².
+- [x] **Photoréaliste** (cohérent avec `dumbledore.png`, `sir_nicolas.png`), pas painterly.
+- [x] Buste 3/4, fantôme translucide nacré, fond runique sombre flou.
+- [x] Poids < **150 KB**. → 103 KB.
+- [x] En jeu : visage du Gardien clairement lisible dans la modale `#npc-dialog`.
