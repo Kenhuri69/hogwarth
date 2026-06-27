@@ -3927,17 +3927,17 @@ button.shop-tab.active {
   width: 24px;
   height: 24px;
   display: block;
-  image-rendering: pixelated;
-  image-rendering: -moz-crisp-edges;
-  image-rendering: crisp-edges;
+  image-rendering: auto;
 }
-/* Icônes UI inline (HUD, équipement, stats, modales) — pixel art net */
+/* Icônes UI inline (HUD, équipement, stats, modales). Rendu LISSE : les icônes
+   sont du painterly haute déf (icons_new, sorts, monstres) — pas du pixel art.
+   `image-rendering: pixelated` les rendait blocky dès qu'on agrandissait/zoomait
+   (vue détail sort, pinch-zoom mobile). `auto` = interpolation lisse à toute
+   échelle. */
 .ui-icon {
   display: inline-block;
   vertical-align: -2px;
-  image-rendering: pixelated;
-  image-rendering: -moz-crisp-edges;
-  image-rendering: crisp-edges;
+  image-rendering: auto;
 }
 .ui-icon-sm { width: 12px; height: 12px; }
 .ui-icon-md { width: 16px; height: 16px; }
