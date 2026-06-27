@@ -30,8 +30,10 @@ Hugging Face est coupé dans cette session — je ne génère pas l'image moi-m�
    `pwa-smoke` ✅ (cache v234), `smoke.js spell` ✅ (11/11). → commit.
 2. [x] **Planche I3** (Nature/Soin/Temps/Utilitaire, 4×3) — 12/12 PASS, QC net,
    bump CACHE_VERSION v234→v235. → commit.
-3. [ ] **Planche F1** (FX Feu/Glace/Poison, 3×3 256²) — attente image,
-   `--side 256 --margin 0.05 --out img/fx/spells`.
+3. [x] **Planche F1** (FX Feu/Glace/Poison, 3×3 256²) — 9/9 PASS. Cellule 9
+   (sanguini_vorace) portait un watermark Gemini « ✦ » baké sur le swirl →
+   masqué + clone-patch (filaments rouges depuis la gauche, feather) avant
+   re-extraction. bump CACHE_VERSION v235→v236. → commit.
 4. [ ] **Planche F2** (FX Lumière/Ténèbres/Support/Temps, 3×3 256²) — idem.
 5. [ ] À chaque planche : sheet_extract + re-bump CACHE_VERSION + tests + commit.
 
