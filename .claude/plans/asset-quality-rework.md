@@ -78,6 +78,15 @@ Tous partent d'une **image source Nano Banana** sur **fond gris plat uni**
   l'art du jeu. → *question ouverte pour l'utilisateur.*
 - **Lot B — Sprites signalés par provenance** (monstres/joueurs) : a priori
   **0** d'après l'audit ; ne traiter que ce que l'utilisateur pointe.
+  - **Vérification ciblée « derniers monstres ajoutés » (2026-06-27)** : revue
+    plein-écran + crops 100 % du **cohort récent** (30 sprites : 4 Gardiens des
+    Fondateurs, 8 boss originaux endgame — Hérauts/Spectre de Givre/Basilic &
+    Magyar Ancestral/Moremplis/reflet_mythe, 4 monstres étourdissants, 14 du
+    sprint étages 8-10). **Tous nets, 512² RGBA, aucun artefact JPEG ni halo.**
+    → **RAS** : aucun monstre récent à reprendre. (NB : l'historique git est
+    aplati — un seul commit d'ajout #636 + un fix halo Gardiens #655 — donc le
+    cohort « récent » vient des vagues documentées dans CLAUDE.md, pas de la
+    date git.)
 - **Lot C — Scènes JPG** (7) : optionnel. Garder JPG (poids) est raisonnable ;
   re-export haute qualité seulement si artefacts visibles signalés.
 
@@ -93,12 +102,14 @@ Tous partent d'une **image source Nano Banana** sur **fond gris plat uni**
 
 - [x] Audit factuel (3 classes scannées) + outil `asset_quality_scan.py`
 - [x] Conclusion : monstres/joueurs sains ; gap = portraits PNJ 256²
-- [ ] Identification validée (utilisateur : confirmer le périmètre + style portraits)
-- [ ] Lot A — portraits 512²
-- [ ] Lot B — sprites pointés (si besoin)
-- [ ] Lot C — scènes (optionnel)
+- [x] Identification validée (utilisateur 2026-06-27 : portraits PNJ « on est
+      bon » → **hors scope** ; scènes JPG **laissées** ; périmètre = vérifier
+      les **derniers monstres ajoutés**)
+- [x] Lot B — vérification du cohort récent (30 sprites) : **RAS, tous propres**
+- [~] Lot A — portraits PNJ : **abandonné** (décision utilisateur : OK en l'état)
+- [~] Lot C — scènes : **abandonné** (laissées en JPG)
 
-> **Décisions attendues de l'utilisateur avant d'implémenter** :
-> 1. Confirmer/compléter la liste des fichiers à reprendre (provenance Copilot).
-> 2. Portraits PNJ : style cible **photoréaliste 512²** vs **painterly** ?
-> 3. Inclure les scènes JPG (Lot C) ou les laisser ?
+> **Décisions utilisateur (2026-06-27)** : PNJ et scènes laissés tels quels ;
+> seuls les derniers monstres étaient à vérifier → vérifiés, aucun défaut.
+> **Plan clos** sauf si l'utilisateur pointe un sprite précis : dans ce cas,
+> reprise unitaire via `process_monster_png.py` (cf. §3).
