@@ -28,7 +28,8 @@ Hugging Face est coupé dans cette session — je ne génère pas l'image moi-m�
    `sheet_extract` 4×3 → 12 PNG `img/icons/spells/` : 12/12 PASS, QC damier net,
    zéro halo. Bump `CACHE_VERSION` v233→v234. `check_cache_versions` ✅,
    `pwa-smoke` ✅ (cache v234), `smoke.js spell` ✅ (11/11). → commit.
-2. [ ] **Planche I3** (Nature/Soin/Temps/Utilitaire, 4×3) — attente image.
+2. [x] **Planche I3** (Nature/Soin/Temps/Utilitaire, 4×3) — 12/12 PASS, QC net,
+   bump CACHE_VERSION v234→v235. → commit.
 3. [ ] **Planche F1** (FX Feu/Glace/Poison, 3×3 256²) — attente image,
    `--side 256 --margin 0.05 --out img/fx/spells`.
 4. [ ] **Planche F2** (FX Lumière/Ténèbres/Support/Temps, 3×3 256²) — idem.
