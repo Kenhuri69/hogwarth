@@ -829,6 +829,23 @@ RECIPES: Dict[str, Recipe] = {
         ],
     ),
 
+    # Cor de la Chasse Sans Tête — trinket épique (récompense Boucle, PNJ)
+    # Cor de chasse fantôme : ivoire d'os, ferrures d'argent oxydé, lueur spectrale.
+    "cor_chasse": Recipe(
+        id="cor_chasse", name="Cor de la Chasse Sans Tête", rarity="epic", material="metal",
+        silhouette={"kind": "svg", "file": "horn-pegasus.svg"},
+        fills={
+            "body":  (212, 198, 168),      # ivoire d'os ancien
+            "bell":  (230, 222, 200),      # pavillon plus clair, blanchi
+            "mouth": ( 52,  56,  54),      # ombre intérieure froide
+            "band":  (146, 154, 158),      # ferrures d'argent oxydé
+        },
+        accents=[
+            {"kind": "emboss", "region": "body", "color": (158, 144, 116)},
+            {"kind": "orb_glow", "region": "bell", "color": (196, 240, 222)},
+        ],
+    ),
+
     # Mandragore
     "mandragore": Recipe(
         id="mandragore", name="Racine de Mandragore", rarity="common", material="matte",
