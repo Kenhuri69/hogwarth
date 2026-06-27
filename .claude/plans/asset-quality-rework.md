@@ -140,6 +140,14 @@ Tous partent d'une **image source Nano Banana** sur **fond gris plat uni**
     (Les 24 base 48² et les autres 128² rendus restent.) Lotis en **2 planches
     de 5** → `nano-banana-prompts-spell-icons-rework.md`. Production : 1 planche
     par lot.
+    - **Lot 1 livré** (fulgari, fulgur_catena, glacius, glacius_tempete,
+      diffindo_maxima) : orbes painterly 128². La planche est sortie en 3×3
+      avec doublons → mapping ciblé ; détourage **hybride par icône** (effets
+      pleine-case → floodfill KO) : rembg (fulgari/glacius/diffindo) + color-key
+      vs gris de fond (fulgur_catena/glacius_tempete). smoke 11/11.
+    - **Lot 2 livré** (patronus_maxima, sectumsempra_imperius, verrou_de_sang,
+      vulnera_sanentur, ferula_maxima) : planche 3×2 bien margée → floodfill
+      propre (5/5 PASS). Les 10 logos Copilot sont repris.
 - **Lot E — Reprise des FX de sorts trop sombres** (≥1 : `diffindo_ultima`,
   éventuellement `nox_devorans`) : régénérer le splash en **valeur lumineuse**
   lisible sur fond de combat sombre (diffindo = lames argentées brillantes).
