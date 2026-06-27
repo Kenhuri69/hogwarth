@@ -1,7 +1,12 @@
 # Polish UX / Interface & Feedback Visuel — Revue & Plan
 
-> Statut : **Étape 1 (revue) + Étape 2 (plan)** rédigées le 2026-06-21.
-> Branche : `claude/hogwarth-ux-polish-y92oau`.
+> 🏁 **Chantier CLOS le 2026-06-27.** Les **12 lots** (Critique C1-C3, Haute
+> H1-H4, Moyenne M1-M5) sont **implémentés, testés et mergés sur `master`**
+> (PR #664 → #682). Voir le « Journal d'implémentation » en bas pour le détail
+> par lot. Ce document est conservé comme archive de la revue et du plan.
+>
+> Statut historique : **Étape 1 (revue) + Étape 2 (plan)** rédigées le 2026-06-21.
+> Branche d'origine : `claude/hogwarth-ux-polish-y92oau`.
 > Objectif : passer d'un jeu « fonctionnel » à « agréable, clair, immersif »
 > **sans régression** et en respectant l'architecture vanilla zéro-build.
 
@@ -537,6 +542,10 @@ Chaque lot est **livrable indépendamment** : la qualité perçue monte dès C1
     270 verts + cache-bump (style.css v60, ui-settings.js v7, `CACHE_VERSION`
     v228). **Phase Moyenne (M1-M5) terminée — les 12 lots du chantier sont
     livrés.**
+
+- **2026-06-27 — Chantier CLOS.** Les 3 phases (Critique / Haute / Moyenne)
+  sont mergées sur `master`. Aucun lot restant ; aucune régression connue.
+  Plan figé en archive.
 
 ---
 
