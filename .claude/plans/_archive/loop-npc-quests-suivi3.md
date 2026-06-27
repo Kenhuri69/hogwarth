@@ -4,7 +4,12 @@ Suite de #587 (PNJ combat/vendeurs) et #591 (Pomfresh/Ollivander/Manon×Lockhart
 Objectif : rallumer les **derniers PNJ muets** de la Boucle, **garder vivants**
 les arcs one-shot, et **enrichir les récompenses** des chasses.
 
-> Statut : **PLAN** (non implémenté). Code à faire après validation.
+> Statut : **✅ LIVRÉ & MERGÉ** sur master. Toutes les étapes ci-dessous sont
+> implémentées (moteur, données, câblage, assets PNG, test). Vérifié dans le
+> code 2026-06-27 : `keepRewardItem` (`quests.js`), les 6 templates B-F
+> (`quests-templates.js`), les 4 items (`data-items.js`), le registre d'icônes
+> (`item-icons.js`), les 4 jeux de mipmaps PNG (`img/icons_new/`) et
+> `scenarioLoopNpcQuests3` (`tests/scenarios/quests.js`).
 > Toutes les quêtes gatées `minFloor: 11` (Boucle uniquement), sauf mention.
 
 ---
@@ -105,17 +110,15 @@ par item : générer PNG 512² transparent → `tools/dechecker_png.py` si fond 
 
 ## Étapes & vérification
 
-1. [ ] Moteur : `keepRewardItem` dans `_rollFarmingTarget` (+ test).
-2. [ ] data.js : 4 nouveaux items équipables + stats.
-3. [ ] quests-templates.js : 7 quêtes (A×0 données / B / C / D / E / F×2).
-4. [ ] npcs.js : câblage `questsGiven` + `dialoguesByQuest` (Scamander, Mimi,
-       Sir Patrick, Guipure, Lockhart, Manon).
-5. [ ] item-icons.js : `ITEM_ICON_NEW_REGISTRY` pour les 4 items (après assets).
-6. [ ] Assets : générer les 4 icônes (prompts dédiés) + mipmaps.
-7. [ ] Tests : `scenarioLoopNpcQuests3` (templates, gate, keepRewardItem, drops).
-8. [ ] smoke + units + cache bump + PR.
+1. [x] Moteur : `keepRewardItem` dans `_rollFarmingTarget` (+ test). → `quests.js:283`
+2. [x] data.js : 4 nouveaux items équipables + stats. → `data-items.js:384-387`
+3. [x] quests-templates.js : 7 quêtes (A×0 données / B / C / D / E / F×2). → 6 templates B-F présents
+4. [x] npcs.js : câblage `questsGiven` + `dialoguesByQuest` (Scamander, Mimi,
+       Sir Patrick, Guipure, Lockhart, Manon). → `npcs-a.js`
+5. [x] item-icons.js : `ITEM_ICON_NEW_REGISTRY` pour les 4 items (après assets). → `item-icons.js:278-281`
+6. [x] Assets : générer les 4 icônes (prompts dédiés) + mipmaps. → 5 mipmaps/item dans `img/icons_new/`
+7. [x] Tests : `scenarioLoopNpcQuests3` (templates, gate, keepRewardItem, drops). → `tests/scenarios/quests.js:1617`
+8. [x] smoke + units + cache bump + PR. → mergé sur master
 
-> Tant que les PNG ne sont pas générés, les items s'affichent en **fallback
-> emoji** (le test de couverture d'icônes accepte ITEM_ICON_REGISTRY/SVG : on
-> ajoutera une entrée SVG ou un fallback PNG existant pour passer le CI avant
-> l'art final, comme fait en #591 pour `recit_manon`).
+> Art final livré : les 4 items disposent de leurs mipmaps PNG painterly (le
+> fallback emoji envisagé n'a finalement pas été nécessaire).
