@@ -34,8 +34,15 @@ Hugging Face est coupé dans cette session — je ne génère pas l'image moi-m�
    (sanguini_vorace) portait un watermark Gemini « ✦ » baké sur le swirl →
    masqué + clone-patch (filaments rouges depuis la gauche, feather) avant
    re-extraction. bump CACHE_VERSION v235→v236. → commit.
-4. [ ] **Planche F2** (FX Lumière/Ténèbres/Support/Temps, 3×3 256²) — idem.
-5. [ ] À chaque planche : sheet_extract + re-bump CACHE_VERSION + tests + commit.
+4. [x] **Planche F2** (FX Lumière/Ténèbres/Support/Temps, 3×3 256²) — 9/9 PASS.
+   Cellule 9 (reliquae_temporis) portait à nouveau un watermark Gemini « ✦ »
+   (translucide) → masque elliptique manuel + clone-patch (débris depuis le
+   haut, feather) avant re-extraction. bump CACHE_VERSION v236→v237. → commit.
+5. [x] À chaque planche : sheet_extract + re-bump CACHE_VERSION + tests + commit.
+
+## ✅ Série close — 4 planches livrées (I2, I3, F1, F2)
+24 icônes + 18 FX de sorts régénérés sans halo, fond gris anti-halo. CACHE_VERSION
+v233→v237. Tous QC verts, watermarks Gemini retirés (sanguini_vorace, reliquae_temporis).
 
 ## Notes
 - Les chemins de sortie écrasent les PNG existants (mêmes ids) → pas de
