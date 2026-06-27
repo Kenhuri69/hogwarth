@@ -18,18 +18,21 @@ estompe en transparence avant le bord. JAMAIS de fond blanc.
 Pas d'accès Nano Banana (Gemini) dans cette session — seulement FLUX/Qwen
 (Hugging Face). Fiabilité de grille incertaine. Étape 1 = test sur I2.
 
+## Boucle confirmée (hand-in-hand)
+L'utilisateur génère la planche avec Nano Banana et me la dépose ; moi je fais
+découpe (`sheet_extract`) → intégration → bump cache → commit/push. (L'`invoke`
+Hugging Face est coupé dans cette session — je ne génère pas l'image moi-même.)
+
 ## Étapes
-1. [ ] Générer Planche I2 (test qualité grille/fond) → vérifier visuellement
-   → critère : grille 4×3 lisible, fond gris uniforme, marges respectées.
-2. [ ] Envoyer I2 à l'utilisateur (SendUserFile) pour validation.
-3. [ ] Si OK → générer I3, F1, F2 idem ; sinon → l'utilisateur fournit les
-   planches Nano Banana.
-4. [ ] Intégration (sheet_extract → img/icons|fx/spells) — voir commandes
-   dans le fichier de prompts. Qui : à confirmer (moi ou utilisateur).
-5. [ ] **Bump cache PWA** (skill cache-bump) : CACHE_VERSION + ?v des assets,
-   `node tools/check_cache_versions.js` + `tests/pwa-smoke.js`. Chemins PNG
-   inchangés → le bump CACHE_VERSION est ce qui rend la maj visible côté joueur.
-6. [ ] `node tests/smoke.js spell` + commit/push.
+1. [x] **Planche I2** (Lumière/Ténèbres/Mental) — fournie par l'utilisateur,
+   `sheet_extract` 4×3 → 12 PNG `img/icons/spells/` : 12/12 PASS, QC damier net,
+   zéro halo. Bump `CACHE_VERSION` v233→v234. `check_cache_versions` ✅,
+   `pwa-smoke` ✅ (cache v234), `smoke.js spell` ✅ (11/11). → commit.
+2. [ ] **Planche I3** (Nature/Soin/Temps/Utilitaire, 4×3) — attente image.
+3. [ ] **Planche F1** (FX Feu/Glace/Poison, 3×3 256²) — attente image,
+   `--side 256 --margin 0.05 --out img/fx/spells`.
+4. [ ] **Planche F2** (FX Lumière/Ténèbres/Support/Temps, 3×3 256²) — idem.
+5. [ ] À chaque planche : sheet_extract + re-bump CACHE_VERSION + tests + commit.
 
 ## Notes
 - Les chemins de sortie écrasent les PNG existants (mêmes ids) → pas de
