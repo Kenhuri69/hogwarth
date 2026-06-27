@@ -1,0 +1,104 @@
+# Plan — Audit qualité & reprise des assets raster (monstres / sprites 3D / portraits)
+
+> Suite de `icon-quality-rework-frameless.md` (items). Hypothèse utilisateur :
+> des images d'origine **Copilot (qualité JPG)** se sont glissées parmi les
+> sprites, à reprendre via le pipeline PNG (Nano Banana → détourage 512²).
+> Ce plan = **audit factuel** + **méthode d'identification** + **pipeline de
+> reprise** par classe d'asset.
+
+## 1. Audit (2026-06-27) — outil `tools/asset_quality_scan.py`
+
+Scan de `img/monsters` (78), `img/players` (16), `img/npc` (44). Métriques :
+dims, mode, alpha %, netteté (var. Laplacien), **signature de grille JPEG 8 px**,
+luminance du liseré (halo de détourage).
+
+### Résultats par classe
+
+| Classe | Fichiers | Format | Verdict |
+|--------|----------|--------|---------|
+| **Monstres** (`img/monsters`) | 78 | **512² RGBA transparent** | ✅ **Sains** — nets, aucune signature JPEG (grid max 1,24 < 1,25), aucun halo. |
+| **Joueurs** (`img/players`) | 16 | **512² RGBA transparent** | ✅ **Sains** — idem. |
+| **Sprites 3D PNJ** (`_npc_*`, `gardien_boucle`) | 10 | **512² RGBA** | ✅ **Sains**. |
+| **Portraits PNJ nommés** | 34 | **256² RGB opaque** (×32) + `mundungus` 928×1148, `rosmerta` 1408×768 RGB | ⚠️ **GAP** — demi-résolution (256 vs standard 512), **opaques** (RGB), style **photoréaliste** divergeant de l'art painterly. |
+| **Scènes** (`img/scenes`) | 7 | **JPG** (896–1536 px) | ◻️ Par conception (grands fonds). Revue qualité optionnelle. |
+
+### Conclusion centrale (contre-intuitive)
+
+**Les sprites « monstre iso 3D » ne sont PAS le problème** : monstres + joueurs
++ sprites 3D PNJ sont tous 512² RGBA, propres, sans artefact JPEG détectable ni
+halo. Inspection plein-écran (peeves, voldemort_affaibli, gardien_lion, aragog)
++ crops 100 % : painterly net, pas de « mush » JPEG.
+
+**Le vrai écart qualité/cohérence est sur les portraits PNJ de dialogue** : 32
+à **256²** (moitié du standard 512), opaques, et de facture **photo** plutôt que
+painterly. Ce sont les candidats les plus probables d'origine Copilot.
+
+> ⚠️ **Limite de détection automatique** : un JPG rééchantillonné (Lanczos) vers
+> 512² **perd l'alignement de sa grille 8 px** → le score `grid` ne peut PAS
+> prouver une origine JPG sur les sprites détourés. L'identification fine
+> **dépend du visuel + de la provenance** (l'utilisateur sait quels fichiers ont
+> été faits sous Copilot). Le scanner fiabilise le **structurel** (résolution,
+> opacité), pas l'historique de compression.
+
+## 2. Méthode d'identification (collaborative)
+
+1. **Structurel** (automatique) : `python3 tools/asset_quality_scan.py`
+   → drapeaux `SMALL` (<512), `OPAQUE` (RGB là où l'alpha est attendu),
+   `BLOCKY` (grid ≥ 1,25). Tri par netteté pour faire remonter les flous.
+2. **Visuel** : `python3 tools/asset_quality_scan.py --contact /tmp/qc`
+   → planches par classe (monsters_1..3, players_1, npc_1..2) à inspecter.
+3. **Provenance** (utilisateur) : marquer les fichiers connus comme exports
+   Copilot/JPG. Toute entrée pointée est traitée même si le scan la juge « OK ».
+
+> Livrable d'identification = une **liste d'ids validée** par classe avant toute
+> régénération. On ne régénère pas « au jugé ».
+
+## 3. Pipeline de reprise (par classe — réutilise l'existant)
+
+Tous partent d'une **image source Nano Banana** sur **fond gris plat uni**
+(jamais JPG ; PNG ou damier détourable), puis :
+
+| Classe | Outil | Sortie | Registre / cache |
+|--------|-------|--------|------------------|
+| Monstre | `tools/process_monster_png.py --src <gen.png> --id <id> --model birefnet` (faire `--dry-run` d'abord) | `img/monsters/<id>.png` 512² RGBA | `imgSrc` déjà set dans `monsters*.js` → **si chemin inchangé, pas de bump** (img en SWR). Bump `monsters*.js`+`CACHE_VERSION` **seulement** si on touche le JS. |
+| Joueur | idem `process_monster_png.py` → `img/players/<id>.png` | 512² RGBA | `PLAYER_SPRITE_SRC` (`renderer-entities.js`) déjà set → idem (bump JS uniquement si édité). |
+| Portrait PNJ | même détourage **à `--side 512`** (ou garder opaque si portrait de dialogue, mais **512²**) | `img/npc/<id>.png` 512² | `portraitImg` (`npcs*.js`) chemin inchangé → pas de bump si seul le PNG change. |
+| Lot groupé | **planche LLM** → `tools/sheet_extract.py --cols C --rows R --ids …` → puis `process_monster_png.py`/`icon_factory --raster` selon la classe | — | comme items (cf. plan frameless). |
+
+> **Règle cache** (guidelines §8) confirmée pour ce travail : `img/**` est servi
+> en **stale-while-revalidate** (pas indexé par `?v=`). **Écraser un PNG au même
+> chemin ne nécessite PAS de bump.** Le bump (`?v` + `CACHE_VERSION`) n'est requis
+> que si un **`.js`/`.css`** change (ex. nouveau chemin d'`imgSrc`).
+
+## 4. Lots de travail proposés (par priorité)
+
+- **Lot A — Portraits PNJ 256²→512²** (34 fichiers) : le gap réel. Sous-lots de
+  ~8–12 via planches. Décision de style à trancher : **(i)** upscale/redo
+  photoréaliste cohérent 512², ou **(ii)** repasse painterly pour aligner sur
+  l'art du jeu. → *question ouverte pour l'utilisateur.*
+- **Lot B — Sprites signalés par provenance** (monstres/joueurs) : a priori
+  **0** d'après l'audit ; ne traiter que ce que l'utilisateur pointe.
+- **Lot C — Scènes JPG** (7) : optionnel. Garder JPG (poids) est raisonnable ;
+  re-export haute qualité seulement si artefacts visibles signalés.
+
+## 5. Critères d'acceptation (par fichier repris)
+
+- Sprite 3D : **512² RGBA**, fond 100 % transparent, pas de halo (liseré non
+  blanc sur sujet sombre), `asset_quality_scan` sans `SMALL/OPAQUE/BLOCKY`.
+- Portrait : **≥ 512²**, net ; opacité tolérée (boîte de dialogue).
+- `node tests/smoke.js` scénarios `MonsterImages` / sprites PNJ / players verts.
+- Bump cache **uniquement** si un `.js` a été édité (sinon SWR suffit).
+
+## 6. État
+
+- [x] Audit factuel (3 classes scannées) + outil `asset_quality_scan.py`
+- [x] Conclusion : monstres/joueurs sains ; gap = portraits PNJ 256²
+- [ ] Identification validée (utilisateur : confirmer le périmètre + style portraits)
+- [ ] Lot A — portraits 512²
+- [ ] Lot B — sprites pointés (si besoin)
+- [ ] Lot C — scènes (optionnel)
+
+> **Décisions attendues de l'utilisateur avant d'implémenter** :
+> 1. Confirmer/compléter la liste des fichiers à reprendre (provenance Copilot).
+> 2. Portraits PNJ : style cible **photoréaliste 512²** vs **painterly** ?
+> 3. Inclure les scènes JPG (Lot C) ou les laisser ?
