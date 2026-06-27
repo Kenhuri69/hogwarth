@@ -1,5 +1,10 @@
 # Planches restantes — génération + intégration (I2, I3, F1, F2)
 
+> ✅ **CLÔTURÉ (2026-06-27)** — 4 planches livrées et mergées (PR #695, squash
+> `3790f7c`). Avec la Planche 1 (PR #694), la reprise complète des images de
+> sorts est terminée : 24 icônes + 18 FX régénérés sans halo, CACHE_VERSION
+> v233→v237. Archivé.
+
 Branche : `claude/nano-banana-remaining-planches-8eo0l6`
 Prompts source : `.claude/plans/nano-banana-prompts-spells-full-rework.md`
 
