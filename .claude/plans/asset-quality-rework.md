@@ -36,13 +36,29 @@ halo. Inspection plein-écran (peeves, voldemort_affaibli, gardien_lion, aragog)
 à **256²** (moitié du standard 512), opaques, et de facture **photo** plutôt que
 painterly. Ce sont les candidats les plus probables d'origine Copilot.
 
-**Sorts (ajout 2026-06-27)** : aucune image de sort n'est d'origine JPG/Copilot.
-Les 46 icônes premium (128²) et les 25 FX (256²) sont painterly nets et
-transparents. Seul un **écart de style/réso** subsiste : les **24 sorts de base
-restent en emblèmes plats 48²** (Accio, Avada, Diffindo, Protego, Reparo…) alors
-que les sorts nommés sont des **orbes painterly 128²** — les deux styles
-cohabitent dans la liste de sorts. C'est une **modernisation optionnelle**
-(design), pas un défaut de compression.
+**Sorts (corrigé 2026-06-27)** — ⚠️ ma 1ʳᵉ passe avait conclu « 25 FX tous
+sains » : **FAUX**. Vérification ciblée des **7 sorts évolués** (dernier lot
+d'art, commit #649 — icône 128² + splash 256² chacun : diffindo_ultima,
+fulgur_imperium, glacius_cataclysme, lumos_solem_ardent, lux_suprema,
+nox_devorans, vulnera_maxima) :
+
+- **`diffindo_ultima` (splash) — DÉFECTUEUX** : luminance moyenne du sujet **76**
+  (vs 177–206 pour les autres), effet **gris charbon sombre** alors que le sort
+  est élément **`physique`** (fauchage → devrait être des lames argentées
+  brillantes). Sur le **fond de combat sombre, il est quasi invisible**. C'est
+  le raté du lot.
+- `nox_devorans` (splash) : luminance 83 — sombre aussi, mais élément
+  **`ténèbres`** + veines roses lumineuses → lisible. Limite, à surveiller.
+- Les 5 autres splashes + les 7 icônes : lisibles/nets.
+
+> Le défaut n'est pas une « grille JPEG » (indétectable ici) mais un problème de
+> **valeur/contraste** (effet trop sombre pour le fond de combat). Les méthodes
+> statiques (grille 8px, taille fichier, métadonnées) ne le voyaient pas — seule
+> la **mise en situation sur fond sombre** le révèle (cf. `last7_fx_proper`).
+
+Par ailleurs, écart **non-bloquant** de style/réso : les **24 sorts de base**
+restent en emblèmes plats 48² vs orbes painterly 128² (modernisation optionnelle,
+Lot D).
 
 > ⚠️ **Limite de détection automatique** : un JPG rééchantillonné (Lanczos) vers
 > 512² **perd l'alignement de sa grille 8 px** → le score `grid` ne peut PAS
@@ -105,6 +121,12 @@ Tous partent d'une **image source Nano Banana** sur **fond gris plat uni**
   128² pour s'aligner sur les 46 sorts premium. Planche LLM (fond gris) →
   `sheet_extract` → mipmaps ; registre `SPELL_ICON_REGISTRY` chemins inchangés
   → pas de bump (img SWR). À ne lancer que si l'utilisateur veut homogénéiser.
+- **Lot E — Reprise des FX de sorts trop sombres** (≥1 : `diffindo_ultima`,
+  éventuellement `nox_devorans`) : régénérer le splash en **valeur lumineuse**
+  lisible sur fond de combat sombre (diffindo = lames argentées brillantes).
+  Source Nano Banana fond gris → détourage 256² (`process_monster_png.py
+  --side 256` ou `sheet_extract`) → `img/fx/spells/<id>.png`, chemin inchangé →
+  pas de bump. **Périmètre exact à confirmer par l'utilisateur.**
 
 ## 5. Critères d'acceptation (par fichier repris)
 
@@ -122,8 +144,10 @@ Tous partent d'une **image source Nano Banana** sur **fond gris plat uni**
       bon » → **hors scope** ; scènes JPG **laissées** ; périmètre = vérifier
       les **derniers monstres ajoutés**)
 - [x] Lot B — vérification du cohort récent (30 sprites) : **RAS, tous propres**
-- [x] Sorts vérifiés : premium 128² + FX 256² sains ; base 48² = écart de
-      style/réso (optionnel Lot D), pas de défaut JPEG
+- [x] Sorts re-vérifiés (1ʳᵉ passe erronée) : `diffindo_ultima` splash
+      **défectueux** (trop sombre), `nox_devorans` limite ; base 48² = écart
+      style/réso (Lot D)
+- [ ] Lot E — reprise FX sombres (périmètre à confirmer)
 - [~] Lot A — portraits PNJ : **abandonné** (décision utilisateur : OK en l'état)
 - [~] Lot C — scènes : **abandonné** (laissées en JPG)
 - [ ] Lot D — modernisation sorts de base 48²→128² (optionnel, en attente)
