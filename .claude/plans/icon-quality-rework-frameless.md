@@ -81,9 +81,12 @@ fournisse le bon halo et qu'un futur `--all` ne réécrase pas l'art dédié
 - [x] Audit (11 items + faux positif identifié)
 - [x] Étape 1 — stubs de recette (11 ids, cor_chasse rétrogradé)
 - [x] Étape 2 — prompt planche rédigé
-- [ ] Étape 3 — planche générée (externe, utilisateur)
-- [ ] Étapes 4-5 — découpe + encadrement
-- [ ] Étape 8 — smoke test après intégration
+- [x] Étape 3 — planche générée (2 versions fournies ; **Version 1** retenue —
+      style painterly propre cohérent avec l'inventaire, PNG sans perte,
+      floodfill propre ; Version 2 écartée : JPG + ombres portées qui
+      fragmentent l'extraction + rendu réaliste divergent)
+- [x] Étapes 4-5 — découpe (11/11 PASS) + encadrement (img/icons_new/<id>_*.png)
+- [x] Étape 8 — `node tests/smoke.js inventory visual icon` vert (202/202)
 
-> Note : `cor_chasse` ships actuellement en version factory intérimaire
-> (encadrée, rareté epic) — sera remplacée par l'art fidèle de la planche.
+> `cor_chasse` ships désormais l'art fidèle (cor orné fantomatique, gemme
+> verte, drapé cramoisi, brume violette) encadré du cartouche doré.
