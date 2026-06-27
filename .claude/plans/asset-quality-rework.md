@@ -20,6 +20,9 @@ luminance du liseré (halo de détourage).
 | **Joueurs** (`img/players`) | 16 | **512² RGBA transparent** | ✅ **Sains** — idem. |
 | **Sprites 3D PNJ** (`_npc_*`, `gardien_boucle`) | 10 | **512² RGBA** | ✅ **Sains**. |
 | **Portraits PNJ nommés** | 34 | **256² RGB opaque** (×32) + `mundungus` 928×1148, `rosmerta` 1408×768 RGB | ⚠️ **GAP** — demi-résolution (256 vs standard 512), **opaques** (RGB), style **photoréaliste** divergeant de l'art painterly. |
+| **Icônes de sorts — base** (`img/icons/spells`, 48²) | 24 | **48² RGBA** | ⚠️ **Style + résolution** : emblèmes plats (disque + glyphe), nets mais **basse réso** et **facture ancienne** ≠ painterly. Pas d'artefact JPEG. |
+| **Icônes de sorts — premium** (`img/icons/spells`, 128²) | 46 | **128² RGBA** | ✅ **Sains** — orbes painterly nets (incendio_royal, glacius_cataclysme vérifiés 100 % : pas de mush JPEG). |
+| **FX de sorts** (`img/fx/spells`) | 25 | **256² RGBA transparent** | ✅ **Sains** — éclats de particules nets. |
 | **Scènes** (`img/scenes`) | 7 | **JPG** (896–1536 px) | ◻️ Par conception (grands fonds). Revue qualité optionnelle. |
 
 ### Conclusion centrale (contre-intuitive)
@@ -32,6 +35,14 @@ halo. Inspection plein-écran (peeves, voldemort_affaibli, gardien_lion, aragog)
 **Le vrai écart qualité/cohérence est sur les portraits PNJ de dialogue** : 32
 à **256²** (moitié du standard 512), opaques, et de facture **photo** plutôt que
 painterly. Ce sont les candidats les plus probables d'origine Copilot.
+
+**Sorts (ajout 2026-06-27)** : aucune image de sort n'est d'origine JPG/Copilot.
+Les 46 icônes premium (128²) et les 25 FX (256²) sont painterly nets et
+transparents. Seul un **écart de style/réso** subsiste : les **24 sorts de base
+restent en emblèmes plats 48²** (Accio, Avada, Diffindo, Protego, Reparo…) alors
+que les sorts nommés sont des **orbes painterly 128²** — les deux styles
+cohabitent dans la liste de sorts. C'est une **modernisation optionnelle**
+(design), pas un défaut de compression.
 
 > ⚠️ **Limite de détection automatique** : un JPG rééchantillonné (Lanczos) vers
 > 512² **perd l'alignement de sa grille 8 px** → le score `grid` ne peut PAS
@@ -89,6 +100,11 @@ Tous partent d'une **image source Nano Banana** sur **fond gris plat uni**
     date git.)
 - **Lot C — Scènes JPG** (7) : optionnel. Garder JPG (poids) est raisonnable ;
   re-export haute qualité seulement si artefacts visibles signalés.
+- **Lot D — Sorts de base 48²→128² painterly** (24) : optionnel (cohérence
+  visuelle, pas qualité). Régénérer les 24 emblèmes plats en orbes painterly
+  128² pour s'aligner sur les 46 sorts premium. Planche LLM (fond gris) →
+  `sheet_extract` → mipmaps ; registre `SPELL_ICON_REGISTRY` chemins inchangés
+  → pas de bump (img SWR). À ne lancer que si l'utilisateur veut homogénéiser.
 
 ## 5. Critères d'acceptation (par fichier repris)
 
@@ -106,8 +122,11 @@ Tous partent d'une **image source Nano Banana** sur **fond gris plat uni**
       bon » → **hors scope** ; scènes JPG **laissées** ; périmètre = vérifier
       les **derniers monstres ajoutés**)
 - [x] Lot B — vérification du cohort récent (30 sprites) : **RAS, tous propres**
+- [x] Sorts vérifiés : premium 128² + FX 256² sains ; base 48² = écart de
+      style/réso (optionnel Lot D), pas de défaut JPEG
 - [~] Lot A — portraits PNJ : **abandonné** (décision utilisateur : OK en l'état)
 - [~] Lot C — scènes : **abandonné** (laissées en JPG)
+- [ ] Lot D — modernisation sorts de base 48²→128² (optionnel, en attente)
 
 > **Décisions utilisateur (2026-06-27)** : PNJ et scènes laissés tels quels ;
 > seuls les derniers monstres étaient à vérifier → vérifiés, aucun défaut.
