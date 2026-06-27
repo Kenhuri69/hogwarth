@@ -116,11 +116,23 @@ Tous partent d'une **image source Nano Banana** sur **fond gris plat uni**
     date git.)
 - **Lot C — Scènes JPG** (7) : optionnel. Garder JPG (poids) est raisonnable ;
   re-export haute qualité seulement si artefacts visibles signalés.
-- **Lot D — Sorts de base 48²→128² painterly** (24) : optionnel (cohérence
-  visuelle, pas qualité). Régénérer les 24 emblèmes plats en orbes painterly
-  128² pour s'aligner sur les 46 sorts premium. Planche LLM (fond gris) →
-  `sheet_extract` → mipmaps ; registre `SPELL_ICON_REGISTRY` chemins inchangés
-  → pas de bump (img SWR). À ne lancer que si l'utilisateur veut homogénéiser.
+- **Lot D — Logos de sorts « pas de bonne qualité »** (demande utilisateur
+  2026-06-27, capture in-game `fulgari`). Audit en **3 tiers** (cf. contact
+  sheets `icons_48_dark` / `icons_128_dark`) :
+  - **D1 — 24 icônes de base 48²** (Accio, Avada, Diffindo, Episkey,
+    Expelliarmus, Ferula, Incendio, Protego, Reparo, Stupefix, Wingardium…) :
+    emblèmes plats disque+glyphe, **basse réso → pixelisés** au rendu in-game.
+    Tier le plus visible (sorts les plus utilisés).
+  - **D2 — ~12 orbes « cheap » 128²** : orbe dégradé uni + glyphe plat →
+    `fulgari`, `glacius`, `fulgur_catena`, `glacius_tempete`, `diffindo_maxima`,
+    `le_mot_du_dormeur`, `nox_vorax`, `patronus_maxima`, `sectumsempra_interdit`,
+    `verrou_de_sang`, `vulnera_sanentur`, `ferula_maxima`.
+  - Tier 3 (~32 orbes painterly riches) = **cible de style**, non touché.
+  - Cible : orbe painterly 128² par élément (modèle incendio_royal /
+    glacius_cataclysme). Planche(s) LLM fond gris → `sheet_extract --side 128`
+    → `img/icons/spells/<id>.png` (chemins inchangés → pas de bump). Volume
+    élevé (~36) → **plusieurs planches** (cases sinon trop petites pour le LLM).
+  - **Périmètre à confirmer** : D1 seul, D1+D2, ou liste précise.
 - **Lot E — Reprise des FX de sorts trop sombres** (≥1 : `diffindo_ultima`,
   éventuellement `nox_devorans`) : régénérer le splash en **valeur lumineuse**
   lisible sur fond de combat sombre (diffindo = lames argentées brillantes).
