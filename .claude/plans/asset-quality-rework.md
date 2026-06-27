@@ -132,7 +132,14 @@ Tous partent d'une **image source Nano Banana** sur **fond gris plat uni**
     glacius_cataclysme). Planche(s) LLM fond gris → `sheet_extract --side 128`
     → `img/icons/spells/<id>.png` (chemins inchangés → pas de bump). Volume
     élevé (~36) → **plusieurs planches** (cases sinon trop petites pour le LLM).
-  - **Périmètre à confirmer** : D1 seul, D1+D2, ou liste précise.
+  - **Périmètre tranché (utilisateur 2026-06-27)** : UNIQUEMENT les logos des
+    derniers sorts générés par Copilot — défaut évident (« blanc qui ressort » /
+    qualité pixel). = **10 icônes** « orbe clair + glyphe plat » : fulgari,
+    fulgur_catena, glacius, glacius_tempete, diffindo_maxima, patronus_maxima,
+    sectumsempra_imperius, verrou_de_sang, vulnera_sanentur, ferula_maxima.
+    (Les 24 base 48² et les autres 128² rendus restent.) Lotis en **2 planches
+    de 5** → `nano-banana-prompts-spell-icons-rework.md`. Production : 1 planche
+    par lot.
 - **Lot E — Reprise des FX de sorts trop sombres** (≥1 : `diffindo_ultima`,
   éventuellement `nox_devorans`) : régénérer le splash en **valeur lumineuse**
   lisible sur fond de combat sombre (diffindo = lames argentées brillantes).
