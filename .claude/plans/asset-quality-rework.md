@@ -147,7 +147,9 @@ Tous partent d'une **image source Nano Banana** sur **fond gris plat uni**
 - [x] Sorts re-vérifiés (1ʳᵉ passe erronée) : `diffindo_ultima` splash
       **défectueux** (trop sombre), `nox_devorans` limite ; base 48² = écart
       style/réso (Lot D)
-- [ ] Lot E — reprise FX sombres (périmètre à confirmer)
+- [x] Lot E — périmètre confirmé (utilisateur) : **les 7 splash FX du lot
+      évolué**, via planche Nano Banana → prompt rédigé
+      (`nano-banana-prompts-spell-fx-rework.md`) ; en attente de la planche.
 - [~] Lot A — portraits PNJ : **abandonné** (décision utilisateur : OK en l'état)
 - [~] Lot C — scènes : **abandonné** (laissées en JPG)
 - [ ] Lot D — modernisation sorts de base 48²→128² (optionnel, en attente)
