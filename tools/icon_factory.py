@@ -1694,6 +1694,44 @@ RECIPES: Dict[str, Recipe] = {
         material="metal", silhouette={"kind": "svg", "file": "gem-pendant.svg"},
         fills={"chain": (200, 168, 96), "setting": (240, 199, 94), "gem": (55, 46, 41)},
     ),
+
+    # ── Refonte qualité/cadre (planche LLM) — stubs : seule `rarity` est lue
+    # par --raster (sujet peint dans tools/raster_src/<id>.png, cadré halo +
+    # cartouche). silhouette/fills inertes. Voir
+    # .claude/plans/icon-quality-rework-frameless.md.
+    "baguette_if_boucle": Recipe(
+        id="baguette_if_boucle", name="Baguette d'If des Profondeurs", rarity="epic",
+        silhouette={"kind": "svg", "file": "wizard-staff.svg"}),
+    "cape_soie_acromantule": Recipe(
+        id="cape_soie_acromantule", name="Cape de Soie d'Acromantule", rarity="epic",
+        silhouette={"kind": "svg", "file": "hood.svg"}),
+    "ceinture_aurors": Recipe(
+        id="ceinture_aurors", name="Ceinturon des Aurors", rarity="epic",
+        silhouette={"kind": "svg", "file": "belt.svg"}),
+    "perle_mimi": Recipe(
+        id="perle_mimi", name="Perle de Larmes de Mimi", rarity="epic",
+        silhouette={"kind": "svg", "file": "gem-pendant.svg"}),
+    "cor_chasse": Recipe(
+        id="cor_chasse", name="Cor de la Chasse Sans Tête", rarity="epic",
+        silhouette={"kind": "svg", "file": "horn-pegasus.svg"}),
+    "plume_lockhart": Recipe(
+        id="plume_lockhart", name="Plume à Papote Dédicacée", rarity="rare",
+        silhouette={"kind": "svg", "file": "feather.svg"}),
+    "bottes_lestes": Recipe(
+        id="bottes_lestes", name="Bottes Lestes", rarity="uncommon",
+        silhouette={"kind": "svg", "file": "boot.svg"}),
+    "cape_doublee": Recipe(
+        id="cape_doublee", name="Cape Doublée", rarity="uncommon",
+        silhouette={"kind": "svg", "file": "hood.svg"}),
+    "ceinture_etudiant": Recipe(
+        id="ceinture_etudiant", name="Ceinture d'Étudiant", rarity="uncommon",
+        silhouette={"kind": "svg", "file": "belt.svg"}),
+    "plastron_renforce": Recipe(
+        id="plastron_renforce", name="Plastron Renforcé", rarity="uncommon",
+        silhouette={"kind": "svg", "file": "hood.svg"}),
+    "serre_tete_etude": Recipe(
+        id="serre_tete_etude", name="Serre-tête d'Étude", rarity="uncommon",
+        silhouette={"kind": "svg", "file": "tiara.svg"}),
 }
 
 
