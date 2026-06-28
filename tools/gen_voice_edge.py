@@ -68,6 +68,16 @@ VOICES = {
     # native (féminine posée, autoritaire) : le tutoriel s'adresse à des
     # débutants, la narration doit être en français sans accent étranger.
     "mcgonagall_help": dict(voice="fr-FR-DeniseNeural", rate="-7%", pitch="+0Hz"),
+    # Lupin : masculin grave, chaleureux et fatigué (le père, le loup las).
+    # Voix FR multilingue naturelle, ralentie + légèrement abaissée.
+    "lupin": dict(voice="fr-FR-RemyMultilingualNeural", rate="-8%", pitch="-6Hz"),
+    # Élara : la mère DÉFUNTE — voix posthume « souvenir ». Identité distinctive
+    # construite sur 3 leviers : (1) un timbre multilingue non utilisé ailleurs
+    # (Emma — doux, légèrement « autre »), (2) registre abaissé + ralenti (mûr,
+    # serein), (3) une SIGNATURE de réverbe « mémoire » ajoutée à l'encodage
+    # (encode_voice.sh, filtre dédié aux clés elara_*). Aucun autre PNJ n'a ce
+    # traitement → Élara est immédiatement reconnaissable comme un souvenir.
+    "elara": dict(voice="en-US-EmmaMultilingualNeural", rate="-7%", pitch="-12Hz"),
 }
 
 # Textes — copie exacte de npcs.js (dialogues.greeting + dialoguesByQuest).
@@ -386,6 +396,41 @@ LINES = {
         ("spell_cheminette_inter_mondes", "Cheminette Inter-Mondes !"),
         ("spell_verrou_de_sang",       "Verrou de Sang !"),
         ("spell_sceau_du_voyageur",    "Sceau du Voyageur !"),
+    ],
+    # Professeur Lupin (le père de Manon). Greeting + quête lumiere_desespoir.
+    # Texte = copie exacte de npcs-a.js (dialogues.greeting + questOffer/Active/Ready).
+    "lupin": [
+        ("lupin_greeting_1",
+         "Bienvenue, jeune sorcier. Je peux t'enseigner un sort puissant — "
+         "mais d'abord, tu dois affronter ta peur la plus sombre."),
+        ("lupin_greeting_2",
+         "Le Patronus exige un souvenir heureux, pur, indéfectible. Sans lui, "
+         "le Détraqueur t'engloutira. Es-tu prêt à passer cette épreuve ?"),
+        ("lupin_offer_1",
+         "Affronte un Détraqueur, puis rapporte-moi un Chocolat aux Sorciers. "
+         "Je t'enseignerai alors le sort du Patronus."),
+        ("lupin_active_1",
+         "As-tu trouvé un Détraqueur ? Et le chocolat ?"),
+        ("lupin_ready_1",
+         "Tu reviens vivant — et avec le chocolat. Approche : voici le sort "
+         "du Patronus."),
+    ],
+    # Élara — voix posthume lue à la collecte des feuillets clairs (Acte III).
+    # Texte = legs de joie de la mère (cf. .claude/plans/voix-manon-elara.md).
+    # L'encodage applique la signature de réverbe « mémoire » aux clés elara_*.
+    "elara": [
+        ("elara_feuillet_1",
+         "Pour ma fille, si elle lit ceci un jour : voici comment dessiner une "
+         "fougère de givre sur une vitre froide. Souffle d'abord. Puis laisse le "
+         "bout de ta baguette suivre la buée."),
+        ("elara_feuillet_2",
+         "La pluie peut se figer en perles si on le lui demande gentiment. Ce "
+         "n'est pas un sort de combat. C'est juste joli. J'aimais les choses "
+         "jolies, avant d'avoir peur."),
+        ("elara_feuillet_3",
+         "Fais tomber un peu de neige dans ta chambre, un soir de cœur lourd. "
+         "Ça ne répare rien. Mais ça rappelle que le froid peut être doux. "
+         "Je t'aime. Élara."),
     ],
     # Tour guidé d'aide — une clé par étape de HELP_TOUR_STEPS
     # (js/help-tour.js). Texte = titre + paragraphe de l'étape.

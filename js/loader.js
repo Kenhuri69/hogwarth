@@ -82,6 +82,8 @@ window.UX_safe = new Proxy({}, {
     { name: '_activePageSet',     source: 'data-spells.js',     kind: 'fn'  },
     { name: 'fuseAct3',           source: 'quests-riddles.js', kind: 'fn' },
     { name: 'hiverClair',         source: 'state.js',        kind: 'obj' },
+    { name: 'elementalMastery',   source: 'state.js',        kind: 'obj' },
+    { name: '_elementalMasteryBonus', source: 'inventory-core.js', kind: 'fn' },
     { name: 'headlessHuntMember', source: 'state.js',        kind: 'obj' },
     { name: 'HERO_BARKS',         source: 'hero-barks.js',   kind: 'obj', optional: true },
     { name: 'pickHeroBark',       source: 'hero-barks.js',   kind: 'fn',  optional: true },

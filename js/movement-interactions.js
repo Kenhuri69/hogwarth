@@ -237,6 +237,13 @@ function _tryCollectPage() {
     setNarrative(`Entre deux pierres, un feuillet givré : « ${page.name} ». Vous le glissez dans le grimoire.`);
   }
   addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/scroll.png" alt=""> ${isAct3 ? 'Feuillet clair récolté' : 'Page récoltée'} : ${page.name}`, 'good');
+  // Voix posthume d'Élara : à chaque feuillet clair (Acte III), elle « lit »
+  // le legs de joie correspondant (1er/2e/3e collecté). Signature « mémoire »
+  // à l'encodage → identité distinctive. Défensif : no-op si OGG absent.
+  if (isAct3 && typeof AudioSystem !== 'undefined' && typeof AudioSystem.playVoice === 'function') {
+    const nClairs = player.grimoirePages.filter(id => set.pages.some(p => p.id === id)).length;
+    AudioSystem.playVoice(`elara_feuillet_${Math.min(3, Math.max(1, nClairs))}`);
+  }
   if (typeof checkPageQuest === 'function') checkPageQuest();
   if (typeof renderMinimap === 'function') renderMinimap();
   return true;

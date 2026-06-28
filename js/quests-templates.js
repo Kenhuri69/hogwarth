@@ -834,6 +834,25 @@ const QUEST_TEMPLATES = [
     reward: { xp: 500, gold: 220 },
     location: "Étage 3 — auprès de Manon"
   },
+  // ── Manon, capstone — « Clair de Lune » (lien PÈRE, Lupin) ──
+  // Vraie dernière quête de l'arc de Manon : après la mère (Actes II-III,
+  // givre), l'arc culmine enfin sur le père. Gated par `manon_acte3`.
+  // L'élément du père = la LUMIÈRE (Lupin enseigne le Patronus, « la Lumière
+  // contre le Désespoir »). Récompense = Livre de Maîtrise Lumière (buff
+  // permanent), jamais un sort déjà acquis. Cible (Détraqueur) toujours
+  // disponible via _ensureActiveKillQuestTargets. Cf. quest-system-revision.md §4.
+  {
+    id: "manon_clair_de_lune",
+    title: "Clair de Lune",
+    giver: "Manon",
+    desc: "Manon veut comprendre la part de son père en elle — non la malédiction de la lune, mais la lumière qu'il oppose au désespoir. Disperse deux Détraqueurs en son nom, et reviens : elle a quelque chose à t'offrir, de la part de Lupin.",
+    prereq: "manon_acte3",
+    objectives: [
+      { type: "kill", monsterId: "detraqueur", amount: 2, progress: 0, completed: false }
+    ],
+    reward: { xp: 560, gold: 240, item: "livre_lumiere_patronus", stats: { mag: 1, lck: 1 } },
+    location: "Étage 3 — auprès de Manon"
+  },
   // ── Easter egg « La Chasse Sans Tête » (comique) ───────────
   // Hôte : Sir Patrick Delaney-Podmore (PNJ déterministe ét. 6, ghost).
   // Objectif : terrasser 2 Chevaliers Fantômes restés casqués. Récompense

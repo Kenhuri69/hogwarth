@@ -508,7 +508,8 @@ MONSTERS.push(
       { itemId: "essence_tenebres",  chance: 0.80 },
       { itemId: "essence_tenebres",  chance: 0.50 },
       { itemId: "potion_lune",       chance: 0.50 },
-      { itemId: "anneau_runique",    chance: 0.20 }
+      { itemId: "anneau_runique",    chance: 0.20 },
+      { itemId: "livre_physique_lion", chance: 1 }
     ]
   },
 
@@ -816,7 +817,8 @@ MONSTERS.push(
       { itemId: "page_grimoire",         chance: 0.55 },
       { itemId: "herbe_asphodele_noire", chance: 0.30 },
       { itemId: "larme_phenix_mineure",  chance: 0.15 },
-      { itemId: "grimoire_avance",       chance: 0.20 }
+      { itemId: "grimoire_avance",       chance: 0.20 },
+      { itemId: "livre_tenebres_pacte",  chance: 1 }
     ]
   },
 
@@ -940,7 +942,8 @@ MONSTERS.push(
       { itemId: "page_grimoire",         chance: 0.50 },
       { itemId: "herbe_asphodele_noire", chance: 0.30 },
       { itemId: "eclat_vitalite",        chance: 0.20 },
-      { itemId: "larme_phenix_mineure",  chance: 0.12 }
+      { itemId: "larme_phenix_mineure",  chance: 0.12 },
+      { itemId: "livre_feu_dragon",      chance: 1 }
     ]
   },
 
@@ -981,7 +984,8 @@ MONSTERS.push(
       { itemId: "page_grimoire",         chance: 0.50 },
       { itemId: "cristal_givre",         chance: 0.35 },
       { itemId: "herbe_asphodele_noire", chance: 0.30 },
-      { itemId: "larme_phenix_mineure",  chance: 0.12 }
+      { itemId: "larme_phenix_mineure",  chance: 0.12 },
+      { itemId: "livre_glace_elara",     chance: 1 }
     ]
   },
 
@@ -1022,7 +1026,8 @@ MONSTERS.push(
       { itemId: "essence_tenebres",      chance: 0.75 },
       { itemId: "page_grimoire",         chance: 0.50 },
       { itemId: "herbe_asphodele_noire", chance: 0.30 },
-      { itemId: "larme_phenix_mineure",  chance: 0.12 }
+      { itemId: "larme_phenix_mineure",  chance: 0.12 },
+      { itemId: "livre_foudre_orage",    chance: 1 }
     ]
   },
 

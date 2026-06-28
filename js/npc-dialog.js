@@ -850,6 +850,21 @@ function _voiceKeyForPage(npcId, state, qid, pageIdx, source, idleIndex) {
     }
     return null;
   }
+  // PNJ à voix dédiée hors chefs de Maison (révision quêtes §2.2).
+  //  • Lupin (le père) : une seule quête → greeting + offer/active/ready
+  //    sans collision (Edge-TTS, OGG livrés).
+  //  • Manon (le cœur émotionnel) : greeting SEUL voixé — ses 8 quêtes
+  //    partageraient des clés d'état génériques (collision texte/voix), donc
+  //    pas de clé offer/active/ready ici (ElevenLabs ; OGG fournis plus tard).
+  if (npcId === 'lupin') {
+    if (source === 'greeting') return `lupin_greeting_${pageIdx + 1}`;
+    if (source === 'offer' || source === 'active' || source === 'ready') return `lupin_${source}_${pageIdx + 1}`;
+    return null;
+  }
+  if (npcId === 'manon') {
+    if (source === 'greeting') return `manon_greeting_${pageIdx + 1}`;
+    return null;
+  }
   if (state !== 'offer' && state !== 'active' && state !== 'ready') return null;
   if (npcId === 'dumbledore') {
     const suffix = _DUMBLEDORE_QID_SUFFIX[qid];

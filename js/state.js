@@ -909,6 +909,14 @@ let endgamePivotSeen = false;
 // _serializeState / _applyState. Cf. .claude/plans/manon-grimoire-easter-egg.md §7.
 let hiverClair = false;
 
+// Maîtrises élémentaires — buffs PERMANENTS de partie octroyés par les
+// « Livres de Maîtrise » (un par élément). `elementalMastery[element]` = bonus
+// fractionnaire de dégâts (+0.12 par livre lu, un seul livre par élément).
+// Lu en combat par `_elementalMasteryBonus` (inventory-core.js). Within-run :
+// vit dans la save (jamais dans le profil cross-run — règle zéro-héritage).
+// Réinitialisé par startGame, persisté via _serializeState / _applyState.
+let elementalMastery = {};
+
 // Easter egg « La Chasse Sans Tête » — true une fois la quête
 // `chasse_sans_tete` remise à Sir Patrick (hook dans completeQuest).
 // Récompense purement cosmétique : badge sur la fiche perso + ligne

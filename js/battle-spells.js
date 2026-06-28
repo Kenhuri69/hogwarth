@@ -555,6 +555,11 @@ function _computeSpellDamage(spell, char, enemy, opts) {
   let suffix = '';
   if (enemy.resist?.includes(spell.element)) { dmg = Math.floor(dmg * RESIST_MULTIPLIER); suffix = ' 🔰'; }
   if (enemy.weak?.includes(spell.element))   { dmg = Math.floor(dmg * WEAK_MULTIPLIER);   suffix = ' 💥'; }
+  // Maîtrise élémentaire (Livre de Maîtrise) — buff permanent +% pour l'élément
+  // du sort. Additif, défensif (0 hors maîtrise). Couvre tous les sorts offensifs
+  // qui passent par ce coeur (élémentaire, vol de vie, malédiction, AoE).
+  const _mast = (typeof _elementalMasteryBonus === 'function') ? _elementalMasteryBonus(spell.element) : 0;
+  if (_mast > 0) dmg = Math.floor(dmg * (1 + _mast));
   if (opts.undead && spell.bonusVsUndead && _isUndead(enemy)) {
     dmg = Math.floor(dmg * spell.bonusVsUndead); suffix += ' ☀️';
   }

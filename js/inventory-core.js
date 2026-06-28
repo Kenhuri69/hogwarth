@@ -642,3 +642,14 @@ function partyFortune() {
   }
   return best;
 }
+
+// Maîtrise élémentaire (Livres de Maîtrise) — bonus fractionnaire de dégâts
+// pour un élément (`feu`/`glace`/`foudre`/`lumière`/`ténèbres`/`physique`).
+// PUR + défensif : lit le global `elementalMastery` (objet de partie). Renvoie
+// 0 si l'état est absent ou l'élément non maîtrisé. Consommé par le pipeline
+// élémentaire (_computeSpellDamage) et l'attaque physique (executeAttack).
+function _elementalMasteryBonus(element) {
+  if (!element || typeof elementalMastery === 'undefined' || !elementalMastery) return 0;
+  const v = elementalMastery[element];
+  return (typeof v === 'number' && v > 0) ? v : 0;
+}

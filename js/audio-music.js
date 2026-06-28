@@ -319,6 +319,24 @@ Object.assign(AudioSystem, {
     spell_cheminette_inter_mondes: 'audio/voice/spell_cheminette_inter_mondes.ogg',
     spell_verrou_de_sang:        'audio/voice/spell_verrou_de_sang.ogg',
     spell_sceau_du_voyageur:     'audio/voice/spell_sceau_du_voyageur.ogg',
+    // ── Voix PNJ — révision quêtes §2.2 (Manon / Lupin / Élara) ──
+    // Lupin (le père) : Edge-TTS, OGG livrés. Manon (cœur émotionnel) :
+    // ElevenLabs — clés enregistrées, repli silencieux tant que les OGG
+    // ne sont pas déposés (cf. .claude/plans/voix-manon-elara.md).
+    lupin_greeting_1:            'audio/voice/lupin_greeting_1.ogg',
+    lupin_greeting_2:            'audio/voice/lupin_greeting_2.ogg',
+    lupin_offer_1:               'audio/voice/lupin_offer_1.ogg',
+    lupin_active_1:              'audio/voice/lupin_active_1.ogg',
+    lupin_ready_1:               'audio/voice/lupin_ready_1.ogg',
+    manon_greeting_1:            'audio/voice/manon_greeting_1.ogg',
+    manon_greeting_2:            'audio/voice/manon_greeting_2.ogg',
+    manon_greeting_3:            'audio/voice/manon_greeting_3.ogg',
+    manon_greeting_4:            'audio/voice/manon_greeting_4.ogg',
+    // Élara (mère défunte) — voix posthume « mémoire » lue à la collecte des
+    // feuillets clairs (Acte III). Edge-TTS (Emma) + signature réverbe.
+    elara_feuillet_1:            'audio/voice/elara_feuillet_1.ogg',
+    elara_feuillet_2:            'audio/voice/elara_feuillet_2.ogg',
+    elara_feuillet_3:            'audio/voice/elara_feuillet_3.ogg',
   },
 
   // ── Lecture d'une voix narrative (one-shot, avec ducking music) ──

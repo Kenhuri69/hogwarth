@@ -401,23 +401,8 @@ NPCS.push(
     icon:  "🌙",
     portraitImg: "img/npc/manon.png",
     placement: { floor: 3, anchor: "any" },
-    questsGiven:    ["manon_secret", "manon_pardon", "manon_revelio", "manon_grimoire", "manon_acte3", "manon_confier", "manon_compagnie"],
-    questsTurnedIn: ["manon_secret", "manon_pardon", "manon_revelio", "manon_grimoire", "manon_acte3", "manon_confier", "manon_compagnie"],
-    // Rédemption en Boucle (étage 13) : Manon confie l'histoire d'Élara, que
-    // Lockhart mettra en mémoire (chaîne manon_confier → memoire_lockhart).
-    dialoguesByQuest: {
-      manon_confier: {
-        questOffer:  "Tu reviens, encore. La Boucle nous ramène tous… alors autant que ça serve. Je veux que l'histoire de ma mère soit dite — pour de vrai. Aide-moi à rassembler ses souvenirs épars dans ces murs, et je les mettrai en mots.",
-        questActive: "Ses souvenirs sont dispersés partout — fouille les recoins. Trois suffiront pour que je me souvienne assez.",
-        questReady:  "C'est écrit. Tout y est : la lune, le mensonge, le pardon. Porte ce récit à quelqu'un qui saura le faire lire — même ce bouffon de Lockhart, s'il le faut. Au moins, lui, on l'écoute."
-      },
-      // Visite répétable : la Boucle est longue et Manon redoute le silence.
-      manon_compagnie: {
-        questOffer:  "Reste un peu… non, d'abord, rends-moi service : des Spectres Maudits rôdent près de ma salle et me terrifient. Chasses-en deux, et puis reviens t'asseoir. Juste un moment. Je n'aime pas être seule, dans la Boucle.",
-        questActive: "Ils sont encore là, à gratter aux murs… Tu les éloignes, dis ?",
-        questReady:  "Merci… c'est plus calme. Et tu es revenu. Ça compte, tu sais. Reviens encore, quand la Boucle pèsera trop."
-      }
-    },
+    questsGiven:    ["manon_secret", "manon_pardon", "manon_revelio", "manon_grimoire", "manon_acte3", "manon_clair_de_lune", "manon_confier", "manon_compagnie"],
+    questsTurnedIn: ["manon_secret", "manon_pardon", "manon_revelio", "manon_grimoire", "manon_acte3", "manon_clair_de_lune", "manon_confier", "manon_compagnie"],
     // Établi de fusion : disponible quand tous les feuillets du set actif
     // sont réunis (5 pages Acte II / 3 feuillets clairs Acte III).
     // Ouvre l'overlay #fusion-modal qui reconstitue le grimoire (= remise
@@ -449,6 +434,19 @@ NPCS.push(
       ]
     },
     dialoguesByQuest: {
+      // Rédemption en Boucle (étage 13) : Manon confie l'histoire d'Élara, que
+      // Lockhart mettra en mémoire (chaîne manon_confier → memoire_lockhart).
+      manon_confier: {
+        questOffer:  "Tu reviens, encore. La Boucle nous ramène tous… alors autant que ça serve. Je veux que l'histoire de ma mère soit dite — pour de vrai. Aide-moi à rassembler ses souvenirs épars dans ces murs, et je les mettrai en mots.",
+        questActive: "Ses souvenirs sont dispersés partout — fouille les recoins. Trois suffiront pour que je me souvienne assez.",
+        questReady:  "C'est écrit. Tout y est : la lune, le mensonge, le pardon. Porte ce récit à quelqu'un qui saura le faire lire — même ce bouffon de Lockhart, s'il le faut. Au moins, lui, on l'écoute."
+      },
+      // Visite répétable : la Boucle est longue et Manon redoute le silence.
+      manon_compagnie: {
+        questOffer:  "Reste un peu… non, d'abord, rends-moi service : des Spectres Maudits rôdent près de ma salle et me terrifient. Chasses-en deux, et puis reviens t'asseoir. Juste un moment. Je n'aime pas être seule, dans la Boucle.",
+        questActive: "Ils sont encore là, à gratter aux murs… Tu les éloignes, dis ?",
+        questReady:  "Merci… c'est plus calme. Et tu es revenu. Ça compte, tu sais. Reviens encore, quand la Boucle pèsera trop."
+      },
       manon_secret: {
         questOffer: [
           "Tu redescends vers les étages profonds, n'est-ce pas ? Alors fais quelque chose pour moi. Va jusqu'à la classe de Défense, l'étage en dessous. Regarde-le. Je veux seulement savoir qu'il est réel — que je n'ai pas remonté toute cette histoire pour un fantôme.",
@@ -512,6 +510,22 @@ NPCS.push(
           "Les trois feuillets clairs. Ils sont tous là. (Elle les étale sur l'établi, près de la fenêtre où le givre monte.) Regarde — pas un sortilège de guerre là-dedans. Une fougère à dessiner sur la vitre. Une goutte de pluie figée en perle. De la neige qu'on fait tomber dans une chambre, un soir de cœur lourd. Elle a couché ça noir sur blanc, pour moi, en riant — je le vois à son écriture : elle ne tremble pas comme dans les autres pages.",
           "Toute ma vie je l'ai crue faite seulement de prudence et de mensonge. Et voilà qu'elle me tend, par-dessus la mort, trois façons d'être heureuse avec un peu de froid. (Sa voix se brise, mais c'est un rire qui passe au travers.) Elle n'a pas seulement cousu sa peur dans ma malle — elle y a glissé sa joie, en espérant que je la trouve après le reste, pour que je ne reste pas sur le mensonge.",
           "(Elle souffle sur le carreau et, du bout de la baguette, y trace une fougère de givre — la toute première du grimoire.) Voilà. Je sais enfin à quoi elle ressemblait quand elle ne se cachait pas. Merci de me l'avoir rendue entière : la menteuse et la rieuse, la même femme. Les soirs de gel, désormais, je ne pleure plus toute seule. Je dessine."
+        ]
+      },
+      // ── Capstone — « Clair de Lune » (le père, Lupin) ──
+      // Après la mère (givre), l'arc se referme sur le père : la lumière qu'il
+      // oppose au désespoir (le Patronus). Récompense : Livre de Maîtrise Lumière.
+      manon_clair_de_lune: {
+        questOffer: [
+          "Ma mère m'a rendu le givre. Mais il me reste mon père à comprendre — pas la bête, pas la lune qui gratte sous ma peau. L'autre part de lui. Celle qui tient debout des enfants terrifiés avec un carré de chocolat et un sortilège de lumière.",
+          "Il m'a confié une chose, l'autre soir, autour du thé. « Ce que je combats depuis toujours, ce ne sont pas les loups. Ce sont les Détraqueurs — le désespoir qui dit qu'on ne mérite pas d'être aimé. Contre eux, je n'ai qu'une arme : la lumière d'un souvenir heureux. » Il voudrait me l'apprendre. Mais d'abord, il faut leur tenir tête.",
+          "Va, et disperse-en deux en notre nom — au mien et au sien. Quand tu reviendras, il aura achevé pour moi un livre : tout ce qu'il sait de cette lumière-là. Le legs qu'il n'a jamais pu m'écrire en seize ans de lettres. Cette fois, il le finit."
+        ],
+        questActive: "Ils sont encore là, les Détraqueurs ? Le froid qu'ils traînent n'a rien de celui de ma mère — c'est un froid qui vide, pas un froid qui dessine. Tiens-leur tête. Mon père dit qu'on n'y arrive jamais seul ; alors pense à quelqu'un que tu aimes, et frappe.",
+        questReady: [
+          "Tu les as dispersés. (Elle expire, longuement.) Mon père l'a senti d'en bas, je crois — il est monté, ce qu'il ne fait jamais. Il avait ce livre sous le bras, relié de sa main, et il tremblait un peu en me le tendant.",
+          "« Je n'ai jamais su t'écrire de mon vivant de père, » m'a-t-il dit. « Alors voilà ce que je sais de mieux : comment faire de la lumière quand tout dit qu'il n'y en a plus. C'est tout ce que j'avais à transmettre. C'est à toi, maintenant. »",
+          "(Elle dépose le livre près de la photographie et de la fougère de givre, sur le rebord de la fenêtre. La lune se lève dessus.) Le givre de ma mère, la lumière de mon père. Les deux tiennent enfin dans le même cadre — et moi au milieu. Garde ce savoir, toi aussi : qu'on apprenne à plus d'un à faire reculer le noir. C'est ce qu'il aurait voulu."
         ]
       }
     }

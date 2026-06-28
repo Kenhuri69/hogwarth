@@ -108,6 +108,7 @@ function _serializeState() {
     combatTutorialSeen,
     endgamePivotSeen,
     hiverClair,
+    elementalMastery,
     headlessHuntMember,
     maitreDeLaMort,
     cycleBroken,
@@ -433,6 +434,10 @@ function _applyState(gs) {
   if (typeof endgamePivotSeen !== 'undefined') endgamePivotSeen = !!gs.endgamePivotSeen;
   // Passif Hiver Clair (Manon Acte III) : saves antérieures → false.
   if (typeof hiverClair !== 'undefined') hiverClair = !!gs.hiverClair;
+  // Maîtrises élémentaires : saves antérieures → objet vide (aucun buff).
+  if (typeof elementalMastery !== 'undefined') {
+    elementalMastery = (gs.elementalMastery && typeof gs.elementalMastery === 'object') ? gs.elementalMastery : {};
+  }
   if (typeof headlessHuntMember !== 'undefined') headlessHuntMember = !!gs.headlessHuntMember;
   // Easter egg Reliques de la Mort : saves antérieures → false.
   if (typeof maitreDeLaMort !== 'undefined') maitreDeLaMort = !!gs.maitreDeLaMort;

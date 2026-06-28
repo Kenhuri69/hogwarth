@@ -1739,6 +1739,139 @@ function loadNpcs() {
 })();
 
 // ============================================================
+// 11bis. Révision du système de quêtes — arc Manon + Livres de Maîtrise
+// ------------------------------------------------------------
+// Verrou de cohérence (cf. .claude/plans/quest-system-revision.md) :
+//  (a) Manon n'a plus de bloc dialoguesByQuest fantôme : CHAQUE quête qu'elle
+//      donne possède un dialogue (le bug des deux clés dupliquées rendait
+//      manon_confier/manon_compagnie muets — ce test l'aurait attrapé).
+//  (b) Capstone « Clair de Lune » : template + cible accessible + reward = le
+//      Livre de Maîtrise Lumière (jamais un sort).
+//  (c) Les 6 Livres de Maîtrise existent, bien typés, élément valide ; les 5
+//      sources de drop pointent le bon livre (le 6e = reward de Manon).
+// ============================================================
+(function testQuestSystemRevision() {
+  const { NPCS } = loadNpcs();
+  const { MONSTERS } = loadMonsters();
+  const { QUEST_TEMPLATES } = loadModule('js/quests-templates.js', ['QUEST_TEMPLATES']);
+  const { ITEMS } = loadModule('js/data-items.js', ['ITEMS']);
+
+  // (a) Manon : une seule structure dialoguesByQuest, sans trou.
+  const manon = NPCS.find(n => n.id === 'manon');
+  check('manon: NPC présent', !!manon);
+  const dq = (manon && manon.dialoguesByQuest) || {};
+  // CHAQUE quête donnée a un dialogue dédié (Manon est intégralement scriptée).
+  check('manon: chaque questsGiven a un dialogue (aucun bloc fantôme)',
+    !!manon && manon.questsGiven.every(qid => !!dq[qid]));
+  // Les deux dialogues jadis morts (clé dupliquée) sont bien revenus, intacts.
+  check('manon: manon_confier dialogue vivant',
+    !!dq.manon_confier && /histoire de ma mère/.test(JSON.stringify(dq.manon_confier)));
+  check('manon: manon_compagnie dialogue vivant',
+    !!dq.manon_compagnie && /Spectres Maudits/.test(JSON.stringify(dq.manon_compagnie)));
+
+  // (b) Capstone « Clair de Lune ».
+  check('manon: capstone dans questsGiven/turnedIn',
+    !!manon && manon.questsGiven.includes('manon_clair_de_lune')
+           && manon.questsTurnedIn.includes('manon_clair_de_lune'));
+  const cap = QUEST_TEMPLATES.find(t => t.id === 'manon_clair_de_lune');
+  check('capstone: template présent', !!cap);
+  check('capstone: prereq manon_acte3 (vraie dernière quête)', !!cap && cap.prereq === 'manon_acte3');
+  check('capstone: cible detraqueur ×2',
+    !!cap && cap.objectives[0].monsterId === 'detraqueur' && cap.objectives[0].amount === 2);
+  check('capstone: cible accessible (detraqueur existe dans MONSTERS)',
+    MONSTERS.some(m => m.id === 'detraqueur'));
+  check('capstone: reward = Livre de Maîtrise Lumière (item, pas sort)',
+    !!cap && cap.reward.item === 'livre_lumiere_patronus' && !cap.reward.spell);
+
+  // (c) Les 6 Livres de Maîtrise : typage + élément valide + cohérence drops.
+  const ELEMENTS = ['feu','glace','foudre','lumière','ténèbres','physique'];
+  const BOOKS = {
+    livre_feu_dragon:       'feu',
+    livre_glace_elara:      'glace',
+    livre_foudre_orage:     'foudre',
+    livre_lumiere_patronus: 'lumière',
+    livre_tenebres_pacte:   'ténèbres',
+    livre_physique_lion:    'physique',
+  };
+  for (const [id, el] of Object.entries(BOOKS)) {
+    const it = ITEMS.find(i => i.id === id);
+    check(`book ${id}: présent, type masterybook, élément ${el}, +12%`,
+      !!it && it.type === 'masterybook' && it.element === el
+           && ELEMENTS.includes(it.element) && approx(it.masteryPct, 0.12));
+  }
+  // Les 5 sources de drop pointent le bon livre (le 6e = reward Manon).
+  const DROPS = {
+    fenrir_greyback:  'livre_physique_lion',
+    heraut_tenebres:  'livre_tenebres_pacte',
+    magyar_ancestral: 'livre_feu_dragon',
+    spectre_givre:    'livre_glace_elara',
+    heraut_foudre:    'livre_foudre_orage',
+  };
+  for (const [mid, bid] of Object.entries(DROPS)) {
+    const m = MONSTERS.find(x => x.id === mid);
+    check(`drop ${mid} → ${bid}`,
+      !!m && Array.isArray(m.drops) && m.drops.some(d => d.itemId === bid));
+  }
+})();
+
+// ============================================================
+// 11ter. Intégrité référentielle de TOUT le système de quêtes
+// ------------------------------------------------------------
+// « Mettre les quêtes en cohérence » : verrou anti-dérive sur les 79
+// templates. Une cible/un reward au mauvais id rend une quête incomplétable
+// ou un reward muet, SANS erreur visible. On vérifie que chaque référence
+// (monstre, item, sort, npc) résout vers un registre réel.
+// ============================================================
+(function testQuestReferentialIntegrity() {
+  const { MONSTERS } = loadMonsters();
+  const { NPCS } = loadNpcs();
+  const { QUEST_TEMPLATES } = loadModule('js/quests-templates.js', ['QUEST_TEMPLATES']);
+  const { ITEMS } = loadModule('js/data-items.js', ['ITEMS']);
+  const { SPELLS } = loadModule('js/data-spells.js', ['SPELLS']);
+
+  const mid = new Set(MONSTERS.map(m => m.id));
+  const iid = new Set(ITEMS.map(i => i.id));
+  const sname = new Set(SPELLS.map(s => s.name));
+  const tid = new Set(QUEST_TEMPLATES.map(t => t.id));
+
+  // (a) Chaque objectif kill cible un monstre réel (sinon quête incomplétable).
+  let killOk = true, badKill = '';
+  for (const q of QUEST_TEMPLATES) {
+    for (const o of (q.objectives || [])) {
+      if (o.type === 'kill' && o.monsterId && !mid.has(o.monsterId)) { killOk = false; badKill = `${q.id}:${o.monsterId}`; }
+      if (o.type === 'item' && o.itemId && !iid.has(o.itemId))       { killOk = false; badKill = `${q.id}:${o.itemId}`; }
+    }
+  }
+  check('quêtes: tout objectif kill/item cible un registre réel' + (killOk ? '' : ` (${badKill})`), killOk);
+
+  // (b) Chaque reward.item/spell (et repeatableReward.item) résout.
+  let rewOk = true, badRew = '';
+  for (const q of QUEST_TEMPLATES) {
+    const r = q.reward || {};
+    if (r.item && !iid.has(r.item))   { rewOk = false; badRew = `${q.id}.item:${r.item}`; }
+    if (r.spell && !sname.has(r.spell)) { rewOk = false; badRew = `${q.id}.spell:${r.spell}`; }
+    const rr = q.repeatableReward;
+    if (rr && rr.item && !iid.has(rr.item)) { rewOk = false; badRew = `${q.id}.repeat:${rr.item}`; }
+  }
+  check('quêtes: toute récompense item/sort résout' + (rewOk ? '' : ` (${badRew})`), rewOk);
+
+  // (c) Chaque questsGiven d'un NPC a un template ; chaque template « normal »
+  //     (hors quêtes de Maison débloquées dynamiquement) est donné par un NPC.
+  let npcOk = true, badNpc = '';
+  for (const n of NPCS) for (const g of (n.questsGiven || [])) if (!tid.has(g)) { npcOk = false; badNpc = `${n.id}:${g}`; }
+  check('quêtes: tout questsGiven NPC a un template' + (npcOk ? '' : ` (${badNpc})`), npcOk);
+
+  const givenByNpc = new Set();
+  NPCS.forEach(n => (n.questsGiven || []).forEach(g => givenByNpc.add(g)));
+  let orphanOk = true, badOrphan = '';
+  for (const t of QUEST_TEMPLATES) {
+    if (t.houseSetQuest || t.houseSignatureQuest || t.houseMytheQuest) continue; // débloqués par tier, pas via questsGiven
+    if (!givenByNpc.has(t.id)) { orphanOk = false; badOrphan = t.id; }
+  }
+  check('quêtes: aucun template orphelin (donné par un NPC)' + (orphanOk ? '' : ` (${badOrphan})`), orphanOk);
+})();
+
+// ============================================================
 // 12. data.js — Artefacts & Reliquaires 2.0, socle data (Lot P0)
 //    ARTIFACT_FORMS (registre inerte) + premiumStat (helper PUR)
 // ------------------------------------------------------------

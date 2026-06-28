@@ -1116,7 +1116,10 @@ function executeAttack(targetIdx) {
   const rawAtk = char.atk + Math.floor(Math.random() * 4);
   // D4 — la STR du frappeur ignore une fraction de la DEF ennemie.
   const effDef = Math.max(0, (enemy.def || 0) * (1 - _strPenFrac(char.str)));
-  let dmg    = Math.max(1, Math.floor(mitigatedDamage(rawAtk, effDef) * _houseVigorMult(char) * _houseElanMult(char)));
+  // Maîtrise Physique (Livre « Cœur de Lion ») — buff permanent +% sur l'attaque
+  // physique. Additif, défensif (0 hors maîtrise).
+  const _physMast = (typeof _elementalMasteryBonus === 'function') ? _elementalMasteryBonus('physique') : 0;
+  let dmg    = Math.max(1, Math.floor(mitigatedDamage(rawAtk, effDef) * _houseVigorMult(char) * _houseElanMult(char) * (1 + _physMast)));
   // Combo : un coup physique sur une cible gelée / qui saigne est amplifié.
   const combo = (typeof comboDamageMult === 'function') ? comboDamageMult(enemy, 'physique') : { mult: 1, label: null };
   if (combo.mult !== 1) dmg = Math.max(1, Math.floor(dmg * combo.mult));
