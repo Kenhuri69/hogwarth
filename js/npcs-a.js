@@ -102,10 +102,16 @@ NPCS.push(
     icon:  "🩺",
     portraitImg: "img/npc/pomfresh.png",
     placement: { floor: 2, anchor: "any" },
-    questsGiven:    ["mandragore_pomfresh", "fabrique_pomfresh", "givre_pomfresh"],
-    questsTurnedIn: ["mandragore_pomfresh", "fabrique_pomfresh", "givre_pomfresh"],
+    questsGiven:    ["mandragore_pomfresh", "fabrique_pomfresh", "givre_pomfresh", "derniere_recette_elara"],
+    questsTurnedIn: ["mandragore_pomfresh", "fabrique_pomfresh", "givre_pomfresh", "derniere_recette_elara"],
     // Quêtes répétables en Boucle (étage 12) — gate minFloor:11.
     dialoguesByQuest: {
+      // Lien Pomfresh × Élara (révision quêtes §6) — la fiche de soin reconnue.
+      derniere_recette_elara: {
+        questOffer:  "Tiens, regarde cette vieille fiche. Cette écriture penchée… Élara. Une guérisseuse de givre, autrefois — elle soignait le mal par le froid, là où nous brûlons. On dit que sa fille rôde dans ces murs. Rapporte-moi deux Cristaux de Givre : je veux refaire sa recette avant qu'elle ne se perde tout à fait.",
+        questActive: "Deux Cristaux de Givre, jeune sorcier — les spectres des Ruines en sont pétris. Pour Élara, prends-en soin.",
+        questReady:  "Les voilà. (Elle les pose sur la fiche jaunie, avec délicatesse.) Sa recette revivra. Quand sa fille viendra un jour à l'infirmerie — et elle viendra — je la soignerai avec le froid de sa mère. Tiens, c'est pour toi : la première fiole."
+      },
       fabrique_pomfresh: {
         questOffer:  "La Boucle me ramène les mêmes blessés, encore et encore. Si tu sais manier un chaudron, concocte-moi 3 Potions de Soin Mineure — l'infirmerie ne tient plus que par tes mains.",
         questActive: "Mes réserves ? Trois Potions de Soin Mineure, jeune sorcier. Le chaudron de Slughorn n'est pas loin.",

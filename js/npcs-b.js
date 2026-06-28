@@ -417,10 +417,16 @@ NPCS.push(
     icon:  "🗝️",
     portraitImg: "img/npc/bill_weasley.png",
     placement: { floor: 9, anchor: "any" },
-    questsGiven:    ["chasse_aragog", "baiser_detraqueur", "dictame_bill", "chasse_bill_boucle"],
-    questsTurnedIn: ["chasse_aragog", "baiser_detraqueur", "dictame_bill", "chasse_bill_boucle"],
+    questsGiven:    ["chasse_aragog", "baiser_detraqueur", "dictame_bill", "givre_ancien", "chasse_bill_boucle"],
+    questsTurnedIn: ["chasse_aragog", "baiser_detraqueur", "dictame_bill", "givre_ancien", "chasse_bill_boucle"],
     // Prime de nettoyage répétable en Boucle (étage 19) — cible aléatoire.
     dialoguesByQuest: {
+      // Lien Bill × Élara (révision quêtes §6) — le briseur reconnaît le givre.
+      givre_ancien: {
+        questOffer:  "Tu récoltes des pages de givre, plus haut ? Je les ai senties d'ici. Le même sortilège de dissimulation court sur les spectres gelés de ces galeries — du travail d'orfèvre, signé d'une certaine Élara. Brise-m'en un, le plus ancien : je veux lire ce qu'elle a pris tant de soin à cacher.",
+        questActive: "Le spectre de givre, tu l'as trouvé ? Cherche les galeries gelées. Garde un sort de feu — le froid de ce sortilège mord deux fois.",
+        questReady:  "Brisé. (Bill effleure les runes de givre qui s'effacent.) De la magie d'amour, pas de guerre. Cette Élara cachait sa tendresse comme d'autres cachent un trésor. Sa fille devrait savoir ça. Tiens — cette page t'appartient autant qu'à moi."
+      },
       chasse_bill_boucle: {
         questOffer:  "Briseur de sortilèges, et me voilà à briser des meutes. {amount}× {target} grouillent dans les galeries d'à côté — réduis-les avant qu'elles n'enflent.",
         questActive: "Ça avance, la galerie ? Ces {target} reviennent vite, dans la Boucle.",
@@ -537,10 +543,16 @@ NPCS.push(
     icon:  "🐕",
     portraitImg: "img/npc/sirius_esprit.png",
     placement: { floor: 10, anchor: "any" },
-    questsGiven:    ["chasse_dolohov", "chasse_heraut", "purification_sirius", "chasse_sirius_boucle"],
-    questsTurnedIn: ["chasse_dolohov", "chasse_heraut", "purification_sirius", "chasse_sirius_boucle"],
+    questsGiven:    ["chasse_dolohov", "chasse_heraut", "purification_sirius", "fardeau_de_sirius", "chasse_sirius_boucle"],
+    questsTurnedIn: ["chasse_dolohov", "chasse_heraut", "purification_sirius", "fardeau_de_sirius", "chasse_sirius_boucle"],
     // Prime d'apaisement répétable en Boucle (étage 20) — cible aléatoire.
     dialoguesByQuest: {
+      // Lien Sirius × Lupin × Manon (révision quêtes §6).
+      fardeau_de_sirius: {
+        questOffer:  "Approche, filleul. Il faut que je te parle de Remus. Mon dernier ami vivant — et le plus lâche des courageux. Il avait une fille, sais-tu ? Une enfant qu'il n'a jamais osé regarder, par peur de lui transmettre sa nuit. Disperse deux Détraqueurs ici, pour lui : qu'il apprenne, même mort, qu'on peut tenir tête au désespoir.",
+        questActive: "Les Détraqueurs rôdent encore ? Remus les a fuis toute sa vie. Toi, tiens-leur tête — c'est tout ce que je lui demande, à travers toi.",
+        questReady:  "Deux de moins. (L'esprit ferme les yeux.) Voilà, Remus. Quelqu'un l'a fait pour toi. Va, filleul — et si tu croises sa fille, ne lui dis pas que son père était un lâche. Dis-lui qu'il avait peur, ce qui n'est pas la même chose."
+      },
       chasse_sirius_boucle: {
         questOffer:  "Le Voile attire les errants, filleul. {amount}× {target} s'attardent près du précipice — renvoie-les au silence, comme j'aimerais l'être.",
         questActive: "Tu apaises le précipice ? Ces {target} ne connaissent pas le repos sans ton aide.",

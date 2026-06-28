@@ -853,6 +853,50 @@ const QUEST_TEMPLATES = [
     reward: { xp: 560, gold: 240, item: "livre_lumiere_patronus", stats: { mag: 1, lck: 1 } },
     location: "Étage 3 — auprès de Manon"
   },
+  // ── Quêtes secondaires de LIENS (révision quêtes §6) ───────
+  // Tissent la constellation Manon / Lupin / Élara avec d'autres PNJ.
+  // Cibles/items 100 % existants (cohérence référentielle) et accessibles
+  // (cibles kill garanties par _ensureActiveKillQuestTargets).
+  // 1) Sirius × Lupin × Manon — Sirius, dernier ami de Remus, sait pour la
+  //    fille cachée et porte le fardeau du silence de son ami.
+  {
+    id: "fardeau_de_sirius",
+    title: "Le fardeau du dernier ami",
+    giver: "Esprit de Sirius Black",
+    desc: "Sirius fut le dernier ami de Remus — et l'un des rares à savoir qu'il avait une fille. « Lupin n'a jamais su affronter le désespoir en face : ni les Détraqueurs, ni l'idée de regarder son enfant. Fais-le pour lui, filleul. Disperse deux Détraqueurs ici, et qu'un peu de sa lâcheté s'apaise avec eux. »",
+    objectives: [
+      { type: "kill", monsterId: "detraqueur", amount: 2, progress: 0, completed: false }
+    ],
+    reward: { xp: 420, gold: 200, item: "larme_phenix_mineure", stats: { lck: 1 } },
+    location: "Étage 10 — antichambre du Voile"
+  },
+  // 2) Pomfresh × Élara — l'infirmière reconnaît la magie de givre d'Élara
+  //    dans une vieille fiche de soin et veut en sauver la recette.
+  {
+    id: "derniere_recette_elara",
+    title: "La dernière recette d'Élara",
+    giver: "Madame Pomfresh",
+    desc: "Pomfresh retourne une fiche de soin jaunie : « Cette écriture… Élara. Elle soignait avec le froid, cette femme — un givre qui apaise au lieu de mordre. Sa fille hante les étages, paraît-il. Rapporte-moi deux Cristaux de Givre : je veux refaire sa recette, pour qu'il reste d'elle autre chose qu'un mensonge. »",
+    minFloor: 11,
+    objectives: [
+      { type: "item", itemId: "cristal_givre", amount: 2, progress: 0, completed: false }
+    ],
+    reward: { xp: 280, gold: 160, item: "potion_l" },
+    location: "Infirmerie de la Boucle (étage 12+)"
+  },
+  // 3) Bill × Élara — le briseur de sortilèges reconnaît, sur les spectres
+  //    de givre, la même magie de dissimulation que celle du grimoire d'Élara.
+  {
+    id: "givre_ancien",
+    title: "Le givre qui cache",
+    giver: "Bill Weasley",
+    desc: "Bill passe la main au-dessus d'un spectre gelé : « Briseur de sortilèges, c'est mon métier — et ce givre-là, je le connais. La même magie de dissimulation que sur ces pages qu'on récolte plus haut, celles d'une certaine Élara. Brise-m'en un, le plus ancien : je veux lire ce qu'il protège. »",
+    objectives: [
+      { type: "kill", monsterId: "spectre_givre", amount: 1, progress: 0, completed: false }
+    ],
+    reward: { xp: 360, gold: 180, item: "page_grimoire", stats: { int: 1 } },
+    location: "Étage 9 — galeries gelées"
+  },
   // ── Easter egg « La Chasse Sans Tête » (comique) ───────────
   // Hôte : Sir Patrick Delaney-Podmore (PNJ déterministe ét. 6, ghost).
   // Objectif : terrasser 2 Chevaliers Fantômes restés casqués. Récompense
