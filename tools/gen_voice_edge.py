@@ -68,6 +68,9 @@ VOICES = {
     # native (féminine posée, autoritaire) : le tutoriel s'adresse à des
     # débutants, la narration doit être en français sans accent étranger.
     "mcgonagall_help": dict(voice="fr-FR-DeniseNeural", rate="-7%", pitch="+0Hz"),
+    # Lupin : masculin grave, chaleureux et fatigué (le père, le loup las).
+    # Voix FR multilingue naturelle, ralentie + légèrement abaissée.
+    "lupin": dict(voice="fr-FR-RemyMultilingualNeural", rate="-8%", pitch="-6Hz"),
 }
 
 # Textes — copie exacte de npcs.js (dialogues.greeting + dialoguesByQuest).
@@ -386,6 +389,24 @@ LINES = {
         ("spell_cheminette_inter_mondes", "Cheminette Inter-Mondes !"),
         ("spell_verrou_de_sang",       "Verrou de Sang !"),
         ("spell_sceau_du_voyageur",    "Sceau du Voyageur !"),
+    ],
+    # Professeur Lupin (le père de Manon). Greeting + quête lumiere_desespoir.
+    # Texte = copie exacte de npcs-a.js (dialogues.greeting + questOffer/Active/Ready).
+    "lupin": [
+        ("lupin_greeting_1",
+         "Bienvenue, jeune sorcier. Je peux t'enseigner un sort puissant — "
+         "mais d'abord, tu dois affronter ta peur la plus sombre."),
+        ("lupin_greeting_2",
+         "Le Patronus exige un souvenir heureux, pur, indéfectible. Sans lui, "
+         "le Détraqueur t'engloutira. Es-tu prêt à passer cette épreuve ?"),
+        ("lupin_offer_1",
+         "Affronte un Détraqueur, puis rapporte-moi un Chocolat aux Sorciers. "
+         "Je t'enseignerai alors le sort du Patronus."),
+        ("lupin_active_1",
+         "As-tu trouvé un Détraqueur ? Et le chocolat ?"),
+        ("lupin_ready_1",
+         "Tu reviens vivant — et avec le chocolat. Approche : voici le sort "
+         "du Patronus."),
     ],
     # Tour guidé d'aide — une clé par étape de HELP_TOUR_STEPS
     # (js/help-tour.js). Texte = titre + paragraphe de l'étape.
