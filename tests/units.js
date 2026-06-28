@@ -1739,6 +1739,82 @@ function loadNpcs() {
 })();
 
 // ============================================================
+// 11bis. Révision du système de quêtes — arc Manon + Livres de Maîtrise
+// ------------------------------------------------------------
+// Verrou de cohérence (cf. .claude/plans/quest-system-revision.md) :
+//  (a) Manon n'a plus de bloc dialoguesByQuest fantôme : CHAQUE quête qu'elle
+//      donne possède un dialogue (le bug des deux clés dupliquées rendait
+//      manon_confier/manon_compagnie muets — ce test l'aurait attrapé).
+//  (b) Capstone « Clair de Lune » : template + cible accessible + reward = le
+//      Livre de Maîtrise Lumière (jamais un sort).
+//  (c) Les 6 Livres de Maîtrise existent, bien typés, élément valide ; les 5
+//      sources de drop pointent le bon livre (le 6e = reward de Manon).
+// ============================================================
+(function testQuestSystemRevision() {
+  const { NPCS } = loadNpcs();
+  const { MONSTERS } = loadMonsters();
+  const { QUEST_TEMPLATES } = loadModule('js/quests-templates.js', ['QUEST_TEMPLATES']);
+  const { ITEMS } = loadModule('js/data-items.js', ['ITEMS']);
+
+  // (a) Manon : une seule structure dialoguesByQuest, sans trou.
+  const manon = NPCS.find(n => n.id === 'manon');
+  check('manon: NPC présent', !!manon);
+  const dq = (manon && manon.dialoguesByQuest) || {};
+  // CHAQUE quête donnée a un dialogue dédié (Manon est intégralement scriptée).
+  check('manon: chaque questsGiven a un dialogue (aucun bloc fantôme)',
+    !!manon && manon.questsGiven.every(qid => !!dq[qid]));
+  // Les deux dialogues jadis morts (clé dupliquée) sont bien revenus, intacts.
+  check('manon: manon_confier dialogue vivant',
+    !!dq.manon_confier && /histoire de ma mère/.test(JSON.stringify(dq.manon_confier)));
+  check('manon: manon_compagnie dialogue vivant',
+    !!dq.manon_compagnie && /Spectres Maudits/.test(JSON.stringify(dq.manon_compagnie)));
+
+  // (b) Capstone « Clair de Lune ».
+  check('manon: capstone dans questsGiven/turnedIn',
+    !!manon && manon.questsGiven.includes('manon_clair_de_lune')
+           && manon.questsTurnedIn.includes('manon_clair_de_lune'));
+  const cap = QUEST_TEMPLATES.find(t => t.id === 'manon_clair_de_lune');
+  check('capstone: template présent', !!cap);
+  check('capstone: prereq manon_acte3 (vraie dernière quête)', !!cap && cap.prereq === 'manon_acte3');
+  check('capstone: cible detraqueur ×2',
+    !!cap && cap.objectives[0].monsterId === 'detraqueur' && cap.objectives[0].amount === 2);
+  check('capstone: cible accessible (detraqueur existe dans MONSTERS)',
+    MONSTERS.some(m => m.id === 'detraqueur'));
+  check('capstone: reward = Livre de Maîtrise Lumière (item, pas sort)',
+    !!cap && cap.reward.item === 'livre_lumiere_patronus' && !cap.reward.spell);
+
+  // (c) Les 6 Livres de Maîtrise : typage + élément valide + cohérence drops.
+  const ELEMENTS = ['feu','glace','foudre','lumière','ténèbres','physique'];
+  const BOOKS = {
+    livre_feu_dragon:       'feu',
+    livre_glace_elara:      'glace',
+    livre_foudre_orage:     'foudre',
+    livre_lumiere_patronus: 'lumière',
+    livre_tenebres_pacte:   'ténèbres',
+    livre_physique_lion:    'physique',
+  };
+  for (const [id, el] of Object.entries(BOOKS)) {
+    const it = ITEMS.find(i => i.id === id);
+    check(`book ${id}: présent, type masterybook, élément ${el}, +12%`,
+      !!it && it.type === 'masterybook' && it.element === el
+           && ELEMENTS.includes(it.element) && approx(it.masteryPct, 0.12));
+  }
+  // Les 5 sources de drop pointent le bon livre (le 6e = reward Manon).
+  const DROPS = {
+    fenrir_greyback:  'livre_physique_lion',
+    heraut_tenebres:  'livre_tenebres_pacte',
+    magyar_ancestral: 'livre_feu_dragon',
+    spectre_givre:    'livre_glace_elara',
+    heraut_foudre:    'livre_foudre_orage',
+  };
+  for (const [mid, bid] of Object.entries(DROPS)) {
+    const m = MONSTERS.find(x => x.id === mid);
+    check(`drop ${mid} → ${bid}`,
+      !!m && Array.isArray(m.drops) && m.drops.some(d => d.itemId === bid));
+  }
+})();
+
+// ============================================================
 // 12. data.js — Artefacts & Reliquaires 2.0, socle data (Lot P0)
 //    ARTIFACT_FORMS (registre inerte) + premiumStat (helper PUR)
 // ------------------------------------------------------------
