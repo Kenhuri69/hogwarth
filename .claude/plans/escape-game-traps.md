@@ -108,8 +108,9 @@ Pourquoi des pièges, et pourquoi maintenant ?
 
 - **Briser le Cycle** : chaque Poche réussie donne **+1 Éclat** (`accumulatedEclats`)
   → accélère le **jalon II** (15 Éclats) **sans le trivialiser** (cap de
-  fréquence, voir ÉTAPE 3). Optionnel : la 1ʳᵉ Poche réussie peut marquer
-  `seenEchoes.add('echo_scene_sceau')` → contribue au **jalon I**.
+  fréquence, voir ÉTAPE 3). **Décision tranchée** : la Poche **ne contribue
+  pas** au **jalon I** (`echo_scene_sceau` reste réservé à l'écho canon de
+  zone D, pour ne pas spoiler sa découverte).
 - **Codex** : nouvelles entrées (§ÉTAPE 2.5) dans les sections *Éclats & Voix* /
   *Lieux* / *Glossaire* — déverrouillées/révélées par la réussite et par Maison.
 - **Gardien de la Boucle** : nouvelle quête répétable optionnelle *« Endurer les
@@ -222,12 +223,30 @@ exclusif Ruines** (`Le Mot du Dormeur` / `Tempus Echo` / `Reliquae Temporis` /
   d'exploration** (réutilise le patron `felixFortuneSteps` à l'envers ; champ
   `corruptionMalusSteps`). Pas d'Éclat, pas de butin. La Poche se referme ; on
   peut réessayer la *suivante* (cooldown standard).
-- **Ironman (permadeath)** — *« mort avec héritage Boucle »* : à 100 %, un
-  **Écho Corrompu** (boss-écho scalé) surgit ; **le combattre est obligatoire**.
-  Le perdre = **mort définitive** (flux Ironman existant `triggerDeath` →
-  `showIronmanResult`), avec une mention d'héritage (*« La Boucle te garde. »*).
-  Le vaincre = sortie en échec *standard* (éjection + malus, vie sauve).
-  → tension réelle sans punir injustement le mode normal.
+- **Ironman (permadeath)** — *« mort avec héritage Boucle »* (**confirmé : oui**) :
+  à 100 %, un **Écho Corrompu** (boss-écho scalé) surgit ; **le combattre est
+  obligatoire**. Le perdre = **mort définitive** (flux Ironman existant
+  `triggerDeath` → `showIronmanResult`). Le vaincre = sortie en échec *standard*
+  (éjection + malus, vie sauve). → tension réelle sans punir le mode normal.
+
+  **Héritage de la mort en Poche** (ce qui la rend « intéressante », non
+  punitive-sèche) — lore : *le héros happé devient lui-même une part du sceau,
+  un écho de plus*. Concrètement, **sans mécanique cross-run lourde** :
+  1. **Profil persistant** (`js/profile.js`, hors-save) : enregistre une mort
+     spéciale → débloque un **titre** dédié (*« Scellé dans la Boucle »*) et une
+     entrée **Codex du Sorcier** (`recordEndingToProfile`-like / champ
+     `sealedDeaths`). Trace visible d'une partie en partie.
+  2. **Hall of Fame** : le score Ironman porte un **badge de cause de mort**
+     distinct (« Poche du Sceau » vs mort au combat) — réutilise le payload HoF
+     existant (champ optionnel, rétro-compatible, repli localStorage).
+  3. **Bonus de score symbolique** : un **fait d'arme** « a affronté l'Écho
+     Corrompu » crédité au score même en cas de défaite (récompense le courage
+     d'être descendu), via `BOSS_FEATS`/`buildIronmanResult`.
+  4. **Saveur (flavor only)** : narrativement, le reflet du héros *« rejoint les
+     échos du Miroir de Salazar »* — texte de mort dédié, **pas** de réel
+     spawn cross-partie (hors-scope, évite la dépendance Mondes Parallèles).
+  → l'héritage est **persistant (profil/HoF) et signifiant**, sans introduire de
+  système de sauvegarde inter-runs nouveau.
 
 ---
 
@@ -241,8 +260,13 @@ test headless (§7), cache-bump (§8), check PR avant push (§6).
 - [x] Audit code + lore vérifié.
 - [x] Design ÉTAPE 1/2 rédigé.
 - [x] Plan d'implémentation (ci-dessous).
-- [ ] **Décision produit** à confirmer avant Lot 1 : fréquence cible (défaut
-      proposé : ~1 Poche / 2–3 étages), régime d'échec Ironman (défaut : activé).
+- [x] **Décisions produit confirmées** (2026-06-28) :
+  - **Fréquence** : ~1 Poche / **2–3 étages** (pas trop punitif) → 25 %/piège,
+    cap 1/étage, cooldown 1 étage. ✅
+  - **Échec Ironman** : **oui, mort possible** (garder la tension) **+ héritage
+    intéressant** (profil persistant + badge HoF + fait d'arme — voir §2.6). ✅
+  - **Jalon I « Briser le Cycle »** : la Poche **ne crédite PAS**
+    `echo_scene_sceau` (ne pas spoiler la découverte canon en zone D). ✅
 
 ## Lot 1 — Cœur technique : entrée/sortie d'un étage éphémère
 **Objectif** : pouvoir entrer dans une Poche vide et en ressortir proprement,
@@ -353,7 +377,8 @@ Codex). Régression : `node tests/smoke.js` (dungeon, save, combat).
 - **Interaction avec les Mondes Parallèles** (visites) : interdire l'entrée en
   Poche pendant une visite inter-mondes (`inEscapePocket` incompatible avec le
   snapshot de visite) — garde-fou à ajouter Lot 1.
-- **Briser le Cycle / jalon I** : valider avec le design existant si la Poche
-  doit ou non créditer `echo_scene_sceau` (défaut : non, pour ne pas court-
-  circuiter la découverte canon en zone D). → **question produit**.
+- **Briser le Cycle / jalon I** : ✅ **tranché** — la Poche **ne crédite pas**
+  `echo_scene_sceau` (découverte canon en zone D préservée). Conséquence : Lot 4
+  ne touche **pas** `seenEchoes`; le jalon I reste acquis uniquement par l'écho
+  canon de zone D.
 ```
