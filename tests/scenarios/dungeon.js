@@ -3594,4 +3594,86 @@ async function scenarioHouseRoomBias() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioCh13EndgamePivot, scenarioScriptedFloorBeats, scenarioVoixDesRuines, scenarioDungeonLife, scenarioFountain, scenarioRefuge, scenarioSoloSoftlock, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioRespawn20Percent, scenarioVictoryTrigger, scenarioStairsGated, scenarioFinalBossGuaranteed, scenarioChamberGuardians, scenarioChamberGuardianPolish, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioFloorTheming, scenarioZoneDEchoes, scenarioZoneDFx, scenarioFounderChamber, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioRoomOfRequirement, scenarioStairsReachable, scenarioHouseRoomBias] };
+// Escape Game via pièges (escape-game-traps.md, Lot 1) — cycle de vie d'une
+// Poche du Sceau : entrée (snapshot + swap d'arrays), sortie (restauration de
+// l'étage source), cap par étage, et survie à un save/load pris DANS la poche.
+async function scenarioEscapePocket() {
+  console.log('\n── Scénario : Poche du Sceau — entrée/sortie + save (Lot 1) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'], house: 'Gryffondor' });
+
+  const r = await page.evaluate(() => {
+    const out = { threw: false };
+    try {
+      out.hasFns = typeof enterEscapePocket === 'function'
+        && typeof exitEscapePocket === 'function'
+        && typeof maybeTriggerEscapePocket === 'function'
+        && typeof CELL !== 'undefined' && CELL.SEAL_RIFT === 19;
+
+      // Contexte Boucle Ténébreuse : post-victoire, étage 14.
+      victoryAchieved = true;
+      currentFloor = 14;
+      const srcFloor = currentFloor;
+      const srcFingerprint = JSON.stringify(dungeon);
+      const srcPX = playerX, srcPY = playerY;
+
+      // Blesse le groupe pour vérifier le soin de réchauffement à la sortie.
+      party.slice(0, partySize).forEach(c => { c.hp = 1; });
+
+      // — Entrée —
+      enterEscapePocket('echo');
+      out.entered      = inEscapePocket === true;
+      out.floorStable  = currentFloor === srcFloor;          // la poche ne change PAS l'étage
+      out.snapshotKept = _escapeSnapshot !== null;
+      out.stateSolved  = !!(escapePocketState && escapePocketState.solved);
+      // La poche contient bien une faille de sortie unique.
+      let riftCount = 0;
+      for (let y = 0; y < dungeon.length; y++)
+        for (let x = 0; x < dungeon[y].length; x++)
+          if (dungeon[y][x] === CELL.SEAL_RIFT) riftCount++;
+      out.hasRift = riftCount === 1;
+      out.dungeonSwapped = JSON.stringify(dungeon) !== srcFingerprint;
+
+      // — Save/load PRIS DANS la poche : doit reprendre en poche —
+      _applyState(_serializeState());
+      out.stillInPocketAfterSave = inEscapePocket === true && _escapeSnapshot !== null;
+
+      // — Sortie réussie (re-scellement) —
+      exitEscapePocket(true);
+      out.exited        = inEscapePocket === false && _escapeSnapshot === null;
+      out.floorRestored = currentFloor === srcFloor && playerX === srcPX && playerY === srcPY;
+      out.dungeonRestored = JSON.stringify(dungeon) === srcFingerprint;  // étage source intact
+      out.cleared       = escapePocketsCleared === 1;
+      out.healed        = party.slice(0, partySize).every(c => c.hp > 1);  // réchauffement
+
+      // — Cap : une 2ᵉ Poche est refusée sur le même étage (usedThisFloor) —
+      out.cappedSameFloor = maybeTriggerEscapePocket() === false;
+    } catch (e) { out.threw = true; out.err = String(e && e.message || e); }
+    return out;
+  });
+
+  assert(r.hasFns, 'API escape-pocket + CELL.SEAL_RIFT=19 présents');
+  assert(!r.threw, 'cycle de poche sans exception (' + (r.err || '') + ')');
+  assert(r.entered, 'entrée : inEscapePocket=true');
+  assert(r.floorStable, 'entrée : currentFloor inchangé (la poche appartient à l\'étage)');
+  assert(r.snapshotKept, 'entrée : _escapeSnapshot capturé');
+  assert(r.stateSolved, 'entrée : escapePocketState.solved (Lot 1)');
+  assert(r.hasRift, 'entrée : exactement une faille CELL.SEAL_RIFT');
+  assert(r.dungeonSwapped, 'entrée : le donjon live est bien la poche');
+  assert(r.stillInPocketAfterSave, 'save/load dans la poche : reprise en poche');
+  assert(r.exited, 'sortie : inEscapePocket=false, snapshot purgé');
+  assert(r.floorRestored, 'sortie : étage + position source restaurés');
+  assert(r.dungeonRestored, 'sortie : donjon source intact (aucune mutation)');
+  assert(r.cleared, 'sortie : escapePocketsCleared incrémenté');
+  assert(r.healed, 'sortie réussie : réchauffement (soin partiel)');
+  assert(r.cappedSameFloor, 'cap : 2ᵉ poche refusée sur le même étage');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS (Poche du Sceau)`);
+  }
+  console.log('  ✅ Poche du Sceau — cycle entrée/sortie/save/cap OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioEscapePocket, scenarioCh13EndgamePivot, scenarioScriptedFloorBeats, scenarioVoixDesRuines, scenarioDungeonLife, scenarioFountain, scenarioRefuge, scenarioSoloSoftlock, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioRespawn20Percent, scenarioVictoryTrigger, scenarioStairsGated, scenarioFinalBossGuaranteed, scenarioChamberGuardians, scenarioChamberGuardianPolish, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioFloorTheming, scenarioZoneDEchoes, scenarioZoneDFx, scenarioFounderChamber, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioRoomOfRequirement, scenarioStairsReachable, scenarioHouseRoomBias] };

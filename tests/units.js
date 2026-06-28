@@ -2703,6 +2703,35 @@ function loadNpcs() {
 })();
 
 // ============================================================
+// N. escape-pocket.js — canTriggerEscapePocket (gate pur, Lot 1)
+// ============================================================
+(function testEscapePocketGate() {
+  const { canTriggerEscapePocket } = loadModule(
+    'js/escape-pocket.js', ['canTriggerEscapePocket']);
+  // Contexte de référence : tout réuni pour déclencher.
+  const ok = { victoryAchieved: true, floor: 14, inPocket: false,
+    usedThisFloor: false, visitor: false, lastPocketFloor: null };
+  check('escape: contexte nominal → true', canTriggerEscapePocket(ok) === true);
+  check('escape: ctx null → false', canTriggerEscapePocket(null) === false);
+  check('escape: pré-victoire → false',
+    canTriggerEscapePocket({ ...ok, victoryAchieved: false }) === false);
+  check('escape: étage < 11 → false',
+    canTriggerEscapePocket({ ...ok, floor: 10 }) === false);
+  check('escape: déjà en poche → false',
+    canTriggerEscapePocket({ ...ok, inPocket: true }) === false);
+  check('escape: déjà utilisée cet étage → false',
+    canTriggerEscapePocket({ ...ok, usedThisFloor: true }) === false);
+  check('escape: en visite inter-mondes → false',
+    canTriggerEscapePocket({ ...ok, visitor: true }) === false);
+  check('escape: cooldown même étage → false',
+    canTriggerEscapePocket({ ...ok, floor: 14, lastPocketFloor: 14 }) === false);
+  check('escape: cooldown étage adjacent → false',
+    canTriggerEscapePocket({ ...ok, floor: 15, lastPocketFloor: 14 }) === false);
+  check('escape: 2 étages d\'écart → true',
+    canTriggerEscapePocket({ ...ok, floor: 16, lastPocketFloor: 14 }) === true);
+})();
+
+// ============================================================
 // Rapport
 // ============================================================
 if (failures.length) {

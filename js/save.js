@@ -105,6 +105,15 @@ function _serializeState() {
     ngPlusTitle,
     accumulatedEclats,
     eclatMilestones: Array.from(eclatMilestones),
+    // Escape Game via pièges (escape-game-traps.md, Lot 1) — Poches du Sceau.
+    // Un save pris DANS une poche reprend correctement : l'état live (dungeon
+    // /visited/playerX…) EST la poche, `_escapeSnapshot` garde l'étage source.
+    inEscapePocket,
+    escapePocketType,
+    escapePocketState,
+    _escapeSnapshot,
+    escapePocketsCleared,
+    corruptionMalusSteps,
     combatTutorialSeen,
     endgamePivotSeen,
     hiverClair,
@@ -427,6 +436,16 @@ function _applyState(gs) {
   // Paliers d'Éclats célébrés (héritage P0) : saves antérieures → vide.
   if (typeof eclatMilestones !== 'undefined') {
     eclatMilestones = new Set(Array.isArray(gs.eclatMilestones) ? gs.eclatMilestones : []);
+  }
+  // Escape Game via pièges (escape-game-traps.md, Lot 1) — saves antérieures
+  // au flag → hors poche. `_escapeSnapshot` non-null ⇒ on est dans une poche.
+  if (typeof inEscapePocket !== 'undefined') {
+    inEscapePocket       = !!gs.inEscapePocket;
+    escapePocketType     = gs.escapePocketType || null;
+    escapePocketState    = gs.escapePocketState || null;
+    _escapeSnapshot      = gs._escapeSnapshot || null;
+    escapePocketsCleared = (typeof gs.escapePocketsCleared === 'number') ? gs.escapePocketsCleared : 0;
+    corruptionMalusSteps = (typeof gs.corruptionMalusSteps === 'number') ? gs.corruptionMalusSteps : 0;
   }
   // Saves antérieures à D2 : champ absent → tuto réaffiché au prochain combat.
   combatTutorialSeen = !!gs.combatTutorialSeen;

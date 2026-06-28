@@ -16,7 +16,7 @@
 //     individuel suffit pour eux.
 // =======================================================================
 
-const CACHE_VERSION = 'hogwarth-v242';
+const CACHE_VERSION = 'hogwarth-v243';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Précache minimal (~1 Mo) : shell HTML/CSS/JS + premier visuel.
@@ -60,7 +60,7 @@ const PRECACHE_URLS = [
   './js/npcs-helpers.js?v=4',
   './js/riddles.js?v=3',
   './js/codex.js?v=19',
-  './js/data.js?v=64',
+  './js/data.js?v=65',
   './js/data-characters.js?v=1',
   './js/data-spells.js?v=1',
   './js/data-items.js?v=3',
@@ -71,7 +71,7 @@ const PRECACHE_URLS = [
   './js/floor-events.js?v=2',
   './js/room-flavor.js?v=1',
   './js/item-icons.js?v=47',
-  './js/state.js?v=45',
+  './js/state.js?v=46',
   './js/hero-barks.js?v=13',
   './js/ui.js?v=25',
   './js/modal-a11y.js?v=2',
@@ -91,9 +91,10 @@ const PRECACHE_URLS = [
   './js/renderer-sprites.js?v=7',
   './js/renderer-entities.js?v=8',
   './js/renderer-minimap.js?v=9',
-  './js/movement.js?v=39',
+  './js/movement.js?v=40',
   './js/movement-floors.js?v=20',
-  './js/movement-interactions.js?v=22',
+  './js/movement-interactions.js?v=23',
+  './js/escape-pocket.js?v=1',
   './js/swipe-canvas.js?v=4',
   './js/battle.js?v=42',
   './js/battle-rewards.js?v=12',
@@ -113,7 +114,7 @@ const PRECACHE_URLS = [
   './js/intro.js?v=3',
   './js/shop.js?v=19',
   './js/save-slots.js?v=4',
-  './js/save.js?v=48',
+  './js/save.js?v=49',
   './js/save-visit-snapshot.js?v=2',
   './js/profile.js?v=3',
   './js/save-ui.js?v=9',
@@ -129,7 +130,7 @@ const PRECACHE_URLS = [
   './js/library.js?v=5',
   './js/help-tour.js?v=4',
   './js/balance-log.js?v=1',
-  './js/loader.js?v=58',
+  './js/loader.js?v=59',
   './js/pwa.js?v=8',
 
   // Icônes PWA + premier écran

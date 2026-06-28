@@ -885,6 +885,17 @@ let ngPlusTitle = '';
 // floorReached — non persisté. Sérialisé via _serializeState / _applyState.
 let accumulatedEclats = 0;
 
+// ── Escape Game via pièges — Poches du Sceau (escape-game-traps.md, Lot 1) ──
+// Étage caché temporaire déclenché par un piège (étages 11+, Boucle Ténébreuse).
+// Tous sérialisés : un save pris DANS une poche doit pouvoir reprendre (la poche
+// est l'état d'étage live, `_escapeSnapshot` garde l'étage source à restaurer).
+let inEscapePocket       = false;  // dans une Poche du Sceau ?
+let escapePocketType     = null;   // 'echo' (Lot 1) | 'riddle' | 'mirror' (Lot 3)
+let escapePocketState    = null;   // { type, solved, progress, sourceFloor }
+let _escapeSnapshot      = null;   // instantané de l'étage source (restauré à la sortie)
+let escapePocketsCleared = 0;      // stat : poches re-scellées (profil/HoF — Lot 4)
+let corruptionMalusSteps = 0;      // pas de malus « corruption » après échec (Lot 3)
+
 // Paliers d'Éclats déjà célébrés (héritage visible — ch.11 P0). Anti-doublon
 // pour les toasts/cosmétiques de palier (5/10/15) déclenchés dans
 // _maybeAdvanceDarkLoop. Pilote aussi l'aura d'Éclats du HUD (eclatAuraTier).

@@ -210,6 +210,7 @@ window.UX_safe = new Proxy({}, {
     { name: 'handleCellEntry',    source: 'movement.js',     kind: 'fn'  },
     { name: 'searchRoom',         source: 'movement-interactions.js', kind: 'fn' },
     { name: 'rest',               source: 'movement-interactions.js', kind: 'fn' },
+    { name: 'maybeTriggerEscapePocket', source: 'escape-pocket.js', kind: 'fn' },
     { name: 'goDeeper',           source: 'movement-floors.js', kind: 'fn' },
     { name: 'goUp',               source: 'movement-floors.js', kind: 'fn' },
     { name: '_changeFloor',       source: 'movement-floors.js', kind: 'fn' },

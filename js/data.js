@@ -36,7 +36,10 @@ const CELL = {
   // Chaudron des Ruines (Potions 2.0 — Lot P11) — atelier d'alchimie endgame,
   // posé comme Forge/Bibliothèque (post-victoire). Interaction → openBrewingModal
   // ({ workshop:"ruines" }). Voir .claude/plans/potions-consumables-craft-2.0.md §1.9.
-  CAULDRON:18
+  CAULDRON:18,
+  // Escape Game via pièges (escape-game-traps.md) — « faille du sceau » : la
+  // sortie d'une Poche du Sceau (étage caché temporaire, étages 11+). Marchable.
+  SEAL_RIFT:19
 };
 
 // Refuge du Blaireau — fraction des PV/PM max rendus par usage (≠ fontaine
