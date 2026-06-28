@@ -414,7 +414,29 @@ de l'Ordre — cohérence maximale, zéro perso orphelin.
     seconde écrase la première → les dialogues `manon_confier`/`manon_compagnie`
     (bloc 408) sont actuellement morts (repli générique). Le capstone a été
     ajouté au bloc **vivant** (451).
-- **Reste à faire (suites)** : P3 (offre étalée « un PNJ, une quête » + floor-gating),
-  P5 (voix OGG Manon/Lupin/Élara — assets à générer hors-ligne), P6 (réécriture
-  dialogues + 3 side-quests). Décision profil cosmétique cross-run (§5.4 option b)
-  non retenue pour l'instant.
+- **2026-06-28 (validation Manon + P3 investigué)** :
+  - **Fix bug Manon** : les deux blocs `dialoguesByQuest` fusionnés (les
+    dialogues `manon_confier`/`manon_compagnie` étaient morts). Prouvé sans
+    trou + verrouillé : `units.js` §11bis (chaque questsGiven a un dialogue,
+    confier/compagnie vivants, capstone cohérent, 6 livres + 5 drops câblés).
+  - **P3 ré-évalué sur le code réel** — la prémisse « quêtes données en bloc /
+    cibles inaccessibles » est **déjà traitée** :
+    - *Offre étalée* : `getNpcQuestState` (`npc-dialog.js:15`) itère `questsGiven`
+      et s'arrête à la **1ʳᵉ** quête actionnable → un PNJ n'offre **déjà** qu'une
+      quête à la fois (staging structurel, pas à ajouter).
+    - *Accessibilité* : `_ensureActiveKillQuestTargets` force-spawn la cible +
+      les chaînes `prereq` gardent les kills profonds derrière des kills
+      profonds → pas de cible introuvable.
+    - *Floor-gating de l'amorce* : **écarté** — il **contredit** le design voulu
+      (quêtes early offertes comme objectifs-avant, cf. test `quests.js:1311`
+      « eclats offrable dès l'étage 1 ») et casserait un test. `isQuestOfferable`
+      respecte déjà `minFloor` pour les cas qui en ont besoin (Boucle/farming).
+  - **Livré à la place (valeur réelle, zéro risque)** : `units.js` §11ter —
+    **intégrité référentielle** des 79 templates (kill→monstre, item→item,
+    reward→item/sort, questsGiven→template, anti-orphelin). Audit : référentiel
+    **100 % cohérent** (aucune référence pendante). +25 assertions au total (971).
+- **Reste à faire (suites)** : P5 (voix OGG Manon/Lupin/Élara — assets à générer
+  hors-ligne ; je peux câbler clés + appels `playVoice` + repli TTS), P6
+  (réécriture dialogues + 3 side-quests `lettre_jamais_envoyee` /
+  `aconit_de_la_meute` / `derniere_recette_elara`). Décision profil cosmétique
+  cross-run (§5.4 option b) non retenue.
