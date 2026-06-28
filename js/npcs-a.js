@@ -403,21 +403,6 @@ NPCS.push(
     placement: { floor: 3, anchor: "any" },
     questsGiven:    ["manon_secret", "manon_pardon", "manon_revelio", "manon_grimoire", "manon_acte3", "manon_clair_de_lune", "manon_confier", "manon_compagnie"],
     questsTurnedIn: ["manon_secret", "manon_pardon", "manon_revelio", "manon_grimoire", "manon_acte3", "manon_clair_de_lune", "manon_confier", "manon_compagnie"],
-    // Rédemption en Boucle (étage 13) : Manon confie l'histoire d'Élara, que
-    // Lockhart mettra en mémoire (chaîne manon_confier → memoire_lockhart).
-    dialoguesByQuest: {
-      manon_confier: {
-        questOffer:  "Tu reviens, encore. La Boucle nous ramène tous… alors autant que ça serve. Je veux que l'histoire de ma mère soit dite — pour de vrai. Aide-moi à rassembler ses souvenirs épars dans ces murs, et je les mettrai en mots.",
-        questActive: "Ses souvenirs sont dispersés partout — fouille les recoins. Trois suffiront pour que je me souvienne assez.",
-        questReady:  "C'est écrit. Tout y est : la lune, le mensonge, le pardon. Porte ce récit à quelqu'un qui saura le faire lire — même ce bouffon de Lockhart, s'il le faut. Au moins, lui, on l'écoute."
-      },
-      // Visite répétable : la Boucle est longue et Manon redoute le silence.
-      manon_compagnie: {
-        questOffer:  "Reste un peu… non, d'abord, rends-moi service : des Spectres Maudits rôdent près de ma salle et me terrifient. Chasses-en deux, et puis reviens t'asseoir. Juste un moment. Je n'aime pas être seule, dans la Boucle.",
-        questActive: "Ils sont encore là, à gratter aux murs… Tu les éloignes, dis ?",
-        questReady:  "Merci… c'est plus calme. Et tu es revenu. Ça compte, tu sais. Reviens encore, quand la Boucle pèsera trop."
-      }
-    },
     // Établi de fusion : disponible quand tous les feuillets du set actif
     // sont réunis (5 pages Acte II / 3 feuillets clairs Acte III).
     // Ouvre l'overlay #fusion-modal qui reconstitue le grimoire (= remise
@@ -449,6 +434,19 @@ NPCS.push(
       ]
     },
     dialoguesByQuest: {
+      // Rédemption en Boucle (étage 13) : Manon confie l'histoire d'Élara, que
+      // Lockhart mettra en mémoire (chaîne manon_confier → memoire_lockhart).
+      manon_confier: {
+        questOffer:  "Tu reviens, encore. La Boucle nous ramène tous… alors autant que ça serve. Je veux que l'histoire de ma mère soit dite — pour de vrai. Aide-moi à rassembler ses souvenirs épars dans ces murs, et je les mettrai en mots.",
+        questActive: "Ses souvenirs sont dispersés partout — fouille les recoins. Trois suffiront pour que je me souvienne assez.",
+        questReady:  "C'est écrit. Tout y est : la lune, le mensonge, le pardon. Porte ce récit à quelqu'un qui saura le faire lire — même ce bouffon de Lockhart, s'il le faut. Au moins, lui, on l'écoute."
+      },
+      // Visite répétable : la Boucle est longue et Manon redoute le silence.
+      manon_compagnie: {
+        questOffer:  "Reste un peu… non, d'abord, rends-moi service : des Spectres Maudits rôdent près de ma salle et me terrifient. Chasses-en deux, et puis reviens t'asseoir. Juste un moment. Je n'aime pas être seule, dans la Boucle.",
+        questActive: "Ils sont encore là, à gratter aux murs… Tu les éloignes, dis ?",
+        questReady:  "Merci… c'est plus calme. Et tu es revenu. Ça compte, tu sais. Reviens encore, quand la Boucle pèsera trop."
+      },
       manon_secret: {
         questOffer: [
           "Tu redescends vers les étages profonds, n'est-ce pas ? Alors fais quelque chose pour moi. Va jusqu'à la classe de Défense, l'étage en dessous. Regarde-le. Je veux seulement savoir qu'il est réel — que je n'ai pas remonté toute cette histoire pour un fantôme.",
