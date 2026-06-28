@@ -221,6 +221,33 @@ function _renderStatLine(iconPath, label, value, derived = false) {
           </div>`;
 }
 
+// Encart « Maîtrises Élémentaires » de la fiche perso (section statistiques).
+// Affiche une puce par élément maîtrisé via un Livre de Maîtrise (buff
+// permanent de partie, within-run). Masqué tant qu'aucune maîtrise acquise.
+// Lit le global `elementalMastery`. Cf. .claude/plans/quest-system-revision.md §5.
+const _ELEM_MASTERY_META = [
+  { key: 'feu',      emoji: '🔥', label: 'Feu',      color: '#e0662a' },
+  { key: 'glace',    emoji: '❄️', label: 'Glace',    color: '#5fb8e0' },
+  { key: 'foudre',   emoji: '⚡', label: 'Foudre',   color: '#e0c63a' },
+  { key: 'lumière',  emoji: '✨', label: 'Lumière',  color: '#f0e0a0' },
+  { key: 'ténèbres', emoji: '🌑', label: 'Ténèbres', color: '#a070d0' },
+  { key: 'physique', emoji: '⚔️', label: 'Physique', color: '#cdb48a' },
+];
+function _renderElementalMasteryPanel() {
+  if (typeof elementalMastery === 'undefined' || !elementalMastery) return '';
+  const chips = _ELEM_MASTERY_META
+    .filter(m => (elementalMastery[m.key] || 0) > 0)
+    .map(m => `<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;margin:2px;
+                  border:1px solid ${m.color};border-radius:10px;font-size:10px;color:${m.color};
+                  background:rgba(0,0,0,.25)">${m.emoji} ${m.label} <b>+${Math.round(elementalMastery[m.key] * 100)}%</b></span>`)
+    .join('');
+  if (!chips) return '';
+  return `<div class="stat-line derived" style="flex-direction:column;align-items:flex-start;gap:2px">
+            <span class="stat-label" style="opacity:.85">📖 Maîtrises élémentaires</span>
+            <div style="display:flex;flex-wrap:wrap">${chips}</div>
+          </div>`;
+}
+
 // Construit la valeur affichée d'une stat avec son bonus.
 // Ex: base 8, total 12 → "8 <span class='stat-bonus'>+4</span>"
 //     base 9, total 9  → "9"
@@ -516,6 +543,7 @@ function openCharacter(charIdx = 0) {
           : ''}
         ${(typeof cycleBroken !== 'undefined' && cycleBroken)
           ? _renderStatLine('img/icons/xp.png', '🕊️ Cycle Brisé', 'La faille rescellée', true) : ''}
+        ${_renderElementalMasteryPanel()}
       </div>
 
       <!-- Équipement (grid-area:equip) -->

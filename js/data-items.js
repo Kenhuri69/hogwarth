@@ -427,6 +427,18 @@ const ITEMS = [
   { id:"livre_nox_vorax",       name:"Nuit Dévorante",            icon:"📕", desc:"Apprend Nox Vorax — vague obscure drainante",        type:"spellbook", spell:"Nox Vorax",        price:1200 },
   // Sort utilitaire premium (cf. .claude/plans/teleportation-spell.md).
   { id:"livre_portus",     name:"Traité de la Téléportation",     icon:"📘", desc:"Apprend Portus — téléportation tactique (combat + hors combat)", type:"spellbook", spell:"Portus", price:2800 },
+  // ── Livres de Maîtrise Élémentaire (buff PERMANENT de partie) ─────────
+  // type:"masterybook" → lu via learnMasteryBook (groupe entier, pas de
+  // sort). Octroie un bonus permanent de dégâts pour l'élément (+12 %),
+  // visible sur la fiche perso. Un seul livre par élément (idempotent : un
+  // doublon se dissipe). Obtention : drop de boss thématique (5) + quête
+  // capstone de Manon (lumière). Cf. .claude/plans/quest-system-revision.md §5.
+  { id:"livre_feu_dragon",      name:"Souffle du Magyar",   icon:"🔥", desc:"Maîtrise du Feu — +12 % de dégâts de feu, à jamais.",      type:"masterybook", element:"feu",      masteryPct:0.12, rarity:"epic", price:0 },
+  { id:"livre_glace_elara",     name:"Givre Éternel",       icon:"❄️", desc:"Maîtrise de la Glace — +12 % de dégâts de glace, à jamais.", type:"masterybook", element:"glace",    masteryPct:0.12, rarity:"epic", price:0 },
+  { id:"livre_foudre_orage",    name:"Fureur de l'Orage",   icon:"⚡", desc:"Maîtrise de la Foudre — +12 % de dégâts de foudre, à jamais.", type:"masterybook", element:"foudre",   masteryPct:0.12, rarity:"epic", price:0 },
+  { id:"livre_lumiere_patronus",name:"Clair de Lune",       icon:"✨", desc:"Maîtrise de la Lumière — +12 % de dégâts de lumière, à jamais.", type:"masterybook", element:"lumière",  masteryPct:0.12, rarity:"epic", price:0 },
+  { id:"livre_tenebres_pacte",  name:"Pacte d'Ombre",       icon:"🌑", desc:"Maîtrise des Ténèbres — +12 % de dégâts de ténèbres, à jamais.", type:"masterybook", element:"ténèbres", masteryPct:0.12, rarity:"epic", price:0 },
+  { id:"livre_physique_lion",   name:"Cœur de Lion",        icon:"⚔️", desc:"Maîtrise Physique — +12 % de dégâts d'attaque physique, à jamais.", type:"masterybook", element:"physique", masteryPct:0.12, rarity:"epic", price:0 },
   // ── Sinks endgame — combo A+E (game-economy-gold-audit.md §5.6) ──
   // Prix progressif (rareté marché) : items avec `rarityScales:true`
   // voient leur prix × 1.5^endgamePurchases[id] à chaque achat.

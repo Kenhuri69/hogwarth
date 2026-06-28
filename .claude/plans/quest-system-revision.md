@@ -390,5 +390,31 @@ de l'Ordre — cohérence maximale, zéro perso orphelin.
 ## Journal d'avancement
 
 - **2026-06-28** — Audit complet du code (quêtes, PNJ, voix, profil, combat
-  élémentaire). Specs Étape 1 + plan Étape 2 rédigés. Aucune ligne de code
-  modifiée. En attente de validation des 4 décisions ouvertes avant P0.
+  élémentaire). Specs Étape 1 + plan Étape 2 rédigés.
+- **2026-06-28 (impl. P0–P2 + P4)** — Décisions par défaut retenues (validées
+  « go ») : affichage **fiche perso in-game** (within-run, zéro-héritage
+  respecté) ; obtention des livres par **drop de boss thématique** (universel,
+  house-agnostic — préféré à la quête signature qui aurait verrouillé 4/6
+  livres selon la Maison) ; capstone Manon en **nouvelle quête**. Livré :
+  - **P0** : `elementalMastery` (state/save/loader/startGame) ; 6 livres
+    `type:"masterybook"` (`data-items.js`) ; `learnMasteryBook` +
+    routage `useItem`/`useItemFromChar` (`inventory.js`).
+  - **P1** : `_elementalMasteryBonus` (`inventory-core.js`) ; injection dans
+    `_computeSpellDamage` (tous sorts) + `executeAttack` (physique).
+  - **P2** : section « Maîtrises élémentaires » (`ui-character-sheet.js`,
+    styles inline → aucun CSS bumpé).
+  - **P4** : quête `manon_clair_de_lune` (lien père, élément Lumière, reward
+    = `livre_lumiere_patronus`) + dialogues Manon ; 5 livres restants en drop
+    (Magyar/feu, Spectre de Givre/glace, Héraut de l'Orage/foudre, Héraut des
+    Ténèbres/ténèbres, Fenrir Greyback/physique).
+  - **Tests** : `units.js` 946 ✓ ; smoke filtré inventory/quest/manon/save (19) +
+    combat/npc/spell/dialog (32) ✓ ; `pwa-smoke.js` ✓ (cache v238).
+  - **Bug pré-existant signalé (non corrigé, hors scope §3)** : Manon a **deux**
+    clés `dialoguesByQuest` (`npcs-a.js` ~408 et ~451) ; en littéral objet JS la
+    seconde écrase la première → les dialogues `manon_confier`/`manon_compagnie`
+    (bloc 408) sont actuellement morts (repli générique). Le capstone a été
+    ajouté au bloc **vivant** (451).
+- **Reste à faire (suites)** : P3 (offre étalée « un PNJ, une quête » + floor-gating),
+  P5 (voix OGG Manon/Lupin/Élara — assets à générer hors-ligne), P6 (réécriture
+  dialogues + 3 side-quests). Décision profil cosmétique cross-run (§5.4 option b)
+  non retenue pour l'instant.

@@ -905,6 +905,29 @@ function learnSpellbook(inventoryIdx, charIdx) {
   closeModal('inventory-modal');
 }
 
+// Lit un Livre de Maîtrise Élémentaire : octroie un buff PERMANENT de dégâts
+// (+masteryPct) pour son élément, à TOUT le groupe (or/inventaire partagés).
+// Un seul livre par élément : un doublon se dissipe (consommé, sans effet
+// cumulatif) plutôt que d'encombrer le sac. Toujours consommé.
+function learnMasteryBook(inventoryIdx) {
+  const item = player.inventory[inventoryIdx];
+  if (!item || item.type !== 'masterybook' || !item.element) return;
+  if (typeof elementalMastery === 'undefined' || !elementalMastery) return;
+  const el  = item.element;
+  const pct = (typeof item.masteryPct === 'number') ? item.masteryPct : 0.12;
+  const cur = (typeof elementalMastery[el] === 'number') ? elementalMastery[el] : 0;
+  if (cur >= pct) {
+    addMsg(`Ta maîtrise de ${el} est déjà à son comble — ${item.name} se dissipe en poussière d'étoiles.`, '');
+  } else {
+    elementalMastery[el] = pct;
+    if (typeof AudioSystem !== 'undefined' && AudioSystem.playLevelUp) AudioSystem.playLevelUp();
+    addMsg(`${item.icon || '📖'} Maîtrise de ${el} éveillée : +${Math.round(pct * 100)} % de dégâts de ${el}, pour toute la partie !`, 'magic');
+  }
+  _removeInvItem(inventoryIdx);
+  updateUI();
+  closeModal('inventory-modal');
+}
+
 // ── Utiliser / équiper un objet ──────────────────────────────
 // Un soin / une recharge n'aurait aucun effet si la stat visée est déjà au
 // max → on refuse l'usage (visible) au lieu de gaspiller l'objet en silence.
@@ -943,6 +966,13 @@ function useItem(idx, battleMode) {
   // Clé de salle scellée — s'utilise sur une porte, pas depuis le sac.
   if (item.type === 'key') {
     addMsg(`${item.name} : avancez vers une porte scellée pour l'utiliser.`, '');
+    return;
+  }
+
+  // Livre de Maîtrise Élémentaire → buff permanent de groupe (hors combat).
+  if (item.type === 'masterybook') {
+    if (battleMode) return; // non utilisable en combat
+    learnMasteryBook(idx);
     return;
   }
 
@@ -1174,6 +1204,12 @@ function useItemFromChar(inventoryIdx, charIdx) {
     addMsg(`${target.name} utilise : ${item.name}`, 'good');
     _consumeAt(inventoryIdx, 1);
     updateUI();
+    openCharacter(charIdx);
+    return;
+  }
+
+  if (item.type === 'masterybook') {
+    learnMasteryBook(inventoryIdx);
     openCharacter(charIdx);
     return;
   }
