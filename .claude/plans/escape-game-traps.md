@@ -268,9 +268,22 @@ test headless (§7), cache-bump (§8), check PR avant push (§6).
   - **Jalon I « Briser le Cycle »** : la Poche **ne crédite PAS**
     `echo_scene_sceau` (ne pas spoiler la découverte canon en zone D). ✅
 
-## Lot 1 — Cœur technique : entrée/sortie d'un étage éphémère
+## Lot 1 — Cœur technique : entrée/sortie d'un étage éphémère ✅ FAIT (2026-06-28)
 **Objectif** : pouvoir entrer dans une Poche vide et en ressortir proprement,
 sans casser save/load ni le cache d'étage. *Le plus risqué — fait en premier.*
+
+> **Livré** : `js/escape-pocket.js` (gate pur `canTriggerEscapePocket` + `maybe
+> TriggerEscapePocket`/`enterEscapePocket`/`exitEscapePocket`/`generateEscape
+> Pocket`), `CELL.SEAL_RIFT=19`, flags state sérialisés, hook dans
+> `_triggerDungeonTrap`, overlay `SEAL_RIFT` + `handleCellEntry`, sérialisation
+> save (round-trip mid-poche), MANIFEST loader, doc CLAUDE.md, cache-bump.
+> Tests : `units.js` (gate, 10 assertions) + smoke `scenarioEscapePocket`
+> (entrée/sortie/save/cap). Stratégie retenue : **swap d'arrays hors
+> `floorDungeons`** + `_escapeSnapshot` (références conservées, Set/Map en
+> tableaux sérialisables) ; `currentFloor` **inchangé** (la poche appartient à
+> l'étage source). Poche minimale (couloir « atteins la faille », `solved:true`)
+> — l'épreuve réelle arrive au Lot 2. Malus d'échec : flag posé, effet stat
+> reporté au Lot 3. Incompatibilité visite inter-mondes gardée dès le gate.
 
 - **Nouveau module** `js/escape-pocket.js` (chargé après `dungeon-spawning.js`,
   avant `movement.js`). Expose :

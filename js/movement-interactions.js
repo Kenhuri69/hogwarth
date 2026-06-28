@@ -434,6 +434,10 @@ function _triggerSearchTrap() {
 // repassée en FLOOR par handleCellEntry. Le statut de combat n'est pas
 // utilisé (risque hors-combat) : on s'en tient à dégâts / drain / ambush.
 function _triggerDungeonTrap() {
+  // Escape Game (escape-game-traps.md) : en Boucle Ténébreuse (étages 11+,
+  // post-victoire), une fraction des pièges projette le groupe dans une Poche
+  // du Sceau au lieu de l'effet habituel. Défensif (no-op si module absent).
+  if (typeof maybeTriggerEscapePocket === 'function' && maybeTriggerEscapePocket()) return;
   // D5 — Fortune (volet LCK) : la chance réduit le risque d'embuscade
   // (déclenchement plein) de F, borné à [0.1, 0.9]. Cf. luck-fortune.md §2.4.
   const F          = (typeof partyFortune === 'function') ? partyFortune() : 0;

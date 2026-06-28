@@ -594,6 +594,21 @@ function _exploreDescriptors() {
       btns:  `<button class="explore-btn" onclick="useRequirementRoom();_hideExploreOverlay()">${reqVar.btn} (suggéré)</button>
               ${reqChoiceBtns}
               <button class="explore-btn secondary" onclick="_hideExploreOverlay()">S'éloigner</button>`
+    },
+    // Escape Game (escape-game-traps.md) — « Faille du Sceau » : la sortie d'une
+    // Poche du Sceau. Ouverte quand l'épreuve est résolue (Lot 1 : d'emblée),
+    // sinon scellée (Lot 2+ : tant que l'énigme/puzzle n'est pas résolu).
+    [CELL.SEAL_RIFT]: (typeof escapePocketState !== 'undefined' && escapePocketState && escapePocketState.solved) ? {
+      icon:  (typeof SCENE_ICONS !== 'undefined' && SCENE_ICONS.stairs_d) ? SCENE_ICONS.stairs_d : '🌀',
+      title: 'Faille du Sceau',
+      desc:  "La rune de scellement vibre, instable : le passage de retour vers les Ruines s'entrouvre. Franchis la faille pour quitter la Poche du Sceau.",
+      btns:  `<button class="explore-btn" onclick="exitEscapePocket(true)">Franchir la faille</button>
+              <button class="explore-btn secondary" onclick="_hideExploreOverlay()">Rester encore</button>`
+    } : {
+      icon:  (typeof SCENE_ICONS !== 'undefined' && SCENE_ICONS.stairs_d) ? SCENE_ICONS.stairs_d : '🌀',
+      title: 'Faille scellée',
+      desc:  "La faille reste close — le sceau n'a pas encore été dénoué. Résous l'épreuve de la Poche pour l'ouvrir.",
+      btns:  `<button class="explore-btn secondary" onclick="_hideExploreOverlay()">S'éloigner</button>`
     }
   };
 }
@@ -662,6 +677,7 @@ function handleCellEntry(cell) {
       cell === CELL.FORGE    || cell === CELL.LIBRARY  ||
       cell === CELL.CAULDRON ||
       cell === CELL.REQUIREMENT ||
+      cell === CELL.SEAL_RIFT ||
       (cell === CELL.GARDEN  && !gardenHidden)) {
     _showExploreOverlay(cell);
   } else if (cell === CELL.TRAP) {
