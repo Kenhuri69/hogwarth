@@ -332,6 +332,11 @@ Object.assign(AudioSystem, {
     manon_greeting_2:            'audio/voice/manon_greeting_2.ogg',
     manon_greeting_3:            'audio/voice/manon_greeting_3.ogg',
     manon_greeting_4:            'audio/voice/manon_greeting_4.ogg',
+    // Élara (mère défunte) — voix posthume « mémoire » lue à la collecte des
+    // feuillets clairs (Acte III). Edge-TTS (Emma) + signature réverbe.
+    elara_feuillet_1:            'audio/voice/elara_feuillet_1.ogg',
+    elara_feuillet_2:            'audio/voice/elara_feuillet_2.ogg',
+    elara_feuillet_3:            'audio/voice/elara_feuillet_3.ogg',
   },
 
   // ── Lecture d'une voix narrative (one-shot, avec ducking music) ──

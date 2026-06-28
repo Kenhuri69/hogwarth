@@ -37,15 +37,25 @@ voix « casse » trop.)
 
 ---
 
-## 2. ÉLARA — voix posthume (SECONDAIRE — câblage call-site à finaliser)
+## 2. ÉLARA — voix posthume ✅ LIVRÉE (Edge-TTS + signature mémoire)
 
-**Voix** : femme adulte (30-40 ans), française, douce et **sereine**, comme un
-souvenir. Timbre chaud mais lointain. (Je peux ajouter une légère réverbe
-« mémoire » à l'encodage via ffmpeg si tu le souhaites — `aecho`.)
+> **Statut : faite et câblée.** Inutile de la repasser en ElevenLabs, sauf si
+> tu veux upgrader le timbre (déposer alors `elara_feuillet_<n>.mp3` dans
+> `_raw/` et je ré-encode avec la même signature).
 
-**Voice settings suggérés** : Stability **60**, Similarity **75**, Style **0**.
+**Identité distinctive** (3 leviers cumulés, qu'aucun autre PNJ ne porte) :
+1. **Timbre** non utilisé ailleurs : `en-US-EmmaMultilingualNeural` (doux,
+   légèrement « autre » en français → renforce l'effet souvenir).
+2. **Registre** abaissé + ralenti (`pitch -12Hz`, `rate -7%`) → mûr, serein.
+3. **Signature sonore « mémoire »** ajoutée à l'encodage (`encode_voice.sh`,
+   filtre réservé aux clés `elara_*`) : réverbe douce + voile passe-bas +
+   léger ralenti → « une voix remémorée, pas présente ».
 
-Clés proposées (lecture des **feuillets clairs** d'Élara, Acte III) :
+**Déclenchement** : à la collecte de chaque feuillet clair (Acte III,
+`movement-interactions.js _tryCollectPage`) → `elara_feuillet_1/2/3` selon
+l'ordre de collecte.
+
+Lignes synthétisées (legs de joie de la mère) :
 
 | Clé | Texte à synthétiser |
 |---|---|

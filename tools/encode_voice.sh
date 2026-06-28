@@ -27,12 +27,21 @@ FORCE=0; KEYS=()
 for a in "$@"; do [ "$a" = "--force" ] && FORCE=1 || KEYS+=("$a"); done
 [ "${#KEYS[@]}" -eq 0 ] && KEYS=($(cd "$RAW" && ls *.mp3 2>/dev/null | sed 's/\.mp3$//'))
 
+# Signature « mémoire » d'Élara (voix posthume) : réverbe douce + voile
+# passe-bas + léger ralenti. Appliquée AUX SEULES clés elara_* → identité
+# sonore distinctive qu'aucun autre PNJ ne porte.
+ELARA_FILTER="atempo=0.97,aecho=0.85:0.9:55|110:0.30|0.18,highpass=f=110,lowpass=f=6500,volume=1.15"
+
 n=0
 for key in "${KEYS[@]}"; do
   src="$RAW/$key.mp3"; dst="$OUT/$key.ogg"
   [ -f "$src" ] || { echo "  ⚠️  $key.mp3 absent"; continue; }
   [ -f "$dst" ] && [ "$FORCE" -eq 0 ] && continue
-  "$FF" -y -loglevel error -i "$src" -ac 1 -ar 22050 -c:a libvorbis -q:a 3 "$dst"
+  case "$key" in
+    elara_*) AF=(-af "$ELARA_FILTER") ;;
+    *)       AF=() ;;
+  esac
+  "$FF" -y -loglevel error -i "$src" "${AF[@]}" -ac 1 -ar 22050 -c:a libvorbis -q:a 3 "$dst"
   echo "  ✓ $key.ogg ($(( $(stat -c%s "$dst") / 1024 )) Ko)"
   n=$((n+1))
 done
