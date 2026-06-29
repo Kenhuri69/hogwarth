@@ -19,6 +19,17 @@ function endBattle(won) {
 
   AudioSystem.stopCombatMusic();
 
+  // Escape Game (Lot 3) — combat de l'Écho Corrompu (échec Ironman en Poche).
+  // Vaincre l'Écho = sortie en échec STANDARD (éjection + malus, vie sauve) :
+  // pas de butin, on délègue au module puis on s'arrête. La défaite est passée
+  // par triggerDeath (showIronmanResult) sans atteindre endBattle.
+  if (typeof isEscapeWardenBattle === 'function' && isEscapeWardenBattle()) {
+    if (won && typeof _escapeOnWardenVictory === 'function') _escapeOnWardenVictory();
+    recolteGoldBonus = false;
+    if (typeof updateUI === 'function') updateUI();
+    return;
+  }
+
   // Phase H §6.9 — combat de résolution d'un Verrou de Sang (côté host).
   // En complément du flow normal (XP / or / drops / quêtes), on remonte
   // le statut au serveur et on distribue un loot bonus (50 or + 1

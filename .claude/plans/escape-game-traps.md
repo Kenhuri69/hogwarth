@@ -338,10 +338,48 @@ source + arrays restaurés). `node tests/units.js` pour le helper de chance.
 *Vérif* : smoke `scenarioEscapeRiddleSolve` (résoudre → sortie ouverte → Éclat +
 Codex). Régression : `node tests/smoke.js` (dungeon, save, combat).
 
-## Lot 3 — Types B & C + variante Maison
-- Type B (miroir/combine) et Type C (écho sous pression) ; tirage de type
-  (biais Maison 50 %).
-- House-aware : indice/budget/récompense bonus selon `chosenHouse`.
+## Lot 3 — Types B & C + variante Maison + malus stat + échec Ironman 🚧 EN COURS (2026-06-29)
+- [x] **Volet 1 — effet stat du malus « Corruption »** : helper PUR
+  `corruptionMalusMult(steps)` (−15 % → 0.85). Décrément de `corruptionMalusSteps`
+  dans `_step` (movement.js, patron `felixFortuneSteps` à l'envers) + toast
+  « le froid reflue » à l'expiration + `recalculateStats()`. Application dans
+  `recalculateStats` (inventory-core.js) : `atk/def/mag × 0.85` tant que
+  `corruptionMalusSteps > 0`. `exitEscapePocket(false)` recalcule pour appliquer
+  d'emblée. Indicateur discret : ligne « ❄️ Corruption −15 % (N pas) » dans
+  `char-stats-panel`.
+- [x] **Volet 2 — Type B « Le Miroir de Salazar »** : `generateEscapePocket('mirror')`
+  → 3 fragments (CELL.CHEST) à ramasser + autel central (CELL.ALTAR) où les
+  déposer DANS L'ORDRE (`escapePocketState.order`). Un ÉCHO du groupe
+  (`escapePocketState.mirror`, sprite via `drawGhostSprite`) avance vers l'autel
+  à chaque pas une fois réveillé ; s'il l'atteint il brouille un fragment posé
+  (+corruption). `escapeMirrorPickup` / `escapeMirrorDeposit`. 3 déposés dans
+  l'ordre → `solved=true`.
+- [x] **Volet 3 — Type C « L'Écho du Scellement »** : `generateEscapePocket('warden')`
+  → budget serré (×0.7), 3 brasiers (CELL.RUNE) à allumer (`escapeLightBrazier`,
+  chaque brasier rend ~15 % de budget via `escapeBrazierRefund`), 1 refuge
+  (CELL.REFUGE, pause 3 pas 1×, `escapeRefugePause`), 1-2 échos hostiles
+  (`enemyMap`, scalés `effectiveFloor`, évitables, pas de respawn). `solved=true`
+  quand 3 brasiers allumés ; sortie à SEAL_RIFT.
+- [x] **Tirage de type + biais Maison** : `pickEscapePocketType(rng, chosenHouse)`
+  PUR → `{type, founder, houseMatch}`. Fondateurs : Rowena→riddle, Salazar→mirror,
+  Godric/Helga→warden. Biaisé 1/2 vers la Maison. House-match (`founder` ==
+  Fondateur de `chosenHouse`) → indice gratuit (stèle pré-gravée / fragment
+  pré-ramassé / brasier pré-allumé) + budget +20 %.
+- [x] **Volet 4 — échec Ironman (mort avec héritage Boucle)** : à 100 %
+  corruption en `ironmanMode`, `_escapeFail` fait surgir un **Écho Corrompu**
+  (boss-écho scalé via `startBattle`, `_escapeWardenBattle`). Défaite =
+  `triggerDeath` → `showIronmanResult` (cause « Poche du Sceau »). Victoire =
+  sortie en échec standard (éjection + malus, vie sauve). Héritage : profil
+  `sealedDeaths` + titre « Scellé dans la Boucle » (`computeProfileTitles`),
+  badge `death_cause` dans le payload Ironman/HoF (optionnel, repli localStorage),
+  fait d'arme `BOSS_FEATS.echo_corrompu` crédité au spawn (même en défaite).
+- [x] Tests : units (`corruptionMalusMult`, `pickEscapePocketType` biais Maison,
+  `escapeBrazierRefund`, titre « Scellé dans la Boucle ») + smoke
+  (`scenarioEscapeMalus`, `scenarioEscapeMirror`, `scenarioEscapeWarden`,
+  `scenarioEscapeIronman`). Zéro régression sur `scenarioEscapePocket`/`RiddleSolve`.
+- [x] cache-bump (escape-pocket.js, movement.js, inventory-core.js, renderer.js,
+  ui-character-sheet.js, profile.js, ironman.js, battle-rewards.js,
+  battle-death.js, hall-of-fame.js) + doc.
 
 *Vérif* : smoke par type ; units pour la courbe de budget et le biais de tirage.
 

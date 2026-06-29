@@ -543,6 +543,9 @@ function openCharacter(charIdx = 0) {
           : ''}
         ${(typeof cycleBroken !== 'undefined' && cycleBroken)
           ? _renderStatLine('img/icons/xp.png', '🕊️ Cycle Brisé', 'La faille rescellée', true) : ''}
+        ${(typeof corruptionMalusSteps === 'number' && corruptionMalusSteps > 0)
+          ? _renderStatLine('img/icons/def.png', '❄️ Corruption',
+              `−15 % ATK/DEF/MAG (${corruptionMalusSteps} pas)`, true) : ''}
         ${_renderElementalMasteryPanel()}
       </div>
 

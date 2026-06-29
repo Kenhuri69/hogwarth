@@ -168,9 +168,21 @@ js/
                       Budget/Spent décrémenté dans _step ; 100 % → exit échec),
                       tileset froid seal_* (override inEscapePocket dans
                       renderer.js/textures.js). Helpers purs computeEscapeStep
-                      Budget/escapeCorruptionPct/_escapeReachable. css/escape-
-                      pocket.css. Défensif. APRÈS movement-interactions.js.
-                      Plan : .claude/plans/escape-game-traps.md
+                      Budget/escapeCorruptionPct/_escapeReachable. Lot 3 :
+                      pickEscapePocketType(rng,house) (tirage biaisé Maison →
+                      {type,founder,houseMatch}) + Type B « Miroir de Salazar »
+                      (fragments CELL.CHEST → escapeMirrorPickup, dépôt ordonné
+                      sur CELL.ALTAR escapeMirrorDeposit, écho du groupe via
+                      drawGhostSprite) + Type C « Écho du Scellement » (brasiers
+                      CELL.RUNE escapeLightBrazier rendent du budget, refuge
+                      CELL.REFUGE escapeRefugePause, échos hostiles enemyMap) +
+                      malus stat « Corruption » (corruptionMalusMult, appliqué
+                      dans recalculateStats, décrément _step) + échec Ironman
+                      (Écho Corrompu _spawnCorruptedEcho → startBattle ; défaite
+                      → triggerDeath/profil sealedDeaths + badge death_cause HoF ;
+                      victoire → éjection standard). House-match → indice gratuit
+                      + budget +20 %. css/escape-pocket.css. Défensif. APRÈS
+                      movement-interactions.js. Plan : .claude/plans/escape-game-traps.md
   swipe-canvas.js  →  Gestes tactiles sur #dungeon-canvas (mobile) :
                       swipe vertical → avancer/reculer, swipe horizontal →
                       tourner. initCanvasSwipeGestures(),

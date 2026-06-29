@@ -16,7 +16,7 @@
 //     individuel suffit pour eux.
 // =======================================================================
 
-const CACHE_VERSION = 'hogwarth-v245';
+const CACHE_VERSION = 'hogwarth-v246';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Précache minimal (~1 Mo) : shell HTML/CSS/JS + premier visuel.
@@ -76,7 +76,7 @@ const PRECACHE_URLS = [
   './js/hero-barks.js?v=13',
   './js/ui.js?v=25',
   './js/modal-a11y.js?v=2',
-  './js/ui-character-sheet.js?v=17',
+  './js/ui-character-sheet.js?v=18',
   './js/ui-settings.js?v=7',
   './js/keybindings.js?v=1',
   './js/ui-bestiary.js?v=8',
@@ -85,25 +85,25 @@ const PRECACHE_URLS = [
   './js/dungeon.js?v=22',
   './js/dungeon-spawning.js?v=2',
   './js/textures.js?v=2',
-  './js/renderer.js?v=18',
+  './js/renderer.js?v=19',
   './js/renderer-effects.js?v=13',
   './js/dungeon-fx.js?v=9',
   './js/cinematics.js?v=3',
   './js/renderer-sprites.js?v=7',
   './js/renderer-entities.js?v=8',
   './js/renderer-minimap.js?v=9',
-  './js/movement.js?v=41',
+  './js/movement.js?v=42',
   './js/movement-floors.js?v=20',
   './js/movement-interactions.js?v=23',
-  './js/escape-pocket.js?v=2',
+  './js/escape-pocket.js?v=3',
   './js/swipe-canvas.js?v=4',
   './js/battle.js?v=42',
-  './js/battle-rewards.js?v=12',
-  './js/battle-death.js?v=4',
+  './js/battle-rewards.js?v=13',
+  './js/battle-death.js?v=5',
   './js/teleport.js?v=2',
   './js/battle-spells.js?v=26',
   './js/battle-ui.js?v=11',
-  './js/inventory-core.js?v=10',
+  './js/inventory-core.js?v=11',
   './js/inventory.js?v=30',
   './js/inventory-spells.js?v=13',
   './js/potions.js?v=8',
@@ -117,10 +117,10 @@ const PRECACHE_URLS = [
   './js/save-slots.js?v=4',
   './js/save.js?v=50',
   './js/save-visit-snapshot.js?v=2',
-  './js/profile.js?v=3',
+  './js/profile.js?v=4',
   './js/save-ui.js?v=9',
-  './js/ironman.js?v=4',
-  './js/hall-of-fame.js?v=4',
+  './js/ironman.js?v=5',
+  './js/hall-of-fame.js?v=5',
   './js/multiplayer.js?v=9',
   './js/multiplayer-social.js?v=1',
   './js/multiplayer-visits.js?v=1',
@@ -131,7 +131,7 @@ const PRECACHE_URLS = [
   './js/library.js?v=5',
   './js/help-tour.js?v=4',
   './js/balance-log.js?v=1',
-  './js/loader.js?v=60',
+  './js/loader.js?v=61',
   './js/pwa.js?v=8',
 
   // Icônes PWA + premier écran
