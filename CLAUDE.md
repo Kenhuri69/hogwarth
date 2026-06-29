@@ -160,8 +160,17 @@ js/
                       + tirage), enterEscapePocket()/exitEscapePocket() (snapshot
                       d'étage + swap d'arrays + restauration), generateEscapePocket().
                       Étage caché temporaire déclenché par CELL.TRAP en Boucle
-                      Ténébreuse ; sortie via CELL.SEAL_RIFT. Défensif. APRÈS
-                      movement-interactions.js. Plan : .claude/plans/escape-game-traps.md
+                      Ténébreuse ; sortie via CELL.SEAL_RIFT. Lot 2 : poche de 3
+                      salles connexes + Type A « L'Énigme des Quatre » (3 stèles
+                      CELL.STELE → answerEscapeStele → glyphes gravés → faille
+                      dé-scellée), HUD #escape-hud (showEscapeHud/_updateEscapeHud,
+                      objectif + jauge de corruption = budget de pas escapeStep
+                      Budget/Spent décrémenté dans _step ; 100 % → exit échec),
+                      tileset froid seal_* (override inEscapePocket dans
+                      renderer.js/textures.js). Helpers purs computeEscapeStep
+                      Budget/escapeCorruptionPct/_escapeReachable. css/escape-
+                      pocket.css. Défensif. APRÈS movement-interactions.js.
+                      Plan : .claude/plans/escape-game-traps.md
   swipe-canvas.js  →  Gestes tactiles sur #dungeon-canvas (mobile) :
                       swipe vertical → avancer/reculer, swipe horizontal →
                       tourner. initCanvasSwipeGestures(),

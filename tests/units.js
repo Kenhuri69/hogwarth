@@ -2732,6 +2732,50 @@ function loadNpcs() {
 })();
 
 // ============================================================
+// N bis. escape-pocket.js — helpers purs Lot 2
+//   computeEscapeStepBudget / escapeCorruptionPct / _escapeReachable
+// ============================================================
+(function testEscapePocketHelpers() {
+  const { computeEscapeStepBudget, escapeCorruptionPct, _escapeReachable } = loadModule(
+    'js/escape-pocket.js',
+    ['computeEscapeStepBudget', 'escapeCorruptionPct', '_escapeReachable']);
+
+  // — Budget de pas : décroît avec la profondeur, plancher 18 —
+  check('budget: depth 1 → 38',  computeEscapeStepBudget(1) === 38);
+  check('budget: depth 5 → 30',  computeEscapeStepBudget(5) === 30);
+  check('budget: depth 11 plancher 18', computeEscapeStepBudget(11) === 18);
+  check('budget: depth 99 plancher 18', computeEscapeStepBudget(99) === 18);
+  check('budget: depth invalide → depth 1', computeEscapeStepBudget(0) === 38);
+  check('budget: depth NaN → depth 1', computeEscapeStepBudget(NaN) === 38);
+
+  // — Jauge de corruption : pourcentage borné [0,100] —
+  check('corruption: 0/40 → 0%',   escapeCorruptionPct(0, 40) === 0);
+  check('corruption: 20/40 → 50%', escapeCorruptionPct(20, 40) === 50);
+  check('corruption: 40/40 → 100%', escapeCorruptionPct(40, 40) === 100);
+  check('corruption: dépassement borné 100%', escapeCorruptionPct(60, 40) === 100);
+  check('corruption: budget 0 → 0%', escapeCorruptionPct(5, 0) === 0);
+
+  // — BFS de connexité (spawn → faille) —
+  const W = 0;  // valeur de « mur » dans la mini-grille de test
+  const F = 1;  // valeur de « sol »
+  const open = [
+    [W, W, W, W],
+    [W, F, F, W],
+    [W, F, W, W],
+    [W, W, W, W],
+  ];
+  check('reachable: chemin ouvert → true',  _escapeReachable(open, 1, 1, 2, 1, W) === true);
+  const split = [
+    [W, W, W, W],
+    [W, F, W, F],
+    [W, W, W, F],
+    [W, W, W, W],
+  ];
+  check('reachable: cible isolée → false', _escapeReachable(split, 1, 1, 3, 1, W) === false);
+  check('reachable: spawn=cible → true',   _escapeReachable(open, 1, 1, 1, 1, W) === true);
+})();
+
+// ============================================================
 // Rapport
 // ============================================================
 if (failures.length) {

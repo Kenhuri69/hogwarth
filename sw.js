@@ -16,7 +16,7 @@
 //     individuel suffit pour eux.
 // =======================================================================
 
-const CACHE_VERSION = 'hogwarth-v243';
+const CACHE_VERSION = 'hogwarth-v244';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Précache minimal (~1 Mo) : shell HTML/CSS/JS + premier visuel.
@@ -38,6 +38,7 @@ const PRECACHE_URLS = [
   './css/cinematics.css?v=1',
   './css/frost.css?v=3',
   './css/codex.css?v=5',
+  './css/escape-pocket.css?v=1',
 
   // JS — ordre identique à index.html (sans incidence pour le cache,
   // mais utile à la relecture)
@@ -71,7 +72,7 @@ const PRECACHE_URLS = [
   './js/floor-events.js?v=2',
   './js/room-flavor.js?v=1',
   './js/item-icons.js?v=47',
-  './js/state.js?v=46',
+  './js/state.js?v=47',
   './js/hero-barks.js?v=13',
   './js/ui.js?v=25',
   './js/modal-a11y.js?v=2',
@@ -83,18 +84,18 @@ const PRECACHE_URLS = [
   './js/dungeon-scaling.js?v=9',
   './js/dungeon.js?v=22',
   './js/dungeon-spawning.js?v=2',
-  './js/textures.js?v=1',
-  './js/renderer.js?v=17',
+  './js/textures.js?v=2',
+  './js/renderer.js?v=18',
   './js/renderer-effects.js?v=13',
   './js/dungeon-fx.js?v=9',
   './js/cinematics.js?v=3',
   './js/renderer-sprites.js?v=7',
   './js/renderer-entities.js?v=8',
   './js/renderer-minimap.js?v=9',
-  './js/movement.js?v=40',
+  './js/movement.js?v=41',
   './js/movement-floors.js?v=20',
   './js/movement-interactions.js?v=23',
-  './js/escape-pocket.js?v=1',
+  './js/escape-pocket.js?v=2',
   './js/swipe-canvas.js?v=4',
   './js/battle.js?v=42',
   './js/battle-rewards.js?v=12',
@@ -114,7 +115,7 @@ const PRECACHE_URLS = [
   './js/intro.js?v=3',
   './js/shop.js?v=19',
   './js/save-slots.js?v=4',
-  './js/save.js?v=49',
+  './js/save.js?v=50',
   './js/save-visit-snapshot.js?v=2',
   './js/profile.js?v=3',
   './js/save-ui.js?v=9',
@@ -130,7 +131,7 @@ const PRECACHE_URLS = [
   './js/library.js?v=5',
   './js/help-tour.js?v=4',
   './js/balance-log.js?v=1',
-  './js/loader.js?v=59',
+  './js/loader.js?v=60',
   './js/pwa.js?v=8',
 
   // Icônes PWA + premier écran

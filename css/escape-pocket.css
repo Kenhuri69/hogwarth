@@ -1,0 +1,96 @@
+/* ============================================================
+   Escape Game via pièges — Poche du Sceau (escape-game-traps.md, Lot 2)
+   Bandeau #escape-hud : objectif (glyphes gravés) + jauge de corruption.
+   Ambiance froide / givre-violet, distincte du HUD de visite (or/vert).
+   Modèle : #visit-hud (css/portal.css).
+   ============================================================ */
+
+#escape-hud {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 14px;
+  background: linear-gradient(180deg,
+              rgba(14, 18, 30, 0.94) 0%,
+              rgba(24, 30, 48, 0.94) 100%);
+  border-bottom: 2px solid #8acde9;
+  box-shadow: 0 4px 18px rgba(120, 170, 220, 0.22),
+              0 0 24px rgba(150, 130, 220, 0.18);
+  color: #d6ecfb;
+  font-family: 'Cinzel', serif;
+  z-index: 9000;
+  pointer-events: auto;
+}
+#escape-hud.active { display: flex; }
+
+.escape-hud-title {
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.5px;
+  color: #bfe3ff;
+  text-shadow: 0 0 8px rgba(150, 200, 255, 0.5);
+  white-space: nowrap;
+}
+
+.escape-hud-objective {
+  font-size: 12px;
+  color: #cfe6f7;
+  white-space: nowrap;
+}
+
+.escape-hud-gauge {
+  position: relative;
+  flex: 1;
+  max-width: 260px;
+  height: 16px;
+  border: 1px solid #5f7da0;
+  border-radius: 8px;
+  background: rgba(8, 12, 22, 0.85);
+  overflow: hidden;
+}
+
+.escape-hud-gauge-fill {
+  position: absolute;
+  top: 0; left: 0; bottom: 0;
+  width: 0%;
+  background: linear-gradient(90deg,
+              rgba(120, 170, 220, 0.85) 0%,
+              rgba(150, 130, 220, 0.9) 100%);
+  transition: width 0.25s ease;
+}
+/* Corruption critique (≥ 70 %) : la jauge vire au givre-rouge alarmant. */
+.escape-hud-gauge-fill[data-critical="1"] {
+  background: linear-gradient(90deg,
+              rgba(180, 120, 210, 0.9) 0%,
+              rgba(210, 90, 120, 0.95) 100%);
+  animation: escape-gauge-pulse 0.9s ease-in-out infinite;
+}
+
+@keyframes escape-gauge-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.7; }
+}
+
+.escape-hud-gauge-label {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  color: #eaf4ff;
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+}
+
+@media (max-width: 700px) {
+  #escape-hud { padding: 6px 10px; gap: 8px; }
+  .escape-hud-title { font-size: 12px; }
+  .escape-hud-objective { font-size: 11px; }
+  .escape-hud-gauge { height: 14px; }
+}

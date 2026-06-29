@@ -3676,4 +3676,112 @@ async function scenarioEscapePocket() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioEscapePocket, scenarioCh13EndgamePivot, scenarioScriptedFloorBeats, scenarioVoixDesRuines, scenarioDungeonLife, scenarioFountain, scenarioRefuge, scenarioSoloSoftlock, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioRespawn20Percent, scenarioVictoryTrigger, scenarioStairsGated, scenarioFinalBossGuaranteed, scenarioChamberGuardians, scenarioChamberGuardianPolish, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioFloorTheming, scenarioZoneDEchoes, scenarioZoneDFx, scenarioFounderChamber, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioRoomOfRequirement, scenarioStairsReachable, scenarioHouseRoomBias] };
+// Escape Game via pièges (Lot 2) — Type A « L'Énigme des Quatre » : poche de
+// 3 salles connexes + 3 stèles, faille scellée tant que solved=false, résolution
+// des 3 énigmes → solved=true → sortie OK, échec par épuisement du budget de pas,
+// et bascule du tileset seal_* quand inEscapePocket.
+async function scenarioEscapeRiddleSolve() {
+  console.log('\n── Scénario : Poche du Sceau — énigmes + budget + seal_* (Lot 2) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'], house: 'Gryffondor' });
+
+  const r = await page.evaluate(() => {
+    const out = { threw: false };
+    try {
+      victoryAchieved = true;
+      currentFloor = 14;
+      const W = MAP_W, H = MAP_H;
+
+      // — Entrée dans une poche d'énigmes (Type A) —
+      enterEscapePocket('riddle');
+      out.entered = inEscapePocket === true;
+
+      // Topologie : exactement 1 faille, 3 stèles, et la faille est joignable.
+      let riftX = -1, riftY = -1, riftCount = 0, steleCount = 0;
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+        if (dungeon[y][x] === CELL.SEAL_RIFT) { riftCount++; riftX = x; riftY = y; }
+        if (dungeon[y][x] === CELL.STELE) steleCount++;
+      }
+      out.oneRift   = riftCount === 1;
+      out.threeStele = steleCount === 3;
+      out.reachable = _escapeReachable(dungeon, playerX, playerY, riftX, riftY, CELL.WALL);
+      out.stateUnsolved = escapePocketState.solved === false
+        && escapePocketState.total === 3 && escapePocketState.progress === 0;
+
+      // Rendu : le tileset froid seal_* est actif (testé sur inEscapePocket).
+      out.sealWall = (typeof getWallTextureType === 'function')
+        && getWallTextureType(0, 0, 0) === 'seal_wall';
+      out.sealRegistered = !!(window.TEXTURES && window.TEXTURES.walls
+        && ('seal_wall' in window.TEXTURES.walls)
+        && ('seal_floor' in window.TEXTURES.floor)
+        && ('seal_ceiling' in window.TEXTURES.ceiling));
+
+      // — Faille scellée : sortie réussie refusée tant que solved=false —
+      exitEscapePocket(true);
+      out.sealedBlocksExit = inEscapePocket === true;
+
+      // — Résolution des 3 stèles (téléport sur chaque + bonne réponse) —
+      const steles = escapePocketState.steles.slice();
+      let progressOk = true;
+      steles.forEach((s, i) => {
+        const [sx, sy] = s.cell.split(',').map(Number);
+        playerX = sx; playerY = sy;
+        const riddle = getRiddleById(s.riddleId);
+        answerEscapeStele(riddle.answer);
+        if (escapePocketState && escapePocketState.progress !== i + 1
+            && !(escapePocketState.solved && i === steles.length - 1)) {
+          // après la dernière, progress peut rester égal à total
+        }
+      });
+      out.solvedAll = escapePocketState && escapePocketState.solved === true;
+      out.progressFull = escapePocketState && escapePocketState.progress === 3;
+
+      // — Sortie réussie : on quitte la poche, compteur incrémenté —
+      const clearedBefore = escapePocketsCleared;
+      exitEscapePocket(true);
+      out.exitedOk = inEscapePocket === false;
+      out.cleared  = escapePocketsCleared === clearedBefore + 1;
+
+      // — Échec par épuisement du budget de pas —
+      escapePocketsCleared = 0;
+      corruptionMalusSteps = 0;
+      enterEscapePocket('riddle');
+      out.reentered = inEscapePocket === true;
+      // À un pas de la rupture : le prochain pas réel épuise le budget.
+      escapeStepSpent = escapeStepBudget - 1;
+      playerDir = 'e';
+      moveForward();  // case FLOOR à l'est du spawn → tick budget → éjection
+      out.failedExit   = inEscapePocket === false;
+      out.malusArmed   = corruptionMalusSteps > 0;
+      out.noClearOnFail = escapePocketsCleared === 0;
+    } catch (e) { out.threw = true; out.err = String(e && e.message || e); }
+    return out;
+  });
+
+  assert(!r.threw, 'cycle énigmes sans exception (' + (r.err || '') + ')');
+  assert(r.entered, 'entrée : poche d\'énigmes ouverte');
+  assert(r.oneRift, 'topologie : exactement une faille SEAL_RIFT');
+  assert(r.threeStele, 'topologie : 3 stèles posées');
+  assert(r.reachable, 'connexité : spawn → faille joignable (BFS)');
+  assert(r.stateUnsolved, 'état initial : solved=false, total=3, progress=0');
+  assert(r.sealWall, 'rendu : getWallTextureType → seal_wall en poche');
+  assert(r.sealRegistered, 'rendu : tileset seal_* enregistré dans TEXTURES');
+  assert(r.sealedBlocksExit, 'faille scellée : sortie refusée tant que non résolu');
+  assert(r.solvedAll, 'résolution : 3 bonnes réponses → solved=true');
+  assert(r.progressFull, 'résolution : progress=3');
+  assert(r.exitedOk, 'sortie réussie : hors poche');
+  assert(r.cleared, 'sortie réussie : escapePocketsCleared incrémenté');
+  assert(r.reentered, 'échec : ré-entrée en poche');
+  assert(r.failedExit, 'échec : budget épuisé → éjection (hors poche)');
+  assert(r.malusArmed, 'échec : malus corruption armé');
+  assert(r.noClearOnFail, 'échec : aucun re-scellement crédité');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS (Poche énigmes)`);
+  }
+  console.log('  ✅ Poche du Sceau Lot 2 — énigmes/budget/seal_* OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioEscapePocket, scenarioEscapeRiddleSolve, scenarioCh13EndgamePivot, scenarioScriptedFloorBeats, scenarioVoixDesRuines, scenarioDungeonLife, scenarioFountain, scenarioRefuge, scenarioSoloSoftlock, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioRespawn20Percent, scenarioVictoryTrigger, scenarioStairsGated, scenarioFinalBossGuaranteed, scenarioChamberGuardians, scenarioChamberGuardianPolish, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioFloorTheming, scenarioZoneDEchoes, scenarioZoneDFx, scenarioFounderChamber, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioRoomOfRequirement, scenarioStairsReachable, scenarioHouseRoomBias] };

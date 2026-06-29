@@ -320,7 +320,13 @@ sans casser save/load ni le cache d'étage. *Le plus risqué — fait en premier
 hook debug, marcher, forcer `solved`, sortir, asserter retour à l'étage/position
 source + arrays restaurés). `node tests/units.js` pour le helper de chance.
 
-## Lot 2 — Génération de la Poche + 1 type jouable (Type A)
+## Lot 2 — Génération de la Poche + 1 type jouable (Type A) ✅ FAIT (2026-06-28)
+> Livré : 3 salles connexes dédiées (hors floorDungeons), Type A « L'Énigme des
+> Quatre » (3 stèles → glyphes gravés → faille dé-scellée), `answerEscapeStele`,
+> HUD `#escape-hud` (objectif + jauge de corruption = budget de pas dans `_step`,
+> 100 % → exit échec), tileset froid `seal_*` (override `inEscapePocket`).
+> Tests : units (budget/corruption/BFS) + smoke `scenarioEscapeRiddleSolve`.
+
 - `generateEscapePocket('riddle', floor)` : 3 salles, stèles `CELL.STELE` +
   `CELL.SEAL_RIFT`, `escapePocketState` initialisé (liste d'énigmes, ordre).
 - Adapter `answerSteleRiddle` (ou variante `answerEscapeStele`) pour pointer sur
