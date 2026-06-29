@@ -449,6 +449,18 @@ function recalculateStats() {
       c.def += Math.floor((c.end || 0) / endDiv);
     }
 
+    // Escape Game (Lot 3) — malus « Corruption » d'échec de Poche du Sceau :
+    // tant que `corruptionMalusSteps > 0`, ATK/DEF/MAG sont rabotées de 15 %.
+    // Dernière passe sur les stats effectives (après équipement/sets/D1-D2).
+    // Décrément du compteur dans movement.js (_step) ; helper PUR testable.
+    if (typeof corruptionMalusSteps === 'number' && corruptionMalusSteps > 0) {
+      const m = (typeof corruptionMalusMult === 'function')
+        ? corruptionMalusMult(corruptionMalusSteps) : 0.85;
+      c.atk = Math.max(0, Math.round(c.atk * m));
+      c.def = Math.max(0, Math.round(c.def * m));
+      c.mag = Math.max(0, Math.round(c.mag * m));
+    }
+
     // D5 — Fortune (volet LCK) : stat dérivée pilotant les événements
     // aléatoires hors-crit (drops, or, fouille/coffres, fuite/pièges). Courbe
     // de Hill saturante sur x = LCK + Σ item.bonusFortune. Le buff Félix

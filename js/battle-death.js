@@ -117,6 +117,13 @@ function triggerDeath(msg) {
     _finishAstralCombat(false);
     return;
   }
+  // Escape Game (Lot 3) — mort pendant le combat de l'Écho Corrompu (échec
+  // Ironman en Poche du Sceau) : badge de cause + héritage profil. Le texte de
+  // mort dédié remplace `msg`. Avant le log d'équilibrage (vraie mort Ironman).
+  if (typeof isEscapeWardenBattle === 'function' && isEscapeWardenBattle()
+      && typeof _escapeOnWardenDefeat === 'function') {
+    msg = _escapeOnWardenDefeat();
+  }
   // Ch.13 P4 — logger d'équilibrage opt-in (§13.9.H) : issue=death + cause +
   // underLevelGap (calculé dans le module). Défensif, après le court-circuit
   // astral (un écho n'est pas une vraie mort). No-op si flag/module absents.

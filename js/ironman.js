@@ -18,6 +18,10 @@ const BOSS_FEATS = {
   voldemort_affaibli: { label: 'Voldemort Affaibli repoussé',   points: 800 },
   voldemort_revenu:   { label: 'Voldemort Ressuscité défait',   points: 1500 },
   reflet_mythe:       { label: 'Le Reflet du Mythe affronté',   points: 1200 },
+  // Escape Game (Lot 3) — crédité DÈS le spawn de l'Écho Corrompu (échec
+  // Ironman en Poche du Sceau), donc même en cas de défaite : on récompense
+  // le courage d'être descendu jusqu'à l'affronter.
+  echo_corrompu:      { label: 'Écho Corrompu affronté',        points: 500 },
 };
 
 // Multiplicateur de score par difficulté — aligné sur la grille des
@@ -123,8 +127,13 @@ function buildIronmanResult(cause) {
   const s = computeIronmanScore();
   const heroes = (party || []).slice(0, partySize || 1)
     .filter(c => c && c.name).map(c => c.name).join(' & ');
+  // Escape Game (Lot 3) — badge de cause de mort (« Poche du Sceau » vs combat).
+  // Lu+consommé depuis escape-pocket.js ; null pour une mort au combat standard.
+  const deathCause = (typeof escapeConsumeDeathCause === 'function')
+    ? escapeConsumeDeathCause() : null;
   return {
     cause:           cause || 'Le groupe est tombé au combat.',
+    death_cause:     deathCause,
     heroes:          heroes || 'Sorcier inconnu',
     difficulty:      difficulty || 'Normal',
     deepestFloor:    s.deepestFloor,
@@ -158,6 +167,10 @@ function ironmanResultToEntry(result, name) {
     gold:             result.gold,
     house:            (typeof chosenHouse !== 'undefined') ? chosenHouse : null,
     run_id:           (typeof ironmanRunId !== 'undefined') ? ironmanRunId : null,
+    // Escape Game (Lot 3) — badge de cause de mort. Champ OPTIONNEL : conservé
+    // dans le repli localStorage du HoF ; non envoyé à Supabase (cf. _hofSubmit
+    // qui whitelist ses colonnes) → rétro-compatible, aucune migration requise.
+    death_cause:      result.death_cause || null,
     created_at:       new Date().toISOString(),
   };
 }

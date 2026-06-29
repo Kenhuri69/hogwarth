@@ -349,11 +349,21 @@ function drawCorridor(cx, cy, scale, W, H) {
       const _msg = (!_isCellSprite && !_visitor && !_ghost && cell === CELL.FLOOR
                     && typeof getMessageAt === 'function')
         ? getMessageAt(_mx, _my) : null;
-      if (_isCellSprite || _visitor || _ghost || _msg) {
+      // Escape Game (Lot 3) — écho du groupe (Miroir de Salazar) : reflet
+      // spectral réveillé qui converge vers l'autel. Rendu via drawGhostSprite.
+      const _escEcho = (!_isCellSprite && !_visitor && !_ghost && !_msg
+        && typeof inEscapePocket !== 'undefined' && inEscapePocket
+        && typeof escapePocketState !== 'undefined' && escapePocketState
+        && escapePocketState.type === 'mirror' && escapePocketState.mirror
+        && escapePocketState.mirror.awake
+        && escapePocketState.mirror.pos === `${_mx},${_my}`
+        && typeof _escapeEchoGhost === 'function')
+        ? _escapeEchoGhost() : null;
+      if (_isCellSprite || _visitor || _ghost || _msg || _escEcho) {
         const nearS = getRect(cx, cy, scale, d - 1);
-        const _kind = _visitor ? 'visitor' : (_ghost ? 'ghost' : (_msg ? 'message' : 'cell'));
+        const _kind = _visitor ? 'visitor' : ((_ghost || _escEcho) ? 'ghost' : (_msg ? 'message' : 'cell'));
         pendingSprite = { kind: _kind,
-                          cell, visitor: _visitor, ghost: _ghost, msg: _msg,
+                          cell, visitor: _visitor, ghost: _ghost || _escEcho, msg: _msg,
                           x: cx, baseY: nearS.y1, sz: nearS.hw * 1.1,
                           mapX: _mx, mapY: _my,
                           clipX0: nearS.x0, clipY0: nearS.y0, clipX1: nearS.x1, clipY1: nearS.y1 };

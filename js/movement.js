@@ -132,6 +132,16 @@ function _step(dir, faceDir) {
   if (restCooldown > 0) restCooldown--;
   // D5 — buff Félix Felicis (Fortune) : décrémenté à chaque pas d'exploration.
   if (typeof felixFortuneSteps === 'number' && felixFortuneSteps > 0) felixFortuneSteps--;
+  // Escape Game (Lot 3) — malus « Corruption » d'échec : −15 % ATK/DEF/MAG
+  // décompté par pas (patron Félix à l'envers). À l'expiration : recalc +
+  // toast « le froid reflue ». Call-site défensif.
+  if (typeof corruptionMalusSteps === 'number' && corruptionMalusSteps > 0) {
+    corruptionMalusSteps--;
+    if (corruptionMalusSteps === 0) {
+      if (typeof recalculateStats === 'function') recalculateStats();
+      if (typeof addMsg === 'function') addMsg('❄️ Le froid reflue — la corruption se dissipe, tes forces reviennent.', 'good');
+    }
+  }
   // Vision des Éclats (P12) — fouille aiguisée : décrémentée à chaque pas.
   if (typeof visionSearchSteps === 'number' && visionSearchSteps > 0) visionSearchSteps--;
   if (typeof healSpellCooldown === 'number' && healSpellCooldown > 0) healSpellCooldown--;
@@ -676,6 +686,15 @@ function handleCellEntry(cell) {
   const _roomNow     = _isRoomCell(playerX, playerY);
   const _enteredRoom = _roomNow && !_wasInRoomCell;
   _wasInRoomCell = _roomNow;
+
+  // Escape Game (Lot 3) — dans une Poche du Sceau, certaines cases ont un
+  // comportement dédié (Type B : fragment/autel ; Type C : brasier/abri).
+  // Le routeur retourne true s'il a pris la case en charge.
+  if (typeof inEscapePocket !== 'undefined' && inEscapePocket
+      && typeof _escapeHandleCellEntry === 'function'
+      && _escapeHandleCellEntry(cell)) {
+    return;
+  }
 
   // Mondes parallèles §6.4 — en visite, le visiteur observe sans agir :
   // pas de piège déclenché (mutation du donjon distant), pas de PNJ

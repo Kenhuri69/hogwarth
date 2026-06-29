@@ -17,10 +17,20 @@
 // Calibration (équilibrage affiné au Lot 5).
 const ESCAPE_POCKET_CHANCE = 0.25;  // part du tirage piège → Poche (gate ci-dessous)
 const ESCAPE_MALUS_STEPS   = 20;    // pas de malus « corruption » en cas d'échec (Lot 3)
+const ESCAPE_MALUS_MULT    = 0.85;  // −15 % ATK/DEF/MAG pendant le malus (Lot 3)
 const ESCAPE_STELE_COUNT   = 3;     // Type A « L'Énigme des Quatre » : 3 stèles
 const ESCAPE_BUDGET_BASE   = 40;    // budget de pas de base (jauge de corruption)
 const ESCAPE_BUDGET_FLOOR  = 18;    // plancher du budget (difficulté max)
 const ESCAPE_WRONG_FRAC    = 0.15;  // mauvaise réponse → +15 % de corruption
+const ESCAPE_BUDGET_HOUSE  = 1.20;  // House-match : +20 % de budget (« la salle te reconnaît »)
+const ESCAPE_WARDEN_BUDGET_MULT  = 0.70;  // Type C : pression accrue (budget serré)
+const ESCAPE_BRAZIER_REFUND_FRAC = 0.15;  // brasier allumé → rend ~15 % de budget
+
+// Tirage de type biaisé Maison (Lot 3). Chaque Poche est thématisée par un
+// Fondateur ; le type d'épreuve en découle. Cf. plan §2.1 (House-aware).
+const ESCAPE_FOUNDERS      = ['godric', 'rowena', 'salazar', 'helga'];
+const ESCAPE_FOUNDER_TYPE  = { godric: 'warden', rowena: 'riddle', salazar: 'mirror', helga: 'warden' };
+const ESCAPE_HOUSE_FOUNDER = { Gryffondor: 'godric', Serdaigle: 'rowena', Serpentard: 'salazar', Poufsouffle: 'helga' };
 
 // ── Helpers PURS (testables hors navigateur — units.js) ────────────────────
 // Budget de pas (jauge de corruption) selon la profondeur de Boucle.
@@ -35,6 +45,39 @@ function escapeCorruptionPct(spent, budget) {
   if (!(budget > 0)) return 0;
   const pct = Math.round((spent / budget) * 100);
   return Math.max(0, Math.min(100, pct));
+}
+
+// Multiplicateur du malus « Corruption » (échec standard, Lot 3). Tant que le
+// décompte de pas est positif, ATK/DEF/MAG sont rabotées de 15 %. PUR.
+function corruptionMalusMult(steps) {
+  return (typeof steps === 'number' && steps > 0) ? ESCAPE_MALUS_MULT : 1;
+}
+
+// Budget rendu par un brasier allumé (Type C — « la lumière tient la peur »).
+// ~15 % du budget total, plancher 1. PUR.
+function escapeBrazierRefund(budget) {
+  const b = (typeof budget === 'number' && budget > 0) ? budget : 0;
+  return Math.max(1, Math.round(b * ESCAPE_BRAZIER_REFUND_FRAC));
+}
+
+// Tirage du type de Poche + Fondateur, biaisé 1 fois sur 2 vers la Maison du
+// héros (Lot 3). PUR & testable : `rng` injectable (défaut Math.random),
+// `chosenHouse` passé en argument. Retourne { type, founder, houseMatch }.
+function pickEscapePocketType(rng, chosenHouseArg) {
+  const r = (typeof rng === 'function') ? rng : Math.random;
+  const houseFounder = ESCAPE_HOUSE_FOUNDER[chosenHouseArg] || null;
+  let founder;
+  if (houseFounder && r() < 0.5) {
+    founder = houseFounder;                       // biais Maison 1 fois sur 2
+  } else {
+    const idx = Math.floor(r() * ESCAPE_FOUNDERS.length) % ESCAPE_FOUNDERS.length;
+    founder = ESCAPE_FOUNDERS[idx];
+  }
+  return {
+    founder,
+    type:       ESCAPE_FOUNDER_TYPE[founder] || 'riddle',
+    houseMatch: !!(houseFounder && founder === houseFounder),
+  };
 }
 
 // Trackers internes (non sérialisés — cap par visite d'étage + cooldown).
@@ -55,11 +98,6 @@ function canTriggerEscapePocket(ctx) {
   if (ctx.lastPocketFloor != null
       && Math.abs(ctx.floor - ctx.lastPocketFloor) <= 1) return false;
   return true;
-}
-
-// ── Tirage du type de Poche (Lot 3 : biais Maison + 3 types) ───────────────
-function pickEscapePocketType() {
-  return 'riddle';  // Lot 2 : Type A « L'Énigme des Quatre »
 }
 
 // ── Décision + déclenchement (appelé depuis _triggerDungeonTrap) ───────────
@@ -89,7 +127,9 @@ function maybeTriggerEscapePocket() {
     : true;
   if (!alive) return false;
   if (Math.random() >= ESCAPE_POCKET_CHANCE) return false;
-  enterEscapePocket(pickEscapePocketType());
+  const ch = (typeof chosenHouse !== 'undefined') ? chosenHouse : null;
+  const pick = pickEscapePocketType(Math.random, ch);
+  enterEscapePocket(pick.type, pick);
   return true;
 }
 
@@ -168,7 +208,7 @@ function _escapeReachable(grid, sx, sy, tx, ty, wallVal) {
 // l'épreuve n'est pas résolue. Type A « L'Énigme des Quatre » : 3 stèles
 // portant chacune une devinette des Ruines ; chaque bonne réponse grave un
 // glyphe (progress++), la 3ᵉ dé-scelle la faille.
-function generateEscapePocket(type, sourceFloor) {
+function generateEscapePocket(type, sourceFloor, meta) {
   const W = (typeof MAP_W === 'number') ? MAP_W : 16;
   const H = (typeof MAP_H === 'number') ? MAP_H : 16;
   dungeon = []; visited = []; enemyMap = []; itemMap = [];
@@ -215,37 +255,154 @@ function generateEscapePocket(type, sourceFloor) {
   npcPlacements = new Map();
   hiddenGardens = new Set();
 
-  const isRiddle = (type === 'riddle');
-  let steles = [];
-  if (isRiddle) {
-    // Une stèle par salle (cellule FLOOR ≠ spawn ≠ faille).
-    const slots = [];
-    for (const r of rooms) {
-      const cands = [];
-      for (let y = r.y0; y <= r.y1; y++)
-        for (let x = r.x0; x <= r.x1; x++) {
-          if (dungeon[y] && dungeon[y][x] === CELL.FLOOR
-              && !(x === playerX && y === playerY)
-              && !(x === riftX && y === riftY)) cands.push([x, y]);
-        }
-      if (cands.length) slots.push(cands[Math.floor(Math.random() * cands.length)]);
-    }
-    const riddleIds = _pickEscapeRiddleIds(ESCAPE_STELE_COUNT);
-    slots.slice(0, ESCAPE_STELE_COUNT).forEach(([sx, sy], i) => {
-      dungeon[sy][sx] = CELL.STELE;
-      steles.push({ cell: `${sx},${sy}`, riddleId: riddleIds[i], solved: false });
-    });
-  }
-
-  // État d'escape. Type A : `solved:false` jusqu'à la dernière stèle gravée.
-  escapePocketState = {
-    type:     type || 'riddle',
-    solved:   !isRiddle,
-    progress: 0,
-    total:    steles.length,
-    steles,
-    sourceFloor
+  // Cellules FLOOR libres d'une salle (≠ spawn ≠ faille), pour poser les
+  // éléments d'épreuve sans recouvrir une case spéciale.
+  const roomFloorCells = (r) => {
+    const cands = [];
+    for (let y = r.y0; y <= r.y1; y++)
+      for (let x = r.x0; x <= r.x1; x++) {
+        if (dungeon[y] && dungeon[y][x] === CELL.FLOOR
+            && !(x === playerX && y === playerY)
+            && !(x === riftX && y === riftY)) cands.push([x, y]);
+      }
+    return cands;
   };
+  const founder    = (meta && meta.founder) || null;
+  const houseMatch = !!(meta && meta.houseMatch);
+  const base = { type: type || 'riddle', founder, houseMatch, solved: false,
+                 progress: 0, sourceFloor };
+
+  if (type === 'mirror')      escapePocketState = _buildMirrorPocket(base, rooms, roomFloorCells, riftX, riftY);
+  else if (type === 'warden') escapePocketState = _buildWardenPocket(base, rooms, roomFloorCells, riftX, riftY, sourceFloor);
+  else if (type === 'riddle') escapePocketState = _buildRiddlePocket(base, rooms, roomFloorCells);
+  else escapePocketState = Object.assign(base, { solved: true, total: 0, steles: [] }); // 'echo' legacy
+}
+
+// Type A « L'Énigme des Quatre » (Rowena) — 3 stèles à graver.
+function _buildRiddlePocket(base, rooms, roomFloorCells) {
+  const steles = [];
+  const slots = [];
+  for (const r of rooms) {
+    const cands = roomFloorCells(r);
+    if (cands.length) slots.push(cands[Math.floor(Math.random() * cands.length)]);
+  }
+  const riddleIds = _pickEscapeRiddleIds(ESCAPE_STELE_COUNT);
+  slots.slice(0, ESCAPE_STELE_COUNT).forEach(([sx, sy], i) => {
+    dungeon[sy][sx] = CELL.STELE;
+    steles.push({ cell: `${sx},${sy}`, riddleId: riddleIds[i], solved: false });
+  });
+  const st = Object.assign(base, { solved: false, total: steles.length, steles });
+  // House-match : 1 stèle pré-gravée (indice gratuit « la salle te reconnaît »).
+  if (base.houseMatch && steles.length) {
+    steles[0].solved = true;
+    st.progress = 1;
+    if (st.progress >= st.total) { st.solved = true; }
+  }
+  return st;
+}
+
+// Type B « Le Miroir de Salazar » (Salazar) — 3 fragments à ramasser puis
+// déposer dans l'ordre sur l'autel central ; un écho du groupe rôde.
+function _buildMirrorPocket(base, rooms, roomFloorCells, riftX, riftY) {
+  // Autel central dans la salle B (case centre, hors couloir critique).
+  const ax = rooms[1].cx, ay = rooms[1].cy;
+  dungeon[ay][ax] = CELL.ALTAR;
+  // 1 fragment par salle (CELL.CHEST). idx = identité du fragment.
+  const fragments = [];
+  rooms.forEach((r, i) => {
+    const cands = roomFloorCells(r).filter(([x, y]) => !(x === ax && y === ay));
+    if (cands.length) {
+      const [fx, fy] = cands[Math.floor(Math.random() * cands.length)];
+      dungeon[fy][fx] = CELL.CHEST;
+      fragments.push({ cell: `${fx},${fy}`, idx: i, picked: false });
+    }
+  });
+  // Ordre de dépôt requis (permutation de [0..n-1]).
+  const order = fragments.map(f => f.idx);
+  for (let i = order.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [order[i], order[j]] = [order[j], order[i]];
+  }
+  // Écho du groupe : démarre dans la salle de la faille, vise l'autel.
+  const echoStart = `${riftX},${riftY}`;
+  const st = Object.assign(base, {
+    solved: false, total: fragments.length, fragments, order, deposited: [],
+    altar: `${ax},${ay}`,
+    mirror: { pos: echoStart, start: echoStart, target: `${ax},${ay}`, awake: false },
+  });
+  // House-match : 1 fragment localisé ET déjà ramassé (indice gratuit).
+  if (base.houseMatch && fragments.length) {
+    const first = fragments.find(f => f.idx === order[0]) || fragments[0];
+    first.picked = true;
+    const [hx, hy] = first.cell.split(',').map(Number);
+    if (dungeon[hy] && dungeon[hy][hx] === CELL.CHEST) dungeon[hy][hx] = CELL.FLOOR;
+  }
+  return st;
+}
+
+// Type C « L'Écho du Scellement » (Godric + Helga) — 3 brasiers à allumer
+// sous pression ; 1 refuge (pause) ; 1-2 échos hostiles évitables.
+function _buildWardenPocket(base, rooms, roomFloorCells, riftX, riftY, sourceFloor) {
+  // 1 brasier (CELL.RUNE) par salle, sur une case libre.
+  const braziers = [];
+  rooms.forEach((r) => {
+    const cands = roomFloorCells(r);
+    if (cands.length) {
+      const [bx, by] = cands[Math.floor(Math.random() * cands.length)];
+      dungeon[by][bx] = CELL.RUNE;
+      braziers.push({ cell: `${bx},${by}`, lit: false });
+    }
+  });
+  // Refuge (CELL.REFUGE) dans la salle centrale, hors brasier.
+  const brazierCells = new Set(braziers.map(b => b.cell));
+  const refCands = roomFloorCells(rooms[1]).filter(([x, y]) => !brazierCells.has(`${x},${y}`));
+  if (refCands.length) {
+    const [rx, ry] = refCands[Math.floor(Math.random() * refCands.length)];
+    dungeon[ry][rx] = CELL.REFUGE;
+  }
+  // 1-2 échos hostiles (évitables) : placés dans les salles, hors case spéciale
+  // et hors chemin direct. Scalés à l'étage source (effectiveFloor via scaleMonster).
+  _spawnWardenEchoes(rooms, sourceFloor, brazierCells);
+  const st = Object.assign(base, {
+    solved: false, total: braziers.length, braziers, refugeUsed: false, refugePause: 0,
+  });
+  // House-match : 1 brasier pré-allumé (indice gratuit + budget déjà rendu).
+  if (base.houseMatch && braziers.length) {
+    braziers[0].lit = true;
+    st.progress = 1;
+    if (typeof litRunes !== 'undefined' && litRunes) litRunes.add(braziers[0].cell);
+  }
+  return st;
+}
+
+// Place 1-2 échos hostiles dans la Poche du Gardien (enemyMap). Évitables :
+// hors case spéciale, hors spawn/faille. Pas de respawn (poche éphémère).
+function _spawnWardenEchoes(rooms, sourceFloor, brazierCells) {
+  if (typeof MONSTERS === 'undefined' || !Array.isArray(MONSTERS)) return;
+  const tmpl = MONSTERS.find(m => m.id === 'detraqueur')
+            || MONSTERS.find(m => m.category === 'fantôme')
+            || MONSTERS[0];
+  if (!tmpl) return;
+  const count = 1 + (Math.random() < 0.5 ? 1 : 0);
+  let placed = 0;
+  // Cherche des cases FLOOR dans les salles B et C, à ≥ 1 case du joueur.
+  for (const r of [rooms[2], rooms[1]]) {
+    if (placed >= count) break;
+    for (let y = r.y0; y <= r.y1 && placed < count; y++)
+      for (let x = r.x0; x <= r.x1 && placed < count; x++) {
+        if (dungeon[y][x] !== CELL.FLOOR) continue;
+        if (x === playerX && y === playerY) continue;
+        if (brazierCells.has(`${x},${y}`)) continue;
+        if (enemyMap[y][x]) continue;
+        const e = (typeof scaleMonster === 'function')
+          ? scaleMonster(tmpl, sourceFloor) : Object.assign({}, tmpl);
+        if (e) {
+          e.name = /^Écho/.test(e.name || '') ? e.name : 'Écho · ' + (e.name || 'Spectre');
+          enemyMap[y][x] = e;
+          placed++;
+        }
+      }
+  }
 }
 
 // Sélectionne les devinettes des stèles : priorité aux 3 énigmes des Ruines
@@ -269,18 +426,23 @@ function _pickEscapeRiddleIds(n) {
 }
 
 // ── Entrée dans la Poche ───────────────────────────────────────────────────
-function enterEscapePocket(type) {
+function enterEscapePocket(type, meta) {
   if (typeof inEscapePocket !== 'undefined' && inEscapePocket) return;
   _escapeSnapshot   = _captureFloorState();
   inEscapePocket    = true;
   escapePocketType  = type || 'riddle';
-  generateEscapePocket(escapePocketType, _escapeSnapshot.floor);
+  generateEscapePocket(escapePocketType, _escapeSnapshot.floor, meta);
   _escapePocketUsedThisFloor = true;
   _lastEscapePocketFloor     = _escapeSnapshot.floor;
   // Budget de pas (jauge de corruption) — rétrécit avec la profondeur de Boucle.
   const depth = (typeof endgameTierIndex === 'function')
     ? endgameTierIndex(_escapeSnapshot.floor) : 1;
-  escapeStepBudget = computeEscapeStepBudget(depth);
+  let budget = computeEscapeStepBudget(depth);
+  // Type C « warden » : pression accrue (budget serré).
+  if (escapePocketType === 'warden') budget = Math.round(budget * ESCAPE_WARDEN_BUDGET_MULT);
+  // House-match : +20 % de budget (« la salle te reconnaît »).
+  if (meta && meta.houseMatch) budget = Math.round(budget * ESCAPE_BUDGET_HOUSE);
+  escapeStepBudget = Math.max(ESCAPE_BUDGET_FLOOR, budget);
   escapeStepSpent  = 0;
   _renderEscapeFloor();
   showEscapeHud();
@@ -326,8 +488,10 @@ function exitEscapePocket(success) {
     }
     if (typeof addMsg === 'function') addMsg("🌀 Tu as re-scellé la Poche et regagné les Ruines.", 'good');
   } else {
-    // Échec : malus « corruption » passager (effet stat appliqué au Lot 3).
+    // Échec : malus « corruption » passager — −15 % ATK/DEF/MAG pendant N pas
+    // (Lot 3). `recalculateStats` applique l'effet d'emblée (lecture du flag).
     corruptionMalusSteps = ESCAPE_MALUS_STEPS;
+    if (typeof recalculateStats === 'function') recalculateStats();
     if (typeof setNarrative === 'function') {
       setNarrative("La corruption te recrache hors de la Poche. Une morsure "
         + "glacée s'attarde sur le groupe.");
@@ -394,7 +558,7 @@ function answerEscapeStele(choiceIdx) {
     escapeStepSpent = (escapeStepSpent || 0) + penalty;
     _updateEscapeHud();
     if (escapeStepBudget > 0 && escapeStepSpent >= escapeStepBudget) {
-      exitEscapePocket(false);
+      _escapeFail();
       return;
     }
     if (typeof _showExploreOverlay === 'function') _showExploreOverlay(CELL.STELE);
@@ -408,17 +572,359 @@ function _openEscapeRift() {
   // de l'intention + extension Lot 3).
 }
 
+// ── Routeur d'interaction de Poche (Lot 3 — Type B/C) ──────────────────────
+// Appelé tôt dans handleCellEntry. Retourne true s'il a pris en charge la case
+// (l'appelant s'arrête alors). Sinon false → flux d'exploration normal (la
+// stèle d'énigme Type A et la faille SEAL_RIFT restent gérées par movement.js).
+function _escapeHandleCellEntry(cell) {
+  if (!inEscapePocket || !escapePocketState) return false;
+  const t = escapePocketState.type;
+  if (t === 'mirror') {
+    if (cell === CELL.CHEST) { escapeMirrorPickup(); return true; }
+    if (cell === CELL.ALTAR) { _showEscapeMirrorAltar(); return true; }
+  } else if (t === 'warden') {
+    if (cell === CELL.RUNE)   { escapeLightBrazier(); return true; }
+    if (cell === CELL.REFUGE) { escapeRefugePause(); return true; }
+  }
+  return false;
+}
+
+// ── Type B « Le Miroir de Salazar » ────────────────────────────────────────
+// Ramasse le fragment posé sur la case du joueur ; réveille l'écho du groupe.
+function escapeMirrorPickup() {
+  const s = escapePocketState;
+  if (!s || !Array.isArray(s.fragments)) return;
+  const key = `${playerX},${playerY}`;
+  const frag = s.fragments.find(f => f.cell === key && !f.picked);
+  if (!frag) return;
+  frag.picked = true;
+  dungeon[playerY][playerX] = CELL.FLOOR;
+  if (s.mirror) s.mirror.awake = true;   // marcher réveille le reflet
+  if (typeof AudioSystem !== 'undefined' && AudioSystem.playChestOpen) AudioSystem.playChestOpen();
+  if (typeof addMsg === 'function') addMsg('🪞 Tu ramasses un fragment du Sceau — ton reflet s\'anime.', 'good');
+  if (typeof setNarrative === 'function') {
+    setNarrative("Un éclat de la Clé repose ici. À l'instant où tu le saisis, "
+      + "ton reflet se détache du mur et se met en marche vers l'autel.");
+  }
+  if (typeof renderMinimap === 'function') renderMinimap();
+  if (typeof drawDungeon === 'function') drawDungeon();
+}
+
+// Ouvre l'overlay de l'autel central : déposer les fragments dans l'ordre.
+function _showEscapeMirrorAltar() {
+  const s = escapePocketState;
+  if (!s) return;
+  const icon    = (typeof document !== 'undefined') ? document.getElementById('explore-icon') : null;
+  const title   = (typeof document !== 'undefined') ? document.getElementById('explore-title') : null;
+  const descEl  = (typeof document !== 'undefined') ? document.getElementById('explore-desc') : null;
+  const actions = (typeof document !== 'undefined') ? document.getElementById('explore-actions') : null;
+  const overlay = (typeof document !== 'undefined') ? document.getElementById('explore-overlay') : null;
+  if (!icon || !title || !descEl || !actions || !overlay) return;
+  icon.innerHTML = (typeof SCENE_ICONS !== 'undefined' && SCENE_ICONS.altar) ? SCENE_ICONS.altar : '🪞';
+  title.textContent = "Autel du Miroir";
+  const dep = Array.isArray(s.deposited) ? s.deposited : [];
+  const carried = (s.fragments || []).filter(f => f.picked && dep.indexOf(f.idx) === -1);
+  // Indice runique : ordre complet en House-match, sinon prochain attendu seul.
+  const fragName = (i) => `Éclat ${['I', 'II', 'III', 'IV'][i] || (i + 1)}`;
+  let hint;
+  if (s.houseMatch) {
+    hint = "L'inscription se révèle entière : déposer dans l'ordre — "
+      + (s.order || []).map(fragName).join(', ') + '.';
+  } else {
+    const next = (s.order || [])[dep.length];
+    hint = (next != null)
+      ? `L'inscription murmure : le prochain à sceller est le ${fragName(next)}.`
+      : 'L\'inscription s\'est tue.';
+  }
+  descEl.textContent = `Une dalle runique reflète le groupe. Repose les fragments du Sceau `
+    + `dans le bon ordre pour rouvrir la faille (${dep.length}/${s.total || 3}). ${hint}`;
+  let btns = '';
+  if (s.solved) {
+    btns = `<button class="explore-btn secondary" onclick="_hideExploreOverlay()">S'éloigner</button>`;
+  } else if (!carried.length) {
+    btns = `<div style="font-size:12px;color:#8a7050;margin-bottom:6px">Aucun fragment en main — explore les salles pour les ramasser.</div>`
+      + `<button class="explore-btn secondary" onclick="_hideExploreOverlay()">S'éloigner</button>`;
+  } else {
+    btns = carried.map(f =>
+      `<button class="explore-btn" onclick="escapeMirrorDeposit(${f.idx})">Déposer le ${fragName(f.idx)}</button>`
+    ).join('\n')
+      + `\n<button class="explore-btn secondary" onclick="_hideExploreOverlay()">S'éloigner</button>`;
+  }
+  actions.innerHTML = btns;
+  overlay.style.display = 'flex';
+}
+
+// Dépose un fragment sur l'autel. Bon ordre → progresse ; mauvais → corruption.
+function escapeMirrorDeposit(fragIdx) {
+  const s = escapePocketState;
+  if (!s || s.solved) { if (typeof _hideExploreOverlay === 'function') _hideExploreOverlay(); return; }
+  const dep = s.deposited = Array.isArray(s.deposited) ? s.deposited : [];
+  const frag = (s.fragments || []).find(f => f.idx === fragIdx && f.picked);
+  if (!frag || dep.indexOf(fragIdx) !== -1) { _showEscapeMirrorAltar(); return; }
+  const expected = (s.order || [])[dep.length];
+  if (fragIdx === expected) {
+    dep.push(fragIdx);
+    s.progress = dep.length;
+    if (typeof AudioSystem !== 'undefined' && AudioSystem.playChestOpen) AudioSystem.playChestOpen();
+    if (dep.length >= (s.total || (s.order || []).length)) {
+      s.solved = true;
+      _openEscapeRift();
+      if (typeof addMsg === 'function') addMsg('🪞 Le miroir s\'apaise — la faille du Sceau s\'ouvre !', 'good');
+      if (typeof setNarrative === 'function') {
+        setNarrative("Le dernier fragment trouve sa place. Ton reflet s'immobilise, "
+          + "enfin en paix — la faille du Sceau s'entrouvre.");
+      }
+      if (typeof _hideExploreOverlay === 'function') _hideExploreOverlay();
+    } else {
+      if (typeof addMsg === 'function') addMsg(`🪞 Fragment scellé — ${dep.length}/${s.total}.`, 'good');
+      _showEscapeMirrorAltar();
+    }
+  } else {
+    // Mauvais ordre : poussée de corruption, le fragment reste en main.
+    const penalty = Math.max(2, Math.round((escapeStepBudget || 0) * ESCAPE_WRONG_FRAC));
+    escapeStepSpent = (escapeStepSpent || 0) + penalty;
+    if (typeof AudioSystem !== 'undefined' && AudioSystem.playHit) AudioSystem.playHit();
+    if (typeof addMsg === 'function') addMsg('🪞 Le reflet se trouble — ce n\'est pas l\'ordre du Sceau.', 'bad');
+    _updateEscapeHud();
+    if (escapeStepBudget > 0 && escapeStepSpent >= escapeStepBudget) {
+      if (typeof _hideExploreOverlay === 'function') _hideExploreOverlay();
+      _escapeFail();
+      return;
+    }
+    _showEscapeMirrorAltar();
+  }
+  if (typeof renderMinimap === 'function') renderMinimap();
+  if (typeof drawDungeon === 'function') drawDungeon();
+}
+
+// Synthétise un « fantôme » du groupe pour le rendu de l'écho du Miroir
+// (réutilise drawGhostSprite). heroKeys = sprites plein corps du groupe.
+function _escapeEchoGhost() {
+  const keys = (typeof party !== 'undefined')
+    ? party.slice(0, (typeof partySize === 'number') ? partySize : party.length)
+        .map(c => c && c.heroKey).filter(Boolean)
+    : [];
+  return { heroKeys: keys, name: 'Reflet', level: 0 };
+}
+
+// Avance l'écho du groupe d'une case vers l'autel (BFS-next). S'il l'atteint,
+// il brouille le dernier fragment déposé (+corruption) et repart de son origine.
+function _escapeEchoStep() {
+  const s = escapePocketState;
+  if (!s || !s.mirror || s.solved) return;
+  const m = s.mirror;
+  const [tx, ty] = m.target.split(',').map(Number);
+  const [cx, cy] = m.pos.split(',').map(Number);
+  const next = _escapeNextStep(cx, cy, tx, ty);
+  if (next) m.pos = `${next[0]},${next[1]}`;
+  const [nx, ny] = m.pos.split(',').map(Number);
+  if (nx === tx && ny === ty) {
+    // L'écho atteint l'autel : il brouille un fragment posé.
+    if (Array.isArray(s.deposited) && s.deposited.length) {
+      s.deposited.pop();
+      s.progress = s.deposited.length;
+      if (typeof addMsg === 'function') addMsg('🪞 Ton reflet brouille un fragment scellé !', 'bad');
+    } else if (typeof addMsg === 'function') {
+      addMsg('🪞 Ton reflet effleure l\'autel — la corruption monte.', 'bad');
+    }
+    const penalty = Math.max(2, Math.round((escapeStepBudget || 0) * ESCAPE_WRONG_FRAC));
+    escapeStepSpent = (escapeStepSpent || 0) + penalty;
+    m.pos = m.start;   // l'écho repart de son origine
+  }
+}
+
+// Pas suivant sur le plus court chemin de (sx,sy) vers (tx,ty) (BFS). Retourne
+// [x,y] ou null. Murs = CELL.WALL ; toute autre case est franchissable.
+function _escapeNextStep(sx, sy, tx, ty) {
+  if (sx === tx && sy === ty) return null;
+  const H = dungeon.length, W = dungeon[0].length;
+  const prev = Array.from({ length: H }, () => Array(W).fill(null));
+  const seen = Array.from({ length: H }, () => Array(W).fill(false));
+  const q = [[sx, sy]];
+  seen[sy][sx] = true;
+  while (q.length) {
+    const [x, y] = q.shift();
+    if (x === tx && y === ty) {
+      // Remonte jusqu'à la 1ʳᵉ case après le départ.
+      let cur = [x, y];
+      while (prev[cur[1]][cur[0]] && !(prev[cur[1]][cur[0]][0] === sx && prev[cur[1]][cur[0]][1] === sy)) {
+        cur = prev[cur[1]][cur[0]];
+      }
+      return cur;
+    }
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const ax = x + dx, ay = y + dy;
+      if (ax < 0 || ay < 0 || ax >= W || ay >= H) continue;
+      if (seen[ay][ax] || dungeon[ay][ax] === CELL.WALL) continue;
+      seen[ay][ax] = true;
+      prev[ay][ax] = [x, y];
+      q.push([ax, ay]);
+    }
+  }
+  return null;
+}
+
+// ── Type C « L'Écho du Scellement » ────────────────────────────────────────
+// Allume le brasier sur la case du joueur : rend ~15 % de budget (« la lumière
+// tient la peur »). Au 3ᵉ → solved=true (la faille s'ouvre, reste à l'atteindre).
+function escapeLightBrazier() {
+  const s = escapePocketState;
+  if (!s || !Array.isArray(s.braziers)) return;
+  const key = `${playerX},${playerY}`;
+  const br = s.braziers.find(b => b.cell === key);
+  if (!br || br.lit) return;
+  br.lit = true;
+  if (typeof litRunes !== 'undefined' && litRunes) litRunes.add(key);
+  const refund = escapeBrazierRefund(escapeStepBudget);
+  escapeStepSpent = Math.max(0, (escapeStepSpent || 0) - refund);
+  const litCount = s.braziers.filter(b => b.lit).length;
+  s.progress = litCount;
+  if (typeof AudioSystem !== 'undefined' && AudioSystem.playChestOpen) AudioSystem.playChestOpen();
+  if (litCount >= (s.total || s.braziers.length)) {
+    s.solved = true;
+    _openEscapeRift();
+    if (typeof addMsg === 'function') addMsg('🔥 Le dernier brasier s\'embrase — la peur reflue, la faille s\'ouvre !', 'good');
+    if (typeof setNarrative === 'function') {
+      setNarrative("Les trois feux brûlent ensemble. La brume de corruption recule "
+        + "devant la lumière — la faille du Sceau s'entrouvre. Atteins-la.");
+    }
+  } else {
+    if (typeof addMsg === 'function') addMsg(`🔥 Brasier allumé (${litCount}/${s.total}) — la lumière repousse la peur.`, 'good');
+    if (typeof setNarrative === 'function') {
+      setNarrative("Le brasier s'embrase d'une lumière chaude. La brume recule un instant.");
+    }
+  }
+  _updateEscapeHud();
+  if (typeof renderMinimap === 'function') renderMinimap();
+  if (typeof drawDungeon === 'function') drawDungeon();
+}
+
+// Abri d'Helga : fige la jauge 3 pas (1×). Récompense l'exploration prudente.
+function escapeRefugePause() {
+  const s = escapePocketState;
+  if (!s) return;
+  if (s.refugeUsed) {
+    if (typeof addMsg === 'function') addMsg('🛖 L\'abri s\'est éteint — il ne tiendra pas une seconde fois.', '');
+    return;
+  }
+  s.refugeUsed = true;
+  s.refugePause = 3;
+  if (typeof AudioSystem !== 'undefined' && AudioSystem.playLevelUp) AudioSystem.playLevelUp();
+  if (typeof addMsg === 'function') addMsg('🛖 Tu reprends ton souffle à l\'abri — la corruption se fige (3 pas).', 'good');
+  if (typeof setNarrative === 'function') {
+    setNarrative("Un creux taillé dans la pierre t'offre un répit. Pendant quelques pas, "
+      + "la brume cesse d'avancer.");
+  }
+  _updateEscapeHud();
+}
+
+// ── Échec Ironman — Écho Corrompu (boss-écho, combat obligatoire) ───────────
+// `_escapeWardenBattle` : combat de l'Écho Corrompu en cours (lu par endBattle
+// et triggerDeath). `_escapeDeathCause` : badge de cause de mort (HoF/profil).
+let _escapeWardenBattle = false;
+let _escapeDeathCause   = null;
+
+function _spawnCorruptedEcho() {
+  const floor = (escapePocketState && escapePocketState.sourceFloor) || currentFloor || 11;
+  const tmpl = (typeof MONSTERS !== 'undefined' && Array.isArray(MONSTERS))
+    ? (MONSTERS.find(m => m.id === 'voldemort_revenu')
+       || MONSTERS.find(m => m.epic)
+       || MONSTERS[MONSTERS.length - 1])
+    : null;
+  let echo = (typeof scaleMonster === 'function' && tmpl)
+    ? scaleMonster(tmpl, floor)
+    : Object.assign({}, tmpl || {}, { hp: 200, atk: 20, def: 8, mag: 15 });
+  echo = Object.assign({}, echo);
+  echo.id    = 'echo_corrompu';
+  echo.name  = 'Écho Corrompu';
+  echo.icon  = '🌀';
+  echo.epic  = true;
+  echo.isDuelist = true;   // hors bestiaire (entité de scellement, pas une espèce)
+  // Crédite le fait d'arme DÈS le spawn : le courage d'avoir affronté l'Écho
+  // compte même si le groupe y laisse la vie (Lot 3 §2.6).
+  if (typeof defeatedBosses !== 'undefined' && defeatedBosses && defeatedBosses.add) {
+    defeatedBosses.add('echo_corrompu');
+  }
+  _escapeWardenBattle = true;
+  hideEscapeHud();
+  if (typeof addMsg === 'function') addMsg('🌀 La corruption se condense — un Écho Corrompu surgit du Sceau !', 'bad');
+  if (typeof setNarrative === 'function') {
+    setNarrative("La brume atteint son comble. Elle se tord, prend ta forme — un Écho "
+      + "Corrompu de toi-même se dresse. Il faut le vaincre, ou rester scellé à jamais.");
+  }
+  startBattle(echo);
+}
+
+// Vrai si l'on est en plein combat de l'Écho Corrompu (lu par endBattle/triggerDeath).
+function isEscapeWardenBattle() {
+  return !!_escapeWardenBattle;
+}
+
+// Lit ET consomme le badge de cause de mort (une lecture → reset). Évite tout
+// report d'un « Poche du Sceau » périmé sur une mort ultérieure. Lu par
+// buildIronmanResult (ironman.js).
+function escapeConsumeDeathCause() {
+  const c = _escapeDeathCause;
+  _escapeDeathCause = null;
+  return c || null;
+}
+
+// Victoire sur l'Écho Corrompu → sortie en échec STANDARD (éjection + malus,
+// vie sauve). Appelé par endBattle(won) avant la distribution de butin.
+function _escapeOnWardenVictory() {
+  _escapeWardenBattle = false;
+  if (typeof inEscapePocket !== 'undefined' && inEscapePocket) exitEscapePocket(false);
+}
+
+// Mort pendant le combat de l'Écho Corrompu → héritage Boucle : badge de cause
+// + titre profil « Scellé dans la Boucle ». Retourne le texte de mort dédié
+// (consommé par triggerDeath pour showIronmanResult).
+function _escapeOnWardenDefeat() {
+  _escapeWardenBattle = false;
+  _escapeDeathCause = 'Poche du Sceau';
+  if (typeof recordSealedDeathToProfile === 'function') recordSealedDeathToProfile();
+  // L'éjection n'a pas lieu (mort définitive) : on purge l'état de poche pour
+  // que l'écran de résultat / un éventuel reload repartent propres.
+  inEscapePocket    = false;
+  escapePocketState = null;
+  _escapeSnapshot   = null;
+  return "Scellé dans une Poche du Sceau — l'Écho Corrompu t'a happé pour l'éternité.";
+}
+
 // ── Jauge de corruption — décompte de pas (appelé depuis _step) ─────────────
 // Retourne true si le budget est épuisé (la Poche a éjecté le groupe en échec).
 function _escapeOnStep() {
   if (!inEscapePocket) return false;
+  // Abri d'Helga (Type C) : la jauge est figée pendant `refugePause` pas.
+  if (escapePocketState && escapePocketState.refugePause > 0) {
+    escapePocketState.refugePause--;
+    _updateEscapeHud();
+    return false;
+  }
   escapeStepSpent = (escapeStepSpent || 0) + 1;
+  // Miroir de Salazar (Type B) : l'écho du groupe avance d'un pas vers l'autel.
+  if (escapePocketState && escapePocketState.type === 'mirror'
+      && escapePocketState.mirror && escapePocketState.mirror.awake) {
+    _escapeEchoStep();
+  }
   _updateEscapeHud();
   if (escapeStepBudget > 0 && escapeStepSpent >= escapeStepBudget) {
-    exitEscapePocket(false);
-    return true;
+    return _escapeFail();
   }
   return false;
+}
+
+// Échec de Poche (budget épuisé). Standard : éjection + malus. Ironman :
+// l'Écho Corrompu surgit (combat obligatoire) — la défaite est mortelle, la
+// victoire libère en échec standard. Retourne true (le pas appelant s'arrête).
+function _escapeFail() {
+  if (typeof ironmanMode !== 'undefined' && ironmanMode
+      && typeof startBattle === 'function' && typeof MONSTERS !== 'undefined') {
+    _spawnCorruptedEcho();
+    return true;
+  }
+  exitEscapePocket(false);
+  return true;
 }
 
 // ── HUD #escape-hud (objectif + jauge de corruption) ───────────────────────
@@ -444,9 +950,7 @@ function _updateEscapeHud() {
   const obj  = document.getElementById('escape-hud-objective');
   const fill = document.getElementById('escape-hud-gauge-fill');
   const lbl  = document.getElementById('escape-hud-gauge-label');
-  const total = (escapePocketState && escapePocketState.total) || ESCAPE_STELE_COUNT;
-  const prog  = (escapePocketState && escapePocketState.progress) || 0;
-  if (obj) obj.textContent = `${prog}/${total} glyphes gravés`;
+  if (obj) obj.textContent = _escapeObjectiveLabel();
   const pct = escapeCorruptionPct(escapeStepSpent, escapeStepBudget);
   if (fill) {
     fill.style.width = pct + '%';
@@ -454,6 +958,23 @@ function _updateEscapeHud() {
   }
   if (lbl) lbl.textContent = `Corruption ${pct}%`;
   return true;
+}
+
+// Libellé d'objectif du HUD selon le type de Poche.
+function _escapeObjectiveLabel() {
+  const s = escapePocketState;
+  if (!s) return '';
+  if (s.type === 'mirror') {
+    const dep = Array.isArray(s.deposited) ? s.deposited.length : 0;
+    return `${dep}/${s.total || 3} fragments scellés`;
+  }
+  if (s.type === 'warden') {
+    const lit = Array.isArray(s.braziers) ? s.braziers.filter(b => b.lit).length : 0;
+    return `${lit}/${s.total || 3} brasiers allumés`;
+  }
+  const total = s.total || ESCAPE_STELE_COUNT;
+  const prog  = s.progress || 0;
+  return `${prog}/${total} glyphes gravés`;
 }
 
 // ── Rendu commun (entrée poche / retour Ruines) ────────────────────────────
@@ -475,4 +996,18 @@ if (typeof window !== 'undefined') {
   window.computeEscapeStepBudget = computeEscapeStepBudget;
   window.escapeCorruptionPct = escapeCorruptionPct;
   window._escapeReachable = _escapeReachable;
+  // Lot 3 — helpers purs + interactions Type B/C + résolution Ironman.
+  window.corruptionMalusMult = corruptionMalusMult;
+  window.escapeBrazierRefund = escapeBrazierRefund;
+  window.pickEscapePocketType = pickEscapePocketType;
+  window.escapeMirrorPickup = escapeMirrorPickup;
+  window.escapeMirrorDeposit = escapeMirrorDeposit;
+  window.escapeLightBrazier = escapeLightBrazier;
+  window.escapeRefugePause = escapeRefugePause;
+  window._escapeHandleCellEntry = _escapeHandleCellEntry;
+  window.isEscapeWardenBattle = isEscapeWardenBattle;
+  window._escapeOnWardenVictory = _escapeOnWardenVictory;
+  window._escapeOnWardenDefeat = _escapeOnWardenDefeat;
+  window.escapeConsumeDeathCause = escapeConsumeDeathCause;
+  window._escapeEchoGhost = _escapeEchoGhost;
 }

@@ -428,6 +428,9 @@ async function _renderHallOfFame(projection) {
       +       `<img class="hof-chip-icon" src="img/icons/map.png" alt="">Ét.${floorText}</span>`
       +     `<span class="hof-chip hof-chip-level" title="Niveau de Harry">`
       +       `<img class="hof-chip-icon" src="img/icons/xp.png" alt="">Niv.${levelText}</span>`
+      +     (r.death_cause === 'Poche du Sceau'
+              ? `<span class="hof-chip hof-chip-sealed" title="Scellé dans une Poche du Sceau">🌀 Scellé</span>`
+              : '')
       +   `</div>`
       + `</div>`
       + `<div class="hof-score">${(r.score | 0).toLocaleString('fr-FR')}</div>`

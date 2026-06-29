@@ -3784,4 +3784,289 @@ async function scenarioEscapeRiddleSolve() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioEscapePocket, scenarioEscapeRiddleSolve, scenarioCh13EndgamePivot, scenarioScriptedFloorBeats, scenarioVoixDesRuines, scenarioDungeonLife, scenarioFountain, scenarioRefuge, scenarioSoloSoftlock, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioRespawn20Percent, scenarioVictoryTrigger, scenarioStairsGated, scenarioFinalBossGuaranteed, scenarioChamberGuardians, scenarioChamberGuardianPolish, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioFloorTheming, scenarioZoneDEchoes, scenarioZoneDFx, scenarioFounderChamber, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioRoomOfRequirement, scenarioStairsReachable, scenarioHouseRoomBias] };
+// Escape Game (Lot 3) — Volet 1 : effet stat du malus « Corruption » (−15 %
+// ATK/DEF/MAG) appliqué par recalculateStats tant que corruptionMalusSteps > 0,
+// armé par un échec de Poche, levé à l'expiration.
+async function scenarioEscapeMalus() {
+  console.log('\n── Scénario : Poche du Sceau — malus Corruption (Lot 3) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'], house: 'Gryffondor' });
+
+  const r = await page.evaluate(() => {
+    const out = { threw: false };
+    try {
+      victoryAchieved = true;
+      currentFloor = 14;
+      // Helper pur exposé.
+      out.helperOk = corruptionMalusMult(1) === 0.85 && corruptionMalusMult(0) === 1;
+
+      // Stats de référence (aucun malus).
+      corruptionMalusSteps = 0;
+      recalculateStats();
+      const c = party[0];
+      const baseAtk = c.atk, baseDef = c.def, baseMag = c.mag;
+
+      // Échec de Poche → malus armé + appliqué d'emblée par recalculateStats.
+      enterEscapePocket('riddle');
+      exitEscapePocket(false);
+      out.armed = corruptionMalusSteps === 20;
+      out.applied = c.atk === Math.round(baseAtk * 0.85)
+                 && c.def === Math.round(baseDef * 0.85)
+                 && c.mag === Math.round(baseMag * 0.85);
+
+      // Expiration → recalcul → stats restaurées.
+      corruptionMalusSteps = 0;
+      recalculateStats();
+      out.restored = c.atk === baseAtk && c.def === baseDef && c.mag === baseMag;
+    } catch (e) { out.threw = true; out.err = String(e && e.message || e); }
+    return out;
+  });
+
+  assert(!r.threw, 'malus sans exception (' + (r.err || '') + ')');
+  assert(r.helperOk, 'helper PUR corruptionMalusMult (0.85 / 1)');
+  assert(r.armed, 'échec : corruptionMalusSteps = 20');
+  assert(r.applied, 'malus appliqué : ATK/DEF/MAG × 0.85');
+  assert(r.restored, 'expiration : stats restaurées (steps=0 → recalc)');
+
+  if (errors.length) { errors.forEach(e => console.log('  ⚠️ ', e)); throw new Error(`${errors.length} erreurs JS (malus)`); }
+  console.log('  ✅ Malus Corruption — appliqué/levé OK');
+  await browser.close();
+}
+
+// Escape Game (Lot 3) — Volet 2 : Type B « Le Miroir de Salazar ». Fragments
+// ramassés + dépôt ordonné sur l'autel → solved ; écho qui brouille un fragment.
+async function scenarioEscapeMirror() {
+  console.log('\n── Scénario : Poche du Sceau — Miroir de Salazar (Lot 3) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'], house: 'Gryffondor' });
+
+  const r = await page.evaluate(() => {
+    const out = { threw: false };
+    try {
+      victoryAchieved = true;
+      currentFloor = 14;
+      // Maison ≠ Salazar → aucun fragment offert (les 3 sont à ramasser).
+      enterEscapePocket('mirror', { founder: 'salazar', houseMatch: false });
+      const s = escapePocketState;
+      out.typeOk = s.type === 'mirror' && s.solved === false;
+      out.threeFrags = Array.isArray(s.fragments) && s.fragments.length === 3;
+      out.orderOk = Array.isArray(s.order) && s.order.length === 3;
+
+      // Topologie : 3 coffres (fragments), 1 autel, 1 faille.
+      let chest = 0, altar = 0, rift = 0;
+      for (let y = 0; y < dungeon.length; y++) for (let x = 0; x < dungeon[y].length; x++) {
+        if (dungeon[y][x] === CELL.CHEST) chest++;
+        if (dungeon[y][x] === CELL.ALTAR) altar++;
+        if (dungeon[y][x] === CELL.SEAL_RIFT) rift++;
+      }
+      out.topo = chest === 3 && altar === 1 && rift === 1;
+
+      // Ramasse les 3 fragments (téléport sur chaque case + pickup).
+      s.fragments.forEach(f => {
+        const [fx, fy] = f.cell.split(',').map(Number);
+        playerX = fx; playerY = fy;
+        escapeMirrorPickup();
+      });
+      out.allPicked = s.fragments.every(f => f.picked) && s.mirror.awake === true;
+
+      // Mauvais ordre : déposer order[1] d'abord → corruption monte, progress 0.
+      const spentBefore = escapeStepSpent;
+      escapeMirrorDeposit(s.order[1]);
+      out.wrongPenalty = escapeStepSpent > spentBefore && s.deposited.length === 0;
+
+      // Bon ordre : dépose les 3 fragments dans l'ordre → solved.
+      s.order.forEach(idx => escapeMirrorDeposit(idx));
+      out.solved = s.solved === true && s.deposited.length === 3;
+
+      // Sortie réussie possible.
+      const clearedBefore = escapePocketsCleared;
+      exitEscapePocket(true);
+      out.exited = inEscapePocket === false && escapePocketsCleared === clearedBefore + 1;
+
+      // Écho : il brouille un fragment déposé en atteignant l'autel.
+      enterEscapePocket('mirror', { founder: 'salazar', houseMatch: false });
+      const s2 = escapePocketState;
+      s2.fragments.forEach(f => { f.picked = true; });
+      escapeMirrorDeposit(s2.order[0]);                 // 1 fragment scellé
+      const depAfterOne = s2.deposited.length;
+      s2.mirror.awake = true;
+      s2.mirror.pos = s2.altar;                         // écho sur l'autel
+      const spent2 = escapeStepSpent;
+      _escapeEchoStep();
+      out.echoScramble = s2.deposited.length === depAfterOne - 1 && escapeStepSpent > spent2;
+
+      // House-match : 1 fragment pré-ramassé + budget +20 %.
+      exitEscapePocket(false);
+      const depthBudget = computeEscapeStepBudget(typeof endgameTierIndex === 'function' ? endgameTierIndex(14) : 1);
+      enterEscapePocket('mirror', { founder: 'salazar', houseMatch: true });
+      out.houseFreebie = escapePocketState.fragments.some(f => f.picked);
+      out.houseBudget = escapeStepBudget >= Math.round(depthBudget * 1.2) - 1;
+      exitEscapePocket(false);
+    } catch (e) { out.threw = true; out.err = String(e && e.message || e); }
+    return out;
+  });
+
+  assert(!r.threw, 'miroir sans exception (' + (r.err || '') + ')');
+  assert(r.typeOk, 'type mirror, non résolu au départ');
+  assert(r.threeFrags, '3 fragments générés');
+  assert(r.orderOk, 'ordre de dépôt à 3 éléments');
+  assert(r.topo, 'topologie : 3 coffres + 1 autel + 1 faille');
+  assert(r.allPicked, 'ramassage : 3 fragments + écho réveillé');
+  assert(r.wrongPenalty, 'dépôt désordonné : +corruption, progress 0');
+  assert(r.solved, 'dépôt ordonné des 3 → solved=true');
+  assert(r.exited, 'sortie réussie : hors poche + crédit');
+  assert(r.echoScramble, 'écho à l\'autel : brouille un fragment + corruption');
+  assert(r.houseFreebie, 'House-match : 1 fragment pré-ramassé');
+  assert(r.houseBudget, 'House-match : budget +20 %');
+
+  if (errors.length) { errors.forEach(e => console.log('  ⚠️ ', e)); throw new Error(`${errors.length} erreurs JS (miroir)`); }
+  console.log('  ✅ Miroir de Salazar — combine/timing OK');
+  await browser.close();
+}
+
+// Escape Game (Lot 3) — Volet 3 : Type C « L'Écho du Scellement ». Brasiers à
+// allumer (rendent du budget), refuge-pause, échos hostiles, solved au 3ᵉ feu.
+async function scenarioEscapeWarden() {
+  console.log('\n── Scénario : Poche du Sceau — Écho du Scellement (Lot 3) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'], house: 'Serpentard' });
+
+  const r = await page.evaluate(() => {
+    const out = { threw: false };
+    try {
+      victoryAchieved = true;
+      currentFloor = 14;
+      const depthBudget = computeEscapeStepBudget(typeof endgameTierIndex === 'function' ? endgameTierIndex(14) : 1);
+      // Serpentard ≠ Godric/Helga → aucun brasier offert.
+      enterEscapePocket('warden', { founder: 'godric', houseMatch: false });
+      const s = escapePocketState;
+      out.typeOk = s.type === 'warden' && s.solved === false;
+      out.threeBraz = Array.isArray(s.braziers) && s.braziers.length === 3;
+      out.tightBudget = escapeStepBudget <= Math.round(depthBudget * 0.70) + 1;
+
+      // Topologie : 3 brasiers (RUNE), ≥1 refuge, 1 faille, 1-2 échos hostiles.
+      let rune = 0, refuge = 0, rift = 0, foes = 0;
+      for (let y = 0; y < dungeon.length; y++) for (let x = 0; x < dungeon[y].length; x++) {
+        if (dungeon[y][x] === CELL.RUNE) rune++;
+        if (dungeon[y][x] === CELL.REFUGE) refuge++;
+        if (dungeon[y][x] === CELL.SEAL_RIFT) rift++;
+        if (enemyMap[y][x]) foes++;
+      }
+      out.topo = rune === 3 && refuge >= 1 && rift === 1;
+      out.foes = foes >= 1 && foes <= 2;
+
+      // Allume les 3 brasiers : chacun rend du budget, le 3ᵉ → solved.
+      escapeStepSpent = 12;
+      let refundedOk = true;
+      s.braziers.forEach((b, i) => {
+        const [bx, by] = b.cell.split(',').map(Number);
+        playerX = bx; playerY = by;
+        const before = escapeStepSpent;
+        escapeLightBrazier();
+        if (!(escapeStepSpent < before)) refundedOk = false;  // budget regagné
+      });
+      out.refunded = refundedOk;
+      out.solved = s.solved === true && s.braziers.every(b => b.lit);
+
+      // Refuge-pause : 1× ; fige la jauge 3 pas (pas de consommation).
+      enterEscapePocket('warden', { founder: 'godric', houseMatch: false });
+      const s2 = escapePocketState;
+      escapeRefugePause();
+      out.pauseArmed = s2.refugePause === 3 && s2.refugeUsed === true;
+      const spentBefore = escapeStepSpent;
+      _escapeOnStep();
+      out.paused = escapeStepSpent === spentBefore && s2.refugePause === 2;
+
+      // House-match : brasier pré-allumé + budget +20 %.
+      exitEscapePocket(false);
+      enterEscapePocket('warden', { founder: 'godric', houseMatch: true });
+      out.houseFreebie = escapePocketState.braziers.some(b => b.lit);
+      out.houseBudget = escapeStepBudget >= Math.round(depthBudget * 0.70 * 1.2) - 1;
+      exitEscapePocket(false);
+    } catch (e) { out.threw = true; out.err = String(e && e.message || e); }
+    return out;
+  });
+
+  assert(!r.threw, 'warden sans exception (' + (r.err || '') + ')');
+  assert(r.typeOk, 'type warden, non résolu au départ');
+  assert(r.threeBraz, '3 brasiers générés');
+  assert(r.tightBudget, 'budget serré (×0.7)');
+  assert(r.topo, 'topologie : 3 brasiers + refuge + faille');
+  assert(r.foes, '1-2 échos hostiles placés');
+  assert(r.refunded, 'brasier : budget regagné à chaque allumage');
+  assert(r.solved, '3 brasiers allumés → solved=true');
+  assert(r.pauseArmed, 'refuge : pause 3 pas armée (1×)');
+  assert(r.paused, 'refuge : jauge figée (pas non consommé)');
+  assert(r.houseFreebie, 'House-match : 1 brasier pré-allumé');
+  assert(r.houseBudget, 'House-match : budget +20 %');
+
+  if (errors.length) { errors.forEach(e => console.log('  ⚠️ ', e)); throw new Error(`${errors.length} erreurs JS (warden)`); }
+  console.log('  ✅ Écho du Scellement — pression/brasiers OK');
+  await browser.close();
+}
+
+// Escape Game (Lot 3) — Volet 4 : échec Ironman = Écho Corrompu obligatoire.
+// Défaite = mort + héritage Boucle (profil, badge HoF, fait d'arme).
+async function scenarioEscapeIronman() {
+  console.log('\n── Scénario : Poche du Sceau — échec Ironman (Lot 3) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  const r = await page.evaluate(() => {
+    const out = { threw: false };
+    try {
+      ironmanMode = true;
+      victoryAchieved = true;
+      currentFloor = 14;
+      defeatedBosses = new Set();
+
+      // Entrée + épuisement du budget → en Ironman, l'Écho Corrompu surgit.
+      enterEscapePocket('riddle');
+      escapeStepSpent = escapeStepBudget;   // 100 % au prochain pas
+      _escapeOnStep();
+      out.battle = inBattle === true && isEscapeWardenBattle() === true;
+      out.echoEnemy = Array.isArray(enemyGroup) && enemyGroup.length >= 1
+        && enemyGroup[0].id === 'echo_corrompu';
+      out.featCredited = defeatedBosses.has('echo_corrompu');   // crédité au spawn
+
+      // Victoire sur l'Écho → sortie en échec standard (vie sauve + malus).
+      _escapeOnWardenVictory();
+      out.survived = isEscapeWardenBattle() === false
+        && inEscapePocket === false && corruptionMalusSteps === 20;
+
+      // Défaite : surgit à nouveau, puis mort → héritage Boucle.
+      ironmanMode = true;
+      corruptionMalusSteps = 0;
+      enterEscapePocket('riddle');
+      escapeStepSpent = escapeStepBudget;
+      _escapeOnStep();
+      out.battle2 = isEscapeWardenBattle() === true;
+      const deathMsg = _escapeOnWardenDefeat();
+      out.deathMsg = typeof deathMsg === 'string' && /Poche du Sceau/.test(deathMsg);
+      out.profileSealed = getPlayerProfile().sealedDeaths >= 1
+        && computeProfileTitles(getPlayerProfile()).includes('Scellé dans la Boucle');
+      // Badge de cause + fait d'arme crédités dans le résultat Ironman.
+      const res = buildIronmanResult(deathMsg);
+      out.badge = res.death_cause === 'Poche du Sceau';
+      out.feat = Array.isArray(res.feats) && res.feats.some(f => /Écho Corrompu/.test(f.label));
+    } catch (e) { out.threw = true; out.err = String(e && e.message || e); }
+    return out;
+  });
+
+  assert(!r.threw, 'ironman sans exception (' + (r.err || '') + ')');
+  assert(r.battle, 'budget épuisé en Ironman → combat de l\'Écho Corrompu');
+  assert(r.echoEnemy, 'ennemi = echo_corrompu');
+  assert(r.featCredited, 'fait d\'arme crédité dès le spawn (defeatedBosses)');
+  assert(r.survived, 'victoire sur l\'Écho → éjection standard + malus, vie sauve');
+  assert(r.battle2, 'ré-épuisement → Écho Corrompu de nouveau');
+  assert(r.deathMsg, 'défaite : texte de mort « Poche du Sceau »');
+  assert(r.profileSealed, 'héritage : profil sealedDeaths + titre « Scellé dans la Boucle »');
+  assert(r.badge, 'résultat Ironman : badge death_cause « Poche du Sceau »');
+  assert(r.feat, 'résultat Ironman : fait d\'arme « Écho Corrompu affronté »');
+
+  if (errors.length) { errors.forEach(e => console.log('  ⚠️ ', e)); throw new Error(`${errors.length} erreurs JS (ironman)`); }
+  console.log('  ✅ Échec Ironman — Écho Corrompu + héritage Boucle OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioEscapePocket, scenarioEscapeRiddleSolve, scenarioEscapeMalus, scenarioEscapeMirror, scenarioEscapeWarden, scenarioEscapeIronman, scenarioCh13EndgamePivot, scenarioScriptedFloorBeats, scenarioVoixDesRuines, scenarioDungeonLife, scenarioFountain, scenarioRefuge, scenarioSoloSoftlock, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioRespawn20Percent, scenarioVictoryTrigger, scenarioStairsGated, scenarioFinalBossGuaranteed, scenarioChamberGuardians, scenarioChamberGuardianPolish, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioFloorTheming, scenarioZoneDEchoes, scenarioZoneDFx, scenarioFounderChamber, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioRoomOfRequirement, scenarioStairsReachable, scenarioHouseRoomBias] };

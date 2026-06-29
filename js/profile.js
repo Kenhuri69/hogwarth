@@ -23,6 +23,7 @@ function _profileEmpty() {
     victories: 0,
     pactVictories: 0,
     cyclesBroken: 0,
+    sealedDeaths: 0,   // morts en Poche du Sceau (Ironman) — héritage Boucle (Lot 3)
     endingsSeen: { victory: false, victory_pact: false, cycle_broken: false },
     titles: []
   };
@@ -38,6 +39,7 @@ function _profileRead() {
     base.victories     = (typeof obj.victories === 'number')     ? obj.victories     : 0;
     base.pactVictories = (typeof obj.pactVictories === 'number') ? obj.pactVictories : 0;
     base.cyclesBroken  = (typeof obj.cyclesBroken === 'number')  ? obj.cyclesBroken  : 0;
+    base.sealedDeaths  = (typeof obj.sealedDeaths === 'number')  ? obj.sealedDeaths  : 0;
     if (obj.endingsSeen && typeof obj.endingsSeen === 'object') {
       base.endingsSeen.victory      = !!obj.endingsSeen.victory;
       base.endingsSeen.victory_pact = !!obj.endingsSeen.victory_pact;
@@ -76,6 +78,8 @@ function computeProfileTitles(profile) {
   if (cycles >= 1 || seen.cycle_broken) {
     titles.push(cycles >= 2 ? `Briseur de Cycle ★${cycles}` : 'Briseur de Cycle');
   }
+  // Escape Game (Lot 3) — héritage d'une mort en Poche du Sceau (Ironman).
+  if ((profile.sealedDeaths | 0) >= 1) titles.push('Scellé dans la Boucle');
   return titles;
 }
 
@@ -112,6 +116,16 @@ function recordEndingToProfile(endingType) {
   } else {
     return false;
   }
+  p.titles = computeProfileTitles(p);
+  return _profileWrite(p);
+}
+
+// Escape Game (Lot 3) — enregistre une mort en Poche du Sceau (Ironman). Trace
+// persistante hors-save : débloque le titre « Scellé dans la Boucle ». Appelé
+// par triggerDeath via _escapeOnWardenDefeat (escape-pocket.js).
+function recordSealedDeathToProfile() {
+  const p = _profileRead();
+  p.sealedDeaths = (p.sealedDeaths | 0) + 1;
   p.titles = computeProfileTitles(p);
   return _profileWrite(p);
 }

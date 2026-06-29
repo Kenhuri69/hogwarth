@@ -1673,6 +1673,12 @@ function loadNpcs() {
   // endingsSeen suffit même sans compteur (saves rétro-compatibles).
   check('titres: endingsSeen seul → Vainqueur',
     computeProfileTitles({ endingsSeen: { victory: true } }).join('|') === "Vainqueur de l'Ombre");
+
+  // Escape Game (Lot 3) — mort en Poche du Sceau (Ironman) → « Scellé dans la Boucle ».
+  check('titres: sealedDeaths≥1 → Scellé dans la Boucle',
+    computeProfileTitles({ sealedDeaths: 1 }).includes('Scellé dans la Boucle'));
+  check('titres: sealedDeaths 0 → pas de titre Scellé',
+    !computeProfileTitles({ sealedDeaths: 0 }).includes('Scellé dans la Boucle'));
 })();
 
 // ============================================================
@@ -2773,6 +2779,51 @@ function loadNpcs() {
   ];
   check('reachable: cible isolée → false', _escapeReachable(split, 1, 1, 3, 1, W) === false);
   check('reachable: spawn=cible → true',   _escapeReachable(open, 1, 1, 1, 1, W) === true);
+})();
+
+// ============================================================
+// N ter. escape-pocket.js — helpers purs Lot 3
+//   corruptionMalusMult / escapeBrazierRefund / pickEscapePocketType
+// ============================================================
+(function testEscapePocketLot3() {
+  const { corruptionMalusMult, escapeBrazierRefund, pickEscapePocketType } = loadModule(
+    'js/escape-pocket.js',
+    ['corruptionMalusMult', 'escapeBrazierRefund', 'pickEscapePocketType']);
+
+  // — Malus « Corruption » : −15 % tant que le compteur est positif —
+  check('malus: 1 pas → 0.85',   corruptionMalusMult(1) === 0.85);
+  check('malus: 20 pas → 0.85',  corruptionMalusMult(20) === 0.85);
+  check('malus: 0 pas → 1 (neutre)', corruptionMalusMult(0) === 1);
+  check('malus: négatif → 1',    corruptionMalusMult(-3) === 1);
+  check('malus: non-nombre → 1', corruptionMalusMult(undefined) === 1);
+
+  // — Budget rendu par un brasier (~15 %, plancher 1) —
+  check('brasier: 40 → 6',  escapeBrazierRefund(40) === 6);
+  check('brasier: 18 → 3',  escapeBrazierRefund(18) === 3);
+  check('brasier: 2 → plancher 1', escapeBrazierRefund(2) === 1);
+  check('brasier: 0 → plancher 1', escapeBrazierRefund(0) === 1);
+
+  // — Tirage de type + Fondateur, biais Maison —
+  // rng déterministe par séquence ; r()<0.5 au 1er tirage → biais Maison.
+  const seq = (vals) => { let i = 0; return () => vals[i++ % vals.length]; };
+  // 1er appel < 0.5 ET Maison reconnue → Fondateur de la Maison.
+  let p = pickEscapePocketType(seq([0.1]), 'Serpentard');
+  check('pick: biais Serpentard → salazar/mirror', p.founder === 'salazar' && p.type === 'mirror' && p.houseMatch === true);
+  p = pickEscapePocketType(seq([0.1]), 'Serdaigle');
+  check('pick: biais Serdaigle → rowena/riddle',  p.founder === 'rowena' && p.type === 'riddle' && p.houseMatch === true);
+  p = pickEscapePocketType(seq([0.1]), 'Gryffondor');
+  check('pick: biais Gryffondor → godric/warden', p.founder === 'godric' && p.type === 'warden' && p.houseMatch === true);
+  // 1er appel ≥ 0.5 → tirage uniforme (2e valeur) : 0 → godric (warden).
+  p = pickEscapePocketType(seq([0.9, 0.0]), 'Serpentard');
+  check('pick: pas de biais → uniforme godric',   p.founder === 'godric' && p.type === 'warden' && p.houseMatch === false);
+  // Maison sans Fondateur connu → toujours uniforme (1 seul r() : 0.6 → salazar).
+  p = pickEscapePocketType(seq([0.6]), null);
+  check('pick: Maison nulle → uniforme (salazar)', p.founder === 'salazar' && p.houseMatch === false);
+  // Type valide pour chaque Fondateur tiré uniformément.
+  ['godric', 'rowena', 'salazar', 'helga'].forEach((f, i) => {
+    const q = pickEscapePocketType(seq([0.9, i / 4]), 'Poufsouffle');
+    check('pick: ' + f + ' → type défini', ['riddle', 'mirror', 'warden'].includes(q.type));
+  });
 })();
 
 // ============================================================
