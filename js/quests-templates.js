@@ -424,6 +424,22 @@ const QUEST_TEMPLATES = [
     repeatableReward: { xp: 230, gold: 195, item: "page_grimoire" },
     location: "Boucle Ténébreuse (étage 11+)"
   },
+  // « Endurer les Poches » (escape-game-traps.md — Lot 4). Objectif `escape` :
+  // re-sceller 2 Poches du Sceau (compteur via checkEscapePocketQuests à la
+  // sortie réussie). Répétable everyLevels:2 → alimente le farm Forge/Biblio.
+  {
+    id: "endurer_poches",
+    title: "Endurer les Poches",
+    giver: "Gardien de la Boucle",
+    desc: "Les gardes runiques du Sceau te happeront encore. Re-scelle deux Poches — chaque épreuve traversée raffermit le verrou, et la Boucle te paiera en matière.",
+    objectives: [
+      { type: "escape", amount: 2, progress: 0, completed: false }
+    ],
+    reward: { xp: 320, gold: 240, item: "essence_tenebres" },
+    repeatable: { everyLevels: 2 },
+    repeatableReward: { xp: 240, gold: 180, item: "page_grimoire" },
+    location: "Boucle Ténébreuse (étage 11+)"
+  },
   // ── Ruines Anciennes — purges & chasse (Gardien de la Boucle) ────
   // Cibles propres à la Zone D (Spectre de Givre, Spectre Renforcé,
   // Basilic Ancestral). Modèle identique aux purge_* (kill, repeatable).

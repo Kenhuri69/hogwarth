@@ -34,6 +34,8 @@
 //   eclatLoop → ctx.accumulatedEclats >= value   (Porteur d'Éclats — V1, ch.11)
 //   cycleBroken → ctx.cycleBroken === true        (« Briser le Cycle » — V3, ch.11)
 //   ending  → ctx.endingType === value            (label de fin dérivé — ch.14 §14.6.2, P3)
+//   escapeCleared → ctx.escapePocketsCleared >= value  (Poches du Sceau re-scellées — Lot 4)
+//   escapeFounder → ctx.escapeFoundersCleared.has(value)  (Fondateur d'une Poche réussie — Lot 4)
 // ============================================================
 
 const CODEX_ENTRIES = [
@@ -181,6 +183,62 @@ const CODEX_ENTRIES = [
     },
   },
 
+  // ── 🔹 Échos des Poches du Sceau (escape-game-traps.md — Lot 4) ──
+  // Une Poche du Sceau réussie ouvre l'écho de SON Fondateur (robinet
+  // `escapeFounder`) ; le porter assez d'Éclats (eclatLoop 5) le révèle.
+  // ids `poche_<founder>` (le plan disait `echo_<founder>` mais `echo_salazar`
+  // est déjà pris par l'entrée personnage). Distincts des `voix_<founder>`
+  // (échos canon de zone D) : ces entrées-ci disent ce que la Poche, en TE
+  // mettant à l'épreuve, t'apprend de chaque Fondateur.
+  {
+    id: 'poche_godric', category: 'eclats', icon: '🦁', act: 4,
+    title: 'La Poche de Godric',
+    links: ['voix_godric', 'poche_du_sceau', 'echo_scellement'],
+    unlockConditions: [{ type: 'escapeFounder', value: 'godric' }],
+    revealedBy: [{ type: 'eclatLoop', value: 5 }],
+    textVersions: {
+      veiled: "La Poche t'a jeté dans l'instant où Godric tint la porte. La brume montait, la peur avec — et il fallait, comme lui, ne pas reculer le temps d'allumer les feux. Sortir, c'était tenir.",
+      revealed: "Tu comprends maintenant l'épreuve de Godric : la Poche ne demande pas de vaincre, elle demande de RESTER. Tenir la porte quand le froid avance n'est pas un éclat de bravoure — c'est un refus répété, pas après pas. En re-scellant sa Poche, tu n'as pas prouvé ta force : tu as prouvé que tu pouvais ne pas fuir.",
+    },
+    variants: { house: { Gryffondor: "La salle t'a reconnu d'emblée : un feu déjà allumé, un peu de répit. Godric ne fait pas de cadeau — il salue les siens." } },
+  },
+  {
+    id: 'poche_rowena', category: 'eclats', icon: '🦅', act: 4,
+    title: 'La Poche de Rowena',
+    links: ['voix_rowena', 'poche_du_sceau', 'echo_scellement'],
+    unlockConditions: [{ type: 'escapeFounder', value: 'rowena' }],
+    revealedBy: [{ type: 'eclatLoop', value: 5 }],
+    textVersions: {
+      veiled: "La Poche de Rowena est une phrase à reconstituer : des stèles, des énigmes, un sceau qui ne cède qu'à la réponse juste. Comprendre, ici, est la seule clé.",
+      revealed: "L'épreuve de Rowena n'a rien d'une devinette gratuite : chaque glyphe gravé est une part de la peur enfin NOMMÉE. On ne re-scelle pas en frappant — on re-scelle en comprenant où poser le mot. Sortir de sa Poche, c'est admettre que la lucidité précède toujours le courage : voir la faille avant de la combattre.",
+    },
+    variants: { house: { Serdaigle: "L'inscription s'est révélée entière, sans détour : Rowena ne cache pas la réponse aux siens — elle leur montre la question." } },
+  },
+  {
+    id: 'poche_salazar', category: 'eclats', icon: '🐍', act: 4,
+    title: 'La Poche de Salazar',
+    links: ['voix_salazar', 'poche_du_sceau', 'echo_scellement'],
+    unlockConditions: [{ type: 'escapeFounder', value: 'salazar' }],
+    revealedBy: [{ type: 'eclatLoop', value: 5 }],
+    textVersions: {
+      veiled: "La Poche de Salazar te reflète : un écho de toi-même rôde, et il faut remettre les fragments du Sceau dans l'ordre avant que ton reflet ne les brouille. Le miroir, toujours le miroir.",
+      revealed: "Salazar a scellé sa faute avec un miroir — et sa Poche te tend le tien. Le reflet qui te poursuit n'est pas un ennemi : c'est ta propre hâte, ta propre faute, qui défait ce que tu poses si tu cèdes. Re-sceller sa Poche, ce n'est pas vaincre le reflet : c'est aller assez vite, et assez juste, pour ne pas avoir à l'écouter.",
+    },
+    variants: { house: { Serpentard: "Un fragment t'attendait déjà en main. Salazar te parle en héritier — il te fait confiance pour ce que tu en feras." } },
+  },
+  {
+    id: 'poche_helga', category: 'eclats', icon: '🦡', act: 4,
+    title: 'La Poche de Helga',
+    links: ['voix_helga', 'poche_du_sceau', 'echo_scellement'],
+    unlockConditions: [{ type: 'escapeFounder', value: 'helga' }],
+    revealedBy: [{ type: 'eclatLoop', value: 5 }],
+    textVersions: {
+      veiled: "La Poche de Helga avance sous pression — mais au milieu, taillé dans la pierre, un abri où reprendre son souffle. Tenir, oui, mais sans s'épuiser : elle pensait déjà aux vivants d'après.",
+      revealed: "L'épreuve de Helga n'oppose pas la peur de front : elle apprend à la traverser sans se perdre. Le refuge au cœur de la Poche n'est pas une faiblesse — c'est sa leçon : on ne tient pas une porte mille ans sans creuser, derrière, de quoi survivre. Re-sceller sa Poche, c'est comprendre qu'abriter vaut autant que résister.",
+    },
+    variants: { house: { Poufsouffle: "La salle t'a offert un répit d'emblée. Helga ne te confie pas le verrou — elle te confie l'abri, et c'est tout aussi sacré." } },
+  },
+
   // ── 📖 Glossaire ────────────────────────────────────────────
   {
     id: 'froid_surnaturel', category: 'glossaire', icon: '🧊', act: 1,
@@ -280,6 +338,21 @@ const CODEX_ENTRIES = [
       veiled: "Sous le dernier palier du château, la pierre change de langue. Plus de blason, plus de torche : des mégalithes runiques, antérieurs à tout nom. Le froid n'y est plus une météo — c'est l'air d'avant.",
       revealed: "Poudlard fut bâti comme un couvercle. Les Fondateurs ont choisi cette colline non pour sa beauté, mais parce qu'il fallait poser une école — du bruit d'enfants, des siècles de vie — sur ce que ces Ruines contiennent. L'école est le mensonge tendre qu'on raconte par-dessus une vérité qu'on ne peut pas tuer. Descendre ici, c'est lire la première page sous toutes les autres.",
       corrupted: "Plus profond encore, les runes ne se lisent plus : elles se souviennent de toi. Le lieu a cessé de distinguer jadis de maintenant — tu n'explores plus les Ruines, tu en es devenu une ligne.",
+    },
+  },
+
+  // Poche du Sceau (escape-game-traps.md — Lot 4). Lieu éphémère : écho figé
+  // du scellement, rendu marchable. Ouvert à la 1ʳᵉ réussite (escapeCleared 1),
+  // révélé quand on en a re-scellé plusieurs (escapeCleared 3).
+  {
+    id: 'poche_du_sceau', category: 'lieux', icon: '🌀', act: 4,
+    title: 'Les Poches du Sceau',
+    links: ['ruines_anciennes', 'echo_scellement', 'echos_temporels', 'briser_cycle'],
+    unlockConditions: [{ type: 'escapeCleared', value: 1 }],
+    revealedBy: [{ type: 'escapeCleared', value: 3 }],
+    textVersions: {
+      veiled: "Certaines runes des Ruines ne te blessent pas : elles te CLASSENT. Le temps se replie, le froid avale la vue, et te voilà dans une poche hors du monde — un fragment du scellement, rejoué. On n'en ressort qu'en refaisant, à son échelle, le geste des Quatre : re-sceller.",
+      revealed: "Les Poches ne sont pas des pièges : ce sont les fail-safes du Sceau, déréglés depuis que ta victoire a élargi la faille. Les gardes runiques ne distinguent plus l'héritier de la menace — alors ils éprouvent. Tenir comme Godric, comprendre comme Rowena, s'ordonner comme Salazar, s'abriter comme Helga : quatre façons d'oser regarder le fond. Chaque Poche re-scellée te rend un Éclat — non un trophée, mais un peu plus de vérité sur le verrou. On ne te punit pas d'être descendu : on te demande si tu en es digne.",
     },
   },
 
@@ -785,6 +858,11 @@ function _codexCondMet(cond, ctx) {
       return ctx.cycleBroken === true;
     case 'ending':
       return ctx.endingType === cond.value;
+    case 'escapeCleared':   // Poches du Sceau re-scellées (escapePocketsCleared) — Lot 4
+      return typeof ctx.escapePocketsCleared === 'number' && ctx.escapePocketsCleared >= cond.value;
+    case 'escapeFounder':   // Fondateur d'une Poche jouée & réussie — Lot 4
+      return !!(ctx.escapeFoundersCleared && ctx.escapeFoundersCleared.has
+                && ctx.escapeFoundersCleared.has(cond.value));
     default:
       return false;
   }

@@ -589,6 +589,8 @@ function _renderQuestStep(o, isActive, ready, isFirst) {
     label = `Découvrir un jardin d'herbes caché`;
   } else if (o.type === 'search') {
     label = `Fouiller ${o.amount} recoin${o.amount > 1 ? 's' : ''}`;
+  } else if (o.type === 'escape') {
+    label = `Re-sceller ${o.amount} Poche${o.amount > 1 ? 's' : ''} du Sceau`;
   } else if (o.type === 'herb') {
     const it = o.itemId && typeof ITEMS !== 'undefined' ? ITEMS.find(x => x.id === o.itemId) : null;
     label = it
@@ -902,6 +904,26 @@ window.checkKillQuests = function(monsterId) {
       addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/quest.png" alt=""> Quête « ${q.title} » : ${step.progress}/${step.amount}`, '');
     }
   });
+};
+
+// ── Appelée à la sortie réussie d'une Poche du Sceau ─────────
+// Met à jour la progression des quêtes « escape » (Endurer les Poches —
+// Gardien de la Boucle). Mirror de checkKillQuests : NE complète PAS la quête
+// automatiquement, le joueur retourne voir le donneur. Défensif.
+window.checkEscapePocketQuests = function() {
+  if (typeof activeQuests === 'undefined' || !Array.isArray(activeQuests)) return;
+  activeQuests.forEach((q) => {
+    const step = getActiveStep(q);
+    if (!step || step.type !== 'escape') return;
+    step.progress = (step.progress || 0) + 1;
+    if (step.progress >= step.amount) {
+      step.completed = true;
+      addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/quest.png" alt=""> Quête « ${q.title} » prête — retourne voir ${q.giver}.`, 'good');
+    } else {
+      addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/quest.png" alt=""> Quête « ${q.title} » : ${step.progress}/${step.amount}`, '');
+    }
+  });
+  if (typeof updateQuestTracker === 'function') updateQuestTracker();
 };
 
 // ── Appelée après le ramassage d'un feuillet de page ────────

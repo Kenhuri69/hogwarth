@@ -94,3 +94,17 @@
   .escape-hud-objective { font-size: 11px; }
   .escape-hud-gauge { height: 14px; }
 }
+
+/* ── Transition d'entrée/sortie « violet-givre » (Lot 4) ──────────────
+   Surcouche de #tier-transition-overlay : recolore le fondu noir en un
+   dégradé givre-violet propre à la Poche du Sceau (entrée + re-scellement).
+   Le timing/affichage reste piloté par .active (css/style.css). */
+#tier-transition-overlay.escape-fade {
+  background: radial-gradient(circle at 50% 45%,
+              rgba(48, 30, 78, 0.92) 0%,
+              rgba(20, 26, 46, 0.96) 55%,
+              rgba(8, 12, 22, 0.98) 100%);
+  color: #cfe0ff;
+  text-shadow: 0 0 28px rgba(150, 130, 230, 0.8),
+               0 0 12px rgba(140, 200, 255, 0.5);
+}

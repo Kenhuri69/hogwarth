@@ -80,6 +80,9 @@ function _codexContext() {
     cycleBroken: (typeof cycleBroken !== 'undefined') ? !!cycleBroken : false,
     // Robinet `ending` (ch.14 §14.6.2, P3) : label de fin dérivé (épilogue).
     endingType: (typeof endingType !== 'undefined') ? endingType : null,
+    // Robinets Poche du Sceau (escape-game-traps.md — Lot 4).
+    escapePocketsCleared: (typeof escapePocketsCleared !== 'undefined') ? escapePocketsCleared : 0,
+    escapeFoundersCleared: (typeof escapeFoundersCleared !== 'undefined') ? escapeFoundersCleared : new Set(),
   };
 }
 

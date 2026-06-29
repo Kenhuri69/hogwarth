@@ -113,6 +113,8 @@ function _serializeState() {
     escapePocketState,
     _escapeSnapshot,
     escapePocketsCleared,
+    escapeFoundersCleared: (typeof escapeFoundersCleared !== 'undefined' && escapeFoundersCleared)
+      ? Array.from(escapeFoundersCleared) : [],
     corruptionMalusSteps,
     escapeStepBudget,
     escapeStepSpent,
@@ -447,6 +449,9 @@ function _applyState(gs) {
     escapePocketState    = gs.escapePocketState || null;
     _escapeSnapshot      = gs._escapeSnapshot || null;
     escapePocketsCleared = (typeof gs.escapePocketsCleared === 'number') ? gs.escapePocketsCleared : 0;
+    if (typeof escapeFoundersCleared !== 'undefined') {
+      escapeFoundersCleared = new Set(Array.isArray(gs.escapeFoundersCleared) ? gs.escapeFoundersCleared : []);
+    }
     corruptionMalusSteps = (typeof gs.corruptionMalusSteps === 'number') ? gs.corruptionMalusSteps : 0;
     escapeStepBudget     = (typeof gs.escapeStepBudget === 'number') ? gs.escapeStepBudget : 0;
     escapeStepSpent      = (typeof gs.escapeStepSpent === 'number') ? gs.escapeStepSpent : 0;
