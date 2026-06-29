@@ -18,9 +18,9 @@ async function loadTextures() {
   // En cours → attendre la promesse existante
   if (_loadingPromise) return _loadingPromise;
 
-  const wallNames  = ['stone1', 'stone2', 'wood', 'tapestry', 'cavern_wall', 'rune_wall'];
-  const floorNames = ['stone', 'carpet', 'cavern_floor', 'rune_floor'];
-  const ceilNames  = ['beams', 'stone', 'cavern_ceiling', 'rune_ceiling'];
+  const wallNames  = ['stone1', 'stone2', 'wood', 'tapestry', 'cavern_wall', 'rune_wall', 'seal_wall'];
+  const floorNames = ['stone', 'carpet', 'cavern_floor', 'rune_floor', 'seal_floor'];
+  const ceilNames  = ['beams', 'stone', 'cavern_ceiling', 'rune_ceiling', 'seal_ceiling'];
 
   function loadOne(img, src) {
     return new Promise(resolve => {

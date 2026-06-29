@@ -895,6 +895,8 @@ let escapePocketState    = null;   // { type, solved, progress, sourceFloor }
 let _escapeSnapshot      = null;   // instantané de l'étage source (restauré à la sortie)
 let escapePocketsCleared = 0;      // stat : poches re-scellées (profil/HoF — Lot 4)
 let corruptionMalusSteps = 0;      // pas de malus « corruption » après échec (Lot 3)
+let escapeStepBudget     = 0;      // budget de pas (jauge de corruption — Lot 2)
+let escapeStepSpent      = 0;      // pas consommés dans la poche courante (Lot 2)
 
 // Paliers d'Éclats déjà célébrés (héritage visible — ch.11 P0). Anti-doublon
 // pour les toasts/cosmétiques de palier (5/10/15) déclenchés dans

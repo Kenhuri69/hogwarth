@@ -116,6 +116,13 @@ function _step(dir, faceDir) {
   playerX += dx; playerY += dy;
   visited[playerY][playerX] = true;
   stepCount++;
+  // Escape Game (escape-game-traps.md, Lot 2) — jauge de corruption : chaque pas
+  // dans la Poche du Sceau consomme du budget ; à épuisement, éjection en échec.
+  // Call-site défensif (no-op hors poche / si le module n'a pas chargé).
+  if (typeof inEscapePocket !== 'undefined' && inEscapePocket
+      && typeof _escapeOnStep === 'function') {
+    if (_escapeOnStep()) return;  // budget épuisé → group éjecté, on stoppe le pas
+  }
   // Jardin d'herbes (Potions P6.b3) : une fois éveillé, le jardin pousse
   // d'1 herbe tous GARDEN_STEP_INTERVAL pas, plafonné à GARDEN_CAP.
   if (typeof gardenDiscovered !== 'undefined' && gardenDiscovered
@@ -447,12 +454,23 @@ function _exploreDescriptors() {
   const stairsSealed = currentFloor === 10
     && !(typeof victoryAchieved !== 'undefined' && victoryAchieved);
   // Stèle d'énigme V2 §3 — devinette piochée dans RIDDLES gardant un coffre.
-  const steleSolved = !!(runeStele && runeStele.solved);
-  const steleRiddle = (runeStele && !steleSolved && typeof getRiddleById === 'function')
-    ? getRiddleById(runeStele.riddleId) : null;
+  // Escape Game (Lot 2) — dans une Poche du Sceau, la stèle courante provient
+  // d'escapePocketState (une par salle) et route vers answerEscapeStele.
+  const inPocket = (typeof inEscapePocket !== 'undefined') && inEscapePocket;
+  let escapeStele = null;
+  if (inPocket && typeof escapePocketState !== 'undefined' && escapePocketState
+      && Array.isArray(escapePocketState.steles)) {
+    const _k = `${playerX},${playerY}`;
+    escapeStele = escapePocketState.steles.find(s => s.cell === _k) || null;
+  }
+  const steleSrc    = inPocket ? escapeStele : runeStele;
+  const steleSolved = !!(steleSrc && steleSrc.solved);
+  const steleRiddle = (steleSrc && !steleSolved && typeof getRiddleById === 'function')
+    ? getRiddleById(steleSrc.riddleId) : null;
+  const steleHandler = inPocket ? 'answerEscapeStele' : 'answerSteleRiddle';
   const steleBtns = steleRiddle
     ? steleRiddle.choices
-        .map((c, i) => `<button class="explore-btn" onclick="answerSteleRiddle(${i})">${c}</button>`)
+        .map((c, i) => `<button class="explore-btn" onclick="${steleHandler}(${i})">${c}</button>`)
         .join('\n')
       + `\n<button class="explore-btn secondary" onclick="_hideExploreOverlay()">S'éloigner</button>`
     : `<button class="explore-btn secondary" onclick="_hideExploreOverlay()">S'éloigner</button>`;

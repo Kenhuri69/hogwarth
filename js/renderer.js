@@ -107,13 +107,17 @@ window._invalidatePatternCache = _invalidatePatternCache;
 // === FIX TEXTURE MISSING === Retourne toujours une clé texture existante.
 // Signature compatible : (x, y, depth) OU (d, side) — tous les paramètres sont optionnels.
 function getWallTextureType(x, y, depth) {
-  const VALID = ['stone1', 'stone2', 'wood', 'tapestry', 'cavern_wall', 'rune_wall'];
+  const VALID = ['stone1', 'stone2', 'wood', 'tapestry', 'cavern_wall', 'rune_wall', 'seal_wall'];
   const f = (typeof currentFloor === 'number' && currentFloor > 0) ? currentFloor : 1;
+  // Escape Game (escape-game-traps.md, Lot 2) — dans une Poche du Sceau, le
+  // tileset froid « seal_* » prime sur tout (testé sur inEscapePocket, PAS sur
+  // l'étage : currentFloor reste celui de l'étage source).
+  const inPocket = (typeof inEscapePocket !== 'undefined') && inEscapePocket;
   // Progression normale pilotée par la SoT FLOOR_THEMES (floor-themes.js).
   // Endgame : override rune_wall à l'étage 11+ post-victoire — matérialise
   // l'entrée dans les Ténèbres (cf. ENDGAME_PLAN.md §7.1bis).
   const dark = (typeof victoryAchieved !== 'undefined' && victoryAchieved) && f >= 11;
-  let key = dark ? 'rune_wall' : getFloorTheme(f).wall;
+  let key = inPocket ? 'seal_wall' : (dark ? 'rune_wall' : getFloorTheme(f).wall);
   // Garantie finale : si la texture n'est pas chargée, on retombe sur une clé chargée
   if (window.TEXTURES && window.TEXTURES.walls) {
     const img = window.TEXTURES.walls[key];
@@ -235,8 +239,10 @@ function _drawSideWall(side, d, near, far, di, edgeA) {
     }
 
     // Texture tuilée (pattern 'repeat' + clip trapèze, alpha plein) — via
-    // cache. Bois pour une porte, pierre du thème pour un mur.
-    const sideKey  = isDoor ? 'wood' : ((d > 3) ? 'stone2' : 'stone1');
+    // cache. Bois pour une porte, pierre du thème pour un mur. Escape Game
+    // (Lot 2) : murs latéraux en seal_wall dans une Poche du Sceau.
+    const _sealWall = (typeof inEscapePocket !== 'undefined') && inEscapePocket && !isDoor;
+    const sideKey  = isDoor ? 'wood' : (_sealWall ? 'seal_wall' : ((d > 3) ? 'stone2' : 'stone1'));
     const _pattern = _patternForKey('walls', sideKey);
     if (_pattern) {
       ctx.save();
@@ -374,7 +380,10 @@ function drawCorridor(cx, cy, scale, W, H) {
       if (far.x1 - far.x0 > 4) drawStoneBlocks(far.x0, far.y0, far.x1, far.y1, edgeA);
 
       // 2) Texture tuilée (pattern 'repeat' + clip, alpha plein)
-      const wallKey  = (d > 3) ? 'stone2' : 'stone1';
+      // Escape Game (Lot 2) : la façade (mur frontal) bascule sur seal_wall
+      // dans une Poche du Sceau — soigne la lisibilité de face de l'ambiance.
+      const wallKey  = ((typeof inEscapePocket !== 'undefined') && inEscapePocket)
+                     ? 'seal_wall' : ((d > 3) ? 'stone2' : 'stone1');
       const _wpattern = _patternForKey('walls', wallKey);
       if (_wpattern) {
         ctx.save();
@@ -425,18 +434,22 @@ function drawCorridor(cx, cy, scale, W, H) {
     ctx.fillRect(near.x0, far.y1, near.x1 - near.x0, near.y1 - far.y1);
 
     // Texture tuilée (pattern 'repeat', alpha plein) — via cache
+    // Escape Game (Lot 2) : seal_floor dans une Poche du Sceau (prime sur tout).
     // Endgame : rune_floor en étage 11+ post-victoire (§7.1bis).
+    const _floorPocket = (typeof inEscapePocket !== 'undefined') && inEscapePocket;
     const _floorDark = (typeof victoryAchieved !== 'undefined' && victoryAchieved)
                     && (typeof currentFloor === 'number') && currentFloor >= 11;
-    const _floorKey  = _floorDark ? 'rune_floor'
-                     : getFloorTheme(currentFloor).floor;
+    const _floorKey  = _floorPocket ? 'seal_floor'
+                     : (_floorDark ? 'rune_floor'
+                     : getFloorTheme(currentFloor).floor);
     const _fpattern  = _patternForKey('floor', _floorKey);
     if (_fpattern) {
       ctx.fillStyle = _fpattern;
       ctx.fillRect(near.x0, far.y1, near.x1 - near.x0, near.y1 - far.y1);
     }
     // Runes pulsées (P-D4) : glow violet froid qui « respire » sur le sol rune.
-    if (_floorDark && typeof _runePulseAlpha === 'function') {
+    // Supprimé dans une Poche du Sceau (le tileset seal_* a sa propre ambiance).
+    if (_floorDark && !_floorPocket && typeof _runePulseAlpha === 'function') {
       const _rp = _runePulseAlpha(di);
       if (_rp > 0) {
         ctx.fillStyle = `rgba(150,130,210,${_rp})`;
@@ -470,17 +483,20 @@ function drawCorridor(cx, cy, scale, W, H) {
     ctx.fillStyle = CEIL_C[di];
     ctx.fillRect(near.x0, near.y0, near.x1 - near.x0, far.y0 - near.y0);
 
+    const _ceilPocket = (typeof inEscapePocket !== 'undefined') && inEscapePocket;
     const _ceilDark = (typeof victoryAchieved !== 'undefined' && victoryAchieved)
                    && (typeof currentFloor === 'number') && currentFloor >= 11;
-    const _ceilKey  = _ceilDark ? 'rune_ceiling'
-                    : getFloorTheme(currentFloor).ceiling;
+    const _ceilKey  = _ceilPocket ? 'seal_ceiling'
+                    : (_ceilDark ? 'rune_ceiling'
+                    : getFloorTheme(currentFloor).ceiling);
     const _cpattern = _patternForKey('ceiling', _ceilKey);
     if (_cpattern) {
       ctx.fillStyle = _cpattern;
       ctx.fillRect(near.x0, near.y0, near.x1 - near.x0, far.y0 - near.y0);
     }
     // Runes pulsées (P-D4) — plafond, plus discret que le sol.
-    if (_ceilDark && typeof _runePulseAlpha === 'function') {
+    // Supprimé dans une Poche du Sceau (ambiance seal_* dédiée).
+    if (_ceilDark && !_ceilPocket && typeof _runePulseAlpha === 'function') {
       const _rp = _runePulseAlpha(di) * 0.7;
       if (_rp > 0) {
         ctx.fillStyle = `rgba(150,130,210,${_rp})`;

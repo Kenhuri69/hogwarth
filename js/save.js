@@ -114,6 +114,8 @@ function _serializeState() {
     _escapeSnapshot,
     escapePocketsCleared,
     corruptionMalusSteps,
+    escapeStepBudget,
+    escapeStepSpent,
     combatTutorialSeen,
     endgamePivotSeen,
     hiverClair,
@@ -446,6 +448,8 @@ function _applyState(gs) {
     _escapeSnapshot      = gs._escapeSnapshot || null;
     escapePocketsCleared = (typeof gs.escapePocketsCleared === 'number') ? gs.escapePocketsCleared : 0;
     corruptionMalusSteps = (typeof gs.corruptionMalusSteps === 'number') ? gs.corruptionMalusSteps : 0;
+    escapeStepBudget     = (typeof gs.escapeStepBudget === 'number') ? gs.escapeStepBudget : 0;
+    escapeStepSpent      = (typeof gs.escapeStepSpent === 'number') ? gs.escapeStepSpent : 0;
   }
   // Saves antérieures à D2 : champ absent → tuto réaffiché au prochain combat.
   combatTutorialSeen = !!gs.combatTutorialSeen;
@@ -612,6 +616,13 @@ function _applyState(gs) {
   if (typeof startNpcAnimLoop === 'function') startNpcAnimLoop();
   if (typeof startDungeonFxLoop === 'function') startDungeonFxLoop();
   if (typeof DFX_safe !== 'undefined') DFX_safe.setFloorAmbience();
+  // Escape Game (Lot 2) : un save chargé DANS une poche réaffiche le HUD ;
+  // hors poche, on s'assure qu'il est masqué.
+  if (typeof inEscapePocket !== 'undefined' && inEscapePocket) {
+    if (typeof showEscapeHud === 'function') showEscapeHud();
+  } else if (typeof hideEscapeHud === 'function') {
+    hideEscapeHud();
+  }
   updateLocationDisplay();
   return true;
 }
