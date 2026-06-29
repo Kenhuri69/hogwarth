@@ -242,6 +242,15 @@ const ITEM_ICON_REGISTRY = {
   livre_nox_vorax:       'img/icons/items/livre_vampyrus.png',
   livre_diffindo_maxima: 'img/icons/items/book_monsters.png',
   livre_vulnera:         'img/icons/items/livre_soin.png',
+  // Livres de Maîtrise élémentaire (masterybook, data-items.js) — alias
+  // legacy vers le livre élémentaire existant le plus proche (couverture
+  // icône, cf. tests/scenarios/visuals.js « Phase 4 — items »).
+  livre_feu_dragon:       'img/icons/items/livre_bombarda.png',
+  livre_glace_elara:      'img/icons/items/livre_glacius.png',
+  livre_foudre_orage:     'img/icons/items/livre_fulgari.png',
+  livre_lumiere_patronus: 'img/icons/items/livre_patronum.png',
+  livre_tenebres_pacte:   'img/icons/items/livre_morsmordre.png',
+  livre_physique_lion:    'img/icons/items/livre_prince.png',
   // Sinks endgame V1 (combo A+E) — alias legacy ; le rendu effectif
   // passe par les PNG painterly dans ITEM_ICON_NEW_REGISTRY (priorité 1).
   // Cf. .claude/plans/game-economy-gold-audit.md §5.6 + §7 Étape 6.
