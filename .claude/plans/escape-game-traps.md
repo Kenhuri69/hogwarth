@@ -383,18 +383,48 @@ Codex). Régression : `node tests/smoke.js` (dungeon, save, combat).
 
 *Vérif* : smoke par type ; units pour la courbe de budget et le biais de tirage.
 
-## Lot 4 — Immersion (transition, audio, FX) + Codex/quête
-- Transition d'entrée/sortie dédiée (fondu violet-givre via
-  `#tier-transition-overlay` réutilisé ou overlay propre) + voix Fondateur +
-  grave sonore (`AudioSystem`). Brume = `DungeonFX`.
-- Entrées **Codex** (`codex.js`) : `poche_du_sceau`, `echo_godric/rowena/
-  salazar/helga` (conditions : `escapePocketsCleared`, `house`, `eclatLoop`).
-  Jalon I : la 1ʳᵉ réussite `seenEchoes.add('echo_scene_sceau')` (optionnel,
-  à valider vs design de Briser le Cycle).
-- Quête répétable Gardien de la Boucle *« Endurer les Poches »*
-  (`quests-templates.js`, `everyLevels`).
+## Lot 4 — Immersion (transition, audio, FX) + récompenses fines + Codex/quête 🚧 EN COURS (2026-06-29)
+- [x] **Volet 1 — transition d'entrée/sortie dédiée** : `_escapeTransition(phase,
+  founder)` réutilise `#tier-transition-overlay` recoloré « violet-givre » (classe
+  `.escape-fade`, `css/escape-pocket.css`) + grave sonore descendant
+  (`AudioSystem.playCorruptionRise`, réutilisé) + voix murmurée d'un Fondateur
+  (`AudioSystem.speakBark`, repli synthèse FR). Brume = `#frost-overlay` piloté par
+  `escapeCorruptionPct` dans `_updateEscapeHud` (froid montant), réchauffement
+  (froid recule) à la sortie réussie. TOUT défensif (no-op si module absent).
+- [x] **Volet 2 — récompenses fines à la sortie réussie** (`exitEscapePocket(true)`) :
+  (a) **+1 Éclat** (`accumulatedEclats`) + toast « Tu comprends un peu mieux le
+  verrou. » (jalon I `echo_scene_sceau` **non crédité** — garde-fou tranché §1.4) +
+  `_maybeCelebrateEclatMilestone` défensif ; (b) réchauffement (soin 30 %) conservé ;
+  (c) **1 tirage de butin curaté** (`_grantEscapeLoot`) : livre élémentaire affilié au
+  Fondateur (Godric→`livre_fulgari`, Rowena→`livre_glacius`, Salazar→`livre_prince`,
+  Helga→`livre_lumos_solem`) OU matériau Forge/Biblio (Essence/Page) OU artefact mineur.
+  **Bonus House-match** : sort exclusif Ruines enseigné en avance (`_escapeFounderSpell` :
+  Godric→Le Mot du Dormeur, Rowena→Tempus Echo, Salazar→Écho Fantôme, Helga→Reliquae
+  Temporis) via `_teachSpellToParty`, repli 2ᵉ tirage si déjà connu. Fondateur résolu
+  tracé dans `escapeFoundersCleared` (Set sérialisé).
+- [x] **Volet 3 — Codex** : 2 nouveaux robinets PURS (`escapeCleared` →
+  `ctx.escapePocketsCleared >= value`, `escapeFounder` → `ctx.escapeFoundersCleared.has`)
+  + entrées `poche_du_sceau` (Lieux, révélé à `escapeCleared 3`, ouvert à 1) et
+  `poche_godric/rowena/salazar/helga` (Éclats, ouverts par `escapeFounder`, révélés par
+  `eclatLoop 5`, variante Maison). **ids `poche_<founder>`** (le plan disait
+  `echo_<founder>` mais `echo_salazar` est déjà pris par l'entrée personnage).
+  `_codexContext` expose les 2 signaux.
+  `checkCodexUnlocks('escape-cleared')` câblé à la sortie réussie.
+- [x] **Volet 4 — quête répétable « Endurer les Poches »** (Gardien de la Boucle,
+  `endurer_poches`, objectif `escape` amount 2, `repeatable everyLevels:2`, matériaux
+  Forge/Biblio). Compteur via `checkEscapePocketQuests` (mirror `checkKillQuests`),
+  hooké à la sortie réussie. Câblé dans `gardien_boucle` (questsGiven/TurnedIn +
+  dialoguesByQuest).
+- [x] Tests : units (`escapeCleared`/`escapeFounder` codex, founder→loot/spell maps) +
+  smoke `scenarioEscapeRewards` (Éclat+1, butin, Codex `poche_du_sceau`/`echo_<f>`,
+  quête « Endurer les Poches » progresse, FX/voix no-op si modules absents).
+- [x] cache-bump (escape-pocket.js, codex.js, ui-codex.js, quests.js, quests-templates.js,
+  npcs-b.js, state.js, save.js, loader.js, escape-pocket.css) + doc.
 
-*Vérif* : smoke (codex unlock, fx no-op si modules absents), check_doc_modules.
+> **Garde-fou jalon I tranché** : la Poche **ne touche pas** `seenEchoes` ;
+> `echo_scene_sceau` reste réservé à l'écho canon de zone D.
+
+*Vérif* : smoke (codex unlock, récompenses, fx no-op si modules absents), check_doc_modules.
 
 ## Lot 5 — Équilibrage & polish
 - Sim/calibration (réutiliser l'esprit `tools/sim-difficulty.js` si applicable,

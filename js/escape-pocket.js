@@ -32,6 +32,30 @@ const ESCAPE_FOUNDERS      = ['godric', 'rowena', 'salazar', 'helga'];
 const ESCAPE_FOUNDER_TYPE  = { godric: 'warden', rowena: 'riddle', salazar: 'mirror', helga: 'warden' };
 const ESCAPE_HOUSE_FOUNDER = { Gryffondor: 'godric', Serdaigle: 'rowena', Serpentard: 'salazar', Poufsouffle: 'helga' };
 
+// ── Immersion & récompenses (Lot 4) ────────────────────────────────────────
+// Murmure du Fondateur joué à la transition (canon echo_scellement). Voix via
+// AudioSystem.speakBark (repli synthèse FR si aucun OGG). `key` = clé voix.
+const ESCAPE_FOUNDER_VOICE = {
+  godric:  { key: 'founder_godric',  line: 'On ne scelle pas par peur. On tient la porte.' },
+  rowena:  { key: 'founder_rowena',  line: 'Comprends, et la faille apparaît.' },
+  salazar: { key: 'founder_salazar', line: 'J\'ai scellé ma part avec ma faute.' },
+  helga:   { key: 'founder_helga',   line: 'J\'ai creusé un abri pour ceux qui restent.' },
+};
+// Livre élémentaire affilié au Fondateur (butin garanti — pool loop existant).
+const ESCAPE_FOUNDER_BOOK = {
+  godric: 'livre_fulgari', rowena: 'livre_glacius',
+  salazar: 'livre_prince', helga: 'livre_lumos_solem',
+};
+// Sort exclusif des Ruines enseigné en avance en House-match (déjà enseigné par
+// stèle ét.21+). Mapping thématique : Godric→verbe ultime, Rowena→rejeu,
+// Salazar→écho de soi (miroir), Helga→restauration (refuge).
+const ESCAPE_FOUNDER_SPELL = {
+  godric: 'Le Mot du Dormeur', rowena: 'Tempus Echo',
+  salazar: 'Écho Fantôme',     helga: 'Reliquae Temporis',
+};
+// Matériaux Forge/Biblio (pool loop) — repli de butin non-livre.
+const ESCAPE_MATERIAL_POOL = ['essence_tenebres', 'page_grimoire'];
+
 // ── Helpers PURS (testables hors navigateur — units.js) ────────────────────
 // Budget de pas (jauge de corruption) selon la profondeur de Boucle.
 // Plus on descend, plus le budget rétrécit (pression temporelle accrue).
@@ -454,6 +478,8 @@ function enterEscapePocket(type, meta) {
   if (typeof addMsg === 'function') addMsg("🌀 Une Poche du Sceau t'engloutit !", 'bad');
   if (typeof DFX_safe !== 'undefined' && DFX_safe.shakeView) DFX_safe.shakeView('heavy');
   if (typeof pulseFrostOverlay === 'function') pulseFrostOverlay();
+  // Transition dédiée « violet-givre » + voix du Fondateur + grave sonore (Lot 4).
+  _escapeTransition('enter', (meta && meta.founder) || (escapePocketState && escapePocketState.founder));
 }
 
 // ── Sortie de la Poche (succès = re-scellement ; échec = éjection) ──────────
@@ -461,6 +487,9 @@ function exitEscapePocket(success) {
   if (typeof inEscapePocket === 'undefined' || !inEscapePocket || !_escapeSnapshot) return;
   // Au succès, la faille doit être dénouée (Lot 2+ : épreuve résolue).
   if (success && escapePocketState && escapePocketState.solved === false) return;
+  // Mémorise le Fondateur AVANT de purger l'état (récompenses fines — Lot 4).
+  const founder    = (escapePocketState && escapePocketState.founder) || 'godric';
+  const houseMatch = !!(escapePocketState && escapePocketState.houseMatch);
   _restoreFloorState(_escapeSnapshot);
   inEscapePocket    = false;
   escapePocketType  = null;
@@ -472,8 +501,10 @@ function exitEscapePocket(success) {
   if (typeof _hideExploreOverlay === 'function') _hideExploreOverlay();
   if (success) {
     escapePocketsCleared = (escapePocketsCleared || 0) + 1;
-    // Lot 1 : récompense minimale = réchauffement (soin partiel). Le butin
-    // détaillé (Éclat, Codex, livre élémentaire) arrive au Lot 4.
+    if (typeof escapeFoundersCleared !== 'undefined' && escapeFoundersCleared && escapeFoundersCleared.add) {
+      escapeFoundersCleared.add(founder);
+    }
+    // (b) Réchauffement (soin partiel 30 %) — conservé du Lot 1.
     if (typeof party !== 'undefined') {
       const n = (typeof partySize === 'number') ? partySize : party.length;
       party.slice(0, n).forEach(c => {
@@ -482,11 +513,41 @@ function exitEscapePocket(success) {
         c.sp = Math.min(c.spMax, c.sp + Math.floor(c.spMax * 0.30));
       });
     }
+    // (a) +1 Éclat (Briser le Cycle, jalon II). GARDE-FOU §1.4 : NE crédite PAS
+    // le jalon I `echo_scene_sceau` (réservé à l'écho canon de zone D).
+    if (typeof accumulatedEclats !== 'undefined') {
+      accumulatedEclats = (accumulatedEclats || 0) + 1;
+      if (typeof addMsg === 'function') addMsg("🔹 Tu comprends un peu mieux le verrou. (+1 Éclat)", 'magic');
+      if (typeof _maybeCelebrateEclatMilestone === 'function') _maybeCelebrateEclatMilestone();
+    }
+    // (c) 1 tirage de butin curaté (livre élémentaire / matériau / artefact mineur).
+    _grantEscapeLoot(founder);
+    // Bonus House-match : sort exclusif des Ruines enseigné en avance, sinon
+    // (déjà connu) un 2ᵉ tirage de butin.
+    if (houseMatch) {
+      const taught = _escapeFounderSpell(founder);
+      if (taught) {
+        if (typeof addMsg === 'function') {
+          const ico = (typeof getSpellIconHtml === 'function') ? getSpellIconHtml(taught, 'ui-icon-md') : '✨';
+          addMsg(`${ico} La salle te reconnaît — elle te confie en avance le sort <em>${taught}</em> !`, 'magic');
+        }
+      } else {
+        _grantEscapeLoot(founder);  // sort déjà connu → 2ᵉ tirage
+      }
+    }
+    if (typeof recalculateStats === 'function') recalculateStats();
     if (typeof setNarrative === 'function') {
       setNarrative("Le sceau se referme dans ton dos. Le froid recule — tu es de "
         + "retour dans les Ruines, à l'endroit même où la rune t'a happé.");
     }
     if (typeof addMsg === 'function') addMsg("🌀 Tu as re-scellé la Poche et regagné les Ruines.", 'good');
+    // Codex (Lot 4) : poche_du_sceau + echo_<founder>.
+    if (typeof checkCodexUnlocks === 'function') checkCodexUnlocks('escape-cleared');
+    // Quête répétable « Endurer les Poches » (Gardien de la Boucle).
+    if (typeof checkEscapePocketQuests === 'function') checkEscapePocketQuests();
+    // Immersion : re-scellement (transition) + réchauffement visuel (froid recule).
+    _escapeTransition('exit-success', founder);
+    _escapeWarmth();
   } else {
     // Échec : malus « corruption » passager — −15 % ATK/DEF/MAG pendant N pas
     // (Lot 3). `recalculateStats` applique l'effet d'emblée (lecture du flag).
@@ -497,6 +558,9 @@ function exitEscapePocket(success) {
         + "glacée s'attarde sur le groupe.");
     }
     if (typeof addMsg === 'function') addMsg("❄️ La Poche t'éjecte — une corruption passagère t'affaiblit.", 'bad');
+    // Immersion : éjection (transition froide). Pas de réchauffement (le froid
+    // s'attarde — le malus est en cours).
+    _escapeTransition('exit-fail', founder);
   }
   _renderEscapeFloor();
   if (typeof safeCall === 'function') safeCall('autoSave', 'escape-exit');
@@ -957,6 +1021,8 @@ function _updateEscapeHud() {
     fill.setAttribute('data-critical', pct >= 70 ? '1' : '0');
   }
   if (lbl) lbl.textContent = `Corruption ${pct}%`;
+  // Brume de corruption (Lot 4) : le froid/brume monte avec la jauge.
+  if (typeof inEscapePocket !== 'undefined' && inEscapePocket) _escapeBrume(pct);
   return true;
 }
 
@@ -975,6 +1041,109 @@ function _escapeObjectiveLabel() {
   const total = s.total || ESCAPE_STELE_COUNT;
   const prog  = s.progress || 0;
   return `${prog}/${total} glyphes gravés`;
+}
+
+// ── Immersion : transition dédiée + brume de corruption (Lot 4) ────────────
+// Fondu « violet-givre » réutilisant #tier-transition-overlay (classe
+// .escape-fade) + grave sonore descendant + voix murmurée d'un Fondateur.
+// `phase` ∈ 'enter' | 'exit-success' | 'exit-fail'. TOUT défensif (no-op si un
+// module manque). Aucune mécanique de jeu touchée — pure surcouche.
+function _escapeTransition(phase, founder) {
+  const overlay = (typeof safeEl === 'function') ? safeEl('tier-transition-overlay')
+    : (typeof document !== 'undefined' ? document.getElementById('tier-transition-overlay') : null);
+  if (overlay) {
+    overlay.classList.add('escape-fade');
+    overlay.textContent = (phase === 'enter')
+      ? '🌀 Poche du Sceau'
+      : (phase === 'exit-success' ? '🔒 Le Sceau se referme' : '❄️ Corruption');
+    overlay.classList.add('active');
+    setTimeout(() => {
+      overlay.classList.remove('active');
+      // Retire la teinte « escape » une fois le fondu terminé (évite de
+      // colorer une transition de tranche ultérieure).
+      setTimeout(() => overlay.classList.remove('escape-fade'), 350);
+    }, 650);
+  }
+  // Grave sonore descendant (réutilise le grondement de corruption existant).
+  if (typeof AudioSystem !== 'undefined' && AudioSystem && AudioSystem.playCorruptionRise) {
+    AudioSystem.playCorruptionRise();
+  }
+  // Voix murmurée d'un Fondateur (repli synthèse FR via speakBark).
+  const v = ESCAPE_FOUNDER_VOICE[founder] || ESCAPE_FOUNDER_VOICE.godric;
+  if (v && typeof AudioSystem !== 'undefined' && AudioSystem && AudioSystem.speakBark) {
+    AudioSystem.speakBark(v.line, v.key);
+  }
+}
+
+// Brume de corruption : pilote l'opacité de #frost-overlay selon la jauge
+// (froid montant). Défensif. Appelé par _updateEscapeHud pendant la poche.
+function _escapeBrume(pct) {
+  const el = (typeof safeEl === 'function') ? safeEl('frost-overlay')
+    : (typeof document !== 'undefined' ? document.getElementById('frost-overlay') : null);
+  if (!el) return;
+  const p = Math.max(0, Math.min(100, pct || 0));
+  // 0 % → 0.18 (froid de base de la poche) … 100 % → 0.6 (brume avalante).
+  el.style.opacity = String(0.18 + (0.42 * p / 100));
+}
+
+// Réchauffement visuel : le froid recule (sortie réussie). Restaure la
+// baseline d'ambiance de corruption de l'étage source. Défensif.
+function _escapeWarmth() {
+  if (typeof _applyCorruptionAmbiance === 'function' && typeof currentFloor !== 'undefined') {
+    _applyCorruptionAmbiance(currentFloor);
+    return;
+  }
+  const el = (typeof safeEl === 'function') ? safeEl('frost-overlay')
+    : (typeof document !== 'undefined' ? document.getElementById('frost-overlay') : null);
+  if (el) el.style.opacity = '0';
+}
+
+// ── Butin curaté à la sortie réussie (Lot 4) ───────────────────────────────
+// 1 tirage : livre élémentaire affilié au Fondateur (40 %) OU matériau Forge/
+// Biblio (40 %) OU artefact mineur du pool loop (20 %). Défensif : refuse
+// silencieusement si l'inventaire est plein ou l'item introuvable.
+function _grantEscapeLoot(founder) {
+  if (typeof ITEMS === 'undefined' || !Array.isArray(ITEMS)) return null;
+  const r = Math.random();
+  let id = null;
+  if (r < 0.40) {
+    id = ESCAPE_FOUNDER_BOOK[founder] || ESCAPE_FOUNDER_BOOK.godric;
+  } else if (r < 0.80) {
+    id = ESCAPE_MATERIAL_POOL[Math.floor(Math.random() * ESCAPE_MATERIAL_POOL.length)];
+  } else {
+    id = _escapeMinorArtifact() || ESCAPE_MATERIAL_POOL[0];
+  }
+  const item = ITEMS.find(i => i.id === id);
+  if (!item) return null;
+  if (typeof tryAddItem === 'function') {
+    if (tryAddItem(item, { silent: true })) {
+      if (typeof addMsg === 'function') {
+        const ico = (typeof getItemIconHtml === 'function') ? getItemIconHtml(item, 'ui-icon-sm') : '🎁';
+        addMsg(`${ico} Le Sceau te laisse une relique : ${item.name}.`, 'good');
+      }
+      return id;
+    }
+    return null;
+  }
+  return id;
+}
+
+// Tire un « artefact mineur » du pool loop existant (consommable/matériau de
+// valeur). Garde-fou : ne tire que des ids effectivement présents dans ITEMS.
+function _escapeMinorArtifact() {
+  const pool = ['essence_chaleur', 'felix', 'potion_m', 'page_grimoire'];
+  if (typeof ITEMS === 'undefined' || !Array.isArray(ITEMS)) return null;
+  const avail = pool.filter(id => ITEMS.some(i => i.id === id));
+  if (!avail.length) return null;
+  return avail[Math.floor(Math.random() * avail.length)];
+}
+
+// Sort exclusif des Ruines à enseigner en House-match. Retourne le nom du sort
+// enseigné (nouvel apprentissage) ou null si déjà connu / introuvable.
+function _escapeFounderSpell(founder) {
+  const name = ESCAPE_FOUNDER_SPELL[founder];
+  if (!name || typeof _teachSpellToParty !== 'function') return null;
+  return _teachSpellToParty(name) ? name : null;
 }
 
 // ── Rendu commun (entrée poche / retour Ruines) ────────────────────────────

@@ -214,6 +214,7 @@ window.UX_safe = new Proxy({}, {
     { name: 'answerEscapeStele',  source: 'escape-pocket.js', kind: 'fn' },
     { name: 'pickEscapePocketType', source: 'escape-pocket.js', kind: 'fn' },
     { name: 'corruptionMalusMult', source: 'escape-pocket.js', kind: 'fn' },
+    { name: 'checkEscapePocketQuests', source: 'quests.js', kind: 'fn', optional: true },
     { name: 'goDeeper',           source: 'movement-floors.js', kind: 'fn' },
     { name: 'goUp',               source: 'movement-floors.js', kind: 'fn' },
     { name: '_changeFloor',       source: 'movement-floors.js', kind: 'fn' },

@@ -4069,4 +4069,107 @@ async function scenarioEscapeIronman() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioEscapePocket, scenarioEscapeRiddleSolve, scenarioEscapeMalus, scenarioEscapeMirror, scenarioEscapeWarden, scenarioEscapeIronman, scenarioCh13EndgamePivot, scenarioScriptedFloorBeats, scenarioVoixDesRuines, scenarioDungeonLife, scenarioFountain, scenarioRefuge, scenarioSoloSoftlock, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioRespawn20Percent, scenarioVictoryTrigger, scenarioStairsGated, scenarioFinalBossGuaranteed, scenarioChamberGuardians, scenarioChamberGuardianPolish, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioFloorTheming, scenarioZoneDEchoes, scenarioZoneDFx, scenarioFounderChamber, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioRoomOfRequirement, scenarioStairsReachable, scenarioHouseRoomBias] };
+// Escape Game (Lot 4) — récompenses fines à la sortie réussie + Codex + quête
+// répétable + immersion défensive : +1 Éclat, butin curaté, déverrouillage
+// Codex (poche_du_sceau + poche_<founder>), progression « Endurer les Poches »,
+// bonus House-match (sort Ruines enseigné), et FX/voix no-op si modules absents.
+async function scenarioEscapeRewards() {
+  console.log('\n── Scénario : Poche du Sceau — récompenses + Codex + quête (Lot 4) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'], house: 'Gryffondor' });
+
+  const r = await page.evaluate(() => {
+    const out = { threw: false };
+    // Résout les 3 stèles d'une poche d'énigmes en cours.
+    function solveRiddlePocket() {
+      escapePocketState.steles.slice().forEach((s) => {
+        const [sx, sy] = s.cell.split(',').map(Number);
+        playerX = sx; playerY = sy;
+        const riddle = getRiddleById(s.riddleId);
+        answerEscapeStele(riddle.answer);
+      });
+    }
+    try {
+      victoryAchieved = true;
+      currentFloor = 14;
+
+      // Quête « Endurer les Poches » active (instance directe, hors gating PNJ).
+      escapeFoundersCleared = new Set();
+      escapePocketsCleared = 0;
+      accumulatedEclats = 0;
+      unlockedCodexEntries = new Set();
+      activeQuests = activeQuests.filter(q => q.id !== 'endurer_poches');
+      activeQuests.push(JSON.parse(JSON.stringify(getQuestTemplate('endurer_poches'))));
+
+      out.hasTemplate = !!getQuestTemplate('endurer_poches');
+
+      // ── 1ʳᵉ Poche : Rowena, hors House-match (héros Gryffondor) ──
+      const eclatBefore = accumulatedEclats;
+      const invBefore   = player.inventory.length;
+      enterEscapePocket('riddle', { founder: 'rowena', houseMatch: false });
+      solveRiddlePocket();
+      out.solved1 = escapePocketState && escapePocketState.solved === true;
+      exitEscapePocket(true);
+
+      out.eclatGained = accumulatedEclats === eclatBefore + 1;             // (a) +1 Éclat
+      out.founderTracked = escapeFoundersCleared.has('rowena');
+      out.cleared1 = escapePocketsCleared === 1;
+      out.lootGained = player.inventory.length > invBefore;               // (c) butin curaté
+      // Codex (Lot 4) : poche_du_sceau ouvert + poche_rowena ouvert.
+      out.codexPoche  = unlockedCodexEntries.has('poche_du_sceau');
+      out.codexFounder = unlockedCodexEntries.has('poche_rowena');
+      // Quête : progression +1.
+      const q1 = activeQuests.find(q => q.id === 'endurer_poches');
+      out.questProg1 = q1 && q1.objectives[0].progress === 1 && !q1.objectives[0].completed;
+
+      // ── 2ᵉ Poche : Godric, House-match (Gryffondor) → sort Ruines enseigné ──
+      const knewSpell = party[0].spells.includes('Le Mot du Dormeur');
+      enterEscapePocket('riddle', { founder: 'godric', houseMatch: true });
+      solveRiddlePocket();
+      exitEscapePocket(true);
+      out.houseSpell = !knewSpell && party[0].spells.includes('Le Mot du Dormeur');
+      out.cleared2 = escapePocketsCleared === 2;
+      out.codexGodric = unlockedCodexEntries.has('poche_godric');
+      // Quête : 2ᵉ progression → complétée (amount 2).
+      const q2 = activeQuests.find(q => q.id === 'endurer_poches');
+      out.questDone = q2 && q2.objectives[0].progress === 2 && q2.objectives[0].completed === true;
+
+      // ── Immersion défensive : transition no-op si overlay + audio absents ──
+      const overlay = document.getElementById('tier-transition-overlay');
+      if (overlay) overlay.remove();
+      const savedAudio = window.AudioSystem;
+      window.AudioSystem = {};                 // sans playCorruptionRise/speakBark
+      let fxThrew = false;
+      try { _escapeTransition('enter', 'salazar'); _escapeBrume(50); _escapeWarmth(); }
+      catch (e) { fxThrew = true; }
+      window.AudioSystem = savedAudio;
+      out.fxNoop = !fxThrew;
+    } catch (e) { out.threw = true; out.err = String(e && e.message || e); }
+    return out;
+  });
+
+  assert(!r.threw, 'cycle récompenses sans exception (' + (r.err || '') + ')');
+  assert(r.hasTemplate, 'quête « Endurer les Poches » présente au catalogue');
+  assert(r.solved1, 'poche 1 résolue (3 stèles)');
+  assert(r.eclatGained, '(a) sortie réussie : +1 Éclat (accumulatedEclats)');
+  assert(r.founderTracked, 'Fondateur de la poche tracé (escapeFoundersCleared)');
+  assert(r.cleared1, 'escapePocketsCleared = 1');
+  assert(r.lootGained, '(c) sortie réussie : butin curaté ajouté à l\'inventaire');
+  assert(r.codexPoche, 'Codex : poche_du_sceau déverrouillé à la 1ʳᵉ réussite');
+  assert(r.codexFounder, 'Codex : poche_rowena (Fondateur joué) déverrouillé');
+  assert(r.questProg1, 'quête « Endurer les Poches » : progression 1/2');
+  assert(r.houseSpell, 'bonus House-match : sort Ruines enseigné en avance');
+  assert(r.cleared2, 'escapePocketsCleared = 2');
+  assert(r.codexGodric, 'Codex : poche_godric déverrouillé (Fondateur de la 2ᵉ poche)');
+  assert(r.questDone, 'quête « Endurer les Poches » : 2/2 → prête à remettre');
+  assert(r.fxNoop, 'immersion : transition/brume/réchauffement no-op si modules absents');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS (Poche récompenses)`);
+  }
+  console.log('  ✅ Poche du Sceau Lot 4 — récompenses/Codex/quête/immersion OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioEscapePocket, scenarioEscapeRiddleSolve, scenarioEscapeMalus, scenarioEscapeMirror, scenarioEscapeWarden, scenarioEscapeIronman, scenarioEscapeRewards, scenarioCh13EndgamePivot, scenarioScriptedFloorBeats, scenarioVoixDesRuines, scenarioDungeonLife, scenarioFountain, scenarioRefuge, scenarioSoloSoftlock, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioRespawn20Percent, scenarioVictoryTrigger, scenarioStairsGated, scenarioFinalBossGuaranteed, scenarioChamberGuardians, scenarioChamberGuardianPolish, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioFloorTheming, scenarioZoneDEchoes, scenarioZoneDFx, scenarioFounderChamber, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioRoomOfRequirement, scenarioStairsReachable, scenarioHouseRoomBias] };

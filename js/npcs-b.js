@@ -747,11 +747,16 @@ NPCS.push(
     icon:  "♾️",
     portraitImg: "img/npc/gardien_boucle.png",
     placement: { floor: 11, anchor: "first-room" },
-    questsGiven:    ["purge_loups", "purge_acromantules", "purge_mangemorts", "purge_moremplis", "purge_givre", "purge_spectres", "chasse_basilic_ancestral", "prime_boss_gardien"],
-    questsTurnedIn: ["purge_loups", "purge_acromantules", "purge_mangemorts", "purge_moremplis", "purge_givre", "purge_spectres", "chasse_basilic_ancestral", "prime_boss_gardien"],
+    questsGiven:    ["purge_loups", "purge_acromantules", "purge_mangemorts", "purge_moremplis", "endurer_poches", "purge_givre", "purge_spectres", "chasse_basilic_ancestral", "prime_boss_gardien"],
+    questsTurnedIn: ["purge_loups", "purge_acromantules", "purge_mangemorts", "purge_moremplis", "endurer_poches", "purge_givre", "purge_spectres", "chasse_basilic_ancestral", "prime_boss_gardien"],
     // Prime de boss premium (cadence longue, everyLevels:3) — invoque le
     // Magyar Ancestral via spawnOnAccept, récompense un matériau primordial.
     dialoguesByQuest: {
+      endurer_poches: {
+        questOffer:  "Les runes du Sceau te happeront encore — c'est leur nature déréglée. N'y vois pas un châtiment : chaque Poche re-scellée raffermit le verrou. Endure-en deux, et la Boucle te paiera en matière.",
+        questActive: "Le Sceau t'éprouve encore. Tiens, comprends, ordonne, abrite-toi — et reviens m'en parler.",
+        questReady:  "Deux Poches re-scellées. Tu oses regarder le fond là où d'autres remontent en courant. La Boucle te doit cela."
+      },
       prime_boss_gardien: {
         questOffer:  "Au cœur de la Boucle dort un dragon que les âges ont oublié — le Magyar Ancestral. Je peux le réveiller pour toi. Peu en réchappent ; mais sa dépouille recèle une Essence Primordiale, et la Boucle paie ce qu'elle doit.",
         questActive: "Le Magyar t'attend. Sa flamme ne s'éteint qu'avec lui.",

@@ -1389,6 +1389,61 @@ function loadNpcs() {
   check('P5 codex : environnement_runique veiled étage 14', codexEntryState(envc, { ...empty, floorReached: 14 }) === 'veiled');
   check('P5 codex : environnement_runique revealed (victoire)',
     codexEntryState(envc, { ...empty, floorReached: 14, victoryAchieved: true }) === 'revealed');
+
+  // ── Lot 4 (Poches du Sceau) — robinets escapeCleared / escapeFounder ──
+  const poche = getCodexEntry('poche_du_sceau');
+  check('Lot4 codex : poche_du_sceau présent (lieux)', !!poche && poche.category === 'lieux');
+  check('Lot4 codex : poche_du_sceau locked à 0 poche', codexEntryState(poche, empty) === 'locked');
+  check('Lot4 codex : poche_du_sceau veiled à 1 poche',
+    codexEntryState(poche, { ...empty, escapePocketsCleared: 1 }) === 'veiled');
+  check('Lot4 codex : poche_du_sceau revealed à 3 poches',
+    codexEntryState(poche, { ...empty, escapePocketsCleared: 3 }) === 'revealed');
+  // echo_<founder> : ouvert par le Fondateur joué, révélé à 5 Éclats portés.
+  for (const f of ['godric', 'rowena', 'salazar', 'helga']) {
+    const e = getCodexEntry('poche_' + f);
+    check(`Lot4 codex : poche_${f} présent (eclats)`, !!e && e.category === 'eclats');
+    check(`Lot4 codex : poche_${f} locked sans Poche de ce Fondateur`,
+      codexEntryState(e, { ...empty, escapeFoundersCleared: new Set() }) === 'locked');
+    check(`Lot4 codex : poche_${f} veiled si Poche ${f} réussie`,
+      codexEntryState(e, { ...empty, escapeFoundersCleared: new Set([f]) }) === 'veiled');
+    check(`Lot4 codex : poche_${f} revealed à 5 Éclats portés`,
+      codexEntryState(e, { ...empty, escapeFoundersCleared: new Set([f]), accumulatedEclats: 5 }) === 'revealed');
+    // Un autre Fondateur n'ouvre pas cette entrée.
+    check(`Lot4 codex : poche_${f} insensible à un autre Fondateur`,
+      codexEntryState(e, { ...empty, escapeFoundersCleared: new Set(['__other__']) }) === 'locked');
+  }
+  // Variante Maison sur l'écho de Godric (cosmétique).
+  check('Lot4 codex : poche_godric variante Gryffondor',
+    typeof codexVariantNote(getCodexEntry('poche_godric'), 'Gryffondor', []) === 'string');
+  // Défensif : ctx sans les champs Lot 4 ne throw pas (escapeFoundersCleared absent).
+  let noThrow4 = true;
+  try { codexEntryState(poche, { floorReached: 1 }); codexEntryState(getCodexEntry('poche_helga'), {}); }
+  catch (e) { noThrow4 = false; }
+  check('Lot4 codex : robinets escape tolèrent un ctx incomplet', noThrow4);
+})();
+
+// ============================================================
+// 8b. escape-pocket.js — maps Fondateur (butin/sort/voix) — Lot 4
+// ============================================================
+(function testEscapeFounderMaps() {
+  const mod = loadModule('js/escape-pocket.js',
+    ['ESCAPE_FOUNDER_BOOK', 'ESCAPE_FOUNDER_SPELL', 'ESCAPE_FOUNDER_VOICE', 'ESCAPE_FOUNDERS']);
+  const { ESCAPE_FOUNDER_BOOK, ESCAPE_FOUNDER_SPELL, ESCAPE_FOUNDER_VOICE, ESCAPE_FOUNDERS } = mod;
+  // Chaque Fondateur a un livre, un sort, une voix.
+  for (const f of ESCAPE_FOUNDERS) {
+    check(`escape map : ${f} → livre élémentaire`, typeof ESCAPE_FOUNDER_BOOK[f] === 'string');
+    check(`escape map : ${f} → sort Ruines`, typeof ESCAPE_FOUNDER_SPELL[f] === 'string');
+    check(`escape map : ${f} → voix murmurée`,
+      ESCAPE_FOUNDER_VOICE[f] && typeof ESCAPE_FOUNDER_VOICE[f].line === 'string');
+  }
+  // Mappings spécifiques attendus (cahier des charges §2.5).
+  check('escape : Godric → livre_fulgari',     ESCAPE_FOUNDER_BOOK.godric === 'livre_fulgari');
+  check('escape : Rowena → livre_glacius',     ESCAPE_FOUNDER_BOOK.rowena === 'livre_glacius');
+  check('escape : Salazar → livre_prince',     ESCAPE_FOUNDER_BOOK.salazar === 'livre_prince');
+  check('escape : Helga → livre_lumos_solem',  ESCAPE_FOUNDER_BOOK.helga === 'livre_lumos_solem');
+  // Les 4 sorts Ruines sont distincts.
+  const spells = ESCAPE_FOUNDERS.map(f => ESCAPE_FOUNDER_SPELL[f]);
+  check('escape : 4 sorts Ruines distincts', new Set(spells).size === 4);
 })();
 
 // ============================================================

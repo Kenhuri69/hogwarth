@@ -16,7 +16,7 @@
 //     individuel suffit pour eux.
 // =======================================================================
 
-const CACHE_VERSION = 'hogwarth-v246';
+const CACHE_VERSION = 'hogwarth-v247';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Précache minimal (~1 Mo) : shell HTML/CSS/JS + premier visuel.
@@ -38,7 +38,7 @@ const PRECACHE_URLS = [
   './css/cinematics.css?v=1',
   './css/frost.css?v=3',
   './css/codex.css?v=5',
-  './css/escape-pocket.css?v=1',
+  './css/escape-pocket.css?v=2',
 
   // JS — ordre identique à index.html (sans incidence pour le cache,
   // mais utile à la relecture)
@@ -57,10 +57,10 @@ const PRECACHE_URLS = [
   './js/monsters-high.js?v=3',
   './js/npcs.js?v=43',
   './js/npcs-a.js?v=5',
-  './js/npcs-b.js?v=3',
+  './js/npcs-b.js?v=4',
   './js/npcs-helpers.js?v=4',
   './js/riddles.js?v=3',
-  './js/codex.js?v=19',
+  './js/codex.js?v=20',
   './js/data.js?v=65',
   './js/data-characters.js?v=1',
   './js/data-spells.js?v=1',
@@ -72,7 +72,7 @@ const PRECACHE_URLS = [
   './js/floor-events.js?v=2',
   './js/room-flavor.js?v=1',
   './js/item-icons.js?v=48',
-  './js/state.js?v=47',
+  './js/state.js?v=48',
   './js/hero-barks.js?v=13',
   './js/ui.js?v=25',
   './js/modal-a11y.js?v=2',
@@ -80,7 +80,7 @@ const PRECACHE_URLS = [
   './js/ui-settings.js?v=7',
   './js/keybindings.js?v=1',
   './js/ui-bestiary.js?v=8',
-  './js/ui-codex.js?v=11',
+  './js/ui-codex.js?v=12',
   './js/dungeon-scaling.js?v=9',
   './js/dungeon.js?v=22',
   './js/dungeon-spawning.js?v=2',
@@ -95,7 +95,7 @@ const PRECACHE_URLS = [
   './js/movement.js?v=42',
   './js/movement-floors.js?v=20',
   './js/movement-interactions.js?v=23',
-  './js/escape-pocket.js?v=3',
+  './js/escape-pocket.js?v=4',
   './js/swipe-canvas.js?v=4',
   './js/battle.js?v=42',
   './js/battle-rewards.js?v=13',
@@ -107,15 +107,15 @@ const PRECACHE_URLS = [
   './js/inventory.js?v=30',
   './js/inventory-spells.js?v=13',
   './js/potions.js?v=8',
-  './js/quests-templates.js?v=23',
-  './js/quests.js?v=21',
+  './js/quests-templates.js?v=24',
+  './js/quests.js?v=22',
   './js/quests-riddles.js?v=3',
   './js/npc-dialog.js?v=23',
   './js/karaoke.js?v=1',
   './js/intro.js?v=3',
   './js/shop.js?v=19',
   './js/save-slots.js?v=4',
-  './js/save.js?v=50',
+  './js/save.js?v=51',
   './js/save-visit-snapshot.js?v=2',
   './js/profile.js?v=4',
   './js/save-ui.js?v=9',
@@ -131,7 +131,7 @@ const PRECACHE_URLS = [
   './js/library.js?v=5',
   './js/help-tour.js?v=4',
   './js/balance-log.js?v=1',
-  './js/loader.js?v=61',
+  './js/loader.js?v=62',
   './js/pwa.js?v=8',
 
   // Icônes PWA + premier écran

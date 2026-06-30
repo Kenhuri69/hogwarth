@@ -894,6 +894,7 @@ let escapePocketType     = null;   // 'echo' (Lot 1) | 'riddle' | 'mirror' (Lot 
 let escapePocketState    = null;   // { type, solved, progress, sourceFloor }
 let _escapeSnapshot      = null;   // instantané de l'étage source (restauré à la sortie)
 let escapePocketsCleared = 0;      // stat : poches re-scellées (profil/HoF — Lot 4)
+let escapeFoundersCleared = new Set(); // Fondateurs dont une Poche a été re-scellée (Codex — Lot 4)
 let corruptionMalusSteps = 0;      // pas de malus « corruption » après échec (Lot 3)
 let escapeStepBudget     = 0;      // budget de pas (jauge de corruption — Lot 2)
 let escapeStepSpent      = 0;      // pas consommés dans la poche courante (Lot 2)

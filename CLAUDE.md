@@ -181,8 +181,20 @@ js/
                       (Écho Corrompu _spawnCorruptedEcho → startBattle ; défaite
                       → triggerDeath/profil sealedDeaths + badge death_cause HoF ;
                       victoire → éjection standard). House-match → indice gratuit
-                      + budget +20 %. css/escape-pocket.css. Défensif. APRÈS
-                      movement-interactions.js. Plan : .claude/plans/escape-game-traps.md
+                      + budget +20 %. Lot 4 : immersion (transition violet-givre
+                      _escapeTransition réutilisant #tier-transition-overlay.escape-fade
+                      + grave AudioSystem.playCorruptionRise + voix murmurée Fondateur
+                      speakBark ; brume #frost-overlay pilotée par la jauge) +
+                      récompenses fines à la sortie réussie (+1 Éclat accumulatedEclats,
+                      butin curaté _grantEscapeLoot : livre élémentaire Fondateur /
+                      matériau Forge-Biblio / artefact mineur ; House-match → sort
+                      Ruines _escapeFounderSpell enseigné en avance) + Codex
+                      (poche_du_sceau + poche_<founder>, robinets escapeCleared/
+                      escapeFounder) + quête répétable « Endurer les Poches »
+                      (checkEscapePocketQuests, objectif `escape`, Gardien de la
+                      Boucle). escapeFoundersCleared (Set sérialisé). css/escape-pocket.css.
+                      Défensif. APRÈS movement-interactions.js.
+                      Plan : .claude/plans/escape-game-traps.md
   swipe-canvas.js  →  Gestes tactiles sur #dungeon-canvas (mobile) :
                       swipe vertical → avancer/reculer, swipe horizontal →
                       tourner. initCanvasSwipeGestures(),
