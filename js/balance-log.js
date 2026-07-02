@@ -47,6 +47,7 @@
       weaknessExploits: 0,  // dont ceux qui exploitent une faiblesse élémentaire
       loopDepths: [],       // étage atteint à chaque descente (goDeeper)
       floorClearTimes: [],  // {floor, ms} — temps réel passé sur l'étage quitté
+      escapes: [],          // {floor, mode, type, founder, houseMatch, outcome, corruptionPct} — Poches du Sceau (Lot 5)
     };
   }
 
@@ -99,6 +100,7 @@
   //   'death'   {cause?, turns?}           — triggerDeath (issue=death)
   //   'spell'   {exploitedWeakness}        — castSpellInBattle (synergyUsageRate)
   //   'descend' {prevFloor}                — goDeeper (loopDepthMedian / averageClearTime)
+  //   'escape'  {type, founder, houseMatch, outcome, corruptionPct} — exitEscapePocket (escapeClearRate)
   function record(event, payload) {
     if (!enabled()) return;
     payload = payload || {};
@@ -141,6 +143,17 @@
         _floorEnterAt = now();
         break;
       }
+      case 'escape':
+        if (!Array.isArray(store.escapes)) store.escapes = [];
+        store.escapes.push({
+          floor, mode,
+          type:          payload.type || '',
+          founder:       payload.founder || '',
+          houseMatch:    !!payload.houseMatch,
+          outcome:       payload.outcome || 'cleared', // 'cleared' | 'failed'
+          corruptionPct: (typeof payload.corruptionPct === 'number') ? payload.corruptionPct : null,
+        });
+        break;
       default:
         return;
     }
@@ -173,6 +186,10 @@
     for (const f in perFloor) deathRatePerFloor[f] = perFloor[f].d / perFloor[f].n;
 
     const clearTurns = battles.map(b => b.turns).filter(t => t > 0);
+    // Poches du Sceau (Lot 5) : taux de réussite = levier de calibration
+    // principal (ESCAPE_POCKET_CHANCE, budget de pas, biais Maison).
+    const escapes = store.escapes || [];
+    const escapeCleared = escapes.filter(e => e.outcome === 'cleared').length;
     return {
       synergyUsageRate: store.spellCasts ? store.weaknessExploits / store.spellCasts : 0,
       loopDepthMedian:  median(store.loopDepths || []),
@@ -182,6 +199,9 @@
       battleCount: battles.length,
       deathCount:  battles.filter(b => b.outcome === 'death').length,
       spellCasts:  store.spellCasts || 0,
+      escapeCount:     escapes.length,
+      escapeClearRate: escapes.length ? escapeCleared / escapes.length : null,
+      escapeCorruptionMean: mean(escapes.map(e => e.corruptionPct).filter(p => typeof p === 'number')),
     };
   }
 

@@ -427,6 +427,38 @@ le **thermomètre ❄** de [10 §10.2](10-lieux-et-geographie.md), prolongé en 
 > cap (lisibilité). Cosmétique en V1 ; aucune refonte de la topologie procédurale
 > (on **ne génère pas** plusieurs donjons, cohérent [10 §10.6](10-lieux-et-geographie.md)).
 
+### 11.7.4 Les Poches du Sceau — l'écho temporel rendu *marchable* — ✅ dans le jeu
+
+✅ **La déformation de la réalité (§11.7.3) atteint son point d'orgue jouable** :
+en Boucle, un piège foulé peut, au lieu de l'embuscade habituelle, vous **happer
+dans une Poche du Sceau** — un fragment du moment du scellement, figé et rejouable.
+Lore complet : [10 §10.5](10-lieux-et-geographie.md) ; règles de jeu :
+[CLAUDE.md « Poches du Sceau »](../../CLAUDE.md).
+
+- **Pourquoi maintenant** : la victoire **élargit la faille** → les gardes runiques
+  fail-safe des Fondateurs se **dérèglent** et ne distinguent plus l'héritier de la
+  menace. C'est un **test**, pas une exécution.
+- **Structure** : petit étage éphémère (3 salles) hors de la carte principale,
+  thématisé par un Fondateur (biais Maison 1/2). Sortie **conditionnelle** : la
+  « faille du Sceau » reste scellée tant que l'épreuve n'est pas résolue.
+- **Trois épreuves = trois vérités des Quatre** : comprendre (Rowena), affronter sa
+  faute (Salazar, un reflet du groupe), tenir & abriter sous la peur (Godric+Helga).
+- **La peur, jauge** : une **corruption** monte à chaque pas (froid/brume crescendo,
+  §11.7.3). À 100 % → échec. Tenir = *regarder jusqu'au fond* → **+1 Éclat**
+  (accélère le jalon II de « Briser le Cycle », §11.10 — **sans** toucher le jalon I
+  `echo_scene_sceau`, réservé à l'écho canon de zone D).
+- **La mort qui laisse une trace (Ironman)** : céder invoque un **Écho Corrompu**
+   obligatoire ; le perdre = **permadeath** — le héros happé *devient une part du
+  sceau, un écho de plus*. Héritage persistant hors-run : titre **« Scellé dans la
+  Boucle »** (profil), badge de cause de mort au Hall of Fame, fait d'arme crédité
+  au score (le courage d'être descendu). Cf. [14](14-scenarios-de-fin.md).
+
+> 💡 **Cohérence Boucle** : la Poche **recompose** des mécaniques existantes
+> (échos temporels §11.7.3, stèles/runes de zone D [10](10-lieux-et-geographie.md),
+> Éclats §11.8.4) — aucune brique de fiction nouvelle, un enrichissement du
+> vocabulaire déjà posé. Elle est **isolée** des Mondes Parallèles (§11.5.1) :
+> interdite pendant une visite inter-mondes.
+
 ---
 
 ## 11.8 Variantes selon les choix — l'empreinte durable des décisions

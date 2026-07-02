@@ -426,10 +426,28 @@ Codex). Régression : `node tests/smoke.js` (dungeon, save, combat).
 
 *Vérif* : smoke (codex unlock, récompenses, fx no-op si modules absents), check_doc_modules.
 
-## Lot 5 — Équilibrage & polish
-- Sim/calibration (réutiliser l'esprit `tools/sim-difficulty.js` si applicable,
-  sinon réglage manuel + telemetry `BalanceLog`).
-- Doc finale : section CLAUDE.md « Poches du Sceau » + ch. `docs/histoire/10`/`11`.
+## Lot 5 — Équilibrage & polish ✅ FAIT (2026-07-02)
+- [x] **Calibration** : `tools/sim-difficulty.js` **ne s'applique pas** (les Poches
+  sont du contenu scénarisé — énigme/puzzle sous pression — et non un combat en
+  boucle simulable). Choix retenu : **réglage manuel + télémétrie terrain**. Les
+  valeurs de départ (constantes en tête de `escape-pocket.js`) sont **confirmées**
+  comme baseline v1 : chance 25 %/piège, cap 1/étage, cooldown 1 étage (≈ 1 Poche /
+  2-3 étages), budget `40 − 2×depth` (plancher 18), malus −15 % / 20 pas, House-match
+  +20 % budget, warden ×0.7, brasier +15 %.
+- [x] **Télémétrie `BalanceLog`** (levier de calibration réel, opt-in `BALANCE_DEBUG`,
+  NO-OP par défaut) : nouvel événement `record('escape', {type, founder, houseMatch,
+  outcome, corruptionPct})` (`js/balance-log.js`) + store `escapes[]` + métriques
+  dérivées `escapeCount` / `escapeClearRate` / `escapeCorruptionMean` dans
+  `summary()`. Hook défensif dans `exitEscapePocket` (`js/escape-pocket.js`), capturé
+  AVANT le reset (le % dépend de `escapeStepSpent/Budget`).
+- [x] **Doc finale** : section dédiée **CLAUDE.md « Poches du Sceau »** (cycle de vie,
+  3 types, pression/HUD/malus, récompenses, télémétrie) + lore
+  **`docs/histoire/10 §10.5`** (lieu-signature récurrent) + mécanique
+  **`docs/histoire/11 §11.7.4`** (Boucle : l'écho temporel marchable).
+- [x] Tests : `node tests/units.js` + `node tests/smoke.js` verts (instrumentation
+  additive NO-OP par défaut, comme les hooks battle/death/spell existants — pas de
+  scénario dédié requis, cf. précédent BalanceLog).
+- [x] cache-bump (`balance-log.js`, `escape-pocket.js`) + `check_cache_versions.js`.
 
 ### Rythme & équilibrage (valeurs de départ proposées)
 | Levier | Valeur initiale | Note |
