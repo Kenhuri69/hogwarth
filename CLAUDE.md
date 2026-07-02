@@ -2173,6 +2173,81 @@ Pendant le dev, ouvrir DevTools → Application → Service Workers →
 
 ---
 
+## Poches du Sceau (Escape Game via pièges — étages 11+, Boucle Ténébreuse)
+
+Mini *escape game* endgame : à partir de l'étage 11 (post-victoire, Boucle
+Ténébreuse), un piège peut, au lieu de l'embuscade/dégâts habituels, projeter le
+groupe dans une **Poche du Sceau** — un étage caché temporaire (écho figé du
+scellement des Fondateurs) d'où l'on ne ressort qu'en franchissant la « faille du
+Sceau » (`CELL.SEAL_RIFT = 19`) après avoir résolu l'épreuve. Tout le système vit
+dans `js/escape-pocket.js` (défensif, call-sites gardés). Plan complet :
+[`.claude/plans/escape-game-traps.md`](./.claude/plans/escape-game-traps.md).
+
+### Cycle de vie (Lot 1)
+- **Entrée** : `maybeTriggerEscapePocket()` (hook dans `_triggerDungeonTrap`,
+  gate pur `canTriggerEscapePocket` : `victoryAchieved && currentFloor >= 11`, pas
+  en visite inter-mondes, pas déjà en Poche) → `enterEscapePocket(type, meta)`.
+- **Stratégie technique** : swap d'arrays **hors `floorDungeons`** + snapshot dédié
+  `_escapeSnapshot` (`_captureFloorState`/`_restoreFloorState`). `currentFloor`
+  **inchangé** (la Poche appartient à l'étage source — scaling/thème continuent de
+  lire l'étage source).
+- **Sortie** : `exitEscapePocket(success)` restaure le snapshot, replace le joueur
+  à l'entrée, applique récompense (succès) ou malus (échec).
+- **Flags sérialisés** (`state.js`, round-trip mid-poche) : `inEscapePocket`,
+  `escapePocketType`, `escapePocketState`, `_escapeSnapshot`, `escapeStepBudget`,
+  `escapeStepSpent`, `corruptionMalusSteps`, `escapePocketsCleared`,
+  `escapeFoundersCleared` (Set), cooldown d'étage.
+
+### Les 3 types d'épreuve (Lot 2–3) — thématisés par Fondateur
+| Type | Fondateur | Mécanique |
+|------|-----------|-----------|
+| **A — L'Énigme des Quatre** (`riddle`) | Rowena | 3 stèles `CELL.STELE` (réutilise `RIDDLES`) → `answerEscapeStele` grave un glyphe par bonne réponse ; mauvaise → +15 % corruption. Dernière → faille dé-scellée. |
+| **B — Le Miroir de Salazar** (`mirror`) | Salazar | 3 fragments `CELL.CHEST` à ramasser puis déposer **dans l'ordre** sur `CELL.ALTAR` (`escapeMirrorPickup`/`escapeMirrorDeposit`). Un écho du groupe (`drawGhostSprite`) court vers l'autel et brouille un dépôt s'il l'atteint. |
+| **C — L'Écho du Scellement** (`warden`) | Godric + Helga | Budget serré (×0.7) ; 3 brasiers `CELL.RUNE` (`escapeLightBrazier`, chacun rend ~15 % de budget) ; 1 refuge `CELL.REFUGE` (pause 3 pas, 1×) ; 1-2 échos hostiles évitables. |
+
+`pickEscapePocketType(rng, chosenHouse)` (PUR) tire type+Fondateur, **biaisé 1/2
+vers la Maison**. House-match (`chosenHouse` == Maison du Fondateur) → indice
+gratuit (stèle pré-gravée / fragment pré-ramassé / brasier pré-allumé) + budget
++20 % + récompense Maison bonus.
+
+### Pression, HUD & malus
+- **Jauge de corruption** = budget de pas (`escapeStepBudget`, décrémenté dans
+  `_step`). `computeEscapeStepBudget(depth) = max(18, 40 − 2×depth)`.
+  `escapeCorruptionPct(spent, budget)` → 0-100. À 100 % → **échec**.
+- **HUD** `#escape-hud` (`css/escape-pocket.css`) : objectif + jauge. Brume
+  `#frost-overlay` pilotée par le %.
+- **Échec standard** (hors Ironman) : éjection + malus « Corruption » −15 %
+  ATK/DEF/MAG pendant 20 pas (`corruptionMalusSteps`, `corruptionMalusMult`,
+  appliqué dans `recalculateStats`). Pas d'Éclat, pas de butin.
+- **Échec Ironman** : un **Écho Corrompu** (boss-écho scalé) surgit ; le vaincre =
+  éjection standard, le perdre = mort définitive (`triggerDeath` →
+  `showIronmanResult`, cause « Poche du Sceau »). Héritage : profil `sealedDeaths`
+  + titre « Scellé dans la Boucle », badge `death_cause` HoF, fait d'arme
+  `BOSS_FEATS.echo_corrompu`.
+
+### Récompenses à la réussite (Lot 4)
+- **+1 Éclat** (`accumulatedEclats`, jalon II de Briser le Cycle). **GARDE-FOU** :
+  ne crédite **pas** le jalon I `echo_scene_sceau` (réservé à l'écho canon zone D).
+- Réchauffement (soin 30 % PV/PM) + 1 tirage de butin curaté (`_grantEscapeLoot` :
+  livre élémentaire affilié / matériau Forge-Biblio / artefact mineur).
+- House-match → sort exclusif des Ruines enseigné en avance (`_escapeFounderSpell`),
+  repli 2ᵉ tirage.
+- Codex : `poche_du_sceau` + `poche_<founder>` (robinets `escapeCleared`/
+  `escapeFounder`). Quête répétable « Endurer les Poches » (`endurer_poches`,
+  Gardien de la Boucle, `checkEscapePocketQuests`).
+
+### Équilibrage & télémétrie (Lot 5)
+`sim-difficulty.js` ne modélise pas les Poches (contenu scénarisé, pas un combat
+en boucle) → calibration **manuelle + télémétrie terrain**. `BalanceLog.record(
+'escape', {type, founder, houseMatch, outcome, corruptionPct})` (hook dans
+`exitEscapePocket`, **NO-OP hors `BALANCE_DEBUG`**) alimente `escapeClearRate` /
+`escapeCount` / `escapeCorruptionMean` dans `BalanceLog.summary`. Valeurs de
+départ (constantes en tête de `escape-pocket.js`) : chance 25 %/piège, cap 1/étage,
+cooldown 1 étage (≈ 1 Poche / 2-3 étages) ; budget `40 − 2×depth` (plancher 18) ;
+malus −15 % / 20 pas ; House-match +20 % budget.
+
+---
+
 ## Mondes Parallèles / Cheminette Inter-Mondes (LOT F)
 
 Système de **visites asynchrones inter-mondes** : un joueur (visiteur) se

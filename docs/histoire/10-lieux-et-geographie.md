@@ -764,6 +764,38 @@ froide, tantôt bibliothèque aux pages effacées. Support narratif du basculeme
 **survie → maîtrise** (§10.4) : le château *essaie* encore d'aider, mais s'épuise.
 Ancrage 🦡 Poufsouffle (les Refuges temporaires, [08](08-quetes-et-sous-intrigues.md)).
 
+#### Les Poches du Sceau (écho scellé marchable) — ✅ dans le jeu
+✅ **Étages 11+ (post-victoire uniquement).** Les Fondateurs n'ont pas seulement
+posé un verrou : ils ont laissé des **gardes runiques** fail-safe. Vaincre
+Voldemort **élargit la faille** (ch. [03 §3.6](03-trame-principale.md)) et
+**dérègle** ces gardes — au moindre dérangement (un piège foulé), une rune
+instable **classe l'intrus dans une poche de temps figé**, un fragment du moment
+même du scellement, rejoué. Ce ne sont **pas** des pièges malveillants : c'est un
+**test** — *« es-tu digne de descendre plus bas, ou es-tu la corruption qui tente
+de remonter ? »* La Poche **est** un écho temporel (§10.8) rendu *marchable*.
+
+On n'en sort qu'en **refaisant, à son échelle, le geste des Quatre** — re-sceller.
+Chaque Poche est thématisée par **un Fondateur**, et rejoue **sa** vérité :
+
+| Poche | Fondateur | Ce qu'elle éprouve | Sortie |
+|-------|-----------|--------------------|--------|
+| **L'Énigme des Quatre** | 🦅 Rowena | *comprendre* — le sceau est une phrase à prononcer juste | graver 3 glyphes (bonnes réponses) |
+| **Le Miroir de Salazar** | 🐍 Salazar | *sa propre faute* — un reflet du groupe court vers l'autel | déposer 3 fragments dans l'ordre |
+| **L'Écho du Scellement** | 🦁 Godric + 🦡 Helga | *tenir & abriter* sous la peur montante | allumer 3 brasiers, atteindre l'abri |
+
+> 💡 **House-aware** : la Poche du **Fondateur de la Maison du héros**
+> (`chosenHouse`) *le reconnaît* — indice gratuit, plus de temps (budget +20 %),
+> récompense de Maison bonus. Même patron d'illumination que les Chambres des
+> Fondateurs ci-dessus.
+
+La **peur** monte le long d'une jauge de corruption (le froid/brume s'intensifie,
+signature canon). Tenir jusqu'au bout = *regarder jusqu'au fond* → on récupère un
+**Éclat** (on comprend mieux le verrou). Céder = la corruption vous **recrache**,
+affaibli — et en **Ironman**, le reflet peut vous **happer pour de bon** : le
+héros happé devient lui-même *une part du sceau, un écho de plus* (titre « Scellé
+dans la Boucle », ch. [14](14-scenarios-de-fin.md)). Mécanique détaillée :
+[11 §11.7.4](11-mondes-paralleles.md).
+
 ---
 
 ## 10.6 Variantes par Maison & héros — la même descente, vécue autrement

@@ -490,6 +490,17 @@ function exitEscapePocket(success) {
   // Mémorise le Fondateur AVANT de purger l'état (récompenses fines — Lot 4).
   const founder    = (escapePocketState && escapePocketState.founder) || 'godric';
   const houseMatch = !!(escapePocketState && escapePocketState.houseMatch);
+  // Télémétrie d'équilibrage (Lot 5) — NO-OP hors BALANCE_DEBUG. Capturé AVANT
+  // le reset (le % de corruption dépend de escapeStepSpent/Budget).
+  if (typeof BalanceLog !== 'undefined' && BalanceLog.record) {
+    BalanceLog.record('escape', {
+      type:          escapePocketType,
+      founder,
+      houseMatch,
+      outcome:       success ? 'cleared' : 'failed',
+      corruptionPct: escapeCorruptionPct(escapeStepSpent, escapeStepBudget),
+    });
+  }
   _restoreFloorState(_escapeSnapshot);
   inEscapePocket    = false;
   escapePocketType  = null;
