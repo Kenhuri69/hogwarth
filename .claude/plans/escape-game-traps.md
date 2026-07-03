@@ -449,6 +449,19 @@ Codex). Régression : `node tests/smoke.js` (dungeon, save, combat).
   scénario dédié requis, cf. précédent BalanceLog).
 - [x] cache-bump (`balance-log.js`, `escape-pocket.js`) + `check_cache_versions.js`.
 
+### Polish d'ambiance post-Lot 5 (2026-07-02)
+- [x] **Icône de scène dédiée `seal_rift`** (`js/scene-icons.js`) : la « Faille du
+  Sceau » réutilisait `SCENE_ICONS.stairs_d` (escalier — hors-thème). Nouveau SVG
+  inline « portail runique en amande, givre violet » cohérent avec le tileset
+  `seal_*` et la transition `escape-fade`. Câblé dans les deux branches de
+  l'overlay `SEAL_RIFT` (`js/movement.js`, fallback 🌀 conservé). cache-bump
+  (`scene-icons.js` v8→v9, `movement.js` v42→v43, `CACHE_VERSION` v249).
+- ⏸ **Voix murmurées des Fondateurs** (son, `founder_{godric,rowena,salazar,helga}`) :
+  reste en **repli synthèse FR** (`speakBark`). Génération d'OGG via
+  `tools/gen_voice_edge.py` **non réalisable dans l'environnement actuel** (edge-tts
+  absent, ffmpeg absent, endpoint bing non garanti). À produire hors-ligne puis
+  enregistrer dans `_VOICE_SAMPLES`. **Reliquat d'ambiance sonore ouvert.**
+
 ### Rythme & équilibrage (valeurs de départ proposées)
 | Levier | Valeur initiale | Note |
 |--------|-----------------|------|

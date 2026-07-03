@@ -660,4 +660,45 @@ const SCENE_ICONS = {
     </circle>
   </svg>`,
 
+  // Escape Game (escape-game-traps.md) — « Faille du Sceau », la sortie d'une
+  // Poche du Sceau. Portail runique en amande (mandorla) fendu de givre violet
+  // — palette froide cohérente avec le tileset seal_* et la transition
+  // escape-fade « violet-givre ». Pulsé (rift instable). ViewBox 120×110.
+  seal_rift: `<svg viewBox="0 0 120 110" width="130" height="120" xmlns="http://www.w3.org/2000/svg" style="display:block">
+    <defs>
+      <radialGradient id="riftHalo" cx="50%" cy="46%" r="60%">
+        <stop offset="0%" stop-color="#cbb4ff" stop-opacity="0.85"/>
+        <stop offset="52%" stop-color="#7a5ec8" stop-opacity="0.32"/>
+        <stop offset="100%" stop-color="#141026" stop-opacity="0"/>
+      </radialGradient>
+      <linearGradient id="riftCore" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#eaf6ff"/>
+        <stop offset="45%" stop-color="#b9a4ff"/>
+        <stop offset="100%" stop-color="#5c46a0"/>
+      </linearGradient>
+      <linearGradient id="riftRing" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#9aa4b4"/>
+        <stop offset="100%" stop-color="#2c2f3a"/>
+      </linearGradient>
+    </defs>
+    <ellipse cx="60" cy="55" rx="46" ry="44" fill="url(#riftHalo)"/>
+    <circle cx="60" cy="55" r="38" fill="none" stroke="url(#riftRing)" stroke-width="6"/>
+    <circle cx="60" cy="55" r="38" fill="none" stroke="#c9d6ff" stroke-width="0.8" opacity="0.5"/>
+    <g stroke="#bfe4ff" stroke-width="1.6" fill="none" opacity="0.85" stroke-linecap="round">
+      <path d="M 60 20 L 60 27 M 56 23 L 64 23"/>
+      <path d="M 95 55 L 88 55 M 92 51 L 92 59"/>
+      <path d="M 60 90 L 60 83 M 56 87 L 64 87"/>
+      <path d="M 25 55 L 32 55 M 28 51 L 28 59"/>
+      <animate attributeName="opacity" values="0.85;0.3;0.85" dur="2.6s" repeatCount="indefinite"/>
+    </g>
+    <path d="M 60 24 Q 78 55 60 86 Q 42 55 60 24 Z" fill="url(#riftCore)" stroke="#e8ddff" stroke-width="1.2">
+      <animate attributeName="opacity" values="1;0.62;1" dur="1.9s" repeatCount="indefinite"/>
+    </path>
+    <circle cx="60" cy="55" r="4.5" fill="#f4ecff">
+      <animate attributeName="r" values="4.5;6.4;4.5" dur="1.7s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="1;0.6;1" dur="1.7s" repeatCount="indefinite"/>
+    </circle>
+    <path d="M 30 96 Q 45 88 60 96 Q 75 88 90 96" fill="none" stroke="#bfe4ff" stroke-width="1" opacity="0.45"/>
+  </svg>`,
+
 };
