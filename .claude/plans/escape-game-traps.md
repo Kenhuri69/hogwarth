@@ -456,11 +456,16 @@ Codex). Régression : `node tests/smoke.js` (dungeon, save, combat).
   `seal_*` et la transition `escape-fade`. Câblé dans les deux branches de
   l'overlay `SEAL_RIFT` (`js/movement.js`, fallback 🌀 conservé). cache-bump
   (`scene-icons.js` v8→v9, `movement.js` v42→v43, `CACHE_VERSION` v249).
-- ⏸ **Voix murmurées des Fondateurs** (son, `founder_{godric,rowena,salazar,helga}`) :
-  reste en **repli synthèse FR** (`speakBark`). Génération d'OGG via
-  `tools/gen_voice_edge.py` **non réalisable dans l'environnement actuel** (edge-tts
-  absent, ffmpeg absent, endpoint bing non garanti). À produire hors-ligne puis
-  enregistrer dans `_VOICE_SAMPLES`. **Reliquat d'ambiance sonore ouvert.**
+- [x] **Voix murmurées des Fondateurs** (son, `founder_{godric,rowena,salazar,helga}`) :
+  **livrées** — 4 OGG **graves / amplifiés / dénaturés**. Pipeline : timbre distinct
+  par Fondateur (`tools/gen_voice_edge.py`, Edge-TTS grave/lent) + filtre dédié
+  `founder_*` dans `tools/encode_voice.sh` (pitch −14 % `asetrate/atempo`, écho de
+  scellement `aecho`, chorus spectral, `aphaser`, voile passe-bas, gain +4 dB).
+  Fichiers `audio/voice/founder_*.ogg` (+ `_raw/*.mp3`), enregistrés dans
+  `_VOICE_SAMPLES` (`js/audio-music.js`) → `speakBark` les joue à la transition
+  d'entrée en Poche (repli synthèse conservé si absents). cache-bump
+  `audio-music.js` v9→v10, `CACHE_VERSION` v250. Outils installés : `edge-tts`
+  (pip) + `ffmpeg` (via `imageio-ffmpeg`).
 
 ### Rythme & équilibrage (valeurs de départ proposées)
 | Levier | Valeur initiale | Note |
