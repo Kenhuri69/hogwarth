@@ -377,3 +377,15 @@ Doc/assets only → pas de bump PWA (sauf si `index.html` est retouché).
   contraste avec la réverbe-mémoire d'Élara). P5a précisé en conséquence.
   Plan finalisé et soumis en PR — l'implémentation démarre dans une
   session dédiée (prompt de lancement fourni à l'utilisateur).
+- **2026-07-03 — P5a LIVRÉ** ✅ : voix Manon générées en Edge-TTS selon la
+  spec §1.3. `tools/gen_voice_edge.py` : entrée `manon`
+  (`en-US-AvaMultilingualNeural`, timbre inédit, parenté Emma/Élara) +
+  support minimal des overrides rate/pitch **par clé** (3ᵉ élément de tuple
+  — porte la prosodie évolutive, aucun autre PNJ n'en a besoin). 4 OGG
+  livrés (`manon_greeting_1..4`, Vorbis mono 22 kHz, 6,9/14,9/20,6/21,2 s),
+  encodage SEC (chaîne standard, pas de filtre — contraste voulu avec la
+  réverbe-mémoire `elara_*`). Textes = copie exacte `npcs-a.js`,
+  didascalies retirées du parlé (protocole `voix-manon-elara.md` §1). Arc
+  prosodique vérifié objectivement (débit g4 > g3 ; +4→+8 Hz). Zéro JS
+  touché (clés déjà câblées) → pas de bump PWA. Reste à l'écoute humaine :
+  valider le rendu perçu (repli→élan) in-game.
