@@ -377,3 +377,14 @@ Doc/assets only → pas de bump PWA (sauf si `index.html` est retouché).
   contraste avec la réverbe-mémoire d'Élara). P5a précisé en conséquence.
   Plan finalisé et soumis en PR — l'implémentation démarre dans une
   session dédiée (prompt de lancement fourni à l'utilisateur).
+- **2026-07-03 — P8a (1/3 : monstres) LIVRÉ** ✅ : `tools/optimize_images.py`
+  créé (quantization palette libimagequant dithering 1.0, familles, idempotent,
+  garde-fou « réécrit seulement si gain > 15 % », planches `img/icons/_*`
+  exclues — P8c en attente d'aval). Famille `monsters` exécutée : **78 sprites,
+  16,9 → 5,7 Mo (−66 %)**. Fidélité vérifiée : RMS visuel 1-2/255 composé sur
+  fond opaque, planche avant/après `tools/_shots/optimize_monstres_avant_apres.jpg`.
+  Assertion smoke `scenarioMonsterImages` adaptée : accepte palette (ct=3)
+  **avec tRNS** en plus de RGBA (ct=6) — l'intention (transparence) est
+  inchangée. `units` 1058 ✅, smoke MonsterImages/ItemIcons/FloorTextures/
+  SceneIcons ✅. Bump `CACHE_VERSION` différé à la dernière PR de famille
+  (une seule purge SWR pour les 3 lots). Familles npc/icons+misc : PRs suivantes.
