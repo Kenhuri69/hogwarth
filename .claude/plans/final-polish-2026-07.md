@@ -105,7 +105,34 @@ Edge TTS à valider derrière le proxy ; sinon génération hors session
 
 | Personnage | Priorité | Clés (déjà câblées ?) | Style vocal | Exemple (extrait) |
 |---|---|---|---|---|
-| **Manon** | 🔴 P0 — « cœur émotionnel », seul PNJ majeur muet | ✅ `manon_greeting_1..4` dans `_VOICE_SAMPLES` (`audio-music.js:331`), repli silencieux actif | Jeune femme 16-17 ans, fragile puis lumineuse. ElevenLabs (Multilingual v2) si dispo, sinon Edge `fr-FR-EloiseNeural`, rate −6 %, pitch +2 Hz | *« Ce nom, il vit. Ici, plus bas, à l'étage de la Défense. C'est mon père. »* (textes complets : `voix-manon-elara.md §1`) |
+| **Manon** | 🔴 P0 — « cœur émotionnel », seul PNJ majeur muet | ✅ `manon_greeting_1..4` dans `_VOICE_SAMPLES` (`audio-music.js:331`), repli silencieux actif | ✅ **Décidé (2026-07-03) : Edge-TTS avec identité unique** — voir spec ci-dessous | *« Ce nom, il vit. Ici, plus bas, à l'étage de la Défense. C'est mon père. »* (textes complets : `voix-manon-elara.md §1`) |
+**Spec voix Manon — identité unique en Edge-TTS** (même exigence de
+distinctivité qu'Élara, leviers différents ; timbres déjà pris vérifiés dans
+`gen_voice_edge.py:54-91` — Éloise = Hermione, Emma = Élara, Denise =
+McGonagall-help, Vivienne = Chourave/Helga) :
+
+1. **Timbre jamais utilisé** : `en-US-AvaMultilingualNeural` (douce, jeune,
+   légèrement « autre » en français). 💡 Bonus narratif : une **parenté de
+   timbre avec Élara** (Emma, même famille multilingue « d'ailleurs ») — la
+   fille porte l'écho de la voix de sa mère, sans être identique.
+2. **Prosodie ÉVOLUTIVE par page** — traitement qu'aucun autre PNJ n'a (tous
+   ont un réglage fixe) : l'arc émotionnel du greeting est joué dans les
+   réglages, du repli vers l'élan :
+   | Clé | rate | pitch | Intention |
+   |---|---|---|---|
+   | `manon_greeting_1` | −10 % | +4 Hz | voix basse, refermée (la fugueuse) |
+   | `manon_greeting_2` | −8 % | +4 Hz | le récit s'installe (Élara, la malle) |
+   | `manon_greeting_3` | −6 % | +6 Hz | la découverte (la photo, le nom) |
+   | `manon_greeting_4` | −2 % | +8 Hz | l'élan, presque un sourire (« Tu veux bien m'écouter ? ») |
+3. **Encodage SEC** (chaîne standard d'`encode_voice.sh`, sans filtre) : pas
+   de réverbe-mémoire — Élara est un souvenir, **Manon est là, à hauteur
+   d'épaule**. Le contraste sec/réverbéré distingue immédiatement la fille
+   vivante de la mère défunte quand les deux voix s'enchaînent dans l'arc.
+4. Upgrade ElevenLabs possible plus tard, fichier par fichier (protocole
+   conservé dans `voix-manon-elara.md`), sans toucher au câblage.
+
+| Personnage | Priorité | Clés (déjà câblées ?) | Style vocal | Exemple (extrait) |
+|---|---|---|---|---|
 | **Esprit de Sirius** (ét. 10/20) | 🟠 P1 | ❌ à câbler (`sirius_greeting_*`) | Voix d'homme mûre, chaleureuse, légère réverbération « écho » à l'encodage (signature type Élara) | *« Douze ans derrière un voile, et c'est encore pour Harry que je reste. Va — je garde la porte. »* |
 | **Gardien de la Boucle** (ét. 11+) | 🟠 P1 | ❌ à câbler (`gardien_boucle_greeting_*`) | Grave, lent, légèrement dénaturé — réutiliser la chaîne d'effets des voix Fondateurs (`founder_*`, pipeline livré Lot 5 escape) | *« Tu reviens. Ils reviennent tous. La Boucle ne se lasse pas — et moi non plus. »* |
 
@@ -150,7 +177,7 @@ champ persistant `masteredElements: []` (union cross-run, rempli par
 
 | # | Tâche | Fichiers | Vérification | Cache PWA |
 |---|---|---|---|---|
-| P5a | Voix Manon : générer `manon_greeting_1..4` (textes de `voix-manon-elara.md`), encoder OGG | `audio/voice/_raw/`, `audio/voice/` | audible in-game (clés déjà câblées, zéro JS) ; `smoke` filtré npc/audio | non (assets à la demande, pas de précache) |
+| P5a | Voix Manon **Edge-TTS, identité unique** (spec §1.3 : Ava multilingue + prosodie évolutive par page + encodage sec) : entrée `manon` dans `VOICES` + textes dans `LINES` de `gen_voice_edge.py` (copie exacte `npcs-a.js`), générer, encoder OGG | `tools/gen_voice_edge.py`, `audio/voice/_raw/`, `audio/voice/` | écoute (arc repli→élan perceptible, contraste sec vs réverbe Élara) ; audible in-game (clés déjà câblées, zéro JS) ; `smoke` filtré npc/audio | non (assets à la demande, pas de précache) |
 | P5b | Voix Sirius + Gardien de la Boucle : clés `_VOICE_SAMPLES` + appels `playVoice` au greeting (modèle Manon/Lupin) + OGG | `audio-music.js`, `npc-dialog.js` (si hook requis), assets | `smoke` npc ; repli silencieux vérifié sans asset | ✅ bump `audio-music.js` |
 | P6a | 2 side-quests (`lettre_jamais_envoyee`, `aconit_de_la_meute`) + dialogues | `quests-templates.js`, `npcs-a.js` | `units.js` §11ter (intégrité réf.) + scénario smoke quests | ✅ bump |
 | P6b | Passe d'écriture PNJ minces (§1.2, ~6 fiches) | `npcs-a.js`, `npcs-b.js` | `smoke` npc/dialog ; relecture | ✅ bump |
@@ -324,10 +351,11 @@ Doc/assets only → pas de bump PWA (sauf si `index.html` est retouché).
 
 ## ❓ Décisions en attente (utilisateur)
 
-1. **Voix Manon** : Edge-TTS immédiat (gratuit, dispo en session si le réseau
-   passe) avec upgrade ElevenLabs plus tard, ou attendre les MP3 ElevenLabs
-   (protocole prêt dans `voix-manon-elara.md`) ? *(reco : Edge-TTS d'abord —
-   remplaçable fichier par fichier.)*
+1. ~~**Voix Manon** : Edge-TTS vs ElevenLabs~~ ✅ **Tranché (2026-07-03)** :
+   **Edge-TTS**, avec un travail dédié d'identité vocale unique (spec §1.3 :
+   timbre Ava jamais utilisé + parenté de timbre avec Élara + prosodie
+   évolutive par page + encodage sec). Upgrade ElevenLabs possible plus tard,
+   fichier par fichier.
 2. **P8c** : suppression des planches `_ingame*` et du doublon `houses/v2`
    (~3,3 Mo repo, jamais servis) — aval explicite requis.
 3. **P8d** : concat JS — *(reco : écarter, risque > gain.)*
@@ -342,3 +370,10 @@ Doc/assets only → pas de bump PWA (sauf si `index.html` est retouché).
   reliquat = compression images (outillage désormais dispo : Pillow,
   edge-tts, ffmpeg statique vérifiés dans l'env) ; Lot 4 = principal
   chantier neuf (README v2, CHANGELOG, checklist release, annonce).
+- **2026-07-03 (finalisation)** — Décision voix Manon tranchée : **Edge-TTS
+  avec identité vocale unique** (spec complète §1.3 — timbre
+  `en-US-AvaMultilingualNeural` inédit, parenté de timbre mère/fille avec
+  Élara, prosodie évolutive par page du repli vers l'élan, encodage sec en
+  contraste avec la réverbe-mémoire d'Élara). P5a précisé en conséquence.
+  Plan finalisé et soumis en PR — l'implémentation démarre dans une
+  session dédiée (prompt de lancement fourni à l'utilisateur).
