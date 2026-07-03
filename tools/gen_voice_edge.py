@@ -78,6 +78,16 @@ VOICES = {
     # (encode_voice.sh, filtre dédié aux clés elara_*). Aucun autre PNJ n'a ce
     # traitement → Élara est immédiatement reconnaissable comme un souvenir.
     "elara": dict(voice="en-US-EmmaMultilingualNeural", rate="-7%", pitch="-12Hz"),
+    # ── Fondateurs — murmures d'écho des Poches du Sceau (escape-game-traps.md) ──
+    # Voix « graves, amplifiées, dénaturées » : registre le plus bas possible en
+    # TTS (grave/lent) ; le reste du traitement (pitch -14 %, écho scellé, chorus
+    # spectral, voile passe-bas, gain) est appliqué à l'encodage par le filtre
+    # founder_* d'encode_voice.sh → timbre ancien/surnaturel. Un timbre distinct
+    # par Fondateur pour rester reconnaissables sous le traitement.
+    "founder_godric":  dict(voice="de-DE-FlorianMultilingualNeural",  rate="-14%", pitch="-12Hz"),
+    "founder_rowena":  dict(voice="de-DE-SeraphinaMultilingualNeural", rate="-10%", pitch="-8Hz"),
+    "founder_salazar": dict(voice="fr-FR-RemyMultilingualNeural",     rate="-14%", pitch="-14Hz"),
+    "founder_helga":   dict(voice="fr-FR-VivienneMultilingualNeural", rate="-10%", pitch="-8Hz"),
 }
 
 # Textes — copie exacte de npcs.js (dialogues.greeting + dialoguesByQuest).
@@ -493,6 +503,13 @@ LINES = {
          "Besoin d'aide ? Le bouton Aide, dans les Réglages, rouvre ce "
          "guide quand tu veux. Bonne aventure à Poudlard !"),
     ],
+    # ── Fondateurs — murmures d'écho des Poches du Sceau ──
+    # Copie EXACTE des lignes de ESCAPE_FOUNDER_VOICE (js/escape-pocket.js).
+    # Speaker == clé OGG (une phrase par Fondateur).
+    "founder_godric":  [("founder_godric",  "On ne scelle pas par peur. On tient la porte.")],
+    "founder_rowena":  [("founder_rowena",  "Comprends, et la faille apparaît.")],
+    "founder_salazar": [("founder_salazar", "J'ai scellé ma part avec ma faute.")],
+    "founder_helga":   [("founder_helga",   "J'ai creusé un abri pour ceux qui restent.")],
 }
 
 

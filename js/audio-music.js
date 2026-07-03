@@ -337,6 +337,14 @@ Object.assign(AudioSystem, {
     elara_feuillet_1:            'audio/voice/elara_feuillet_1.ogg',
     elara_feuillet_2:            'audio/voice/elara_feuillet_2.ogg',
     elara_feuillet_3:            'audio/voice/elara_feuillet_3.ogg',
+    // Fondateurs — murmures d'écho des Poches du Sceau (escape-game-traps.md).
+    // Voix graves/amplifiées/dénaturées (Edge-TTS + filtre founder_* de
+    // encode_voice.sh). Jouées par speakBark à la transition d'entrée en Poche
+    // (js/escape-pocket.js, ESCAPE_FOUNDER_VOICE). Repli synthèse si absents.
+    founder_godric:              'audio/voice/founder_godric.ogg',
+    founder_rowena:              'audio/voice/founder_rowena.ogg',
+    founder_salazar:             'audio/voice/founder_salazar.ogg',
+    founder_helga:               'audio/voice/founder_helga.ogg',
   },
 
   // ── Lecture d'une voix narrative (one-shot, avec ducking music) ──
