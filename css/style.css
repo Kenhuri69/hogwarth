@@ -212,14 +212,17 @@ body {
 .castle-art {
   margin: 14px 0 8px;
   opacity: 0.95;
-  width: min(80vw, 600px);
   max-width: calc(100vw - 80px);
   filter: drop-shadow(0 12px 30px rgba(0,0,0,0.55));
+  display: flex;
+  justify-content: center;
 }
 .castle-art svg,
 .castle-art img {
-  width: 100%;
+  width: auto;
   height: auto;
+  max-width: min(80vw, 600px);
+  max-height: min(64vh, 620px);
   display: block;
   border-radius: 10px;
 }
