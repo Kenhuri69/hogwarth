@@ -377,3 +377,17 @@ Doc/assets only → pas de bump PWA (sauf si `index.html` est retouché).
   contraste avec la réverbe-mémoire d'Élara). P5a précisé en conséquence.
   Plan finalisé et soumis en PR — l'implémentation démarre dans une
   session dédiée (prompt de lancement fourni à l'utilisateur).
+- **2026-07-04 — P10 + V3 LIVRÉS** ✅ (item n°7) :
+  `docs/release-checklist.md` consolidée — 6 volets : pré-vol automatique
+  (units/smoke 277/pwa-smoke + 3 garde-fous CI), parcours 1→10 + victoire
+  (re-run qa-parcours-complet, ressenti humain), endgame/lassitude
+  (playtest-3-boucles) **+ section 2bis Poches du Sceau** (V3 : protocole
+  V1 prêt à dérouler — `hogwarts_balance_debug='1'`, cibles clear-rate
+  60-75 % hors House-match, corruption 50-90 %, 3 types tombés ; V2 :
+  leviers exacts + « 1 PR de tuning max »), perf (checklist
+  perf-optimization + avertissement machine du re-pass P8b), mobile réel
+  15 min, spot-checks du contenu neuf de la release. Tableau de verdict
+  GO/NO-GO en pied. **V1/V2 = session humaine à dérouler par
+  l'utilisateur via cette checklist** (le plan les marque « M (humain) » —
+  un bot connaîtrait les solutions des épreuves, sa mesure de clear-rate
+  serait insignifiante). Item n°7 livré côté outillage.
