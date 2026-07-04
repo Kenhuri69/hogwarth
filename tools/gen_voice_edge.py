@@ -78,6 +78,16 @@ VOICES = {
     # (encode_voice.sh, filtre dédié aux clés elara_*). Aucun autre PNJ n'a ce
     # traitement → Élara est immédiatement reconnaissable comme un souvenir.
     "elara": dict(voice="en-US-EmmaMultilingualNeural", rate="-7%", pitch="-12Hz"),
+    # Manon : la fille VIVANTE — identité vocale unique (final-polish §1.3).
+    # 3 leviers : (1) timbre jamais utilisé ailleurs, Ava multilingue (douce,
+    # jeune, légèrement « autre » en français) — parenté de famille avec Emma
+    # (Élara) : la fille porte l'écho de la voix de sa mère sans être
+    # identique ; (2) prosodie ÉVOLUTIVE par page (traitement qu'aucun autre
+    # PNJ n'a — overrides par clé dans LINES) : l'arc du greeting va du repli
+    # vers l'élan ; (3) encodage SEC (encode_voice.sh, chaîne standard sans
+    # filtre) — contraste voulu avec la réverbe-mémoire d'Élara : la mère est
+    # un souvenir, Manon est là, à hauteur d'épaule.
+    "manon": dict(voice="en-US-AvaMultilingualNeural", rate="-10%", pitch="+4Hz"),
     # Esprit de Sirius (ét. 10/20) : voix d'homme mûre, chaleureuse — timbre
     # multilingue inédit (Brian, chaud/posé). La « voix de l'au-delà » est
     # signée à l'encodage par une LÉGÈRE réverbe d'écho (SIRIUS_FILTER,
@@ -437,6 +447,40 @@ LINES = {
          "Tu reviens vivant — et avec le chocolat. Approche : voici le sort "
          "du Patronus."),
     ],
+    # Manon — greeting 4 pages (étage 3). Texte = copie exacte de npcs-a.js,
+    # didascalies entre parenthèses retirées du parlé (protocole
+    # voix-manon-elara.md §1). Le 3e élément du tuple = overrides rate/pitch
+    # par page : la prosodie JOUE l'arc émotionnel, du repli (voix basse,
+    # lente) vers l'élan (presque un sourire).
+    "manon": [
+        ("manon_greeting_1",
+         "Ne fais pas de bruit. S'il te plaît. Tu n'es pas un professeur. "
+         "Tant mieux — eux, je les évite.",
+         dict(rate="-10%", pitch="+4Hz")),   # voix basse, refermée (la fugueuse)
+        ("manon_greeting_2",
+         "Je m'appelle Manon. Manon Aubin — le nom de ma mère ; c'est le "
+         "seul que j'aie le droit de dire. Je vis dans ce château sans y "
+         "être inscrite : je dors dans les salles vides, je mange ce que je "
+         "trouve. Personne ne sait que je suis là. Personne ne doit savoir.",
+         dict(rate="-8%", pitch="+4Hz")),    # le récit s'installe (Élara, la malle)
+        ("manon_greeting_3",
+         "Il y a deux mois, ma mère est morte. Élara. C'est elle qui m'a "
+         "élevée — seule, loin d'ici — et qui m'a répété toute ma vie que "
+         "mon père était tombé en héros à la guerre. En vidant sa maison, "
+         "j'ai trouvé une photographie cousue dans la doublure d'une "
+         "vieille malle : un homme qui me tenait, bébé, et qui ne souriait "
+         "pas. Au dos, un seul mot. Un nom : Lupin.",
+         dict(rate="-6%", pitch="+6Hz")),    # la découverte (la photo, le nom)
+        ("manon_greeting_4",
+         "Ce nom, il vit. Ici, plus bas, à l'étage de la Défense. C'est mon "
+         "père. Ma mère m'a menti chaque jour pendant seize ans, et elle "
+         "est partie avant que je puisse lui demander pourquoi, en face. "
+         "Alors il me reste lui. Depuis des semaines je tourne dans ces "
+         "couloirs sans oser descendre lui dire que j'existe encore. Tu "
+         "veux bien m'écouter ? Ça fait si longtemps que je n'ai parlé à "
+         "personne.",
+         dict(rate="-2%", pitch="+8Hz")),    # l'élan, presque un sourire
+    ],
     # Élara — voix posthume lue à la collecte des feuillets clairs (Acte III).
     # Texte = legs de joie de la mère (cf. .claude/plans/voix-manon-elara.md).
     # L'encodage applique la signature de réverbe « mémoire » aux clés elara_*.
@@ -566,8 +610,12 @@ async def main(targets):
         cfg = VOICES[npc]
         print(f"── {npc} — {cfg['voice']} "
               f"(rate {cfg['rate']}, pitch {cfg['pitch']}) ──")
-        for key, text in LINES[npc]:
-            await gen_one(key, text, cfg)
+        for entry in LINES[npc]:
+            # Tuple (key, text) ou (key, text, overrides) — les overrides
+            # rate/pitch par clé portent la prosodie évolutive (Manon).
+            key, text = entry[0], entry[1]
+            eff = {**cfg, **entry[2]} if len(entry) > 2 else cfg
+            await gen_one(key, text, eff)
     print("Terminé. MP3 dans audio/voice/_raw/ — convertir en OGG ensuite.")
 
 
