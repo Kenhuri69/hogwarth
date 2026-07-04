@@ -426,3 +426,14 @@ Doc/assets only → pas de bump PWA (sauf si `index.html` est retouché).
   purger le cache SWR des images. `check_cache_versions` ✅,
   `pwa-smoke` (offline OK, cache v252) ✅, smoke icons/textures (6) ✅.
   **P8a terminé** — reste P8b (re-pass Lighthouse).
+- **2026-07-03 — P8b LIVRÉ** ✅ (mesure consignée dans
+  `docs/perf-lighthouse.md`) : avant/après P8a **identiques en lab**
+  (57 / LCP ~23 s sur cette machine) — 2 enseignements : (1) le score
+  lab n'est pas comparable entre machines (le même master mesure 69/6,1 s
+  sur la machine de juin vs 57/23 s ici ; breakdown : l'image arrive en
+  90 ms, le paint attend ~23 s d'éval JS simulée — limite « 85 modules
+  non-minifiés » déjà assumée, P8d écarté) ; (2) P8a ne cible pas le
+  first-visit : son gain est le poids in-game (dialogue Rosmerta 1,6 Mo
+  → 29 Ko, pack offline ÷2). Cibles lab (>75, <5 s) reportées au volet
+  Perf de la checklist release P10, sur machine comparable/appareil réel.
+  **Item n°2 (P8a-b) terminé.**

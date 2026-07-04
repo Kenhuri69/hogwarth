@@ -48,6 +48,55 @@ cf. `CLAUDE.md`). Le `defer` des scripts a déjà été livré (P1.5). Aucune
 micro-optim supplémentaire n'est applicable sans renier cette contrainte
 d'architecture — hors-scope.
 
+## Re-pass P8b après compression images (2026-07, plan final-polish §Lot 3)
+
+Mesure avant/après la série P8a (PRs compression : monstres, PNJ/héros,
+icônes/misc — `img/` **44 → 20 Mo**, −55 %), même protocole, Lighthouse
+13.4.0, même machine, cache vide :
+
+| État mesuré | Score | FCP | LCP | Speed Index | TTI |
+|---|---|---|---|---|---|
+| master pré-P8a (même env.) | 57 | 3,9 s | 23,1 s | 23,6 s | 23,1 s |
+| après P8a | 57 | 3,9 s | 22,8 s | 26,8 s* | 22,8 s |
+
+\* variance inter-runs du simulateur (2ᵉ run : 23,4 s).
+
+**Lecture (2 constats importants)** :
+
+1. **La cible « LCP < 5 s / score > 75 » n'est pas comparable entre
+   machines.** Le même code (master) au même Lighthouse 13.4.0 mesure
+   **69 / LCP 6,1 s** sur la machine du pass de juin et **57 / LCP 23 s**
+   sur celle-ci. Le breakdown LCP l'explique entièrement : TTFB 5 ms +
+   resource load 75 ms (l'image arrive vite, `fetchpriority` OK,
+   checklist discovery 100 % verte) + **element render delay ≈ 23 s** —
+   le paint est bloqué par l'évaluation simulée des 85 modules JS
+   non-minifiés, très sensible au CPU hôte. C'est la « limite résiduelle
+   assumée » ci-dessus, amplifiée par un conteneur plus lent. Le remède
+   serait la minification/concat (P8d) — **écartée par principe**
+   (zéro build step).
+2. **P8a ne cible pas le lab first-visit — et c'est attendu.** L'écran
+   titre ne charge que `title.jpg` (déjà optimisée, inchangée) : les
+   images compressées sont servies **à la demande** (combats, dialogues,
+   bestiaire, blasons). Le gain P8a est le **poids des données en jeu** :
+
+   | Famille | Avant | Après |
+   |---|---|---|
+   | `img/monsters/` (78 sprites) | 16,9 Mo | 5,7 Mo |
+   | `img/npc/` (+ resize Rosmerta/Mundungus) | 8,0 Mo | 2,1 Mo |
+   | `img/players/` + médaillons | 2,6 Mo | 0,9 Mo |
+   | `img/icons*` | 9,6 Mo | 7,5 Mo |
+   | `img/houses`/`fx`/`codex`/`scenes`/`textures` | ~7 Mo | ~3,5 Mo |
+   | **Total `img/`** | **44 Mo** | **20 Mo** |
+
+   Concrètement : un dialogue PNJ coûtait jusqu'à 1,6 Mo (Rosmerta),
+   il coûte 29 Ko ; un combat de boss ~400 Ko → ~100 Ko ; le pack
+   offline complet (PWA) pèse moitié moins en données mobiles.
+
+**Verdict P8b** : gain joueur validé côté données (−55 %) ; les cibles
+lab (score > 75, LCP < 5 s) doivent être re-mesurées sur une machine
+comparable à celle de juin — reporté à la checklist release (P10,
+volet Perf), idéalement sur appareil Android réel.
+
 ## Protocole de mesure (reproductible)
 
 ```bash
