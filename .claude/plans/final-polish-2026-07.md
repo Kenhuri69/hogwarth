@@ -406,6 +406,20 @@ Doc/assets only → pas de bump PWA (sauf si `index.html` est retouché).
   (lettre = 1ʳᵉ livraison inter-PNJ, aconit) et quêtes de Boucle
   (confier/Lockhart/compagnie). **Le Lot 1 est intégralement clos ;
   tous les items du plan sont livrés.**
+- **2026-07-04 — P10 + V3 LIVRÉS** ✅ (item n°7) :
+  `docs/release-checklist.md` consolidée — 6 volets : pré-vol automatique
+  (units/smoke 277/pwa-smoke + 3 garde-fous CI), parcours 1→10 + victoire
+  (re-run qa-parcours-complet, ressenti humain), endgame/lassitude
+  (playtest-3-boucles) **+ section 2bis Poches du Sceau** (V3 : protocole
+  V1 prêt à dérouler — `hogwarts_balance_debug='1'`, cibles clear-rate
+  60-75 % hors House-match, corruption 50-90 %, 3 types tombés ; V2 :
+  leviers exacts + « 1 PR de tuning max »), perf (checklist
+  perf-optimization + avertissement machine du re-pass P8b), mobile réel
+  15 min, spot-checks du contenu neuf de la release. Tableau de verdict
+  GO/NO-GO en pied. **V1/V2 = session humaine à dérouler par
+  l'utilisateur via cette checklist** (le plan les marque « M (humain) » —
+  un bot connaîtrait les solutions des épreuves, sa mesure de clear-rate
+  serait insignifiante). Item n°7 livré côté outillage.
 - **2026-07-04 — P9a-c LIVRÉ** ✅ (item n°5) : README v2 + CHANGELOG.
   P9a : 4 captures RÉELLES via Playwright (harness smoke + bascule
   d'écrans explicite) — donjon 3D duo (86 Ko), combat 3 ennemis avec
