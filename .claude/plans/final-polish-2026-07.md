@@ -408,3 +408,10 @@ Doc/assets only → pas de bump PWA (sauf si `index.html` est retouché).
   inchangée. `units` 1058 ✅, smoke MonsterImages/ItemIcons/FloorTextures/
   SceneIcons ✅. Bump `CACHE_VERSION` différé à la dernière PR de famille
   (une seule purge SWR pour les 3 lots). Familles npc/icons+misc : PRs suivantes.
+- **2026-07-03 — P8a (2/3 : npc + players + médaillons) LIVRÉ** ✅ : familles
+  `npc` + `players` : **npc 8,0 → 2,1 Mo, players 1,9 → 0,7 Mo**.
+  Rosmerta 1408×768/1,6 Mo → 256×140/29 Ko et Mundungus 928×1148/1,5 Mo →
+  207×256/42 Ko (standard portrait PNJ 256², affichage 64-96 px). Planche
+  `tools/_shots/optimize_npc_avant_apres.jpg` (contrôle visuel OK, y compris
+  portrait photo-réaliste Manon). Smoke npc (11) + MultiplayerPresence
+  (16 sprites plein corps chargent) ✅.
