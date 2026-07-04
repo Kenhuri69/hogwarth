@@ -2036,6 +2036,40 @@ function loadNpcs() {
 })();
 
 // ============================================================
+// 11sexies. P6b — passe d'écriture PNJ : verrous anti-régression
+// ------------------------------------------------------------
+// (a) Sir Patrick avait DEUX clés dialoguesByQuest dupliquées dans son
+//     objet : la 2e écrasait la 1re et rendait chasse_sans_tete_boucle
+//     muette (même bug que jadis chez Manon, §11bis). On verrouille la
+//     présence des DEUX dialogues après fusion.
+// (b) Les 4 marchands de la Boucle portent chacun leur théorie du Sceau
+//     (recoupement joueur) ; les fantômes leur mémoire des Fondateurs.
+// ============================================================
+(function testP6bNpcWritingPass() {
+  const { NPCS } = loadNpcs();
+  const pat = NPCS.find(n => n.id === 'sir_patrick');
+  check('sir_patrick: les 2 quêtes ont leur dialogue (fusion des clés dupliquées)',
+    !!pat && !!pat.dialoguesByQuest.chasse_sans_tete && !!pat.dialoguesByQuest.chasse_sans_tete_boucle);
+  check('sir_patrick: ≥ 5 idleRandom (passe P6b)',
+    !!pat && pat.dialogues.idleRandom.length >= 5);
+
+  // Chaque marchand de la Boucle évoque le Sceau à sa manière (≥ 1 ligne).
+  const sceau = /[Ss]ceau|scell/;
+  for (const id of ['marchand_clandestin', 'apothicaire_tenebreux', 'forgeron_tenebreux', 'marchand_ombre']) {
+    const n = NPCS.find(x => x.id === id);
+    check(`${id}: porte une théorie du Sceau`,
+      !!n && (n.dialogues.idleRandom || []).some(l => sceau.test(l)));
+  }
+  // Fantômes : mémoire des Fondateurs.
+  const helga = NPCS.find(n => n.id === 'moine_gras');
+  const nick  = NPCS.find(n => n.id === 'sir_nicolas');
+  check('moine_gras: mémoire de Helga',
+    !!helga && helga.dialogues.idleRandom.some(l => /Helga/.test(l)));
+  check('sir_nicolas: mémoire de Godric (porte close)',
+    !!nick && nick.dialogues.idleRandom.some(l => /Godric/.test(l) && /porte/.test(l)));
+})();
+
+// ============================================================
 // 12. data.js — Artefacts & Reliquaires 2.0, socle data (Lot P0)
 //    ARTIFACT_FORMS (registre inerte) + premiumStat (helper PUR)
 // ------------------------------------------------------------
