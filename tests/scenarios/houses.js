@@ -452,6 +452,12 @@ async function scenarioHouseApotheoseTier() {
     chosenHouse = 'Poufsouffle'; houseTier = 18;
     for (let y = 0; y < enemyMap.length; y++)
       for (let x = 0; x < enemyMap[y].length; x++) enemyMap[y][x] = null;
+    // Anti-flake : neutraliser aussi les PIÈGES — un pas sur CELL.TRAP
+    // inflige des dégâts qui masquent la régén (+2 −3 = hpGain négatif,
+    // vu en CI). Même famille de flake que #683.
+    for (let y = 0; y < dungeon.length; y++)
+      for (let x = 0; x < dungeon[y].length; x++)
+        if (dungeon[y][x] === CELL.TRAP) dungeon[y][x] = CELL.FLOOR;
     party[0].hp = 5; party[0].sp = 5;
     const hpBefore = party[0].hp, spBefore = party[0].sp;
     const x0 = playerX, y0 = playerY;
