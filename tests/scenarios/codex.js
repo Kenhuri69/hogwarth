@@ -939,6 +939,44 @@ async function scenarioNgPlusProfile() {
   assert(hud.visible, 'bandeau titre HUD devrait être visible en NG+');
   assert(hud.run === true && hud.title === 'Briseur de Cycle', 'flags NG+ devraient survivre au round-trip de save');
 
+  // Bibliothèque des Maîtrises (P7) : round-trip via le VRAI hook
+  // learnMasteryBook → profil persistant (union cross-run, cosmétique).
+  const mastery = await page.evaluate(() => {
+    // Livre de Maîtrise Feu au sac → lecture (hook réel).
+    const book = ITEMS.find(i => i.id === 'livre_feu_dragon');
+    player.inventory.push({ ...book });
+    learnMasteryBook(player.inventory.length - 1);
+    const p1 = getPlayerProfile();
+    // Doublon : se dissipe, mais la collection reste 1/6 (idempotent).
+    player.inventory.push({ ...book });
+    learnMasteryBook(player.inventory.length - 1);
+    const p2 = getPlayerProfile();
+    // Valeur invalide rejetée.
+    recordMasteredElementToProfile('plasma');
+    const p3 = getPlayerProfile();
+    // Rendu Codex : section + livre nommé une fois collecté.
+    renderProfileCodex();
+    const body = document.getElementById('wizard-codex-body');
+    const txt = body ? body.textContent : '';
+    return {
+      afterRead: p1.masteredElements.join('|'),
+      afterDup:  p2.masteredElements.join('|'),
+      afterBad:  p3.masteredElements.join('|'),
+      buffKept:  elementalMastery.feu > 0,
+      section:   txt.includes('Bibliothèque des Maîtrises · 1/6'),
+      bookName:  txt.includes('Souffle du Magyar'),
+      lockedElsewhere: txt.includes('glace'),
+    };
+  });
+  console.log('  mastery :', mastery);
+  assert(mastery.afterRead === 'feu', 'lecture du Livre Feu → profil [feu]');
+  assert(mastery.afterDup === 'feu',  'doublon → collection inchangée (idempotent)');
+  assert(mastery.afterBad === 'feu',  'élément invalide rejeté');
+  assert(mastery.buffKept,            'le buff within-run reste elementalMastery');
+  assert(mastery.section,             'Codex : section « Bibliothèque des Maîtrises · 1/6 »');
+  assert(mastery.bookName,            'Codex : livre collecté affiché par son nom');
+  assert(mastery.lockedElsewhere,     'Codex : éléments non collectés listés (grisés)');
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS (NG+ P5)`);

@@ -277,6 +277,7 @@ window.UX_safe = new Proxy({}, {
     { name: 'migrateLegacyKey',   source: 'save-slots.js',   kind: 'fn'  },
     { name: 'getRequirementCodex', source: 'save-slots.js',  kind: 'fn', optional: true }, // V3
     { name: 'getPlayerProfile',   source: 'profile.js',      kind: 'fn', optional: true }, // Ch.14 P5
+    { name: 'recordMasteredElementToProfile', source: 'profile.js', kind: 'fn', optional: true }, // P7 Bibliothèque des Maîtrises
     { name: 'recordEndingToProfile', source: 'profile.js',   kind: 'fn', optional: true }, // Ch.14 P5
     { name: 'ngPlusAvailable',    source: 'profile.js',      kind: 'fn', optional: true }, // Ch.14 P5
     { name: 'openWizardCodex',    source: 'profile.js',      kind: 'fn', optional: true }, // Ch.14 P6

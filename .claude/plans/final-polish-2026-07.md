@@ -397,6 +397,20 @@ Doc/assets only → pas de bump PWA (sauf si `index.html` est retouché).
   (lettre = 1ʳᵉ livraison inter-PNJ, aconit) et quêtes de Boucle
   (confier/Lockhart/compagnie). **Le Lot 1 est intégralement clos ;
   tous les items du plan sont livrés.**
+- **2026-07-04 — P7 LIVRÉ** ✅ (item n°4) : Bibliothèque des Maîtrises au
+  Codex du Sorcier. Champ persistant `masteredElements` (profil
+  `hogwarts_rpg_profile`, assaini à la lecture) + helper PUR
+  `mergeMasteredElements` (union, ordre canonique, rejet des inconnus) +
+  `recordMasteredElementToProfile` hooké dans `learnMasteryBook`
+  (les 2 branches — lecture ET doublon dissipé). Section « Bibliothèque
+  des Maîtrises · N/6 » dans `renderProfileCodex` (6 puces, patron visuel
+  des fins — zéro CSS neuf ; livre nommé une fois collecté, élément seul
+  sinon, pas de spoiler de source). Bouton hub visible dès le 1er livre.
+  ⚠️ Contrainte cardinale respectée : PUREMENT cosmétique, aucun calcul
+  de gameplay ne lit la collection (buff = `elementalMastery` within-run).
+  Tests : units §11quater-bis (10 assertions pures) + extension
+  `scenarioNgPlusProfile` (hook réel, doublon, invalide, rendu) ; smoke
+  save (6) ✅. Bump profile/inventory/loader + CACHE_VERSION v253.
 - **2026-07-04 — P6a LIVRÉ** ✅ (item n°3) : les 2 side-quests du §1.2.
   `lettre_jamais_envoyee` inaugure la **livraison inter-PNJ** : donnée par
   Manon (nouveau champ `grantOnAccept` — l'objet entre au sac à l'accept,

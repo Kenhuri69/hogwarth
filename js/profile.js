@@ -17,6 +17,10 @@
 
 const PROFILE_KEY = 'hogwarts_rpg_profile';
 
+// Les 6 éléments canoniques des Livres de Maîtrise (data-items.js,
+// type:"masterybook") — ordre canonique de la Bibliothèque des Maîtrises.
+const PROFILE_MASTERY_ELEMENTS = ['feu', 'glace', 'foudre', 'lumière', 'ténèbres', 'physique'];
+
 function _profileEmpty() {
   return {
     version: 1,
@@ -25,7 +29,12 @@ function _profileEmpty() {
     cyclesBroken: 0,
     sealedDeaths: 0,   // morts en Poche du Sceau (Ironman) — héritage Boucle (Lot 3)
     endingsSeen: { victory: false, victory_pact: false, cycle_broken: false },
-    titles: []
+    titles: [],
+    // Bibliothèque des Maîtrises (P7) — union CROSS-RUN des éléments dont un
+    // Livre de Maîtrise a été lu. PUREMENT cosmétique : le buff (+12 %) reste
+    // `elementalMastery`, within-run — cette liste n'est JAMAIS lue par un
+    // calcul de gameplay (garde-fou cardinal ci-dessus).
+    masteredElements: []
   };
 }
 
@@ -46,6 +55,10 @@ function _profileRead() {
       base.endingsSeen.cycle_broken = !!obj.endingsSeen.cycle_broken;
     }
     base.titles = Array.isArray(obj.titles) ? obj.titles.filter(t => typeof t === 'string') : [];
+    // Assainissement : ne garde que les 6 éléments canoniques, ordre canonique.
+    base.masteredElements = Array.isArray(obj.masteredElements)
+      ? PROFILE_MASTERY_ELEMENTS.filter(e => obj.masteredElements.includes(e))
+      : [];
     return base;
   } catch (e) {
     return _profileEmpty();
@@ -130,6 +143,30 @@ function recordSealedDeathToProfile() {
   return _profileWrite(p);
 }
 
+// PUR & testable (units.js) — union d'un élément dans la collection, en
+// conservant l'ordre canonique PROFILE_MASTERY_ELEMENTS. Les valeurs
+// inconnues (élément invalide, entrées corrompues de la liste) sont
+// rejetées/filtrées. Retourne TOUJOURS une nouvelle liste.
+function mergeMasteredElements(list, element) {
+  const cur = (Array.isArray(list) ? list : []).filter(e => PROFILE_MASTERY_ELEMENTS.includes(e));
+  const set = new Set(cur);
+  if (PROFILE_MASTERY_ELEMENTS.includes(element)) set.add(element);
+  return PROFILE_MASTERY_ELEMENTS.filter(e => set.has(e));
+}
+
+// Bibliothèque des Maîtrises (P7, final-polish §1.5) — enregistre au profil
+// persistant qu'un Livre de Maîtrise de cet élément a été lu (union
+// cross-run). Appelé par learnMasteryBook (inventory.js). PUREMENT
+// cosmétique : aucun calcul de gameplay ne lit cette liste — le buff
+// (+12 %) reste `elementalMastery`, within-run, zéro héritage.
+function recordMasteredElementToProfile(element) {
+  const p = _profileRead();
+  const merged = mergeMasteredElements(p.masteredElements, element);
+  if (merged.length === p.masteredElements.length) return false; // déjà collecté / invalide
+  p.masteredElements = merged;
+  return _profileWrite(p);
+}
+
 // New Game+ disponible dès la 1ʳᵉ victoire enregistrée au profil.
 function ngPlusAvailable() {
   return _profileRead().victories >= 1;
@@ -154,6 +191,17 @@ const _PROFILE_ENDINGS = [
   { key: 'victory',      icon: '🏆', name: "L'Ombre s'efface",  hint: 'Vaincre Lord Voldemort' },
   { key: 'victory_pact', icon: '🐍', name: 'Le Pacte scellé',   hint: 'Vaincre après avoir scellé le Pacte des Cachots' },
   { key: 'cycle_broken', icon: '🕊️', name: 'Le Cycle brisé',    hint: 'Briser la Boucle Ténébreuse' }
+];
+
+// Bibliothèque des Maîtrises (P7) — les 6 Livres, avec leur nom une fois
+// collectés (l'élément seul sinon : pas de spoiler de source de drop).
+const _PROFILE_MASTERY_BOOKS = [
+  { el: 'feu',      icon: '🔥', name: 'Souffle du Magyar' },
+  { el: 'glace',    icon: '❄️', name: 'Givre Éternel' },
+  { el: 'foudre',   icon: '⚡', name: "Fureur de l'Orage" },
+  { el: 'lumière',  icon: '✨', name: 'Clair de Lune' },
+  { el: 'ténèbres', icon: '🌑', name: "Pacte d'Ombre" },
+  { el: 'physique', icon: '⚔️', name: 'Cœur de Lion' },
 ];
 
 // Rend le corps de la modale Codex du Sorcier (#wizard-codex-body).
@@ -184,6 +232,19 @@ function renderProfileCodex() {
   }).join('');
   const gotEndings = _PROFILE_ENDINGS.filter(e => p.endingsSeen && p.endingsSeen[e.key]).length;
 
+  // Bibliothèque des Maîtrises (P7) : 6 puces, colorées si le Livre de cet
+  // élément a été lu dans une partie (union cross-run). Même patron visuel
+  // que les fins (classes prof-ending seen/locked — zéro CSS nouveau).
+  const mastered = new Set(p.masteredElements || []);
+  const masteryPills = _PROFILE_MASTERY_BOOKS.map(b => {
+    const got = mastered.has(b.el);
+    const title = got
+      ? `« ${b.name} » — maîtrise de ${b.el} éveillée au cours d'une partie`
+      : `Livre de Maîtrise (${b.el}) — à découvrir`;
+    return `<span class="prof-ending ${got ? 'seen' : 'locked'}" title="${esc(title)}">`
+         + `${got ? b.icon : '·'} ${esc(got ? b.name : b.el)}</span>`;
+  }).join('');
+
   el.innerHTML = `
     ${banner}
     <div class="wcodex-sub">Mémoire de tes parties achevées. Purement honorifique — aucun avantage hérité.</div>
@@ -194,7 +255,9 @@ function renderProfileCodex() {
     <div class="wcodex-section-label">Titres</div>
     <div class="prof-titles">${titleChips}</div>
     <div class="wcodex-section-label">Fins découvertes · ${gotEndings}/${_PROFILE_ENDINGS.length}</div>
-    <div class="prof-endings">${endingPills}</div>`;
+    <div class="prof-endings">${endingPills}</div>
+    <div class="wcodex-section-label">Bibliothèque des Maîtrises · ${mastered.size}/${_PROFILE_MASTERY_BOOKS.length}</div>
+    <div class="prof-endings">${masteryPills}</div>`;
 }
 
 function openWizardCodex() {
@@ -214,7 +277,10 @@ function _refreshHubCodexBtn() {
   const btn = document.getElementById('hub-codex-btn');
   if (!btn) return;
   const p = _profileRead();
-  const has = (p.victories | 0) > 0 || (p.cyclesBroken | 0) > 0;
+  // Visible dès qu'il y a quelque chose à montrer : une fin atteinte OU un
+  // premier Livre de Maîtrise collecté (P7 — collectible dès l'étage 8).
+  const has = (p.victories | 0) > 0 || (p.cyclesBroken | 0) > 0
+    || (p.masteredElements || []).length > 0;
   btn.style.display = has ? '' : 'none';
 }
 

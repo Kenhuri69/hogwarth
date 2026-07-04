@@ -104,7 +104,7 @@ const PRECACHE_URLS = [
   './js/battle-spells.js?v=26',
   './js/battle-ui.js?v=11',
   './js/inventory-core.js?v=11',
-  './js/inventory.js?v=30',
+  './js/inventory.js?v=31',
   './js/inventory-spells.js?v=13',
   './js/potions.js?v=8',
   './js/quests-templates.js?v=25',
@@ -117,7 +117,7 @@ const PRECACHE_URLS = [
   './js/save-slots.js?v=4',
   './js/save.js?v=51',
   './js/save-visit-snapshot.js?v=2',
-  './js/profile.js?v=4',
+  './js/profile.js?v=5',
   './js/save-ui.js?v=9',
   './js/ironman.js?v=5',
   './js/hall-of-fame.js?v=5',
@@ -131,7 +131,7 @@ const PRECACHE_URLS = [
   './js/library.js?v=5',
   './js/help-tour.js?v=4',
   './js/balance-log.js?v=2',
-  './js/loader.js?v=62',
+  './js/loader.js?v=63',
   './js/pwa.js?v=9',
 
   // Icônes PWA + premier écran
