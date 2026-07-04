@@ -695,6 +695,11 @@ const ITEM_ICON_SVG_REGISTRY = {
   // Le récit de Manon (objet de quête, chaîne manon_confier → memoire_lockhart) :
   // un parchemin roulé, scellé d'un ruban lunaire.
   recit_manon: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><rect x="16" y="10" width="32" height="44" rx="3" fill="#e8d9b0"/><rect x="16" y="10" width="32" height="44" rx="3" fill="none" stroke="#b89b63" stroke-width="1.5"/><path d="M22 20 H42 M22 27 H42 M22 34 H38 M22 41 H40" stroke="#9c8048" stroke-width="1.4" fill="none" opacity="0.8"/><path d="M12 14 a4 4 0 0 1 4 -4 v44 a4 4 0 0 0 -4 4 Z" fill="#cdb985"/><path d="M52 14 a4 4 0 0 0 -4 -4 v44 a4 4 0 0 1 4 4 Z" fill="#cdb985"/><circle cx="32" cy="50" r="5" fill="#7c6cae"/><path d="M30 49 a2 2 0 1 1 4 0 a2 2 0 1 1 -4 0" fill="#cfc4ec"/></svg>`,
+  // La lettre jamais envoyée (P6a, livraison Manon → Lupin) : enveloppe
+  // scellée de cire, un croissant de lune sur le cachet (Élara/le loup).
+  lettre_elara: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="16" width="44" height="32" rx="3" fill="#efe3c2"/><rect x="10" y="16" width="44" height="32" rx="3" fill="none" stroke="#b89b63" stroke-width="1.5"/><path d="M10 18 L32 36 L54 18" fill="none" stroke="#b89b63" stroke-width="1.5"/><path d="M10 46 L26 32 M54 46 L38 32" stroke="#cdb985" stroke-width="1.2" fill="none" opacity="0.8"/><circle cx="32" cy="36" r="6.5" fill="#a03a3a"/><path d="M34.5 33 a4.5 4.5 0 1 0 0 6 a3.6 3.6 0 1 1 0 -6 Z" fill="#e8c9c9"/></svg>`,
+  // Potion Tue-Loup (P6a, récompense de Lupin) : fumée bleu-gris d'aconit.
+  potion_tue_loup: _potionSvg('cl_ptl', 33, '#5a6a9a', '#8a9ac8', '#4a5a6a'),
   // Clé du Donjon (salle scellée §2.C) : clé de fer à anneau et panneton.
   cle_donjon: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><g transform="rotate(45 32 32)"><circle cx="32" cy="17" r="9" fill="none" stroke="#c9a23c" stroke-width="5"/><circle cx="32" cy="17" r="3.2" fill="#3a2c12"/><rect x="29.5" y="24" width="5" height="27" fill="#d4af45"/><rect x="34.5" y="40" width="8" height="4.5" fill="#d4af45"/><rect x="34.5" y="47" width="6" height="4.5" fill="#d4af45"/></g></svg>`,
 };

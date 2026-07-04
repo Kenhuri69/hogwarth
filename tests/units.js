@@ -1933,6 +1933,66 @@ function loadNpcs() {
 })();
 
 // ============================================================
+// 11quinquies. Side-quests P6a — livraison inter-PNJ (lettre) + aconit
+// ------------------------------------------------------------
+// lettre_jamais_envoyee inaugure la LIVRAISON inter-PNJ : donnée par Manon
+// (grantOnAccept), close par LUPIN seul (questsTurnedIn ≠ questsGiven).
+// Verrous : câblage asymétrique exact des deux fiches PNJ + intégrité des
+// deux templates + items associés. La mécanique runtime (accept → item au
+// sac → 'ready' chez Lupin seulement) est couverte par le scénario smoke
+// scenarioDeliveryQuestLetter.
+// ============================================================
+(function testP6aSideQuests() {
+  const { NPCS } = loadNpcs();
+  const { QUEST_TEMPLATES } = loadModule('js/quests-templates.js', ['QUEST_TEMPLATES']);
+  const { ITEMS } = loadModule('js/data-items.js', ['ITEMS']);
+
+  const manon = NPCS.find(n => n.id === 'manon');
+  const lupin = NPCS.find(n => n.id === 'lupin');
+
+  // Lettre : donnée par Manon, close par Lupin UNIQUEMENT.
+  check('lettre: Manon la donne', !!manon && manon.questsGiven.includes('lettre_jamais_envoyee'));
+  check('lettre: Manon ne la clôt PAS', !!manon && !manon.questsTurnedIn.includes('lettre_jamais_envoyee'));
+  check('lettre: Lupin la clôt', !!lupin && lupin.questsTurnedIn.includes('lettre_jamais_envoyee'));
+  check('lettre: Lupin ne la donne pas', !!lupin && !lupin.questsGiven.includes('lettre_jamais_envoyee'));
+  const lettre = QUEST_TEMPLATES.find(t => t.id === 'lettre_jamais_envoyee');
+  check('lettre: template présent, prereq capstone', !!lettre && lettre.prereq === 'manon_clair_de_lune');
+  check('lettre: grantOnAccept = objectif (l\'objet est confié à l\'accept)',
+    !!lettre && lettre.grantOnAccept === 'lettre_elara'
+             && lettre.objectives[0].type === 'item'
+             && lettre.objectives[0].itemId === 'lettre_elara');
+  check('lettre: item lettre_elara existe (material, non achetable)',
+    ITEMS.some(i => i.id === 'lettre_elara' && i.type === 'material' && i.price === 0));
+  check('lettre: dialogues dédiés (offer/active chez Manon, ready chez Lupin)',
+    !!manon.dialoguesByQuest.lettre_jamais_envoyee
+      && !!manon.dialoguesByQuest.lettre_jamais_envoyee.questOffer
+      && !manon.dialoguesByQuest.lettre_jamais_envoyee.questReady
+      && !!lupin.dialoguesByQuest
+      && !!lupin.dialoguesByQuest.lettre_jamais_envoyee.questReady);
+
+  // Aconit : quête classique de Lupin (herbe en besace), potion en récompense.
+  check('aconit: Lupin donne ET clôt', !!lupin
+    && lupin.questsGiven.includes('aconit_de_la_meute')
+    && lupin.questsTurnedIn.includes('aconit_de_la_meute'));
+  const aconit = QUEST_TEMPLATES.find(t => t.id === 'aconit_de_la_meute');
+  check('aconit: prereq manon_pardon, PAS de minFloor (Lupin est étage 4)',
+    !!aconit && aconit.prereq === 'manon_pardon' && aconit.minFloor == null);
+  check('aconit: objectif herb ×3 sur herbe_aconit (besace)',
+    !!aconit && aconit.objectives[0].type === 'herb'
+             && aconit.objectives[0].itemId === 'herbe_aconit'
+             && aconit.objectives[0].amount === 3);
+  check('aconit: herbe_aconit existe en type herb',
+    ITEMS.some(i => i.id === 'herbe_aconit' && i.type === 'herb'));
+  check('aconit: récompense potion_tue_loup existe (temp_buff mineur)',
+    !!aconit && aconit.reward.item === 'potion_tue_loup'
+    && ITEMS.some(i => i.id === 'potion_tue_loup' && i.effect === 'temp_buff'));
+  check('aconit: dialogues dédiés complets chez Lupin',
+    !!lupin.dialoguesByQuest.aconit_de_la_meute
+      && ['questOffer','questActive','questReady']
+          .every(k => !!lupin.dialoguesByQuest.aconit_de_la_meute[k]));
+})();
+
+// ============================================================
 // 12. data.js — Artefacts & Reliquaires 2.0, socle data (Lot P0)
 //    ARTIFACT_FORMS (registre inerte) + premiumStat (helper PUR)
 // ------------------------------------------------------------
