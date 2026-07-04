@@ -59,21 +59,25 @@ async function scenarioMonsterImages() {
     assert(ctrl.usesSvg && !ctrl.usesImg, 'fallback SVG cassé');
   }
 
-  // Color-type RGBA (§1 IMG_STYLE.md) : tous les PNG monstres doivent
-  // avoir un canal alpha. Lecture du byte 25 de l'IHDR (color-type=6).
+  // Transparence (§1 IMG_STYLE.md) : tous les PNG monstres doivent avoir
+  // un canal alpha. Deux formes valides : color-type 6 (RGBA truecolor)
+  // ou color-type 3 (palette, compression P8a) AVEC chunk tRNS — sans
+  // tRNS, une palette est opaque et le fond damier réapparaîtrait.
   // L'alpha non-trivial (≥5% pixels à 0) est validé en amont par
   // tools/process_monster_png.py au moment de l'intégration ; on n'y
   // revient pas ici (file:// + getImageData = canvas tainted).
   const fs = require('fs');
   const repoRoot = ROOT;
-  let nonRgba = [];
+  let noAlpha = [];
   for (const id of ids) {
     const buf = fs.readFileSync(path.join(repoRoot, 'img/monsters', `${id}.png`));
     // Signature 8 bytes + IHDR length 4 + "IHDR" 4 + width 4 + height 4 + bit-depth 1 = 25
-    if (buf[25] !== 6) nonRgba.push(`${id}(ct=${buf[25]})`);
+    const ct = buf[25];
+    const ok = ct === 6 || (ct === 3 && buf.includes(Buffer.from('tRNS')));
+    if (!ok) noAlpha.push(`${id}(ct=${ct})`);
   }
-  console.log(`  color-type RGBA : ${ids.length - nonRgba.length}/${ids.length} OK`);
-  assert(nonRgba.length === 0, `PNG sans canal alpha : ${nonRgba.join(', ')}`);
+  console.log(`  canal alpha (RGBA ou palette+tRNS) : ${ids.length - noAlpha.length}/${ids.length} OK`);
+  assert(noAlpha.length === 0, `PNG sans canal alpha : ${noAlpha.join(', ')}`);
 
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
