@@ -116,10 +116,33 @@ node tools/check_difficulty.js --base origin/master       # équilibrage stable
 - **`docs/REVUE-TRANSVERSALE-ET-ROADMAP.md`** — revue narration & roadmap.
 - **`DIFFICULTY_REPORT.md`** — étude d'équilibrage (simulation Monte-Carlo).
 
+## 📣 Annonce — mise à jour majeure : « Le Sceau des Fondateurs »
+
+> Poudlard & Magie sort de Release Candidate ! Au menu de cette version
+> finale :
+>
+> - 🗝️ **Les Poches du Sceau** — un escape game caché dans les pièges de la
+>   Boucle Ténébreuse : énigmes de Rowena, miroir de Salazar, brasiers de
+>   Godric et Helga… avec des variantes selon votre Maison.
+> - 📖 **Les six Maîtrises élémentaires** — des livres légendaires à arracher
+>   aux plus grands boss, pour des bonus permanents de feu, glace, foudre,
+>   lumière, ténèbres et acier — et une collection à exhiber dans votre
+>   Codex du Sorcier.
+> - 🌙 **L'arc de Manon, achevé** — huit quêtes, un père retrouvé, une
+>   lettre jamais envoyée enfin remise, et le « Clair de Lune » en héritage.
+>   Désormais avec des voix.
+> - ⚡ **Deux fois plus léger** — images compressées (44 → 20 Mo), des
+>   dizaines de polish : combats plus lisibles, clavier remappable, mobile
+>   peaufiné.
+>
+> Jouable gratuitement, hors-ligne, sans installation :
+> **<https://kenhuri69.github.io/hogwarth/>** — vos sauvegardes sont
+> conservées. Détail complet : [CHANGELOG](./CHANGELOG.md).
+
 ## 📦 Statut
 
-**Release Candidate** — jeu fonctionnellement complet et équilibré, en phase
-de polish final avant une mise à jour publique majeure.
+**Version finale** — « Le Sceau des Fondateurs ». Jeu complet et équilibré ;
+le suivi se poursuit via le [CHANGELOG](./CHANGELOG.md).
 
 ---
 

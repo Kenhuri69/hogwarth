@@ -377,6 +377,15 @@ Doc/assets only → pas de bump PWA (sauf si `index.html` est retouché).
   contraste avec la réverbe-mémoire d'Élara). P5a précisé en conséquence.
   Plan finalisé et soumis en PR — l'implémentation démarre dans une
   session dédiée (prompt de lancement fourni à l'utilisateur).
+- **2026-07-04 — P11 PRÉPARÉ** ✅ (item n°8) : annonce finalisée depuis le
+  draft §4.3 avec les chiffres réels post-P8/P9 (44 → 20 Mo, arc Manon
+  8 quêtes dont la lettre, collection Codex) — section « 📣 Annonce » du
+  README + statut passé de « Release Candidate » à « Version finale ».
+  PR empilée sur P9 (même fichier README). ❓ **En attente de
+  l'utilisateur** : canal de publication (release GitHub taguée à créer ?
+  nom du tag ? autre canal ?) — la publication EXTERNE n'est pas faite
+  sans aval (règle du plan §5). Question posée en fin de session avec
+  les 2 autres ❓ (P8c purge assets, P8d concat JS).
 - **2026-07-04 — P9a-c LIVRÉ** ✅ (item n°5) : README v2 + CHANGELOG.
   P9a : 4 captures RÉELLES via Playwright (harness smoke + bascule
   d'écrans explicite) — donjon 3D duo (86 Ko), combat 3 ennemis avec
