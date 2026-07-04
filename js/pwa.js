@@ -20,7 +20,7 @@
     return;
   }
 
-  const SW_URL = 'sw.js?v=8';
+  const SW_URL = 'sw.js?v=9';
   let updateBanner = null;
   let pendingWorker = null;
 
