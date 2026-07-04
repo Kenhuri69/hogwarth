@@ -377,3 +377,16 @@ Doc/assets only → pas de bump PWA (sauf si `index.html` est retouché).
   contraste avec la réverbe-mémoire d'Élara). P5a précisé en conséquence.
   Plan finalisé et soumis en PR — l'implémentation démarre dans une
   session dédiée (prompt de lancement fourni à l'utilisateur).
+- **2026-07-04 — P9a-c LIVRÉ** ✅ (item n°5) : README v2 + CHANGELOG.
+  P9a : 4 captures RÉELLES via Playwright (harness smoke + bascule
+  d'écrans explicite) — donjon 3D duo (86 Ko), combat 3 ennemis avec
+  frise d'initiative (81 Ko), fiche paper-doll équipée (86 Ko), mobile
+  D-pad 390×844 @2x (115 Ko) — toutes ≤ 200 Ko, contrôle visuel fait
+  (pièges corrigés : écrans non basculés par le harness, toasts de
+  démarrage, modale de level-up). P9b : pitch resserré (1 phrase-choc +
+  3 puces), section 📸 Aperçu (grille 2×2 légendée), section 🎮 Contrôles
+  (relatif au regard, remappable, mobile), liens CHANGELOG. P9c :
+  CHANGELOG.md curaté par thèmes depuis l'historique réel des PRs
+  (#507→#716 relus) : Poches du Sceau, Maîtrises, arc Manon, 2.0
+  (Sorts/Artefacts/Potions), Boucle enrichie, NG+, UX/a11y, perf, audio
+  + jalons antérieurs. Doc/assets purs → pas de bump PWA.

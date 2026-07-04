@@ -1,16 +1,31 @@
 # Poudlard & Magie : Les Secrets de Poudlard
 
-> RPG **dungeon-crawler en tour par tour** dans l'univers de Poudlard, inspiré de
-> *Might & Magic Book One*. Exploration en vue pseudo-3D, combats tactiques,
-> sortilèges, potions, 4 Maisons, et un endgame profond — le tout en **Vanilla
-> JS / Canvas**, sans aucune dépendance ni étape de build.
+> **Un dungeon-crawler en tour par tour sous Poudlard, à l'ancienne — et le
+> mal vient d'en bas.**
+>
+> - 🏰 Vue pseudo-3D, 4 Maisons, ~100 créatures, un endgame qui boucle sur
+>   lui-même — dans la lignée de *Might & Magic Book One* ;
+> - 🗝️ Des secrets à tous les étages : grimoire d'Élara, Poches du Sceau,
+>   Chambres des Fondateurs, « Briser le Cycle » ;
+> - ⚙️ **Vanilla JS / Canvas** : zéro dépendance, zéro build step, jouable
+>   hors-ligne.
 
 🎮 **Jouer maintenant : <https://kenhuri69.github.io/hogwarth/>**
 
 > Installable comme application (Android / iOS / desktop) et **jouable
-> hors-ligne** après une première visite.
+> hors-ligne** après une première visite. Nouveautés : voir le
+> [CHANGELOG](./CHANGELOG.md).
 
 ---
+
+## 📸 Aperçu
+
+| | |
+|---|---|
+| ![Exploration en vue pseudo-3D](docs/screenshots/donjon.jpg) | ![Combat en groupe contre 3 créatures](docs/screenshots/combat.jpg) |
+| *Exploration — couloirs de Poudlard, minimap, boussole* | *Combat tactique — groupe de 3 créatures, frise d'initiative* |
+| ![Fiche de personnage paper-doll](docs/screenshots/fiche.jpg) | ![Version mobile avec D-pad tactile](docs/screenshots/mobile.jpg) |
+| *Fiche personnage — paper-doll 11 emplacements, stats dérivées* | *Mobile — D-pad tactile et gestes de swipe* |
 
 ## ✨ Fonctionnalités
 
@@ -33,6 +48,23 @@
 - 🔊 **Audio adaptatif** : musique d'ambiance par zone, musique de combat par
   contexte, effets et voix optionnelle.
 - 📱 **Mobile-first** : D-pad tactile, gestes de swipe, layout responsive.
+
+## 🎮 Contrôles
+
+Les déplacements sont **relatifs au regard** (style dungeon crawler) ; toutes
+les touches sont **remappables** dans Réglages → Clavier.
+
+| Action | Clavier | Souris / Desktop | Mobile |
+|--------|---------|------------------|--------|
+| Avancer | ↑ / W / Z | bouton « Avancer » | ▲ du D-pad, swipe ↑ |
+| Reculer | ↓ / S | bouton « Reculer » | ▼ du D-pad, swipe ↓ |
+| Pivoter à gauche / droite | ← → / A Q / D | boutons « Pivoter » | ↺ ↻ du D-pad, swipe ← → |
+| Fermer une modale | Échap | ✕ | ✕ |
+| Actions de combat | raccourcis 1-9 + G (Garde) | boutons d'action | boutons d'action |
+
+En jeu : 🎒 Sac, 📖 Sorts, 📜 Fiche, 📕 Bestiaire, 📔 Codex, ⭐ Quêtes,
+🔍 Fouiller, 💤 Repos, et ⚙️ Réglages (sauvegarde 3 slots + auto, son,
+difficulté, aide). Un **tour guidé** narré est proposé aux nouveaux joueurs.
 
 ## 🛠️ Stack technique
 
@@ -77,6 +109,7 @@ node tools/check_difficulty.js --base origin/master       # équilibrage stable
 
 ## 📚 Documentation
 
+- **`CHANGELOG.md`** — nouveautés, curatées par thèmes.
 - **`CLAUDE.md`** — mémoire projet & architecture (source de vérité technique).
 - **`docs/histoire/`** — les 14 chapitres de narration & game-design.
 - **`docs/gameplay/`** — chapitres de gameplay (combat, économie, endgame…).
