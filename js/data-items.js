@@ -111,6 +111,12 @@ const ITEMS = [
   { id:"recit_manon",     name:"Le récit de Manon", icon:"📜", rarity:"rare",
     desc:"Les souvenirs d'Élara, mis en mots par sa fille. Une histoire vraie, enfin.",
     type:"material", price:0 },
+  // Objet de quête — la dernière lettre d'Élara à Lupin, jamais envoyée
+  // (side-quest lettre_jamais_envoyee : donnée par Manon via grantOnAccept,
+  // remise à LUPIN — questsTurnedIn du destinataire). Consommée à la remise.
+  { id:"lettre_elara",    name:"La lettre jamais envoyée", icon:"✉️", rarity:"rare",
+    desc:"L'écriture d'Élara, un cachet jamais rompu. Seize ans de silence, et un seul étage à descendre.",
+    type:"material", price:0 },
   // Objet de quête — Épreuve de la Lumière Éternelle (portrait de Dumbledore).
   // Tombe des morts-vivants ; réuni ×3 pour le 1er temps de l'épreuve.
   // type:"quest" → non utilisable manuellement (useItem affiche un message).
@@ -391,6 +397,8 @@ const ITEMS = [
   { id:"cape_combat",       name:"Cape de Combat",       icon:"🧥", desc:"DEF+3 · Esquive +5 %",                          type:"armor", slot:"cloak", family:"cloak_combat",    rarity:"rare", bonusDef:3, bonusDodgeChance:5, power:3, price:700 },
   { id:"anneau_anti_magie", name:"Anneau Anti-Magie",    icon:"💍", desc:"DEF+2 INT+3 — Atténue les sortilèges",        type:"acc",   slot:"ring",  family:"ring_anti_magic", rarity:"rare", bonusDef:2, bonusInt:3, power:2, price:750 },
   { id:"potion_lune",       name:"Élixir de Lune",       icon:"🌕", desc:"+45 PV — distillé sous pleine lune",          type:"consumable", effect:"heal", power:45, price:90 },
+  // Récompense de la side-quest aconit_de_la_meute (Lupin) — buff mineur.
+  { id:"potion_tue_loup",   name:"Potion Tue-Loup",      icon:"🐺", desc:"+6 DEF pendant 4 tours — l'amère recette que Lupin brasse désormais sans se cacher", type:"consumable", effect:"temp_buff", buffStat:"def", power:6, turns:4, rarity:"rare", price:0 },
   // ── Phase 3 — Tranche étage 9 « Les Profondeurs » : équipement endgame mid (boutique + drop boss) ──
   { id:"diademe_antique",   name:"Diadème Antique",      icon:"👑", desc:"MAG+5 LCK+2 — Couronne d'une reine oubliée",   type:"armor", slot:"head",  family:"tiara_antique",   rarity:"rare", bonusMag:5, bonusLck:2, power:5, price:900 },
   { id:"bague_protection",  name:"Bague de Protection",  icon:"💍", desc:"DEF+3 END+3 — Sertie d'une perle de jade",     type:"acc",   slot:"ring",  family:"ring_protection", rarity:"rare", bonusDef:3, bonusEnd:3, power:3, price:780 },

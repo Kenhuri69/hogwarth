@@ -367,8 +367,10 @@ NPCS.push(
     icon:  "🐺",
     portraitImg: "img/npc/lupin.png",
     placement: { floor: 4, anchor: "any" },
-    questsGiven:    ["lumiere_desespoir"],
-    questsTurnedIn: ["lumiere_desespoir"],
+    // lettre_jamais_envoyee : Lupin ne la DONNE pas (c'est Manon) mais il
+    // la CLÔT — destinataire de la livraison (questsTurnedIn seulement).
+    questsGiven:    ["lumiere_desespoir", "aconit_de_la_meute"],
+    questsTurnedIn: ["lumiere_desespoir", "aconit_de_la_meute", "lettre_jamais_envoyee"],
     dialogues: {
       greeting:    [
         "Bienvenue, jeune sorcier. Je peux t'enseigner un sort puissant — mais d'abord, tu dois affronter ta peur la plus sombre.",
@@ -394,6 +396,21 @@ NPCS.push(
         { killedId: "fenrir_greyback",
           text: "Tu as abattu Greyback. L'homme qui a fait de moi ce que je suis, dans une chambre d'enfant. Je ne sais pas si je dois te remercier ou pleurer — alors je ferai les deux." }
       ]
+    },
+    // Les champs questOffer/Active/Ready plats ci-dessus restent ceux de
+    // lumiere_desespoir (Patronus). Les quêtes de l'arc Manon (P6a) ont
+    // leurs dialogues dédiés ici.
+    dialoguesByQuest: {
+      // Destinataire de la livraison de Manon — l'épilogue épistolaire.
+      lettre_jamais_envoyee: {
+        questReady: "(Il reconnaît l'écriture avant même que tu tendes la lettre. Il s'assied.) Seize ans que j'écris des lettres sans les poster — et elle, elle en avait une pour moi. (Il lit. Longtemps. Quand il relève la tête, sa voix est très calme.) Elle me demande pardon. À MOI. Pour le mensonge, pour les années… et elle me confie Manon, comme si je méritais qu'on me confie quoi que ce soit. (Il plie la lettre dans sa poche intérieure, côté cœur.) Nous étions trois à ne pas savoir nous dire les choses. La dernière lettre de la famille est arrivée. Merci d'avoir été le hibou que nous n'avons jamais osé être."
+      },
+      // Le père assume sa condition devant sa fille (potion Tue-Loup).
+      aconit_de_la_meute: {
+        questOffer:  "Ma fille sait ce que je suis, maintenant. Alors la potion Tue-Loup, je ne la brasserai plus jamais caché dans une cave, comme une honte. Je la préparerai dans ma classe, à sa vue. Rapporte-moi trois brins d'aconit — c'est amer, c'est laid, et c'est ce qui me garde homme. Manon doit voir cela aussi : le loup, ET ce que je fais de lui.",
+        questActive: "L'aconit pousse là où le château laisse entrer le froid — jardins murés des profondeurs, ou l'étal d'un apothicaire. Trois brins, pas moins : la recette de Belby ne pardonne pas l'à-peu-près.",
+        questReady:  "(Il pèse les brins un à un, sans hâte, et pose le chaudron sur le bureau — face à la porte ouverte.) Voilà. La première Tue-Loup de ma vie que je prépare à la lumière. Prends-en une fiole : ce qui rend un loup patient rendra bien un sorcier plus dur à mordre. Et si tu croises Manon… dis-lui que la classe sent l'aconit, et que la porte est ouverte."
+      }
     }
   },
   // PNJ original : fille cachée de Lupin. Pseudo-quête en deux volets
@@ -407,7 +424,10 @@ NPCS.push(
     icon:  "🌙",
     portraitImg: "img/npc/manon.png",
     placement: { floor: 3, anchor: "any" },
-    questsGiven:    ["manon_secret", "manon_pardon", "manon_revelio", "manon_grimoire", "manon_acte3", "manon_clair_de_lune", "manon_confier", "manon_compagnie"],
+    // lettre_jamais_envoyee est DONNÉE par Manon mais REMISE à Lupin
+    // (livraison inter-PNJ) : présente dans questsGiven, absente de
+    // questsTurnedIn — c'est le questsTurnedIn de Lupin qui la clôt.
+    questsGiven:    ["manon_secret", "manon_pardon", "manon_revelio", "manon_grimoire", "manon_acte3", "manon_clair_de_lune", "lettre_jamais_envoyee", "manon_confier", "manon_compagnie"],
     questsTurnedIn: ["manon_secret", "manon_pardon", "manon_revelio", "manon_grimoire", "manon_acte3", "manon_clair_de_lune", "manon_confier", "manon_compagnie"],
     // Établi de fusion : disponible quand tous les feuillets du set actif
     // sont réunis (5 pages Acte II / 3 feuillets clairs Acte III).
@@ -440,6 +460,13 @@ NPCS.push(
       ]
     },
     dialoguesByQuest: {
+      // Clôture épistolaire du triangle (P6a) : Manon donne la dernière
+      // lettre d'Élara — pas de questReady ici, la remise se joue chez
+      // Lupin (son dialoguesByQuest porte l'épilogue).
+      lettre_jamais_envoyee: {
+        questOffer:  "Il restait une chose au fond de la malle. Une lettre — son écriture, son cachet jamais rompu. Adressée à Remus Lupin. Elle l'a écrite en sachant qu'elle mourait, et elle ne l'a pas envoyée. Évidemment. C'était sa façon d'aimer : tout écrire, ne rien dire. (Elle te la tend très vite, comme si le papier brûlait.) Porte-la-lui. Moi, j'ai déjà descendu cet escalier une fois. Je crois qu'on n'a droit qu'à un seul courage par famille — et j'ai pris le mien.",
+        questActive: "Tu l'as encore ? Ne la lis pas. Ne me la rends pas non plus. Descends, c'est tout. Il l'attend depuis seize ans — simplement, il ne le sait pas."
+      },
       // Rédemption en Boucle (étage 13) : Manon confie l'histoire d'Élara, que
       // Lockhart mettra en mémoire (chaîne manon_confier → memoire_lockhart).
       manon_confier: {

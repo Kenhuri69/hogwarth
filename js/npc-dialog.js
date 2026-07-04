@@ -15,14 +15,27 @@
 function getNpcQuestState(npc) {
   if (!npc) return 'none';
   const given = npc.questsGiven || [];
-  if (!given.length) return 'none';
+  // Liste des quêtes que ce PNJ CLÔT. Historiquement questsTurnedIn ===
+  // questsGiven pour tous les PNJ (comportement inchangé) ; une quête de
+  // LIVRAISON inter-PNJ (ex. lettre_jamais_envoyee : donnée par Manon,
+  // remise à Lupin) figure dans le questsTurnedIn du destinataire SANS
+  // être dans son questsGiven — et inversement chez le donneur.
+  const closes = npc.questsTurnedIn || given;
+  if (!given.length && !closes.length) return 'none';
   if (typeof _refreshObjectives === 'function') _refreshObjectives();
+  // Remises prêtes d'abord (couvre les livraisons closes ici sans y être données).
+  for (const qid of closes) {
+    const active = (typeof activeQuests !== 'undefined')
+      ? activeQuests.find(q => q.id === qid) : null;
+    if (active && (active.objectives || []).every(o => o.completed)) return 'ready';
+  }
   for (const qid of given) {
     const active = (typeof activeQuests !== 'undefined')
       ? activeQuests.find(q => q.id === qid) : null;
     if (active) {
-      const allDone = (active.objectives || []).every(o => o.completed);
-      return allDone ? 'ready' : 'active';
+      // Objectifs remplis mais remise chez un AUTRE PNJ (livraison en
+      // cours) → ce PNJ reste en 'active', jamais en 'ready'.
+      return 'active';
     }
     // Offrable = nouvelle OU répétable dont le cooldown est écoulé
     if (typeof isQuestOfferable === 'function' && isQuestOfferable(qid)) {
@@ -79,11 +92,16 @@ function _currentQuestForState(npc, state) {
   }
   if (state === 'active' || state === 'ready') {
     const wantReady = state === 'ready';
-    return given.find(q => {
+    // 'ready' se résout sur la liste des quêtes que ce PNJ CLÔT (couvre
+    // les livraisons inter-PNJ) ; 'active' sur celles qu'il DONNE — une
+    // livraison prête mais remise ailleurs reste 'active' chez le donneur.
+    const closes = npc.questsTurnedIn || given;
+    const list = wantReady ? closes : given;
+    return list.find(q => {
       const a = (typeof activeQuests !== 'undefined') ? activeQuests.find(x => x.id === q) : null;
       if (!a) return false;
       const ready = (a.objectives || []).every(o => o.completed);
-      return wantReady ? ready : !ready;
+      return wantReady ? ready : (!ready || !closes.includes(q));
     }) || null;
   }
   return null;
@@ -533,7 +551,10 @@ function _npcDialogActions(npc, state) {
   // quêtes simultanément. Les chaînes (prereq) n'ont de toute façon qu'une
   // quête offrable à la fois.
   const given = npc.questsGiven || [];
-  const turnInable = given.filter(q => {
+  // La remise s'appuie sur questsTurnedIn (liste des quêtes que ce PNJ
+  // CLÔT) — identique à questsGiven pour tous les PNJ historiques, mais
+  // une LIVRAISON inter-PNJ ne se remet que chez son destinataire.
+  const turnInable = (npc.questsTurnedIn || given).filter(q => {
     const a = (typeof activeQuests !== 'undefined') ? activeQuests.find(x => x.id === q) : null;
     // manon_grimoire (Acte II) ET manon_acte3 (Acte III) se remettent via
     // l'établi de fusion (specialAction open_fusion), pas par le bouton

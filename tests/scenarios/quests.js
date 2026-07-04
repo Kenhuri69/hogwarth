@@ -1613,6 +1613,111 @@ async function scenarioLoopNpcQuests2() {
   await browser.close();
 }
 
+// P6a — livraison inter-PNJ : « La lettre jamais envoyée » (Manon → Lupin)
+// + « L'aconit de la meute » (Lupin, herbe en besace). Couvre la nouvelle
+// mécanique grantOnAccept + remise gated par questsTurnedIn (≠ questsGiven).
+async function scenarioDeliveryQuestLetter() {
+  console.log('\n── Scénario : livraison inter-PNJ (lettre) + aconit (P6a) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Poufsouffle' });
+
+  // T1 : gating par prereq — pas offrable avant le capstone Manon.
+  const t1 = await page.evaluate(() => {
+    availableQuests.add('lettre_jamais_envoyee');
+    availableQuests.add('aconit_de_la_meute');
+    currentFloor = 4;
+    return {
+      lettreGated: isQuestOfferable('lettre_jamais_envoyee'),   // false attendu
+      aconitGated: isQuestOfferable('aconit_de_la_meute'),      // false attendu
+      items: ['lettre_elara', 'potion_tue_loup'].every(id => ITEMS.some(i => i.id === id))
+    };
+  });
+  console.log('  T1:', t1);
+  assert(t1.lettreGated === false, 'lettre non offrable avant manon_clair_de_lune');
+  assert(t1.aconitGated === false, 'aconit non offrable avant manon_pardon');
+  assert(t1.items, 'les items P6a doivent exister');
+
+  // T2 : sac PLEIN → l'acceptation de la livraison est refusée (grantOnAccept).
+  const t2 = await page.evaluate(() => {
+    completedQuests.add('manon_clair_de_lune');
+    const savedInv = player.inventory;
+    player.inventory = Array.from({ length: 16 }, () => ({ ...ITEMS.find(i => i.id === 'wand1') }));
+    const refused = acceptQuest('lettre_jamais_envoyee');
+    const notActive = !activeQuests.some(q => q.id === 'lettre_jamais_envoyee');
+    player.inventory = savedInv;
+    return { refused, notActive };
+  });
+  console.log('  T2:', t2);
+  assert(t2.refused === false, 'sac plein → accept refusé');
+  assert(t2.notActive,         'sac plein → quête non activée');
+
+  // T3 : livraison — accept chez Manon (lettre au sac, objectif rempli
+  // d'emblée), remise possible chez LUPIN seulement.
+  const t3 = await page.evaluate(() => {
+    const manon = getNpcById('manon');
+    const lupin = getNpcById('lupin');
+    const accepted = acceptQuest('lettre_jamais_envoyee');
+    if (typeof _refreshObjectives === 'function') _refreshObjectives();
+    const hasLettre = player.inventory.some(i => i.id === 'lettre_elara');
+    const q = activeQuests.find(x => x.id === 'lettre_jamais_envoyee');
+    const objDone = !!q && q.objectives.every(o => o.completed);
+    // Manon ne propose PAS la remise ; Lupin la propose.
+    const turnKey = "turnInQuestById('lettre_jamais_envoyee')";
+    const manonActs = _npcDialogActions(manon, getNpcQuestState(manon)).map(a => a.onClick).join('|');
+    const lupinState = getNpcQuestState(lupin);
+    const lupinActs = _npcDialogActions(lupin, lupinState).map(a => a.onClick).join('|');
+    // dialoguesByQuest de Lupin résolu pour l'état ready.
+    const readyQid = _currentQuestForState(lupin, 'ready');
+    const turned = turnInQuestById('lettre_jamais_envoyee');
+    const lettreLeft = player.inventory.some(i => i.id === 'lettre_elara');
+    return {
+      accepted, hasLettre, objDone,
+      manonCanClose: manonActs.includes(turnKey),
+      lupinState, lupinCanClose: lupinActs.includes(turnKey),
+      readyQid, turned, lettreLeft
+    };
+  });
+  console.log('  T3:', t3);
+  assert(t3.accepted,   'lettre acceptable après le capstone');
+  assert(t3.hasLettre,  'grantOnAccept doit mettre la lettre au sac');
+  assert(t3.objDone,    'objectif rempli dès l\'accept (l\'épreuve est le trajet)');
+  assert(!t3.manonCanClose, 'Manon ne doit PAS proposer la remise (livraison)');
+  assert(t3.lupinState === 'ready', 'Lupin doit être en état ready');
+  assert(t3.lupinCanClose,  'Lupin doit proposer la remise');
+  assert(t3.readyQid === 'lettre_jamais_envoyee', 'dialogue ready de Lupin → la lettre');
+  assert(t3.turned,         'la remise chez Lupin doit réussir');
+  assert(!t3.lettreLeft,    'la lettre doit être consommée à la remise');
+
+  // T4 : aconit — herbe comptée en besace, potion Tue-Loup à la remise.
+  const t4 = await page.evaluate(() => {
+    completedQuests.add('manon_pardon');
+    const accepted = acceptQuest('aconit_de_la_meute');
+    addHerb('herbe_aconit', 3);
+    if (typeof _refreshObjectives === 'function') _refreshObjectives();
+    const q = activeQuests.find(x => x.id === 'aconit_de_la_meute');
+    const ready = !!q && q.objectives.every(o => o.completed);
+    const turned = turnInQuestById('aconit_de_la_meute');
+    return {
+      accepted, ready, turned,
+      herbsLeft: (player.herbs && player.herbs.herbe_aconit) || 0,
+      hasPotion: player.inventory.some(i => i.id === 'potion_tue_loup')
+    };
+  });
+  console.log('  T4:', t4);
+  assert(t4.accepted,        'aconit acceptable après manon_pardon');
+  assert(t4.ready,           '3 aconits en besace → objectif rempli');
+  assert(t4.turned,          'remise aconit OK');
+  assert(t4.herbsLeft === 0, 'les 3 aconits doivent être consommés (besace)');
+  assert(t4.hasPotion,       'la remise doit donner la potion Tue-Loup');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (livraison P6a)`);
+  }
+  console.log('  ✅ Livraison inter-PNJ + aconit OK');
+  await browser.close();
+}
+
 // Suivi 3 — derniers PNJ lore + drop matériau sur les chasses + items récompense.
 async function scenarioLoopNpcQuests3() {
   console.log('\n── Scénario : quêtes PNJ de la Boucle (suivi 3) ──');
@@ -1722,4 +1827,4 @@ async function scenarioSignatureQuestBadge() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioChainedQuest, scenarioHeadlessHunt, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioFarmingQuests, scenarioDelayedSearch, scenarioCleVoute, scenarioQuestFanfare, scenarioLoopNpcQuests, scenarioLoopNpcQuests2, scenarioLoopNpcQuests3, scenarioSignatureQuestBadge] };
+module.exports = { scenarios: [scenarioChainedQuest, scenarioHeadlessHunt, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioFarmingQuests, scenarioDelayedSearch, scenarioCleVoute, scenarioQuestFanfare, scenarioLoopNpcQuests, scenarioLoopNpcQuests2, scenarioLoopNpcQuests3, scenarioSignatureQuestBadge, scenarioDeliveryQuestLetter] };

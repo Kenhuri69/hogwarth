@@ -377,3 +377,21 @@ Doc/assets only → pas de bump PWA (sauf si `index.html` est retouché).
   contraste avec la réverbe-mémoire d'Élara). P5a précisé en conséquence.
   Plan finalisé et soumis en PR — l'implémentation démarre dans une
   session dédiée (prompt de lancement fourni à l'utilisateur).
+- **2026-07-04 — P6a LIVRÉ** ✅ (item n°3) : les 2 side-quests du §1.2.
+  `lettre_jamais_envoyee` inaugure la **livraison inter-PNJ** : donnée par
+  Manon (nouveau champ `grantOnAccept` — l'objet entre au sac à l'accept,
+  refus si sac plein), **remise chez Lupin uniquement** — `questsTurnedIn`
+  devient la vraie liste des quêtes qu'un PNJ clôt (union dans
+  `getNpcQuestState`/`_npcDialogActions`/`_currentQuestForState` ;
+  vérifié : les 37 PNJ existants ont questsTurnedIn === questsGiven →
+  zéro changement de comportement pour eux). Épilogue épistolaire porté
+  par `dialoguesByQuest.questReady` de Lupin. `aconit_de_la_meute` :
+  quête classique de Lupin (prereq `manon_pardon`), objectif `herb` ×3
+  `herbe_aconit` (besace), récompense `potion_tue_loup` (temp_buff DEF+6
+  ×4 tours, nouvelle). ⚠️ Écart au plan assumé : `minFloor 5` écarté —
+  minFloor gate l'OFFRE par étage courant et Lupin est placé étage 4
+  (la quête serait devenue inoffrable hors Boucle) ; le prereq suffit.
+  Tests : units §11quinquies (14 assertions) + scénario smoke
+  `scenarioDeliveryQuestLetter` (gating, sac plein, remise gated par
+  questsTurnedIn, consommation besace) ; régression quest/npc/dialog
+  21 scénarios ✅. Bump : 5 JS + CACHE_VERSION v252.

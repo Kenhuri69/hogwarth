@@ -913,6 +913,43 @@ const QUEST_TEMPLATES = [
     reward: { xp: 360, gold: 180, item: "page_grimoire", stats: { int: 1 } },
     location: "Étage 9 — galeries gelées"
   },
+  // 4) Manon × Élara × Lupin — clôture épistolaire du triangle (P6a,
+  //    final-polish §1.2). LIVRAISON inter-PNJ : donnée par Manon
+  //    (grantOnAccept → la lettre entre au sac, objectif rempli d'emblée),
+  //    remise chez LUPIN uniquement (questsTurnedIn du destinataire —
+  //    Manon ne la clôt pas). L'épilogue est porté par le
+  //    dialoguesByQuest.questReady de Lupin.
+  {
+    id: "lettre_jamais_envoyee",
+    title: "La lettre jamais envoyée",
+    giver: "Manon",
+    desc: "Au fond de la malle d'Élara restait une dernière lettre — adressée à Remus Lupin, cachetée, jamais envoyée. Manon n'a plus la force de descendre cet escalier une seconde fois : porte la lettre à son père, à l'étage de la Défense. Il doit lire la fin.",
+    prereq: "manon_clair_de_lune",
+    grantOnAccept: "lettre_elara",
+    objectives: [
+      { type: "item", itemId: "lettre_elara", amount: 1, progress: 0, completed: false }
+    ],
+    reward: { xp: 380, gold: 180 },
+    location: "Étage 4 — classe de Défense (remise à Lupin)"
+  },
+  // 5) Lupin × Manon — le père assume sa condition devant sa fille (P6a).
+  //    L'aconit (herbe tier 3, besace) se cueille dans les jardins d'herbes
+  //    des étages profonds ou s'achète à l'Apothicaire. NB : le plan notait
+  //    « minFloor 5 », écarté — minFloor gate l'OFFRE par étage courant et
+  //    Lupin est placé étage 4 : la quête serait devenue inoffrable hors
+  //    Boucle. Le prereq manon_pardon suffit comme gate de progression.
+  {
+    id: "aconit_de_la_meute",
+    title: "L'aconit de la meute",
+    giver: "Professeur Lupin",
+    desc: "Lupin ne cache plus rien : « Ma fille sait ce que je suis. Alors cette potion, je la brasserai devant elle, plus jamais dans une cave. Rapporte-moi trois brins d'aconit — c'est amer, c'est laid, et c'est ce qui me garde homme. Elle doit voir ça aussi. »",
+    prereq: "manon_pardon",
+    objectives: [
+      { type: "herb", itemId: "herbe_aconit", amount: 3, progress: 0, completed: false }
+    ],
+    reward: { xp: 300, gold: 150, item: "potion_tue_loup" },
+    location: "Étage 4 — classe de Défense"
+  },
   // ── Easter egg « La Chasse Sans Tête » (comique) ───────────
   // Hôte : Sir Patrick Delaney-Podmore (PNJ déterministe ét. 6, ghost).
   // Objectif : terrasser 2 Chevaliers Fantômes restés casqués. Récompense

@@ -388,6 +388,16 @@ function acceptQuest(id) {
     }
   }
 
+  // Objet remis par le donneur à l'acceptation (quêtes de LIVRAISON —
+  // ex. lettre_jamais_envoyee : Manon confie la lettre, remise chez Lupin).
+  // Sac plein → tryAddItem affiche son message et l'acceptation est refusée.
+  if (tpl.grantOnAccept) {
+    if (typeof tryAddItem !== 'function' || !tryAddItem(tpl.grantOnAccept)) {
+      addMsg(`Fais de la place dans ton sac avant d'accepter « ${tpl.title} ».`, 'bad');
+      return false;
+    }
+  }
+
   activeQuests.push(inst);
   availableQuests.delete(id);
   addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/quest.png" alt=""> Nouvelle quête : « ${tpl.title} »`, 'magic');
