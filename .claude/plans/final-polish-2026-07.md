@@ -377,3 +377,14 @@ Doc/assets only → pas de bump PWA (sauf si `index.html` est retouché).
   contraste avec la réverbe-mémoire d'Élara). P5a précisé en conséquence.
   Plan finalisé et soumis en PR — l'implémentation démarre dans une
   session dédiée (prompt de lancement fourni à l'utilisateur).
+- **2026-07-04 — Décisions ❓ TRANCHÉES par l'utilisateur** (AskUserQuestion) :
+  1. **P8c** : purge **partielle** — les planches de montage
+     `img/icons/_*.png` (24 fichiers, ~4,5 Mo) sont supprimées (re-grep de
+     contrôle : zéro référence dans index.html/js/css/sw.js) ; le doublon
+     `img/houses/v2/` est **conservé** par prudence (décision utilisateur).
+  2. **P8d (concat JS)** : **écarté définitivement** — cohérent avec
+     « zéro build step » et la mesure P8b (coût JS = évaluation, pas
+     réseau ; la concat n'y changerait rien).
+  3. **P11 (canal)** : **release GitHub taguée** après merge des PRs
+     (suggestion `v1.0-sceau-des-fondateurs`) — à créer une fois #717/#721
+     mergées ; suivi assuré par le check-in planifié.
