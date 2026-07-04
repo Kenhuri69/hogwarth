@@ -1737,6 +1737,49 @@ function loadNpcs() {
 })();
 
 // ============================================================
+// 11quater-bis. profile.js — Bibliothèque des Maîtrises (P7)
+//    mergeMasteredElements PUR : union cross-run, ordre canonique,
+//    rejet des valeurs inconnues. La collection est PUREMENT cosmétique
+//    (garde-fou zéro-héritage) — le round-trip localStorage est couvert
+//    par le scénario smoke scenarioNgPlusProfile.
+// ============================================================
+(function testProfileMasteryLibrary() {
+  const { mergeMasteredElements, PROFILE_MASTERY_ELEMENTS } = loadModule(
+    'js/profile.js', ['mergeMasteredElements', 'PROFILE_MASTERY_ELEMENTS']);
+
+  check('maîtrises: 6 éléments canoniques',
+    Array.isArray(PROFILE_MASTERY_ELEMENTS) && PROFILE_MASTERY_ELEMENTS.length === 6
+    && ['feu','glace','foudre','lumière','ténèbres','physique']
+        .every(e => PROFILE_MASTERY_ELEMENTS.includes(e)));
+
+  // Union simple depuis vide / liste absente.
+  check('merge: vide + feu → [feu]', mergeMasteredElements([], 'feu').join('|') === 'feu');
+  check('merge: undefined + glace → [glace]', mergeMasteredElements(undefined, 'glace').join('|') === 'glace');
+
+  // Idempotence + ordre canonique quel que soit l'ordre d'acquisition.
+  const a = mergeMasteredElements(['ténèbres'], 'feu');
+  check('merge: ordre canonique (feu avant ténèbres)', a.join('|') === 'feu|ténèbres');
+  check('merge: idempotent', mergeMasteredElements(a, 'feu').join('|') === 'feu|ténèbres');
+
+  // Valeurs inconnues rejetées (élément invalide + entrées corrompues filtrées).
+  check('merge: élément inconnu → liste inchangée',
+    mergeMasteredElements(['feu'], 'plasma').join('|') === 'feu');
+  check('merge: entrées corrompues filtrées',
+    mergeMasteredElements(['feu', 'xx', 42], 'glace').join('|') === 'feu|glace');
+
+  // Nouvelle liste (pas de mutation de l'entrée).
+  const src = ['feu'];
+  mergeMasteredElements(src, 'glace');
+  check('merge: entrée non mutée', src.join('|') === 'feu');
+
+  // Collection complète.
+  let all = [];
+  for (const e of PROFILE_MASTERY_ELEMENTS) all = mergeMasteredElements(all, e);
+  check('merge: collection complète 6/6 en ordre canonique',
+    all.join('|') === PROFILE_MASTERY_ELEMENTS.join('|'));
+})();
+
+// ============================================================
 // 12. monsters.js — Basilic Ancestral (boss Boucle profonde)
 //    Vérifie l'enregistrement + le gating d'étage effectif + le statut
 //    de « brute » (→ Broyer auto). Données pures.

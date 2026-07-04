@@ -923,6 +923,10 @@ function learnMasteryBook(inventoryIdx) {
     if (typeof AudioSystem !== 'undefined' && AudioSystem.playLevelUp) AudioSystem.playLevelUp();
     addMsg(`${item.icon || '📖'} Maîtrise de ${el} éveillée : +${Math.round(pct * 100)} % de dégâts de ${el}, pour toute la partie !`, 'magic');
   }
+  // Bibliothèque des Maîtrises (P7) : trace cosmétique CROSS-RUN au profil
+  // persistant (Codex du Sorcier) — dans les deux branches, l'élément est
+  // maîtrisé dans cette partie. AUCUN bonus hérité (le buff reste within-run).
+  if (typeof recordMasteredElementToProfile === 'function') recordMasteredElementToProfile(el);
   _removeInvItem(inventoryIdx);
   updateUI();
   closeModal('inventory-modal');
