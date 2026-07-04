@@ -389,6 +389,14 @@ Doc/assets only → pas de bump PWA (sauf si `index.html` est retouché).
   prosodique vérifié objectivement (débit g4 > g3 ; +4→+8 Hz). Zéro JS
   touché (clés déjà câblées) → pas de bump PWA. Reste à l'écoute humaine :
   valider le rendu perçu (repli→élan) in-game.
+- **2026-07-04 — P-doc LIVRÉ** ✅ (dernier item du Lot 1) : la fiche de
+  l'arc Manon dans `docs/histoire/08` est réconciliée avec le livré —
+  capstone « Clair de Lune » (part du père, Livre de Maîtrise Lumière),
+  système des 6 Livres de Maîtrise (drops boss + collection cosmétique
+  « Bibliothèque des Maîtrises » au Codex du Sorcier), épilogues P6a
+  (lettre = 1ʳᵉ livraison inter-PNJ, aconit) et quêtes de Boucle
+  (confier/Lockhart/compagnie). **Le Lot 1 est intégralement clos ;
+  tous les items du plan sont livrés.**
 - **2026-07-04 — P6a LIVRÉ** ✅ (item n°3) : les 2 side-quests du §1.2.
   `lettre_jamais_envoyee` inaugure la **livraison inter-PNJ** : donnée par
   Manon (nouveau champ `grantOnAccept` — l'objet entre au sac à l'accept,
