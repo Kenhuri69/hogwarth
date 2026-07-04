@@ -397,6 +397,19 @@ Doc/assets only → pas de bump PWA (sauf si `index.html` est retouché).
   (lettre = 1ʳᵉ livraison inter-PNJ, aconit) et quêtes de Boucle
   (confier/Lockhart/compagnie). **Le Lot 1 est intégralement clos ;
   tous les items du plan sont livrés.**
+- **2026-07-04 — P9a-c LIVRÉ** ✅ (item n°5) : README v2 + CHANGELOG.
+  P9a : 4 captures RÉELLES via Playwright (harness smoke + bascule
+  d'écrans explicite) — donjon 3D duo (86 Ko), combat 3 ennemis avec
+  frise d'initiative (81 Ko), fiche paper-doll équipée (86 Ko), mobile
+  D-pad 390×844 @2x (115 Ko) — toutes ≤ 200 Ko, contrôle visuel fait
+  (pièges corrigés : écrans non basculés par le harness, toasts de
+  démarrage, modale de level-up). P9b : pitch resserré (1 phrase-choc +
+  3 puces), section 📸 Aperçu (grille 2×2 légendée), section 🎮 Contrôles
+  (relatif au regard, remappable, mobile), liens CHANGELOG. P9c :
+  CHANGELOG.md curaté par thèmes depuis l'historique réel des PRs
+  (#507→#716 relus) : Poches du Sceau, Maîtrises, arc Manon, 2.0
+  (Sorts/Artefacts/Potions), Boucle enrichie, NG+, UX/a11y, perf, audio
+  + jalons antérieurs. Doc/assets purs → pas de bump PWA.
 - **2026-07-04 — P6b LIVRÉ** ✅ (item n°6, 1/2) : passe d'écriture
   recalibrée sur l'état RÉEL du code — l'audit programmatique (critère du
   plan : < 3 idle OU dialoguesByQuest manquant) montre que Rusard (9),
