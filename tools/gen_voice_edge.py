@@ -88,6 +88,18 @@ VOICES = {
     # filtre) — contraste voulu avec la réverbe-mémoire d'Élara : la mère est
     # un souvenir, Manon est là, à hauteur d'épaule.
     "manon": dict(voice="en-US-AvaMultilingualNeural", rate="-10%", pitch="+4Hz"),
+    # Esprit de Sirius (ét. 10/20) : voix d'homme mûre, chaleureuse — timbre
+    # multilingue inédit (Brian, chaud/posé). La « voix de l'au-delà » est
+    # signée à l'encodage par une LÉGÈRE réverbe d'écho (SIRIUS_FILTER,
+    # encode_voice.sh) — parent de la signature-mémoire d'Élara, plus court
+    # et sans ralenti : un esprit présent, pas un souvenir.
+    "sirius": dict(voice="en-US-BrianMultilingualNeural", rate="-6%", pitch="-4Hz"),
+    # Gardien de la Boucle (ét. 11+) : grave, lent, légèrement dénaturé —
+    # le rendu final réutilise la CHAÎNE D'EFFETS DES FONDATEURS
+    # (FOUNDER_FILTER via le case gardien_boucle_* d'encode_voice.sh :
+    # pitch −14 %, écho scellé, chorus spectral, voile). Timbre FR neutre
+    # inédit (Henri) pour rester distinct des 4 Fondateurs sous le filtre.
+    "gardien_boucle": dict(voice="fr-FR-HenriNeural", rate="-14%", pitch="-8Hz"),
     # ── Fondateurs — murmures d'écho des Poches du Sceau (escape-game-traps.md) ──
     # Voix « graves, amplifiées, dénaturées » : registre le plus bas possible en
     # TTS (grave/lent) ; le reste du traitement (pitch -14 %, écho scellé, chorus
@@ -546,6 +558,28 @@ LINES = {
         ("mcgonagall_help_15",
          "Besoin d'aide ? Le bouton Aide, dans les Réglages, rouvre ce "
          "guide quand tu veux. Bonne aventure à Poudlard !"),
+    ],
+    # Esprit de Sirius — greeting 2 pages (étage 10/20). Copie exacte de
+    # npcs-b.js (sirius_esprit.dialogues.greeting).
+    "sirius": [
+        ("sirius_greeting_1",
+         "Tu m'entends ? Bien. Voici une voix de l'au-delà — celle de "
+         "Sirius Black, mort derrière le Voile au Ministère."),
+        ("sirius_greeting_2",
+         "Je ne peux plus tenir une baguette. Mais je peux te guider — "
+         "Dolohov, le Héraut, les Spectres. Tous les trois doivent tomber "
+         "avant que Voldemort ne réapparaisse en pleine puissance."),
+    ],
+    # Gardien de la Boucle — greeting 2 pages (étage 11+, post-victoire).
+    # Copie exacte de npcs-b.js (gardien_boucle.dialogues.greeting).
+    "gardien_boucle": [
+        ("gardien_boucle_greeting_1",
+         "Tu reviens. Tous reviennent — c'est le sens de la Boucle. Je "
+         "veille ici depuis la première récurrence."),
+        ("gardien_boucle_greeting_2",
+         "Les ombres se reforment, et tu dois les défaire encore et "
+         "encore. Pour chaque purge, je récompenserai — c'est tout ce que "
+         "je peux offrir."),
     ],
     # ── Fondateurs — murmures d'écho des Poches du Sceau ──
     # Copie EXACTE des lignes de ESCAPE_FOUNDER_VOICE (js/escape-pocket.js).

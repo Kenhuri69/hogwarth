@@ -332,6 +332,12 @@ Object.assign(AudioSystem, {
     manon_greeting_2:            'audio/voice/manon_greeting_2.ogg',
     manon_greeting_3:            'audio/voice/manon_greeting_3.ogg',
     manon_greeting_4:            'audio/voice/manon_greeting_4.ogg',
+    // ── Voix P5b (final-polish §1.3) — Esprit de Sirius (écho léger à
+    // l'encodage) & Gardien de la Boucle (chaîne d'effets des Fondateurs).
+    sirius_greeting_1:           'audio/voice/sirius_greeting_1.ogg',
+    sirius_greeting_2:           'audio/voice/sirius_greeting_2.ogg',
+    gardien_boucle_greeting_1:   'audio/voice/gardien_boucle_greeting_1.ogg',
+    gardien_boucle_greeting_2:   'audio/voice/gardien_boucle_greeting_2.ogg',
     // Élara (mère défunte) — voix posthume « mémoire » lue à la collecte des
     // feuillets clairs (Acte III). Edge-TTS (Emma) + signature réverbe.
     elara_feuillet_1:            'audio/voice/elara_feuillet_1.ogg',

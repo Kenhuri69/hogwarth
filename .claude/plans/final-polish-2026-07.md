@@ -397,6 +397,19 @@ Doc/assets only → pas de bump PWA (sauf si `index.html` est retouché).
   (lettre = 1ʳᵉ livraison inter-PNJ, aconit) et quêtes de Boucle
   (confier/Lockhart/compagnie). **Le Lot 1 est intégralement clos ;
   tous les items du plan sont livrés.**
+- **2026-07-04 — P5b LIVRÉ** ✅ (item n°6, 2/2) : voix Esprit de Sirius +
+  Gardien de la Boucle. Sirius : timbre inédit `en-US-BrianMultilingualNeural`
+  (mûr, chaleureux) + nouvelle signature `SIRIUS_FILTER` à l'encodage (écho
+  léger « voix de l'au-delà » — parent de la réverbe-mémoire d'Élara, plus
+  court, sans ralenti : un esprit présent). Gardien : `fr-FR-HenriNeural`
+  grave/lent + **chaîne d'effets des Fondateurs réutilisée** (case
+  `gardien_boucle_*` → FOUNDER_FILTER), niveau conforme aux founders
+  (−33 dB). 4 OGG (8-12 s), textes = copie exacte npcs-b.js. Câblage :
+  4 clés `_VOICE_SAMPLES` + cases `_voiceKeyForPage` (greeting SEUL voixé,
+  modèle Manon — quêtes multiples = repli silencieux, pas de collision).
+  Smoke : T5bis dans scenarioHeadOfHouseVoice (clés, mapping, replis
+  null) + npc (11) ✅. Bump audio-music/npc-dialog + CACHE_VERSION.
+  **Item n°6 (P6b+P5b) terminé.**
 - **2026-07-04 — P7 LIVRÉ** ✅ (item n°4) : Bibliothèque des Maîtrises au
   Codex du Sorcier. Champ persistant `masteredElements` (profil
   `hogwarts_rpg_profile`, assaini à la lecture) + helper PUR

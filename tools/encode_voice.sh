@@ -32,6 +32,11 @@ for a in "$@"; do [ "$a" = "--force" ] && FORCE=1 || KEYS+=("$a"); done
 # sonore distinctive qu'aucun autre PNJ ne porte.
 ELARA_FILTER="atempo=0.97,aecho=0.85:0.9:55|110:0.30|0.18,highpass=f=110,lowpass=f=6500,volume=1.15"
 
+# Signature « Sirius » (voix de l'au-delà, P5b) : LÉGÈRE réverbe d'écho —
+# parente de la signature-mémoire d'Élara mais plus courte et sans ralenti
+# ni voile appuyé : un esprit PRÉSENT qui te parle, pas un souvenir relu.
+SIRIUS_FILTER="aecho=0.8:0.88:40|85:0.24|0.14,highpass=f=100,lowpass=f=7500,volume=1.1"
+
 # Signature « Fondateur » (murmures d'écho des Poches du Sceau) : voix GRAVE,
 # AMPLIFIÉE et DÉNATURÉE. asetrate/atempo abaisse le pitch de ~14 % (grave, en
 # gardant la durée) ; aecho = écho de scellement (couloir de pierre) ; chorus =
@@ -45,9 +50,12 @@ for key in "${KEYS[@]}"; do
   [ -f "$src" ] || { echo "  ⚠️  $key.mp3 absent"; continue; }
   [ -f "$dst" ] && [ "$FORCE" -eq 0 ] && continue
   case "$key" in
-    elara_*)   AF=(-af "$ELARA_FILTER") ;;
-    founder_*) AF=(-af "$FOUNDER_FILTER") ;;
-    *)         AF=() ;;
+    elara_*)          AF=(-af "$ELARA_FILTER") ;;
+    sirius_*)         AF=(-af "$SIRIUS_FILTER") ;;
+    # Gardien de la Boucle : réutilise la chaîne des Fondateurs (P5b).
+    gardien_boucle_*) AF=(-af "$FOUNDER_FILTER") ;;
+    founder_*)        AF=(-af "$FOUNDER_FILTER") ;;
+    *)                AF=() ;;
   esac
   "$FF" -y -loglevel error -i "$src" "${AF[@]}" -ac 1 -ar 22050 -c:a libvorbis -q:a 3 "$dst"
   echo "  ✓ $key.ogg ($(( $(stat -c%s "$dst") / 1024 )) Ko)"

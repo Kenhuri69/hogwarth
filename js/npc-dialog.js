@@ -886,6 +886,17 @@ function _voiceKeyForPage(npcId, state, qid, pageIdx, source, idleIndex) {
     if (source === 'greeting') return `manon_greeting_${pageIdx + 1}`;
     return null;
   }
+  // P5b — greeting SEUL voixé (comme Manon) : l'Esprit de Sirius et le
+  // Gardien de la Boucle ont des quêtes multiples qui partageraient des
+  // clés d'état génériques (collision texte/voix).
+  if (npcId === 'sirius_esprit') {
+    if (source === 'greeting') return `sirius_greeting_${pageIdx + 1}`;
+    return null;
+  }
+  if (npcId === 'gardien_boucle') {
+    if (source === 'greeting') return `gardien_boucle_greeting_${pageIdx + 1}`;
+    return null;
+  }
   if (state !== 'offer' && state !== 'active' && state !== 'ready') return null;
   if (npcId === 'dumbledore') {
     const suffix = _DUMBLEDORE_QID_SUFFIX[qid];
