@@ -196,6 +196,25 @@ une quête acceptée est un clone en cours (`activeQuests`). Objectifs supporté
     découverte du 1ᵉʳ feuillet. 💡 Élara n'avait pas caché que des secrets :
     aussi de la **joie** (sorts de givre heureux pour sa fille). Récompense
     surtout **narrative** (passif « Hiver Clair »).
+  - **Capstone** — *Clair de Lune* (`manon_clair_de_lune`, prereq
+    `manon_acte3`) : ✅ après la mère (le givre), l'arc culmine sur le
+    **père** — disperser 2 Détraqueurs « en son nom », et recevoir le livre
+    que Lupin achève : **« Clair de Lune »**, le Livre de Maîtrise de la
+    **Lumière** (`livre_lumiere_patronus`). 💡 C'est l'un des **6 Livres de
+    Maîtrise élémentaire** (`type:"masterybook"`, +12 % permanent de dégâts
+    de l'élément, groupe entier) — les 5 autres se prennent sur les grands
+    boss (Magyar/feu, Spectre de Givre/glace, Héraut de l'Orage/foudre,
+    Héraut des Ténèbres/ténèbres, Greyback/physique). Collection cosmétique
+    cross-run « Bibliothèque des Maîtrises » au Codex du Sorcier (profil,
+    zéro héritage de puissance).
+  - **Épilogues** (side-quests de liens, P6a) : ✅ *La lettre jamais
+    envoyée* (`lettre_jamais_envoyee`, prereq capstone) — première
+    **livraison inter-PNJ** : Manon confie la dernière lettre d'Élara, la
+    remise se fait chez **Lupin**, qui la lit (clôture épistolaire du
+    triangle) ; *L'aconit de la meute* (`aconit_de_la_meute`, Lupin,
+    prereq `manon_pardon`) — le père brasse la Tue-Loup au grand jour,
+    devant sa fille. En Boucle : `manon_confier` → `memoire_lockhart`
+    (l'histoire d'Élara enfin écrite) et `manon_compagnie` (répétable).
 - **Liens :** Lupin, Revelio, Strangulot ; incarne le thème « le choix plutôt
   que le don » ([03 §3.7](03-trame-principale.md)).
 
