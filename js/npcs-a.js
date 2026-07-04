@@ -551,14 +551,6 @@ NPCS.push(
     placement: { floor: 6, anchor: "any" },
     questsGiven:    ["chasse_sans_tete", "chasse_sans_tete_boucle"],
     questsTurnedIn: ["chasse_sans_tete", "chasse_sans_tete_boucle"],
-    // Quête répétable en Boucle (étage 16) — chevaucher la Chasse Sans Tête.
-    dialoguesByQuest: {
-      chasse_sans_tete_boucle: {
-        questOffer:  "Ha ! La Boucle nous offre une chevauchée éternelle, et il nous manque des cavaliers ! Terrasse 3 Chevaliers Fantômes — montre-nous ta fougue — et tu galoperas à nos côtés, tête ou pas.",
-        questActive: "Alors, ces Chevaliers Fantômes ? La Chasse n'attend pas les traînards !",
-        questReady:  "Magnifique chevauchée ! Au nom de la Chasse Sans Tête, accepte ce cor — sonne-le, et nous accourrons. Enfin… si nous retrouvons nos montures."
-      }
-    },
     dialogues: {
       greeting: [
         "Halte-là ! (Sa tête, parfaitement détachée, roule sous son bras le temps d'un salut goguenard.) Vous tombez sur Sir Patrick Delaney-Podmore, fondateur de la Chasse Sans Tête. Membres : décapités intégralement. Recalés : les autres.",
@@ -567,10 +559,22 @@ NPCS.push(
       idleRandom: [
         "Notre dernier tournoi de Hockey à Têtes fut un triomphe. Dommage que Nicolas n'ait pu y participer — il aurait fallu qu'il se débarrasse de ce dernier centimètre de peau.",
         "La décapitation, jeune sorcier, est un art. On ne s'improvise pas sans-tête.",
-        "Quarante-cinq coups de hache pour Nicolas ! Et pas un n'a fini le travail. Quelle malchance — ou quel bourreau."
+        "Quarante-cinq coups de hache pour Nicolas ! Et pas un n'a fini le travail. Quelle malchance — ou quel bourreau.",
+        // P6b — mémoire des Fondateurs (les fantômes ont l'âge du château).
+        "J'ai été décapité l'année où l'on a muré la moitié de ces galeries. Coïncidence ? Les vivants adorent ce mot. Nous autres, nous nous souvenons qu'on n'a pas muré pour rien.",
+        "Godric Gryffondor aurait adoré la Chasse. Un homme qui charge d'abord et compte ses membres ensuite — c'est tout l'esprit du club, ça."
       ]
     },
+    // NB : UN SEUL bloc dialoguesByQuest — deux clés dupliquées rendaient
+    // chasse_sans_tete_boucle muette (la 2e écrasait la 1re ; même bug que
+    // jadis chez Manon, cf. units §11bis).
     dialoguesByQuest: {
+      // Quête répétable en Boucle (étage 16) — chevaucher la Chasse Sans Tête.
+      chasse_sans_tete_boucle: {
+        questOffer:  "Ha ! La Boucle nous offre une chevauchée éternelle, et il nous manque des cavaliers ! Terrasse 3 Chevaliers Fantômes — montre-nous ta fougue — et tu galoperas à nos côtés, tête ou pas.",
+        questActive: "Alors, ces Chevaliers Fantômes ? La Chasse n'attend pas les traînards !",
+        questReady:  "Magnifique chevauchée ! Au nom de la Chasse Sans Tête, accepte ce cor — sonne-le, et nous accourrons. Enfin… si nous retrouvons nos montures."
+      },
       chasse_sans_tete: {
         questOffer: [
           "Vous plaidez pour ce brave Nicolas ? (Il soupire, et sa tête en profite pour bâiller sous son bras.) Soit. Je veux une preuve qu'un fantôme entêté sait encore chasser.",

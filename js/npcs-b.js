@@ -147,7 +147,10 @@ NPCS.push(
         "Quatre siècles que j'arpente ces couloirs. Les visages changent, les peurs jamais.",
         "Le Baron Sanglant n'apparaît qu'aux nuits d'orage. Évitez les cachots ce soir.",
         "Quarante-cinq coups de hache émoussée. Voilà ce qu'il a fallu pour me séparer de ce monde. Le bourreau n'était pas… doué.",
-        "Devenir fantôme fut mon choix : j'ai eu peur de ce qui venait après. Aujourd'hui encore, je ne sais pas si j'ai bien fait."
+        "Devenir fantôme fut mon choix : j'ai eu peur de ce qui venait après. Aujourd'hui encore, je ne sais pas si j'ai bien fait.",
+        // P6b — mémoire des Fondateurs (Godric, sa Maison).
+        "J'ai connu des fantômes plus vieux que moi qui refusaient de descendre sous les cachots. « Les Quatre y ont laissé une porte close », disaient-ils. Puis ils ont cessé de le dire. Puis ils ont cessé, tout court.",
+        "Godric répétait, paraît-il : « On ne scelle pas par peur — on tient la porte. » Quand les murs runiques tremblent, là-dessous, je me demande qui la tient encore, cette porte. Et depuis combien de temps il est seul."
       ]
     }
   },
@@ -179,7 +182,10 @@ NPCS.push(
         "Méfie-toi des Inferius. Ils n'ont ni faim ni pitié.",
         "J'ai vu passer tant d'élèves rieurs… Je les ai vus revenir vieillis, courbés, puis ne plus revenir du tout. C'est cela, l'éternité.",
         "Le froid du donjon ne me dérange plus. C'est le froid de ne plus rien sentir qui pèse, certaines nuits.",
-        "Un de ces Inferius, là-bas… je l'ai connu vivant. Il riait fort. Ne le laisse pas t'approcher : ce n'est plus lui."
+        "Un de ces Inferius, là-bas… je l'ai connu vivant. Il riait fort. Ne le laisse pas t'approcher : ce n'est plus lui.",
+        // P6b — mémoire des Fondateurs (Helga, sa Maison).
+        "Les moines de mon temps disaient encore « l'abri de Helga » en parlant des caves. Elle avait creusé des refuges, disait-on, pour ceux qui resteraient quand tout fermerait. J'ai longtemps cru à une légende de cellier. Plus maintenant.",
+        "Quand tu descends sous le septième palier, mon enfant, bénis tes provisions. C'est une vieille coutume de Poufsouffle — Helga exigeait qu'on ne scelle jamais une porte sans laisser du pain derrière."
       ]
     }
   },
@@ -402,7 +408,10 @@ NPCS.push(
         "Si on te demande, tu m'as jamais vu.",
         "Le casque, j'l'ai retrouvé dans un tas de feuilles. Le sang est parti au lavage.",
         "Cette cape arrête à peu près tout. Sauf le regard d'un Détraqueur — mais ça, rien ne l'arrête.",
-        "L'Élixir de Lune, c'est ma fierté. Distillé moi-même. Goûte avant de juger."
+        "L'Élixir de Lune, c'est ma fierté. Distillé moi-même. Goûte avant de juger.",
+        // P6b — théorie du Sceau (version receleur : un coffre-fort géant).
+        "Le Sceau des Fondateurs ? Réfléchis deux secondes. On ne scelle pas du vide. Quatre sorciers pleins aux as verrouillent un sous-sol pour mille ans… Moi je dis : le plus gros coffre-fort de l'histoire, et on marche dessus.",
+        "Un piège qui t'avale et te recrache dans une salle scellée ? Petit, c'est pas un piège, c'est une chambre forte qui t'a pris pour un cambrioleur. Et franchement — elle a pas tort."
       ]
     }
   },
@@ -527,7 +536,10 @@ NPCS.push(
         "L'Essence des Ténèbres, ça se cueille comme une fleur. Sauf que la fleur, elle pousse dans les organes.",
         "Une Page de Grimoire, c'est un sort qui attend son livre. Bonne occasion pour ta Bibliothèque interdite.",
         "Le Dictame guérit même les morsures lycanthropes. Demande à Bill — il connaît mes prix.",
-        "Mes potions ne sont pas autorisées. C'est précisément pourquoi elles fonctionnent."
+        "Mes potions ne sont pas autorisées. C'est précisément pourquoi elles fonctionnent.",
+        // P6b — théorie du Sceau (version apothicaire : un organe qui suppure).
+        "Le Sceau n'est pas une porte, sorcier. C'est une cicatrice. Et une cicatrice millénaire, ça suppure — mon Essence des Ténèbres, je la récolte au bord des plaies. Demande-toi ce qui saigne.",
+        "Ces poches où les pièges t'engloutissent ? Des kystes. Le château les forme autour de ce qui l'infecte, comme un corps enkyste une écharde. J'y vendrais bien mes onguents, si elles ne me recrachaient pas."
       ]
     }
   },
@@ -639,7 +651,10 @@ NPCS.push(
         "Tu trouveras moins cher chez l'Apothicaire de l'étage du dessus. Mais sa marchandise n'a pas dormi sous ma forge.",
         "L'Essence des Ténèbres, à mon prix, c'est une assurance. Au sien, c'est une loterie.",
         "Mon Pectoral d'Auror a déjà sauvé deux Aurors. Le troisième a refusé le prix — il n'a pas survécu pour le regretter.",
-        "Personne ne descend plus bas que cet étage avec mauvaise réputation. J'ai mauvaise réputation. Cherche l'erreur."
+        "Personne ne descend plus bas que cet étage avec mauvaise réputation. J'ai mauvaise réputation. Cherche l'erreur.",
+        // P6b — théorie du Sceau (version forgeron : un ouvrage, donc des coutures).
+        "Le Sceau ? Parle-m'en en artisan. Quatre mains, quatre métaux, une seule soudure — du travail admirable. Mais toute soudure a mille ans de fatigue. Colle l'oreille aux murs runiques : ça craque comme une enclume qui refroidit.",
+        "Ces salles scellées qui s'ouvrent sous les pièges — c'est pas de la magie noire, c'est de l'usure. Les coutures de l'ouvrage qui lâchent une à une. Et crois un forgeron : on ne répare pas une pièce pareille. On la reforge. Entièrement."
       ]
     }
   },
@@ -730,7 +745,10 @@ NPCS.push(
         "Mon prix est ferme. Mon temps aussi : j'aurai disparu avant ton prochain étage.",
         "Va. Quand tu reviendras, je serai parti — ou peut-être pas.",
         "Garde tes pas légers, sorcier. Et tes Gallions plus encore.",
-        "Une Pierre d'Âme ? J'en trouve trois par siècle. La tienne est là, devant toi."
+        "Une Pierre d'Âme ? J'en trouve trois par siècle. La tienne est là, devant toi.",
+        // P6b — théorie du Sceau (version voyageur : le verrou a deux côtés).
+        "Le Sceau ? Un verrou, oui. Mais un verrou, ça a deux côtés, gamin. Demande-toi qui a la clef de l'autre.",
+        "Je passe partout — chemins fixes exceptés. Or il est un seuil que je ne franchis jamais : ces poches figées où le temps sent le givre. Ce qui s'y souvient de moi n'est pas… à vendre."
       ]
     }
   },

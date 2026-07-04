@@ -377,3 +377,19 @@ Doc/assets only → pas de bump PWA (sauf si `index.html` est retouché).
   contraste avec la réverbe-mémoire d'Élara). P5a précisé en conséquence.
   Plan finalisé et soumis en PR — l'implémentation démarre dans une
   session dédiée (prompt de lancement fourni à l'utilisateur).
+- **2026-07-04 — P6b LIVRÉ** ✅ (item n°6, 1/2) : passe d'écriture
+  recalibrée sur l'état RÉEL du code — l'audit programmatique (critère du
+  plan : < 3 idle OU dialoguesByQuest manquant) montre que Rusard (9),
+  Trelawney (9), Rosmerta (8), Mondingus (8) ont DÉJÀ été enrichis par les
+  passes précédentes → non touchés (constat, « renforcer pas
+  reconstruire »). Livré sur les manques réels : (a) **bug corrigé** —
+  sir_patrick avait 2 clés `dialoguesByQuest` dupliquées (la 2e écrasait
+  la 1re → `chasse_sans_tete_boucle` muette, même bug que jadis Manon) ;
+  fusion + verrou units ; (b) les **4 marchands de la Boucle** portent
+  chacun leur THÉORIE du Sceau (Clandestin : coffre-fort ; Apothicaire :
+  cicatrice qui suppure ; Forgeron : soudure fatiguée ; Marchand d'Ombre :
+  « le verrou a deux côtés » — ligne du plan) — le joueur recoupe, et ça
+  résonne avec les Poches livrées ; (c) fantômes : mémoire des Fondateurs
+  (Sir Patrick +2, Moine Gras : Helga/refuges, Sir Nicolas : Godric/la
+  porte tenue). Units §11sexies (8 assertions) + smoke npc/dialog (11) ✅.
+  Bump npcs-a/npcs-b + CACHE_VERSION.
