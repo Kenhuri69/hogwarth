@@ -16,7 +16,7 @@
 //     individuel suffit pour eux.
 // =======================================================================
 
-const CACHE_VERSION = 'hogwarth-v251';
+const CACHE_VERSION = 'hogwarth-v252';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Précache minimal (~1 Mo) : shell HTML/CSS/JS + premier visuel.
@@ -132,7 +132,7 @@ const PRECACHE_URLS = [
   './js/help-tour.js?v=4',
   './js/balance-log.js?v=2',
   './js/loader.js?v=62',
-  './js/pwa.js?v=8',
+  './js/pwa.js?v=9',
 
   // Icônes PWA + premier écran
   './img/icons/pwa/icon-192.png?v=4',

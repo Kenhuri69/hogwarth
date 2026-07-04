@@ -395,3 +395,14 @@ Doc/assets only → pas de bump PWA (sauf si `index.html` est retouché).
   `tools/_shots/optimize_npc_avant_apres.jpg` (contrôle visuel OK, y compris
   portrait photo-réaliste Manon). Smoke npc (11) + MultiplayerPresence
   (16 sprites plein corps chargent) ✅.
+- **2026-07-03 — P8a (3/3 : icons + misc) LIVRÉ** ✅ : familles `icons`
+  (icons 6,1 → 4,7 Mo — planches `_*` exclues/P8c ; icons_new 3,5 → 2,8 Mo)
+  + `misc` (houses 3,0 → 1,1 ; fx 2,3 → 0,8 ; codex/scenes/textures).
+  `title.jpg` inchangé (déjà optimisé au pass Lighthouse, garde-fou
+  idempotent). **TOTAL img/ : 44 → 20 Mo (−55 %)** — cible du plan
+  (20-25 Mo) atteinte. Planche `optimize_icons_misc_avant_apres.jpg`
+  (blason, icône PWA, icône painterly, FX feu, tuile texture ×4 sans
+  couture). Bump `CACHE_VERSION` v251→v252 (+ SW_URL v9, pwa.js v9) pour
+  purger le cache SWR des images. `check_cache_versions` ✅,
+  `pwa-smoke` (offline OK, cache v252) ✅, smoke icons/textures (6) ✅.
+  **P8a terminé** — reste P8b (re-pass Lighthouse).
