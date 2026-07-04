@@ -1514,6 +1514,29 @@ async function scenarioHeadOfHouseVoice() {
       mcgoDone:   _voiceKeyForPage('mcgonagall', 'done', null, 0, 'done'),
     };
   });
+  // T5bis (P5b) : Sirius & Gardien de la Boucle — greeting seul voixé,
+  // clés présentes dans _VOICE_SAMPLES, repli silencieux hors greeting.
+  const t5b = await page.evaluate(() => {
+    const sm = AudioSystem._VOICE_SAMPLES;
+    return {
+      missing: ['sirius_greeting_1', 'sirius_greeting_2',
+                'gardien_boucle_greeting_1', 'gardien_boucle_greeting_2']
+        .filter(k => !sm[k]),
+      sirius1:  _voiceKeyForPage('sirius_esprit', 'none', null, 0, 'greeting'),
+      sirius2:  _voiceKeyForPage('sirius_esprit', 'none', null, 1, 'greeting'),
+      gardien1: _voiceKeyForPage('gardien_boucle', 'none', null, 0, 'greeting'),
+      siriusOffer:  _voiceKeyForPage('sirius_esprit', 'offer', 'chasse_dolohov', 0, 'offer'),
+      gardienIdle:  _voiceKeyForPage('gardien_boucle', 'none', null, 0, 'idle'),
+    };
+  });
+  console.log('  T5bis Sirius/Gardien:', t5b);
+  assert(t5b.missing.length === 0, `clés P5b manquantes : ${t5b.missing.join(', ')}`);
+  assert(t5b.sirius1 === 'sirius_greeting_1' && t5b.sirius2 === 'sirius_greeting_2',
+    'greeting Sirius → sirius_greeting_N');
+  assert(t5b.gardien1 === 'gardien_boucle_greeting_1', 'greeting Gardien → gardien_boucle_greeting_1');
+  assert(t5b.siriusOffer === null, 'offer Sirius → null (repli silencieux, pas de collision)');
+  assert(t5b.gardienIdle === null, 'idle Gardien → null (repli silencieux)');
+
   console.log('  T5 autres dialogues:', t5);
   assert(t5.missing.length === 0,
     `clés voice étendues manquantes : ${t5.missing.join(', ')}`);
