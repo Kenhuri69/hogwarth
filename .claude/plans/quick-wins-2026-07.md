@@ -57,3 +57,9 @@
     + `CACHE_VERSION` v253→v254. `check_cache_versions` ✅, `pwa-smoke` ✅ (v254).
   - Tests : `units` 1089 ✅ ; `smoke` inventory/shop/bestiary/npc/audio (14) +
     houses/save/visuals/crit (18) ✅.
+- **2026-07-09 — FIX CI** ✅ : `scenarioItemIcons` (non couvert par mon filtre
+  local) exige une entrée `ITEM_ICON_REGISTRY`/SVG chargeable par item — les 5
+  neufs n'avaient qu'un emoji. Mappés sur PNG génériques existants
+  (`item-icons.js`), patron déjà utilisé par ~30 items. `item-icons.js` v49→50,
+  `CACHE_VERSION` v254→v255. `scenarioItemIcons` re-vert (215/215 mappés).
+  Leçon : lancer `ItemIcons` (ou le smoke complet) lors de tout ajout d'item.
