@@ -53,6 +53,13 @@ const ITEM_ICON_REGISTRY = {
   baton_apprenti:       'img/icons/items/wand1.png',
   baton_ancestral:      'img/icons/items/wand2.png',
   cape_funambule:       'img/icons/items/cape_voyageur.png',
+  // Items Fortune/Célérité (quick-wins) — fallback legacy sur PNG génériques
+  // existants (pas de painterly dédié ; emoji reste le repli ultime).
+  anneau_trefle:        'img/icons/items/anneau_argent.png',
+  patte_niffleur:       'img/icons/items/amulette.png',
+  medaillon_chance:     'img/icons/items/amulette_protection.png',
+  bottes_lievre:        'img/icons/items/bottes_apprenti.png',
+  bracelet_tempo:       'img/icons/items/gants_apprenti.png',
   masque_courage:       'img/icons/items/chapeau_pointu.png',
   masque_rituel:        'img/icons/items/chapeau_pointu.png',
   grimoire_flottant:    'img/icons/items/book_monsters.png',
