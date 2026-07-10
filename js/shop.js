@@ -40,6 +40,8 @@ const SHOP_CATALOG = [
   { id: "chapeau_apprenti",    minFloor: 2 },
   { id: "ceinture_cuir",       minFloor: 2 },
   { id: "anneau_argent",       minFloor: 2 },
+  { id: "anneau_trefle",       minFloor: 2 },
+  { id: "bottes_lievre",       minFloor: 2 },
   { id: "felix",               minFloor: 3 },
   { id: "amulette",            minFloor: 3 },
   { id: "cape_voyageur",       minFloor: 3 },

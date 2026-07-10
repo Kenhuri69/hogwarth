@@ -1083,6 +1083,8 @@
     <!-- En-tête -->
     <div class="bestiary-header">
       <span class="bestiary-title" id="bestiary-modal-title"><img class="ui-icon ui-icon-xl" src="img/icons/bestiary.png" alt=""> Bestiaire de Poudlard</span>
+      <span id="bestiary-progress" aria-live="polite" title="Créatures découvertes / total"
+            style="margin-left:auto;margin-right:10px;font-family:'Cinzel',serif;font-size:11px;letter-spacing:1px;color:var(--gold-light);white-space:nowrap"></span>
       <span class="modal-close" onclick="closeBestiary()" role="button" title="Fermer (Échap)" aria-label="Fermer (Échap)" tabindex="0">✕</span>
     </div>
     <div class="grimoire-tabs" data-grimoire-tabs role="tablist" aria-label="Navigation du Grimoire"></div>
@@ -1407,13 +1409,13 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="js/room-flavor.js?v=1"></script>
 <script defer src="js/item-icons.js?v=50"></script>
 <script defer src="js/state.js?v=48"></script>
-<script defer src="js/hero-barks.js?v=13"></script>
+<script defer src="js/hero-barks.js?v=14"></script>
 <script defer src="js/ui.js?v=26"></script>
 <script defer src="js/modal-a11y.js?v=2"></script>
 <script defer src="js/ui-character-sheet.js?v=18"></script>
 <script defer src="js/ui-settings.js?v=7"></script>
 <script defer src="js/keybindings.js?v=1"></script>
-<script defer src="js/ui-bestiary.js?v=8"></script>
+<script defer src="js/ui-bestiary.js?v=9"></script>
 <script defer src="js/ui-codex.js?v=12"></script>
 <script defer src="js/dungeon-scaling.js?v=10"></script>
 <script defer src="js/dungeon.js?v=22"></script>
@@ -1448,7 +1450,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="js/house-donation.js?v=2"></script>
 <script defer src="js/karaoke.js?v=1"></script>
 <script defer src="js/intro.js?v=4"></script>
-<script defer src="js/shop.js?v=19"></script>
+<script defer src="js/shop.js?v=20"></script>
 <script defer src="js/save-slots.js?v=4"></script>
 <script defer src="js/save.js?v=52"></script>
 <script defer src="js/save-visit-snapshot.js?v=2"></script>
