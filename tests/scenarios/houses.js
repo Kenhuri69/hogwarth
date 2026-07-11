@@ -1597,8 +1597,8 @@ async function scenarioHouseSignatureQuests() {
   const HOUSES = [
     { house:'Gryffondor', qid:'quest_signature_gryff', floor:2, mob:'chevalier_fantome', amount:1, head:'mcgonagall', reward:'banniere_godric', flag:'gryffSignatureDone' },
     { house:'Serpentard', qid:'quest_signature_slyth', floor:4, mob:'basilic',           amount:1, head:'rogue',      reward:'langue_de_plomb', flag:'slythSignatureDone' },
-    { house:'Serdaigle',  qid:'quest_signature_raven', floor:2, mob:'gardien_portail',    amount:1, head:'flitwick',   reward:'codex_rowena_eclat', flag:'ravenSignatureDone' },
-    { house:'Poufsouffle',qid:'quest_signature_pouf',  floor:2, mob:'inferius',           amount:3, head:'sprout',     reward:'coeur_refuge',    flag:'poufSignatureDone' },
+    { house:'Serdaigle',  qid:'quest_signature_raven', floor:6, mob:'gardien_portail',    amount:1, head:'flitwick',   reward:'codex_rowena_eclat', flag:'ravenSignatureDone' },
+    { house:'Poufsouffle',qid:'quest_signature_pouf',  floor:3, mob:'inferius',           amount:3, head:'sprout',     reward:'coeur_refuge',    flag:'poufSignatureDone' },
   ];
 
   // T1 : cycle complet par Maison — gate étage, accept, kill, remise (flag),
@@ -1929,7 +1929,7 @@ async function scenarioHouseSignatureSerpentard() {
 async function scenarioHouseSignatureSerdaigle() {
   await _runHouseSignatureDonor({
     house: 'Serdaigle', donor: 'flitwick', gated: false, donorFloor: 6,
-    qid: 'quest_signature_raven', trigger: 2, flag: 'ravenSignatureDone'
+    qid: 'quest_signature_raven', trigger: 6, flag: 'ravenSignatureDone'
   });
 }
 
@@ -1937,7 +1937,7 @@ async function scenarioHouseSignatureSerdaigle() {
 async function scenarioHouseSignaturePoufsouffle() {
   await _runHouseSignatureDonor({
     house: 'Poufsouffle', donor: 'sprout', gated: false, donorFloor: 3,
-    qid: 'quest_signature_pouf', trigger: 2, flag: 'poufSignatureDone'
+    qid: 'quest_signature_pouf', trigger: 3, flag: 'poufSignatureDone'
   });
 }
 

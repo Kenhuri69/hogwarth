@@ -179,13 +179,18 @@ puis appliquent une **récursion** par palier de 10 étages :
 ```
 n = endgameTierIndex(floor) = floor((floor − 1) / 10)   // 1 pour 11-20, 2 pour 21-30…
 stat = _endgameRecurse(stat0, n, fixEff, scal)           // applique (stat×scal + fixEff) n fois
-  scal   = 1 + 0.5 / intraMult                           // scalDelta = 0.5, lissé
-  fixEff = baseFix[stat] / intraMult                      // baseFix {hp:80, atk:10, def:5, mag:8, xp:50, gold:80}
+  scalDelta(n) = 0.8 + 0.2 × (n − 1)                     // base 0.8 + croissance +0.2/palier
+  scal   = 1 + scalDelta(n) / intraMult                  // lissé par intraMult
+  fixEff = baseFix[stat] / intraMult                      // baseFix {hp:112, atk:14, def:7, mag:11, xp:70, gold:112}
 ```
 
-> ✅ **Effet net** : puissance des monstres **× ~1.5 par palier de 10 étages**
-> (`DIFFICULTY_STUDY.md §8.2`). Un monstre d'étage 14 a la *base* d'un étage 4,
-> rehaussée par la récursion endgame.
+> ✅ **Calibration « R1 marqué » (2026-06)** : la Boucle était trop facile pour
+> un joueur suréquipé — `scalDelta` relevé de 0.5 → **0.8**, croissance
+> `scalDeltaGrowth` **+0.2/palier**, `baseFix` ×1.4. Cibles validées par
+> `tools/sim-difficulty.js --endgame` (joueur suréquipé Solo/Duo) : ét. 25
+> ~57/76 %, ét. 30 ~48/66 %, ét. 40 ~18/28 %. Un monstre d'étage 14 a la
+> *base* d'un étage 4, rehaussée par la récursion endgame. Détail :
+> `.claude/plans/_archive/dark-loop-scaling-review.md`.
 
 ### 13.2.4 Progression du joueur (PV, stats, sorts)
 
@@ -284,7 +289,8 @@ résistance du donjon. Les 4 Maisons sont équilibrées entre elles par construc
 
 ### 13.3.2 Choix du / des héros & mode solo vs duo
 
-✅ Le choix du héros (Harry, Hermione, Céleste, Iris, Maxence, Anastasia)
+✅ Le choix du héros (**16 jouables** — 5 figures canon + 11 originaux de la
+Garde de l'Aube, registre `js/data-characters.js`, cf. [05 §5.0](05-personnages-jouables.md))
 **n'altère pas la structure** : tout repose sur `party[0]/party[1]`. Son impact
 est **cosmétique et émotionnel** (barks par événement) et de **build** (stats de
 départ : Harry physique-offensif LCK 15, Hermione mage-soutien INT 17).
@@ -326,6 +332,27 @@ la difficulté est **ponctuel** (un seul combat) et **bénéfique**.
 ✅ **Éclats de la Clé de Voûte** : aujourd'hui un **fil rouge purement narratif**
 — 3 `eclat_voute` (Peeves → Loup-Garou Adulte → Mangemort d'Élite, un par acte),
 issus d'une **quête optionnelle**. **Ils ne donnent aucune puissance.**
+
+> ⚠️ **Désambiguïsation « Éclats » (deux compteurs, même objet de lore)** :
+> ne pas confondre (a) les **3 `eclat_voute`** ci-dessus (objets de quête
+> narrative, zéro puissance) et (b) le compteur **`accumulatedEclats`**
+> (Éclats de Boucle, +1 par nouvel étage le plus profond post-victoire,
+> jalon II de « Briser le Cycle » à 15 — `state.js`, `movement-floors.js`).
+> Même objet fictionnel (des éclats de la Clé), deux systèmes de code
+> disjoints. Toute référence doc/plan doit préciser lequel.
+>
+> ⚠️ **Exception assumée au « Codex zéro puissance »** : la **Faveur de la
+> Salle** (`_applyRequirementMetaBonus`, `main.js`) dérive un léger bonus de
+> départ des thèmes de Salle sur Demande découverts (état surfacé au Codex).
+> C'est le **seul** chemin où une découverte type-Codex touche une stat —
+> voulu (récompense d'exploration marginale), à ne pas étendre sans repasser
+> par ce chapitre.
+
+> ℹ️ **Désambiguïsation « pages » (même mot, deux systèmes)** : les
+> **Pages de Grimoire** (`page_grimoire`, matériau d'upgrade de la
+> Bibliothèque Interdite, drop/purges de Boucle) sont distinctes des **pages
+> du grimoire d'Élara** (`player.grimoirePages`, collecte narrative de la
+> quête de Manon). Aucun croisement mécanique.
 
 > 💡 **Proposition — `eclatPowerBoost`** (à valider `❓`) : faire des Éclats un
 > **3ᵉ axe de progression optionnel** (chaque Éclat → +1 LCK ou +2 % stat

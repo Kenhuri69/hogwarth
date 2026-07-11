@@ -69,8 +69,8 @@ purgé, c'est le château qui s'enfonce un peu plus dans la nuit.
 > intime** de chaque héros est porté par une couche de **beats scénarisés
 > cosmétiques** — sa raison *personnelle* de descendre est *dite*, pas *jouée*
 > (aucun arc/quête/stat dédiés). Voir [05 §5.4.2](05-personnages-jouables.md)
-> (registre `hero-barks.js`, beat `descentStake` au seuil 3↔4 pour les 6 héros
-> jouables).
+> (registre `hero-barks.js`, beat `descentStake` au seuil 3↔4 — couvert par
+> les 6 héros historiques sur les 16 jouables).
 
 ## 1.4 Le moteur de progression narrative
 
@@ -84,8 +84,9 @@ Descendre **fait** avancer l'histoire : la profondeur est l'axe dramatique.
 | Le fond (10) | La source du mal | **Voldemort Ressuscité** |
 
 ✅ La menace culmine à l'**étage 10** avec `voldemort_revenu`. Les boss canon
-jalonnent la descente : Fenrir Greyback, Aragog, Antonin Dolohov, Bellatrix,
-**Voldemort Affaibli** (ét. 9) puis **Ressuscité** (ét. 10).
+jalonnent la descente : Fenrir Greyback (ét. 8), Bellatrix (ét. 8), Aragog
+(ét. 9), **Voldemort Affaibli** (ét. 9), Antonin Dolohov (ét. 10) puis
+**Voldemort Ressuscité** (ét. 10).
 
 ## 1.5 Climax & résolution
 

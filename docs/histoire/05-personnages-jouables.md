@@ -2,14 +2,16 @@
 
 **Statut :** 🟩 proposition de référence — à valider / amender
 
-> 📊 **Statut réel (code)** : ✅ 6 héros jouables + beats `descentStake` —
-> modules : `js/data.js` (`CHARACTERS`), `js/main.js` (`_hydrateCharacter`),
-> `js/hero-barks.js`.
+> 📊 **Statut réel (code)** : ✅ **16 héros jouables** (5 canon + 11 Garde de
+> l'Aube) + beats `descentStake` (couverture : les 6 héros historiques —
+> ⚠️ les 10 plus récents n'ont pas encore leur beat, cf. §5.4.2) —
+> modules : `js/data-characters.js` (`CHARACTERS`), `js/main.js`
+> (`_hydrateCharacter`), `js/hero-barks.js`.
 > Cf. [index doc ↔ module](../README.md#index-doc--module--statut-réel).
 
 > Objectif : donner à chaque héros sélectionnable une **personnalité, un rôle
 > et un arc**. Le casting mêle figures canon et créations originales. `✅` = acté
-> dans le jeu (`js/data.js` — `CHARACTERS`, taglines, stats et sorts exacts) ;
+> dans le jeu (`js/data-characters.js` — `CHARACTERS`, taglines, stats et sorts exacts) ;
 > `💡` = proposition de fond narratif, librement modifiable ; `❓` = à arbitrer.
 > Voir la trame en [03](03-trame-principale.md), les Maisons en
 > [07](07-les-maisons.md), les Quêtes Signature en
@@ -630,8 +632,13 @@ Intro Dumbledore (Clé de Voûte)  →  Choix de Maison (chosenHouse)
 > `movement-interactions.js`.
 
 - **À la transition 3↔4 (on quitte l'école) — enjeu intime du meneur présent** ✅ :
-  chacun des **6 héros jouables** porte sa raison *personnelle* de descendre
-  (`descentStake`, jouée par le 1ᵉʳ membre vivant du groupe ; `movement-floors.js`).
+  chacun des **6 héros historiques** (Harry, Hermione, Céleste, Iris, Maxence,
+  Anastasia) porte sa raison *personnelle* de descendre (`descentStake`, jouée
+  par le 1ᵉʳ membre vivant du groupe ; `movement-floors.js`).
+  ⚠️ **Lacune de couverture** : les **10 héros plus récents** (Drago, Cho,
+  Cedric, Louis, Jeanne, Margaux, Agathe, Olivier de Clairval, Nathalie,
+  Châtillon) n'ont **pas** d'entrée `descentStake` — silencieux à ce beat
+  (défensif, pas de bug). À combler lors d'un lot de contenu barks.
   - *Harry* : « Encore lui, encore en bas. Personne d'autre ne devrait avoir à
     descendre ici — alors ce sera moi. Comme toujours. »
   - *Hermione* : « On me dit « une terreur ». Moi, je vois un problème. Et un
@@ -736,7 +743,7 @@ Un candidat n'est validé que s'il coche **tout** :
      (512×512 RGBA transparent, Règle A `IMG_STYLE.md`) → enregistrer la clé
      dans `PLAYER_SPRITE_SRC` (`js/renderer-entities.js`) + bump cache PWA +
      compte de héros à jour dans `tests/scenarios/multiplayer.js`.
-2. **Données** : entrée dans `CHARACTERS` (`js/data.js`) — `name`, `icon`, `class`,
+2. **Données** : entrée dans `CHARACTERS` (`js/data-characters.js`) — `name`, `icon`, `class`,
    `imgSrc`, `role`, stats, `wand/armor/acc`, `spells`, `tagline`.
 3. **Carte de sélection** : `<button class="hero-card" data-key="<key>" …>` dans
    `#hero-grid` (`index.html`), badge numéroté à la suite. **Bump cache PWA** si

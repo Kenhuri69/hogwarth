@@ -618,4 +618,28 @@ Lot 6 (équilibrage global & QA de synthèse) ── ferme le tout
 
 - **2026-07-10** — Création : revue complète (4 audits parallèles), registre
   des trous de cohérence (Partie I), 5 chantiers de design (Parties II-VI),
-  ordonnancement en 7 lots (Partie VII). Aucun code modifié.
+  ordonnancement en 7 lots (Partie VII). Aucun code modifié. Mergé (PR #725).
+- **2026-07-10 — Lot 0 exécuté** :
+  - [x] 0.1 Doc 13 §13.2.3 réaligné sur `ENDGAME_SCALING` réel (scalDelta
+    0.8 + growth 0.2, baseFix ×1.4, cibles R1 marqué).
+  - [x] 0.2 Roster : doc 05 (bandeau + §5.4.2 + §5.5) « 6 héros » → 16 avec
+    précision factuelle : `descentStake` ne couvre QUE les 6 héros historiques
+    (vérifié `hero-barks.js`, 6 entrées) — lacune des 10 récents documentée
+    comme tâche de contenu future ; doc 03 #2, doc 01 §1.3 reformulés ;
+    doc 13 §13.3.2 → 16 héros ; renvois `data.js` → `data-characters.js`
+    corrigés (doc 05 ×3, G3, docs/README, CLAUDE.md, skill
+    add-playable-character). Plans `_archive/` laissés tels quels (archives
+    datées).
+  - [x] 0.3 `dungeon-scaling.js` : lien plan → `_archive/` ; doc 01 §1.4 :
+    boss ordonnés par étage (Dolohov ét. 10).
+  - [x] 0.4 **Écart au plan** : renommages d'affichage E1/E2 NON appliqués —
+    « Éclats » est le nom canon des deux compteurs (même objet de lore,
+    cf. fil rouge 03/08/12/14) et un renommage UI toucherait des dizaines de
+    call-sites + textes testés. Remplacé par des encarts de désambiguïsation
+    dans doc 13 §13.3.4 (Éclats ×2, pages ×2). Un renommage UI éventuel est
+    repoussé à un lot UX dédié (❓).
+  - [x] 0.5 Doc 13 §13.3.4 : exception « Faveur de la Salle » au principe
+    Codex-zéro-puissance documentée.
+  - [x] 0.6 `HOUSE_SIGNATURE_FLOORS` aligné sur l'étage des donneurs
+    (Serdaigle 2→6, Poufsouffle 2→3, commentaire source) + fixtures de test
+    mises à jour (`tests/scenarios/houses.js` ×3).
