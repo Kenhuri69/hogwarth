@@ -107,10 +107,12 @@ async function scenarioNpcIntegration() {
   assert(t1.gryff.chevAt2,              'Chevalier Fantôme doit apparaître à l\'ét. 2 pour Gryffondor');
   assert(t1.slyth.f2 === 4,             'étage 2 (Serpentard) doit avoir 4 PNJ (Chevalier gaté absent)');
   assert(!t1.slyth.chevAt2,             'Chevalier Fantôme ne doit PAS apparaître hors Gryffondor');
-  // Base ét. 4 : Lupin, Hagrid, Rogue = 3 ; +1 Écho de Salazar (🐍) pour Serpentard.
-  assert(t1.gryff.f4 === 3,             'étage 4 (Gryffondor) doit avoir 3 PNJ (Écho gaté absent)');
+  // Base ét. 4 : Lupin, Hagrid, Rogue + Portrait-relais de Dumbledore
+  // (dumbledore_relais_4, Lot 1 revue 2026-07) = 4 ; +1 Écho de Salazar (🐍)
+  // pour Serpentard.
+  assert(t1.gryff.f4 === 4,             'étage 4 (Gryffondor) doit avoir 4 PNJ (Écho gaté absent)');
   assert(!t1.gryff.echoAt4,             'Écho de Salazar ne doit PAS apparaître hors Serpentard');
-  assert(t1.slyth.f4 === 4,             'étage 4 (Serpentard) doit avoir 4 PNJ (3 + Écho de Salazar)');
+  assert(t1.slyth.f4 === 5,             'étage 4 (Serpentard) doit avoir 5 PNJ (4 + Écho de Salazar)');
   assert(t1.slyth.echoAt4,              'Écho de Salazar doit apparaître à l\'ét. 4 pour Serpentard');
 
   // T2 : génération étage 1 — Dumbledore présent + npcPlacements peuplé
