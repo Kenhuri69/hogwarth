@@ -248,16 +248,23 @@ portent du lore (décor détaillé en [10 §10.4](10-lieux-et-geographie.md)) :
 | **Jardin d'herbes** | ✅ besace d'herbes / craft | Respiration verte, écho de la Botanique (Chourave). |
 | **Énigmes de Dumbledore** | ✅ `quests-riddles.js` (Lumière Éternelle) | Beat émotionnel : le souvenir heureux contre les ténèbres. |
 
-> 💡 **Étages scénarisés fixes ?** Le jeu est procédural, mais on peut
-> **épingler une scène écrite** à un étage-charnière sans casser la génération :
-> l'étage 10 (Voldemort) en est déjà un de fait. Candidats naturels : étage 1
-> (premier pas, ton pédagogique), étage 4 (première transition), étage 11
-> (rencontre du Gardien de la Boucle). On garderait le procédural *autour* d'un
-> **point fixe scénarisé** (spéc technique : plan d'implémentation §C).
+> ✅ **Étages-scènes : tranché et livré** (`FLOOR_SCRIPTED_BEATS`,
+> `floor-ambiance.js`) — beat écrit one-shot garanti à la première entrée des
+> étages **1, 4, 7, 8, 9** (pré-victoire), **12, 13** (début de Boucle) et
+> **15, 21** (Ruines), plus la variante post-victoire « Grande Salle »
+> (étage 1) et l'étage-scène « Chambre des Fondateurs » (étage 17). L'étage 10
+> (Voldemort) reste scénarisé de fait ; l'étage 11 passe par le **dialogue
+> dédié du Gardien de la Boucle** (exclu volontairement du registre). Le
+> procédural reste intact *autour* de ces points fixes (pur affichage textuel).
 
-> ❓ À arbitrer : veut-on **formaliser des « étages-scènes »** (un beat écrit
-> garanti à l'entrée d'étages-clés) en plus du procédural, ou réserver le
-> scénarisé au seul climax (étage 10) ?
+> ✅ **Fil d'Ariane « La Descente »** (Lot 1 revue 2026-07) : la colonne
+> vertébrale est désormais **visible** — quête principale trackée en 4 étapes
+> (`descente_1..finale`, flag `main`, épinglée 🧭 en tête du tracker),
+> **non-gating** (le seul verrou reste `victoryAchieved`) et **auto-remise**
+> (la remise EST la descente, aucun retour PNJ). Post-victoire, la boussole
+> d'endgame prend le relais du guidage. En complément, trois
+> **portraits-relais de Dumbledore** (étages 4/7/10, `npcs-a.js`) reçoivent
+> la chaîne d'épreuves et les Éclats — plus besoin de remonter à l'étage 1.
 
 ## 4.5 La frontière 13↔14 — entrée des Ruines Anciennes
 
@@ -362,8 +369,9 @@ climax (§4.2).
 > franchissement le plus solennel — entrée dans des ruines pré-Poudlard.
 
 ## Points à trancher (résumé)
-1. ❓ Formaliser des **« étages-scènes » non procéduraux** (étage 1 / 4 / 11) en
-   plus du climax (étage 10) ? (§4.4)
+1. ✅ ~~Formaliser des **« étages-scènes » non procéduraux** ?~~ **Tranché et
+   livré** : beats 1/4/7/8/9 + Boucle 12/13 + Ruines 15/21 (`FLOOR_SCRIPTED_BEATS`) ;
+   l'étage 11 passe par le dialogue du Gardien. (§4.4)
 2. ❓ **Traitement audiovisuel renforcé** de la frontière 13↔14 (toast long /
    voix dédiée / cinématique) ? (§4.5)
 3. 💡 Adopter le **niveau de corruption** d'ambiance (cosmétique) comme 4ᵉ levier

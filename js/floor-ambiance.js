@@ -548,12 +548,13 @@ function echoLine(floor, victoryAchieved, chosenHouse) {
 // ── Étages-scènes scénarisés (P5) ────────────────────────────
 // Beat narratif écrit GARANTI à la première entrée de certains étages-clés,
 // sans toucher à la génération procédurale (pur affichage textuel).
-// Étages retenus (arbitrage 2026-06-08) : 1 (Seuil familier), 4 (entrée des
-// Cachots / 1re transition), 8 (Seuil du Veilleur, graine des Ruines).
-// L'étage 10 (Voldemort) est déjà scénarisé de fait ; l'étage 11 (Gardien de
-// la Boucle) a son dialogue dédié — exclus volontairement.
-// Textes : docs/histoire/10-lieux-et-geographie.md §10.2 (1/4/8) & §10.5.
-// Plan : .claude/plans/scripted-floor-beats.md.
+// Étages retenus (arbitrage 2026-06-08, étendu Lot 1 revue 2026-07) :
+// 1 (Seuil familier), 4 (entrée des Cachots), 7 (entrée des Profondeurs),
+// 8 (Seuil du Veilleur), 9 (Souffle incomplet, pré-climax), 12/13 (début de
+// Boucle) + Ruines 15/21. L'étage 10 (Voldemort) est déjà scénarisé de fait ;
+// l'étage 11 (Gardien de la Boucle) a son dialogue dédié — exclus volontairement.
+// Textes : docs/histoire/10-lieux-et-geographie.md §10.2 & §10.5.
+// Plans : .claude/plans/scripted-floor-beats.md + revue-design-progression-2026-07.md §2.4.
 const FLOOR_SCRIPTED_BEATS = {
   1: {
     id: 'seuil_familier',
@@ -565,10 +566,35 @@ const FLOOR_SCRIPTED_BEATS = {
     narrative: "L'école s'efface derrière toi. Ici la pierre est froide, l'haleine fume, des chaînes pendent aux murs. Des voix humaines basses œuvrent dans l'ombre : la corruption a désormais des fidèles. La Clé scellait deux maux, pas un.",
     toast: "Les Cachots de Poudlard — la corruption a des serviteurs.",
   },
+  // 7 : entrée de la tranche C — le Poudlard connu s'arrête (Lot 1, trou A3).
+  7: {
+    id: 'seuil_profondeurs',
+    narrative: "Le dernier couloir qui ressemblait encore à Poudlard s'arrête ici. Devant toi, la roche n'a jamais connu de maçon : les Profondeurs Oubliées s'ouvrent, tièdes d'une haleine qui monte de très loin. L'école n'a plus de prise — et le fond, lui, sait déjà que tu viens.",
+    toast: "Les Profondeurs Oubliées — Poudlard s'arrête, l'inconnu commence.",
+  },
   8: {
     id: 'seuil_veilleur',
     narrative: "Sur la roche brute affleurent les premières runes — un alphabet qu'aucun cours n'a enseigné. Quelque chose monte la garde au seuil de ce qui dort plus bas. Tu touches la graine des Ruines Anciennes.",
     toast: "Le Seuil du Veilleur — la pierre se souvient d'avant l'école.",
+  },
+  // 9 : pré-climax — l'ombre incomplète (Voldemort Affaibli rôde à cet étage).
+  9: {
+    id: 'souffle_incomplet',
+    narrative: "L'air se raréfie, chargé d'un froid qui n'est pas celui de la pierre. Quelque chose d'incomplet rôde à cet étage — une silhouette qui se recompose, patiente, éclat après éclat. Elle t'a senti descendre. Encore un étage, et vous vous ferez face.",
+    toast: "Le Souffle incomplet — l'ombre se reforme, un étage plus bas.",
+  },
+  // 12-13 : début de Boucle Ténébreuse (post-victoire) — la « narration
+  // continue » promise par la doc entre le Gardien (ét. 11, dialogue dédié)
+  // et les Mégalithes (ét. 15).
+  12: {
+    id: 'boucle_apprend',
+    narrative: "Ces couloirs, tu les as déjà arpentés — dix étages plus haut, dans une autre lumière. La Boucle rejoue le château, mais elle ne le copie pas : elle l'apprend. Les ombres y répètent tes gestes avec une seconde de retard, comme des élèves appliqués.",
+    toast: "La Boucle apprend — le château répète tes pas.",
+  },
+  13: {
+    id: 'boucle_souvient',
+    narrative: "Au bord des Ruines, la Boucle cesse de rejouer : elle se souvient. Les murs portent des marques de combats que tu n'as pas encore livrés — ou que tu as déjà livrés, plus bas, plus tard. Sous le prochain escalier, la pierre n'a plus de nom.",
+    toast: "La Boucle se souvient — les Ruines affleurent.",
   },
   // ── Ruines Anciennes (Zone D, atteignable en Boucle) ─────────────
   // 15 : seuil des Mégalithes — la Stèle de Rowena nomme la corruption.

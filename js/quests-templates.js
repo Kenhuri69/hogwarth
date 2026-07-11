@@ -17,6 +17,61 @@ const QUEST_TEMPLATES = [
     reward: { xp: 30, gold: 20, stats: { hp: 5, atk: 1, def: 1, mag: 1 } },
     location: "Hall d'entrée (étage 1)"
   },
+  // ── Quête principale « La Descente » (fil d'Ariane — Lot 1 revue 2026-07) ──
+  // Rend VISIBLE la colonne vertébrale (descendre → Voldemort) dans le
+  // quest-tracker : 4 étapes chaînées, épinglées en tête (flag `main`).
+  // NON-GATING (le seul verrou reste `victoryAchieved`) et SANS remise PNJ :
+  // `autoTurnIn` — la remise EST la descente. Chaîne pilotée par
+  // _ensureMainQuestProgress (quests.js), amorcée à la fin de l'intro.
+  // Hors des questsGiven de Dumbledore : jamais offerte en dialogue.
+  {
+    id: "descente_1",
+    main: true, autoTurnIn: true,
+    title: "La Descente I — Les Cachots",
+    giver: "Albus Dumbledore",
+    desc: "La fêlure vient d'en bas. Trouve les grands escaliers et descends jusqu'aux Cachots (étage 4).",
+    objectives: [
+      { type: "floor", floor: 4, progress: 0, amount: 1, completed: false }
+    ],
+    reward: { xp: 60, gold: 30 },
+    location: "En descendant — étage 4"
+  },
+  {
+    id: "descente_2",
+    main: true, autoTurnIn: true, prereq: "descente_1",
+    title: "La Descente II — Les Profondeurs",
+    giver: "Albus Dumbledore",
+    desc: "Sous les Cachots s'ouvrent des Profondeurs qu'aucun cours n'enseigne. Continue de descendre jusqu'à l'étage 7.",
+    objectives: [
+      { type: "floor", floor: 7, progress: 0, amount: 1, completed: false }
+    ],
+    reward: { xp: 120, gold: 60 },
+    location: "En descendant — étage 7"
+  },
+  {
+    id: "descente_3",
+    main: true, autoTurnIn: true, prereq: "descente_2",
+    title: "La Descente III — Le Dixième Étage",
+    giver: "Albus Dumbledore",
+    desc: "Chaque boss tombé affaiblit le sceau. Atteins l'étage 10 — là où l'ombre se reforme.",
+    objectives: [
+      { type: "floor", floor: 10, progress: 0, amount: 1, completed: false }
+    ],
+    reward: { xp: 200, gold: 100 },
+    location: "En descendant — étage 10"
+  },
+  {
+    id: "descente_finale",
+    main: true, autoTurnIn: true, prereq: "descente_3",
+    title: "La Descente — L'Ombre au Fond",
+    giver: "Albus Dumbledore",
+    desc: "Voldemort, pleinement reformé, garde la source de la fêlure. Mets fin à l'arc : affronte-le et scelle ta victoire.",
+    objectives: [
+      { type: "kill", monsterId: "voldemort_revenu", amount: 1, progress: 0, completed: false }
+    ],
+    reward: { xp: 400, gold: 200 },
+    location: "Le fond — étage 10"
+  },
   // ── Chaîne d'épreuves de Dumbledore (Phase 3) ─────────────────
   // Une chaîne de 5 quêtes (intro_tutoriel + 4 nouvelles) qui boost
   // permanent les stats du groupe et débloque sorts/items. La quête N+1
