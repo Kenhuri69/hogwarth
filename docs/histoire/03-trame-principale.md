@@ -253,6 +253,6 @@ l'arc en deux.
 2. ✅ Enjeu intime des héros en parallèle de l'enjeu collectif : **tranché** — couche
    de **beats scénarisés cosmétiques** (raison personnelle de descendre *dite*, pas
    *jouée* ; aucun arc/quête dédiés). Cf. [05 §5.4.2](05-personnages-jouables.md)
-   (beat `descentStake`, 6 héros jouables).
+   (beat `descentStake` — couvert par les 6 héros historiques sur les 16 jouables).
 3. ✅ Phases du combat final : tranchées (boss multi-phases dans le code). ❓ Dialogue avant/pendant + PNJ allié combattant : non tranché.
 4. ✅ Boucle Ténébreuse : prestige infini (tranché par le jeu — série ★ N génératrice sans fin).

@@ -30,7 +30,7 @@
 // `scalDeltaGrowth` de +0.2 par palier `n` (le TODO historique — escalade les
 // boucles profondes), et des `baseFix` × 1.4. Cibles validées par simulation
 // (joueur suréquipé Solo/Duo) : ét.25 ~57/76 %, ét.30 ~48/66 %, ét.40 ~18/28 %.
-// Cf. .claude/plans/dark-loop-scaling-review.md.
+// Cf. .claude/plans/_archive/dark-loop-scaling-review.md.
 const ENDGAME_SCALING = {
   baseFix: { hp: 112, atk: 14, def: 7, mag: 11, xp: 70, gold: 112 },
   scalDelta: 0.8,

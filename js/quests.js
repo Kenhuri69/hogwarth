@@ -70,8 +70,11 @@ const HOUSE_SIGNATURE_QUESTS = {
 
 // Étage déclencheur par Maison : la signature s'ouvre dès que le joueur
 // atteint cet étage (gate `chosenHouse` + étage, distinct du prestige).
+// Aligné sur l'étage du PNJ donneur (npcs-a.js) — le toast ne doit jamais
+// annoncer une quête dont le donneur n'est pas encore atteignable :
+// chevalier_godric ét. 2, echo_salazar ét. 4, flitwick ét. 6, sprout ét. 3.
 const HOUSE_SIGNATURE_FLOORS = {
-  Gryffondor: 2, Serpentard: 4, Serdaigle: 2, Poufsouffle: 2,
+  Gryffondor: 2, Serpentard: 4, Serdaigle: 6, Poufsouffle: 3,
 };
 
 // Ouvre la Quête Signature de la Maison choisie. Idempotent (ignoré si la

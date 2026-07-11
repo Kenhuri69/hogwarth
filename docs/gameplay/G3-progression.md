@@ -106,7 +106,7 @@ est appliqué sur la base (`_base*`) et survit aux recalculs.
 
 ### Stats de base des héros (au niveau 1)
 
-✅ (dans le jeu — `js/data.js — CHARACTERS`)
+✅ (dans le jeu — `js/data-characters.js — CHARACTERS`)
 
 Seuls Harry et Hermione sont disponibles par défaut dans le mode 2 joueurs. Les
 autres héros (`draco`, `cho`, `cedric`, personnages originaux) sont sélectionnables

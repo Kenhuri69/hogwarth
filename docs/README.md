@@ -111,7 +111,7 @@ sombre et plus profond.
 | 02 | Univers, ton & canon | ✅ | `floor-themes.js`, `floor-ambiance.js`, `data.js` |
 | 03 | Trame principale | ✅ | `monsters.js`, `quests*.js`, `endgame.js`, `break-cycle.js` |
 | 04 | Structure : actes & étages | ✅ | `floor-themes.js`, `dungeon.js`, `movement-floors.js`, `floor-events.js` |
-| 05 | Personnages jouables | ✅ | `data.js` (`CHARACTERS`), `main.js`, `hero-barks.js` |
+| 05 | Personnages jouables | ✅ | `data-characters.js` (`CHARACTERS`), `main.js`, `hero-barks.js` |
 | 06 | PNJ & factions | ✅ | `npcs.js`, `npcs-helpers.js`, `npc-dialog.js` |
 | 07 | Les Maisons | ✅ | `state.js` (`HOUSE_BONUSES`), `main.js`, `house-donation.js` |
 | 08 | Quêtes & sous-intrigues | ✅ | `quests-templates.js`, `quests.js`, `quests-riddles.js`, `potions.js` |

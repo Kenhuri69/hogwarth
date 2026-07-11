@@ -99,7 +99,7 @@ no text, no watermark, no signature, no border frame, no ground line, no ground 
 Tant que l'image n'est pas livrée, le héros reste pleinement jouable via le
 **repli vectoriel** — mais le prompt doit avoir été fourni.
 
-### 2. Données — entrée dans `CHARACTERS` (`js/data.js`)
+### 2. Données — entrée dans `CHARACTERS` (`js/data-characters.js`)
 Lue par `_hydrateCharacter()`. Champs :
 ```js
 <key>: {

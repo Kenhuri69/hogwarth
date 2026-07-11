@@ -838,7 +838,7 @@ Harry, Hermione, Céleste, Iris, Maxence, Anastasia) :
    - Si l'image source arrive sur **fond damier aplati** (Gemini/Nano Banana,
      RGB sans alpha) : détourer via
      `python3 tools/dechecker_png.py <src.png> img/players/<key>.png`.
-2. **Données** — ajouter une entrée dans `CHARACTERS` (`js/data.js`)
+2. **Données** — ajouter une entrée dans `CHARACTERS` (`js/data-characters.js`)
    avec `name`, `icon`, `class`, `imgSrc:"img/<key>.png"`, `role`, stats
    (hp/sp/str/int/agi/end/lck/mag/atk/def), `wand`, `armor`, `acc`,
    `spells:[…]`, `tagline`. `_hydrateCharacter()` lit ces champs.
