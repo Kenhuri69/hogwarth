@@ -373,12 +373,23 @@ La pièce 4/4 de chaque set est de rareté **legendary**.
 
 ✅ (dans le jeu — `js/forge.js`, cellule `CELL.FORGE` générée aux étages 11/14/17/20)
 
-La Forge permet d'**améliorer un item déjà équipé** jusqu'au niveau 5
-(`FORGE_MAX_LEVEL = 5`). Deux voies verrouillées au premier upgrade :
+La Forge permet d'**améliorer un item déjà équipé** jusqu'au niveau 8
+(`FORGE_MAX_LEVEL = 8` ; les niveaux 6-8 exigent en plus de l'Essence
+Primordiale). **Quatre voies** (Lot 2 revue 2026-07), choisies au premier
+upgrade et **re-forgeables** ensuite :
 
 - **Voie Puissance** (défaut) : `+upgradeLevel` sur la stat principale de
   l'item (la plus élevée parmi ATK/DEF/MAG/LCK).
 - **Voie Critique** : `+upgradeLevel × 2 %` de crit physique (`FORGE_CRIT_PER_LEVEL`).
+- **Voie Garde** : `+1 %` d'esquive et `+2` PV max par niveau
+  (`FORGE_GARDE_*` — build tank).
+- **Voie Résonance** : `+4 %` de dégâts élémentaires par niveau sur UN
+  élément choisi au 1ᵉʳ cran (`item.resonanceElement`, appliqué au moment
+  des dégâts via `_artifactElemBonus`).
+
+**Respec « Reforger la voie »** (`reforgePathAtForge`) : dès le niveau +1,
+changer de voie coûte **40 % de l'or investi** (`_forgeRespecCost`) — le
+niveau de forge est conservé. Fin du verrouillage à vie (trou C1 du plan).
 
 Coût en or + Essence des Ténèbres (consommé via `_consumeEssence`) :
 
@@ -389,6 +400,9 @@ Coût en or + Essence des Ténèbres (consommé via `_consumeEssence`) :
 | 3 | 320 G | 3 |
 | 4 | 640 G | 5 |
 | 5 | 1 280 G | 8 |
+| 6 | 2 200 G | 10 + 1 🔮 |
+| 7 | 3 400 G | 13 + 2 🔮 |
+| 8 | 5 000 G | 16 + 3 🔮 |
 
 Les items `grantsSpell` et `regen` ne voient pas ces effets binaires altérés
 par l'`upgradeLevel` (les bonus regen/sort restent fixes). L'upgrade est

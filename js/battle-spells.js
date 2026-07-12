@@ -595,7 +595,13 @@ function _artifactElemBonus(char, element) {
   if (!char || !char.equipped || !element) return 0;
   let total = 0;
   for (const item of Object.values(char.equipped)) {
-    if (!item || !item.bonusElemDmg) continue;
+    if (!item) continue;
+    // Voie Forge « Résonance » (Lot 2) : +4 %/niveau sur l'élément choisi.
+    if (item.forgePath === 'resonance' && item.resonanceElement === element) {
+      const per = (typeof FORGE_RESONANCE_PER_LEVEL === 'number') ? FORGE_RESONANCE_PER_LEVEL : 0.04;
+      total += (item.upgradeLevel | 0) * per;
+    }
+    if (!item.bonusElemDmg) continue;
     const m = item.bonusElemDmg;
     if (typeof m[element] === 'number') total += m[element];
     if (typeof m.tous === 'number')     total += m.tous;
@@ -707,6 +713,22 @@ function _spellElementalDamage(spell, char, enemy, targetIdx) {
         UX_safe.floatDmg(`enemy:${enemyGroup.indexOf(other)}`, sd, 'dmg');
         msg += ` 💥 ${other.name} −${sd}${ssfx}`;
         UX_safe.logCombat(`💥 Éclaboussure sur ${other.name} : <b>−${sd}</b>${ssfx}`, 'magic');
+      });
+    }
+
+    // Amplitude (Bibliothèque, Lot 2) : éclaboussure proportionnelle au coup
+    // principal sur les ennemis ADJACENTS à la cible (sorts mono-cible ;
+    // les sorts déjà splash comme Bombarda gardent leur propre formule).
+    if (spell._amplitudeSplash > 0 && !spell.splash && typeof targetIdx === 'number') {
+      const frac = Math.min(0.4, spell._amplitudeSplash);
+      [targetIdx - 1, targetIdx + 1].forEach(ai => {
+        const adj = enemyGroup[ai];
+        if (!adj || adj === enemy || adj.currentHp <= 0) return;
+        const sd = Math.max(1, Math.floor(dmg * frac));
+        adj.currentHp -= sd;
+        UX_safe.floatDmg(`enemy:${ai}`, sd, 'dmg');
+        msg += ` 💫 ${adj.name} −${sd}`;
+        UX_safe.logCombat(`💫 Amplitude sur ${adj.name} : <b>−${sd}</b>`, 'magic');
       });
     }
 
@@ -1407,8 +1429,24 @@ function _spellForCaster(spell, char) {
     if (typeof spell.cost  === 'number') out.cost  = Math.max(1, spell.cost - lvl);
     if (typeof spell.chance === 'number') out.chance = Math.min(0.5, spell.chance + 0.05 * lvl);
   };
-  if (path === 'power')      applyPower();
-  else if (path === 'focus') applyFocus();
+  // Lot 2 — voie Amplitude : power +1/niveau + éclaboussure sur les cibles
+  // adjacentes (+8 % tous les 2 crans, appliquée par _spellElementalDamage).
+  const applyAmplitude = () => {
+    if (typeof spell.power === 'number') out.power = spell.power + lvl;
+    out._amplitudeSplash = 0.08 * Math.floor(lvl / 2);
+  };
+  // Lot 2 — voie Métamorphose : power +1/niveau + l'élément du sort devient
+  // celui choisi au 1er cran (char.spellElements[name]) — contourne les
+  // résistances (variantes de Boucle resist-ténèbres, etc.).
+  const applyMeta = () => {
+    if (typeof spell.power === 'number') out.power = spell.power + lvl;
+    const el = char.spellElements && char.spellElements[spell.name];
+    if (el && spell.element && spell.element !== 'physique') out.element = el;
+  };
+  if (path === 'power')           applyPower();
+  else if (path === 'focus')      applyFocus();
+  else if (path === 'amplitude')  applyAmplitude();
+  else if (path === 'meta')       applyMeta();
   else { applyPower(); applyFocus(); }  // legacy combiné (sans spellPaths)
   return out;
 }

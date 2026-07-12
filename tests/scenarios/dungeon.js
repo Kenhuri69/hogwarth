@@ -1327,6 +1327,160 @@ async function scenarioLibraryUpgrade() {
   await browser.close();
 }
 
+// ── Lot 2 revue 2026-07 : 4 voies + respec (Forge & Bibliothèque) ──
+// Voies Garde/Résonance (Forge) et Amplitude/Métamorphose (Bibliothèque),
+// respec « Reforger la voie » contre or, migration héritage (+1 niveau
+// offert), et nouveaux résolveurs d'artefact (hasteGroup/sapDefense/
+// succorGroup — vérifiés au niveau données).
+async function scenarioForgeLibraryRespec() {
+  console.log('\n── Scénario Lot 2 : 4 voies + respec Forge/Bibliothèque ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 — Forge, voie Garde : +1 % esquive et +2 PV max par niveau.
+  const t1 = await page.evaluate(() => {
+    const wand = JSON.parse(JSON.stringify(ITEMS.find(i => i.id === 'wand1')));
+    party[0].equipped.wand = wand;
+    player.gold = 50000;
+    for (let i = 0; i < 10; i++) player.inventory.push({ ...ITEMS.find(i => i.id === 'essence_tenebres') });
+    recalculateStats();
+    const before = { atk: party[0].atk, dodge: party[0].dodgeChance, hpMax: party[0].hpMax };
+    const ok = upgradeItemAtForge(0, 'wand', 'garde');
+    return {
+      ok, path: party[0].equipped.wand.forgePath,
+      atkSame:  party[0].atk === before.atk,
+      dodgeUp:  party[0].dodgeChance === before.dodge + FORGE_GARDE_DODGE_PER_LEVEL,
+      hpUp:     party[0].hpMax === before.hpMax + FORGE_GARDE_HP_PER_LEVEL,
+    };
+  });
+  console.log('  T1 voie Garde →', t1);
+  assert(t1.ok && t1.path === 'garde', 'upgrade voie garde doit réussir');
+  assert(t1.atkSame,  'voie garde : ATK inchangé');
+  assert(t1.dodgeUp,  'voie garde : esquive +1 %/niveau');
+  assert(t1.hpUp,     'voie garde : PV max +2/niveau');
+
+  // T2 — Forge, respec Garde → Critique : gold débité, effets basculés.
+  const t2 = await page.evaluate(() => {
+    upgradeItemAtForge(0, 'wand'); // garde niv 2
+    const lvl  = party[0].equipped.wand.upgradeLevel;
+    const cost = _forgeRespecCost(lvl);
+    const goldBefore  = player.gold;
+    const dodgeBefore = party[0].dodgeChance;
+    const critBefore  = party[0].critChance;
+    const ok = reforgePathAtForge(0, 'wand', 'crit');
+    return {
+      lvl, cost, ok,
+      path:      party[0].equipped.wand.forgePath,
+      goldSpent: goldBefore - player.gold,
+      dodgeDown: party[0].dodgeChance === dodgeBefore - lvl * FORGE_GARDE_DODGE_PER_LEVEL,
+      critUp:    party[0].critChance === critBefore + lvl * FORGE_CRIT_PER_LEVEL,
+      lvlKept:   party[0].equipped.wand.upgradeLevel === lvl,
+    };
+  });
+  console.log('  T2 respec Forge →', t2);
+  assert(t2.ok && t2.path === 'crit',  'respec garde→crit doit réussir');
+  assert(t2.goldSpent === t2.cost,     `respec débite ${t2.cost} g (40 % du gold investi)`);
+  assert(t2.dodgeDown && t2.critUp,    'respec bascule les effets (esquive → crit)');
+  assert(t2.lvlKept,                   'respec conserve le niveau de forge');
+
+  // T3 — Forge, voie Résonance : +4 %/niveau sur l'élément choisi
+  // (lu par _artifactElemBonus, pipeline des dégâts élémentaires).
+  const t3 = await page.evaluate(() => {
+    const ring = JSON.parse(JSON.stringify(ITEMS.find(i => i.id === 'anneau_argent')));
+    party[0].equipped.ring1 = ring;
+    recalculateStats();
+    const okNoEl = upgradeItemAtForge(0, 'ring1', 'resonance');            // sans élément → refus
+    const ok     = upgradeItemAtForge(0, 'ring1', 'resonance', 'feu');
+    return {
+      okNoEl, ok,
+      path:    party[0].equipped.ring1.forgePath,
+      element: party[0].equipped.ring1.resonanceElement,
+      bonusFeu:   _artifactElemBonus(party[0], 'feu'),
+      bonusGlace: _artifactElemBonus(party[0], 'glace'),
+      expected:   FORGE_RESONANCE_PER_LEVEL * (party[0].equipped.ring1.upgradeLevel | 0),
+    };
+  });
+  console.log('  T3 voie Résonance →', t3);
+  assert(t3.okNoEl === false,             'résonance sans élément → refusée');
+  assert(t3.ok && t3.path === 'resonance' && t3.element === 'feu', 'résonance feu posée');
+  assert(Math.abs(t3.bonusFeu - t3.expected) < 1e-9 && t3.bonusFeu > 0, 'bonus élém. feu = 4 %/niveau');
+  assert(t3.bonusGlace === 0,             'aucun bonus sur un autre élément');
+
+  // T4 — Bibliothèque, voies Amplitude & Métamorphose (_spellForCaster).
+  const t4 = await page.evaluate(() => {
+    const c = party[0];
+    _ensureSpellUpgradesInit();
+    c.spellUpgrades['Incendio'] = 4; c.spellPaths['Incendio'] = 'amplitude';
+    c.spellUpgrades['Stupefix'] = 2; c.spellPaths['Stupefix'] = 'meta';
+    c.spellElements['Stupefix'] = 'glace';
+    const inc  = SPELLS.find(s => s.name === 'Incendio');
+    const stu  = SPELLS.find(s => s.name === 'Stupefix');
+    const aInc = _spellForCaster(inc, c);
+    const aStu = _spellForCaster(stu, c);
+    return {
+      ampPower:  aInc.power === inc.power + 4,
+      ampSplash: Math.abs(aInc._amplitudeSplash - 0.16) < 1e-9,
+      metaPower: aStu.power === stu.power + 2,
+      metaElem:  aStu.element === 'glace',
+      baseElem:  stu.element,
+    };
+  });
+  console.log('  T4 Amplitude/Métamorphose →', t4);
+  assert(t4.ampPower,  'amplitude : power +1/niveau');
+  assert(t4.ampSplash, 'amplitude : splash 8 %/2 crans (0.16 à +4)');
+  assert(t4.metaPower, 'métamorphose : power +1/niveau');
+  assert(t4.metaElem,  `métamorphose : élément changé (${t4.baseElem} → glace)`);
+
+  // T5 — Bibliothèque : migration héritage (+1 niveau offert) puis respec.
+  const t5 = await page.evaluate(() => {
+    const c = party[0];
+    c.spellUpgrades['Expelliarmus'] = 3;
+    delete c.spellPaths['Expelliarmus'];       // héritage combiné pré-C3b
+    const okLegacy = migrateLegacySpellPath(0, 'Expelliarmus', 'focus');
+    const lvlAfter = c.spellUpgrades['Expelliarmus'];
+    const goldBefore = player.gold;
+    const cost = _libraryRespecCost(lvlAfter);
+    const okRespec = reforgeSpellPathAtLibrary(0, 'Expelliarmus', 'power');
+    return {
+      okLegacy, lvlAfter,
+      pathAfterLegacy: 'focus',
+      okRespec, cost, goldSpent: goldBefore - player.gold,
+      finalPath: c.spellPaths['Expelliarmus'],
+      lvlKept: c.spellUpgrades['Expelliarmus'] === lvlAfter,
+    };
+  });
+  console.log('  T5 héritage + respec Biblio →', t5);
+  assert(t5.okLegacy && t5.lvlAfter === 4, 'migration héritage : +1 niveau offert (3 → 4)');
+  assert(t5.okRespec && t5.finalPath === 'power', 'respec Biblio focus→power');
+  assert(t5.goldSpent === t5.cost, 'respec Biblio débite 40 % du gold investi');
+  assert(t5.lvlKept, 'respec Biblio conserve le niveau');
+
+  // T6 — Nouveaux artefacts actifs (données + résolveurs câblés).
+  const t6 = await page.evaluate(() => {
+    const arts = ['sablier_fele', 'poincon_gobelin', 'flasque_source']
+      .map(id => ITEMS.find(i => i.id === id));
+    return {
+      allExist: arts.every(Boolean),
+      resolvers: arts.map(a => a && a.activeEffect && a.activeEffect.resolve),
+      fnSource: typeof useActiveArtifact === 'function'
+        ? ['hasteGroup', 'sapDefense', 'succorGroup'].every(r => useActiveArtifact.toString().includes(r))
+        : false,
+    };
+  });
+  console.log('  T6 artefacts →', t6);
+  assert(t6.allExist, 'les 3 nouveaux artefacts existent');
+  assert(JSON.stringify(t6.resolvers) === JSON.stringify(['hasteGroup', 'sapDefense', 'succorGroup']),
+    'résolveurs déclarés sur les artefacts');
+  assert(t6.fnSource, 'les 3 résolveurs sont câblés dans useActiveArtifact');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Lot 2 : 4 voies + respec + artefacts OK');
+  await browser.close();
+}
+
 async function scenarioForgeLibraryAudit() {
   console.log('\n── Scénario : audit forge/biblio V1 ──');
   const { browser, page, errors } = await launchGame();
@@ -4172,4 +4326,4 @@ async function scenarioEscapeRewards() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioEscapePocket, scenarioEscapeRiddleSolve, scenarioEscapeMalus, scenarioEscapeMirror, scenarioEscapeWarden, scenarioEscapeIronman, scenarioEscapeRewards, scenarioCh13EndgamePivot, scenarioScriptedFloorBeats, scenarioVoixDesRuines, scenarioDungeonLife, scenarioFountain, scenarioRefuge, scenarioSoloSoftlock, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioRespawn20Percent, scenarioVictoryTrigger, scenarioStairsGated, scenarioFinalBossGuaranteed, scenarioChamberGuardians, scenarioChamberGuardianPolish, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioFloorTheming, scenarioZoneDEchoes, scenarioZoneDFx, scenarioFounderChamber, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioRoomOfRequirement, scenarioStairsReachable, scenarioHouseRoomBias] };
+module.exports = { scenarios: [scenarioEscapePocket, scenarioEscapeRiddleSolve, scenarioEscapeMalus, scenarioEscapeMirror, scenarioEscapeWarden, scenarioEscapeIronman, scenarioEscapeRewards, scenarioCh13EndgamePivot, scenarioScriptedFloorBeats, scenarioVoixDesRuines, scenarioDungeonLife, scenarioFountain, scenarioRefuge, scenarioSoloSoftlock, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioRespawn20Percent, scenarioVictoryTrigger, scenarioStairsGated, scenarioFinalBossGuaranteed, scenarioChamberGuardians, scenarioChamberGuardianPolish, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryRespec, scenarioForgeLibraryAudit, scenarioFloorTheming, scenarioZoneDEchoes, scenarioZoneDFx, scenarioFounderChamber, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioRoomOfRequirement, scenarioStairsReachable, scenarioHouseRoomBias] };

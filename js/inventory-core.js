@@ -260,7 +260,7 @@ function recalculateStats() {
     const _ench = (typeof _enchantTotals === 'function') ? _enchantTotals(c.equipped) : null;
 
     // C3a — voie Forge 'crit' : accumulée ici, versée dans critBonus plus bas.
-    let forgeCritBonus = 0;
+    let forgeCritBonus = 0, forgeDodgeBonus = 0, forgeHpBonus = 0;
     if (c.equipped) {
       // Itérer sur tous les slots présents (extensible sans toucher au code).
       // Bonus Forge : `upgradeLevel` ajoute +N au bonus principal de l'item
@@ -283,6 +283,15 @@ function recalculateStats() {
             // Voie Critique : +N % de crit physique par niveau.
             const per = (typeof FORGE_CRIT_PER_LEVEL === 'number') ? FORGE_CRIT_PER_LEVEL : 2;
             forgeCritBonus += lvl * per;
+          } else if (item.forgePath === 'garde') {
+            // Voie Garde (Lot 2) : +1 % esquive et +2 PV max par niveau.
+            const dPer = (typeof FORGE_GARDE_DODGE_PER_LEVEL === 'number') ? FORGE_GARDE_DODGE_PER_LEVEL : 1;
+            const hPer = (typeof FORGE_GARDE_HP_PER_LEVEL === 'number') ? FORGE_GARDE_HP_PER_LEVEL : 2;
+            forgeDodgeBonus += lvl * dPer;
+            forgeHpBonus    += lvl * hPer;
+          } else if (item.forgePath === 'resonance') {
+            // Voie Résonance (Lot 2) : appliquée au moment des dégâts
+            // (_artifactElemBonus, battle-spells.js) — rien à recalculer ici.
           } else {
             // Voie Puissance (défaut/legacy) : +N sur la stat principale
             // (plus élevée parmi atk/def/mag/lck).
@@ -322,9 +331,9 @@ function recalculateStats() {
     //   critChance / spellCritChance  : LCK plafonne à 40 %, les bonus
     //     d'équipement/set s'ajoutent par-dessus (peuvent dépasser 40 %).
     //   critMultiplier / spellCritMultiplier : 1.5 + bonusCritDamage cumulés.
-    let critBonus = forgeCritBonus, dodgeBonus = 0;
+    let critBonus = forgeCritBonus, dodgeBonus = forgeDodgeBonus;
     let critDmgBonus = 0, spellCritBonus = 0, spellCritDmgBonus = 0;
-    let hpMaxBonus = 0, spMaxBonus = 0;
+    let hpMaxBonus = forgeHpBonus, spMaxBonus = 0;
     let counterBonus = 0;
     if (c.equipped) {
       for (const item of Object.values(c.equipped)) {

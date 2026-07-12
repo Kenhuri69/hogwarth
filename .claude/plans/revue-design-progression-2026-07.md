@@ -667,3 +667,35 @@ Lot 6 (équilibrage global & QA de synthèse) ── ferme le tout
   - [x] Tests : units beats réalignés (1/4/7/8/9/12/13/15/21) ; 2 nouveaux
     scénarios smoke `scenarioMainQuestDescente` + `scenarioDumbledoreRelais`
     (tests/scenarios/quests.js).
+- **2026-07-12 — Lot 2 exécuté** (PR #728 du Lot 1 mergée au préalable) :
+  - [x] 2.1 Respec « Reforger la voie » : `reforgePathAtForge` (forge.js) +
+    `reforgeSpellPathAtLibrary` (library.js), coût = 40 % de l'or investi
+    (`_forgeRespecCost`/`_libraryRespecCost`, purs), niveau conservé.
+    **Écart** : coût en or seul — le volet « +5 Marques de Traque » sera
+    branché au Lot 3 (la ressource n'existe pas encore).
+  - [x] 2.2 Migration héritage combiné : `migrateLegacySpellPath` — choix de
+    voie volontaire avec +1 niveau OFFERT (❓3 tranché : compensation +1
+    niveau) ; sans interaction, cumul runtime conservé (zéro nerf silencieux).
+  - [x] 2.3 Voies Forge « Garde » (+1 % esquive, +2 PV max/niv — recalc) et
+    « Résonance » (+4 %/niv sur un élément choisi — hook `_artifactElemBonus`).
+  - [x] 2.4 Voies Biblio « Amplitude » (power +1/niv + splash 8 %/2 crans
+    sur ennemis adjacents, `_spellForCaster` + `_spellElementalDamage`) et
+    « Métamorphose » (power +1/niv + élément changé, `char.spellElements`).
+    **Écart** : le rider « +1 tour de durée » d'Amplitude abandonné — les
+    durées de statut ne vivent pas sur le sort (STATUS_BY_SPELL calcule à
+    l'application) ; splash seul, borné 0.4.
+  - [x] 2.5a 3 nouveaux résolveurs d'artefact (battle.js) : `hasteGroup`
+    (jauge Célérité groupe), `sapDefense` (DEF ennemie −25 % du combat),
+    `succorGroup` (12 % PV/PM groupe) + 3 artefacts epic porteurs
+    (`sablier_fele`, `poincon_gobelin`, `flasque_source` — drop coffre epic
+    + achat).
+  - [ ] 2.5b **Éveil d'artefact (3 rangs) REPORTÉ au Lot 3** : son coût
+    prévu (Marques + Primordiale) dépend de la ressource Marques — plus
+    cohérent de le livrer avec les Traques Rituelles.
+  - [x] 2.6 Docs : G5 (Forge 4 voies + respec + table T5 complète), G6
+    (section Bibliothèque 4 voies + héritage) ; sérialisation
+    `spellElements` (défaut paresseux save.js ; `resonanceElement` porté
+    par l'item, sérialisé d'office).
+  - [x] Tests : scénario smoke `scenarioForgeLibraryRespec` (6 volets :
+    Garde, respec Forge, Résonance, Amplitude/Métamorphose, héritage+respec
+    Biblio, artefacts/résolveurs) ; scénarios Forge/Biblio existants verts.

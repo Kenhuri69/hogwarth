@@ -16,10 +16,22 @@
 // exigent en plus de l'Essence Primordiale (`primordiale`), matériau premium
 // vendu par l'Apothicaire des Ténèbres (Boucle) — gold-sink endgame profond.
 const FORGE_MAX_LEVEL = 8;
-// C3a — deux voies d'amélioration, verrouillées au 1er upgrade (item.forgePath) :
+// Lot 2 revue 2026-07 — QUATRE voies d'amélioration (item.forgePath), choisies
+// au 1er upgrade et désormais RE-forgeables contre or (respec, cf.
+// reforgePathAtForge — fin du lock C1) :
 //   'power' (défaut/legacy) → +upgradeLevel sur la stat principale.
 //   'crit'                  → +upgradeLevel × FORGE_CRIT_PER_LEVEL % de crit.
+//   'garde'                 → +1 % esquive et +2 PV max par niveau (build tank).
+//   'resonance'             → +4 % dégâts élémentaires par niveau, sur UN
+//                             élément choisi au 1er cran (item.resonanceElement,
+//                             consommé par _artifactElemBonus, battle-spells.js).
 const FORGE_CRIT_PER_LEVEL = 2;
+const FORGE_GARDE_DODGE_PER_LEVEL = 1;    // % esquive / niveau
+const FORGE_GARDE_HP_PER_LEVEL    = 2;    // PV max / niveau
+const FORGE_RESONANCE_PER_LEVEL   = 0.04; // fraction de dégâts élém. / niveau
+const FORGE_RESPEC_FRACTION       = 0.4;  // part du gold investi, coût du respec
+const FORGE_ELEMENTS = ['feu', 'glace', 'foudre', 'lumière', 'ténèbres'];
+const FORGE_PATH_LABELS = { power: 'Puissance', crit: 'Critique', garde: 'Garde', resonance: 'Résonance' };
 const FORGE_COSTS = {
   // [niveau cible] → { gold, essence }
   1: { gold:   80, essence: 1 },
@@ -159,6 +171,64 @@ function forgeBonus(item) {
 
 window.forgeBonus = forgeBonus;
 
+// ── Respec « Reforger la voie » (Lot 2 revue 2026-07 — dé-lock C1) ──
+// Gold cumulé investi dans un item forgé au niveau `lvl` (PUR).
+function _forgeInvestedGold(lvl) {
+  let total = 0;
+  for (let t = 1; t <= (lvl | 0); t++) {
+    const cost = FORGE_COSTS[t];
+    if (cost) total += cost.gold | 0;
+  }
+  return total;
+}
+window._forgeInvestedGold = _forgeInvestedGold;
+
+// Coût du respec d'un item forgé (PUR) : fraction du gold cumulé investi.
+function _forgeRespecCost(lvl) {
+  return Math.ceil(_forgeInvestedGold(lvl) * FORGE_RESPEC_FRACTION);
+}
+window._forgeRespecCost = _forgeRespecCost;
+
+// Change la voie d'un item déjà forgé (niveau conservé) contre or.
+// `element` requis pour la voie 'resonance'.
+function reforgePathAtForge(charIdx, slot, newPath, element) {
+  const c = party[charIdx];
+  if (!c || !c.equipped) return false;
+  const item = c.equipped[slot];
+  if (!item) return false;
+  const lvl = item.upgradeLevel | 0;
+  if (lvl <= 0) return false;
+  if (!FORGE_PATH_LABELS[newPath]) return false;
+  if (newPath === (item.forgePath || 'power')) return false;
+  if (newPath === 'resonance' && !FORGE_ELEMENTS.includes(element)) return false;
+  const cost = _forgeRespecCost(lvl);
+  if ((player.gold | 0) < cost) {
+    addMsg(`Reforger la voie : ${cost} Gallions requis (vous en avez ${player.gold | 0}).`, 'bad');
+    return false;
+  }
+  player.gold -= cost;
+  item.forgePath = newPath;
+  if (newPath === 'resonance') item.resonanceElement = element;
+  else delete item.resonanceElement;
+  if (typeof recalculateStats === 'function') recalculateStats();
+  addMsg(`♻️ ${item.name} : voie reforgée → ${FORGE_PATH_LABELS[newPath]}${element ? ` (${element})` : ''} (niveau +${lvl} conservé).`, 'magic');
+  if (typeof updateUI === 'function') updateUI();
+  _forgeUiExpand = null;
+  openForge();
+  if (typeof autoSave === 'function') autoSave('forge-respec');
+  return true;
+}
+window.reforgePathAtForge = reforgePathAtForge;
+
+// État UI : panneau déplié (choix d'élément Résonance / choix de respec).
+// Clé `${charIdx}:${slot}:reso` (1er upgrade), `:respec` ou `:respec-reso`.
+let _forgeUiExpand = null;
+function forgeToggleExpand(key) {
+  _forgeUiExpand = (_forgeUiExpand === key) ? null : key;
+  openForge();
+}
+window.forgeToggleExpand = forgeToggleExpand;
+
 // Récap de progression Forge par héros actif. Pure — utilisée par
 // `openForge()` (entête) + le smoke test. Pour chaque héros, compte les
 // items équipés `upgradable` (porteur de _primaryBonus), distingue ceux
@@ -277,14 +347,21 @@ function _equippedItems() {
 
 // Effectue l'upgrade : vérifie ressources, débite, incrémente le niveau,
 // recalcule les stats. Retourne true si l'upgrade a réussi.
-function upgradeItemAtForge(charIdx, slot, path) {
+function upgradeItemAtForge(charIdx, slot, path, element) {
   const c = party[charIdx];
   if (!c || !c.equipped) return false;
   const item = c.equipped[slot];
   if (!item) return false;
   const currentLvl = item.upgradeLevel | 0;
-  // La voie est verrouillée au 1er upgrade ; ensuite on suit item.forgePath.
-  if (currentLvl === 0) item.forgePath = (path === 'crit') ? 'crit' : 'power';
+  // La voie est choisie au 1er upgrade (modifiable ensuite via
+  // reforgePathAtForge) ; les upgrades suivants suivent item.forgePath.
+  if (currentLvl === 0) {
+    item.forgePath = FORGE_PATH_LABELS[path] ? path : 'power';
+    if (item.forgePath === 'resonance') {
+      if (!FORGE_ELEMENTS.includes(element)) return false;
+      item.resonanceElement = element;
+    }
+  }
   if (currentLvl >= FORGE_MAX_LEVEL) {
     addMsg(`${item.name} : niveau maximum atteint.`, '');
     return false;
@@ -316,8 +393,9 @@ function upgradeItemAtForge(charIdx, slot, path) {
   item.upgradeLevel = targetLvl;
   if (typeof recalculateStats === 'function') recalculateStats();
   if (typeof AudioSystem !== 'undefined' && AudioSystem.playLevelUp) AudioSystem.playLevelUp();
-  const voie = item.forgePath === 'crit' ? 'Critique' : 'Puissance';
+  const voie = FORGE_PATH_LABELS[item.forgePath] || 'Puissance';
   addMsg(`🔨 ${item.name} forgée au niveau ${targetLvl} (voie ${voie}) !`, 'magic');
+  _forgeUiExpand = null;
   if (typeof updateUI === 'function') updateUI();
   // Re-render
   openForge();
@@ -367,7 +445,7 @@ function openForge() {
       const iconHtml = (typeof getItemIconHtml === 'function')
         ? getItemIconHtml(item, 'ui-icon-md') : (item.icon || '⚔️');
       const path     = item.forgePath || 'power';
-      const voieLbl  = path === 'crit' ? 'Critique' : 'Puissance';
+      const voieLbl  = FORGE_PATH_LABELS[path] || 'Puissance';
       const lvlBadge  = lvl > 0 ? `<span class="forge-lvl-badge">+${lvl}</span>` : '';
       const costLine = cost
         ? `<div class="forge-cost">${cost.gold} g · ${cost.essence} 🌑${cost.primordiale ? ` · ${cost.primordiale} 🔮` : ''}</div>`
@@ -375,28 +453,77 @@ function openForge() {
       const affordable = cost && player.gold >= cost.gold && _countEssence() >= cost.essence
         && _countPrimordiale() >= (cost.primordiale | 0);
       const dis = affordable ? '' : 'disabled';
+      const expandKey = `${charIdx}:${slot}`;
+      // Boutons de choix d'élément (voie Résonance) — `fn` = appel généré.
+      const resoBtns = (fn) => FORGE_ELEMENTS.map(el =>
+        `<button class="forge-upgrade-btn ${dis}" ${dis}
+           onclick="${fn.replace('__EL__', el)}">${el}</button>`).join('');
       let previewLine = '', btn = '';
       if (!upgradable) {
         previewLine = `<div class="forge-preview forge-noupgrade">Effet spécial — non forgeable</div>`;
       } else if (maxed) {
         previewLine = `<div class="forge-preview forge-maxed">Niveau MAX (${voieLbl})</div>`;
       } else if (lvl === 0) {
-        // 1er upgrade : choix entre les deux voies.
+        // 1er upgrade : choix entre les QUATRE voies (Lot 2). Résonance ouvre
+        // un sous-choix d'élément.
         const statName = primBonus.key.replace('bonus', '');
         previewLine = `<div class="forge-preview forge-choose">Choisir une voie :</div>`;
-        btn = `<div class="forge-path-choice">
-                 <button class="forge-upgrade-btn ${dis}" ${dis}
-                   onclick="upgradeItemAtForge(${charIdx}, '${slot}', 'power')">⚔️ +${statName}</button>
-                 <button class="forge-upgrade-btn ${dis}" ${dis}
-                   onclick="upgradeItemAtForge(${charIdx}, '${slot}', 'crit')">✯ +${FORGE_CRIT_PER_LEVEL}% Crit</button>
-               </div>`;
+        if (_forgeUiExpand === `${expandKey}:reso`) {
+          btn = `<div class="forge-path-choice">
+                   <div class="forge-preview">🜂 Résonance — élément :</div>
+                   ${resoBtns(`upgradeItemAtForge(${charIdx}, '${slot}', 'resonance', '__EL__')`)}
+                   <button class="forge-upgrade-btn" onclick="forgeToggleExpand('${expandKey}:reso')">↩</button>
+                 </div>`;
+        } else {
+          btn = `<div class="forge-path-choice">
+                   <button class="forge-upgrade-btn ${dis}" ${dis}
+                     onclick="upgradeItemAtForge(${charIdx}, '${slot}', 'power')">⚔️ +${statName}</button>
+                   <button class="forge-upgrade-btn ${dis}" ${dis}
+                     onclick="upgradeItemAtForge(${charIdx}, '${slot}', 'crit')">✯ +${FORGE_CRIT_PER_LEVEL}% Crit</button>
+                   <button class="forge-upgrade-btn ${dis}" ${dis}
+                     onclick="upgradeItemAtForge(${charIdx}, '${slot}', 'garde')">🛡 +${FORGE_GARDE_DODGE_PER_LEVEL}% Esq/+${FORGE_GARDE_HP_PER_LEVEL} PV</button>
+                   <button class="forge-upgrade-btn ${dis}" ${dis}
+                     onclick="forgeToggleExpand('${expandKey}:reso')">🜂 +${Math.round(FORGE_RESONANCE_PER_LEVEL * 100)}% Élém.</button>
+                 </div>`;
+        }
       } else {
-        // Voie verrouillée : aperçu + bouton unique.
-        previewLine = (path === 'crit')
-          ? `<div class="forge-preview">✯ Crit +${lvl * FORGE_CRIT_PER_LEVEL}% → <b>+${(lvl + 1) * FORGE_CRIT_PER_LEVEL}%</b></div>`
-          : `<div class="forge-preview">${primBonus.key.replace('bonus', '')} ${primBonus.value + lvl} → <b>${primBonus.value + lvl + 1}</b></div>`;
+        // Voie choisie : aperçu + bouton unique + respec (Reforger la voie).
+        if (path === 'crit') {
+          previewLine = `<div class="forge-preview">✯ Crit +${lvl * FORGE_CRIT_PER_LEVEL}% → <b>+${(lvl + 1) * FORGE_CRIT_PER_LEVEL}%</b></div>`;
+        } else if (path === 'garde') {
+          previewLine = `<div class="forge-preview">🛡 Esq +${lvl * FORGE_GARDE_DODGE_PER_LEVEL}%/PV +${lvl * FORGE_GARDE_HP_PER_LEVEL} → <b>+${(lvl + 1) * FORGE_GARDE_DODGE_PER_LEVEL}%/+${(lvl + 1) * FORGE_GARDE_HP_PER_LEVEL}</b></div>`;
+        } else if (path === 'resonance') {
+          previewLine = `<div class="forge-preview">🜂 ${item.resonanceElement || '?'} +${Math.round(lvl * FORGE_RESONANCE_PER_LEVEL * 100)}% → <b>+${Math.round((lvl + 1) * FORGE_RESONANCE_PER_LEVEL * 100)}%</b></div>`;
+        } else {
+          previewLine = `<div class="forge-preview">${primBonus.key.replace('bonus', '')} ${primBonus.value + lvl} → <b>${primBonus.value + lvl + 1}</b></div>`;
+        }
+        const respecCost   = _forgeRespecCost(lvl);
+        const respecAfford = (player.gold | 0) >= respecCost;
+        const respecDis    = respecAfford ? '' : 'disabled';
+        let respecUi;
+        if (_forgeUiExpand === `${expandKey}:respec-reso`) {
+          respecUi = `<div class="forge-path-choice">
+              <div class="forge-preview">🜂 Résonance — élément :</div>
+              ${FORGE_ELEMENTS.map(el => `<button class="forge-upgrade-btn ${respecDis}" ${respecDis}
+                 onclick="reforgePathAtForge(${charIdx}, '${slot}', 'resonance', '${el}')">${el}</button>`).join('')}
+              <button class="forge-upgrade-btn" onclick="forgeToggleExpand('${expandKey}:respec-reso')">↩</button>
+            </div>`;
+        } else if (_forgeUiExpand === `${expandKey}:respec`) {
+          const others = Object.keys(FORGE_PATH_LABELS).filter(p => p !== path);
+          respecUi = `<div class="forge-path-choice">
+              ${others.map(p => p === 'resonance'
+                ? `<button class="forge-upgrade-btn ${respecDis}" ${respecDis}
+                     onclick="forgeToggleExpand('${expandKey}:respec-reso')">🜂 ${FORGE_PATH_LABELS[p]}</button>`
+                : `<button class="forge-upgrade-btn ${respecDis}" ${respecDis}
+                     onclick="reforgePathAtForge(${charIdx}, '${slot}', '${p}')">${FORGE_PATH_LABELS[p]}</button>`).join('')}
+              <button class="forge-upgrade-btn" onclick="forgeToggleExpand('${expandKey}:respec')">↩</button>
+            </div>`;
+        } else {
+          respecUi = `<button class="forge-enchant-btn ${respecDis}" ${respecDis}
+              onclick="forgeToggleExpand('${expandKey}:respec')">♻️ Reforger la voie (${respecCost}g)</button>`;
+        }
         btn = `<button class="forge-upgrade-btn ${dis}" ${dis}
-                 onclick="upgradeItemAtForge(${charIdx}, '${slot}')">Améliorer (${voieLbl})</button>`;
+                 onclick="upgradeItemAtForge(${charIdx}, '${slot}')">Améliorer (${voieLbl})</button>${respecUi}`;
       }
       // Enchantement rerollable (Piste D) — disponible sur tout item équipé.
       const enchCost   = _enchantCost(item);

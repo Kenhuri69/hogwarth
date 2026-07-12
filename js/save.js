@@ -292,8 +292,11 @@ function _applyState(gs) {
   party.forEach(c => { if (c && !c.spellUpgrades) c.spellUpgrades = {}; });
   // C3b — voie d'amplification par sort. Une save antérieure à C3b a des
   // spellUpgrades sans spellPaths → traité comme voie « legacy combinée »
-  // côté _spellForCaster (pas de migration, pas de nerf).
+  // côté _spellForCaster (pas de nerf silencieux ; migration volontaire à la
+  // Bibliothèque via migrateLegacySpellPath, +1 niveau offert — Lot 2).
   party.forEach(c => { if (c && !c.spellPaths) c.spellPaths = {}; });
+  // Lot 2 — élément choisi de la voie Métamorphose (par sort).
+  party.forEach(c => { if (c && !c.spellElements) c.spellElements = {}; });
 
   // Migration rétroactive des points de stats libres : un perso niveau N
   // de l'ancienne version n'avait pas accumulé de points. On lui crédite

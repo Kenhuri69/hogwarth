@@ -320,6 +320,29 @@ STR/4)`). Distinct des 6 AoE pures ci-dessus.
 Coût prohibitif — utilisation parcimonieuse. Obtenu via le Grimoire Interdit
 (sink matériaux Forge + Bibliothèque).
 
+### Amplification des sorts — Bibliothèque Interdite
+
+✅ (`js/library.js` + `_spellForCaster` dans `battle-spells.js`, cellule
+`CELL.LIBRARY` post-victoire)
+
+Chaque sort à `power` peut être amplifié jusqu'à **+8** (`LIBRARY_MAX_LEVEL`,
+niveaux 6-8 avec Essence Primordiale) contre or + Pages de Grimoire.
+**Quatre voies** (Lot 2 revue 2026-07), choisies au 1ᵉʳ upgrade et
+**re-forgeables** contre 40 % de l'or investi (`reforgeSpellPathAtLibrary`) :
+
+| Voie | Effet par niveau |
+|------|-------------------|
+| ⚡ Puissance (défaut) | power +2 |
+| 🎯 Maîtrise | cost −1 (plancher 1) + chance de statut +5 % (cap 50 %) |
+| 💫 Amplitude | power +1 + éclaboussure +8 %/2 crans sur les ennemis **adjacents** (sorts mono-cible) |
+| 🜍 Métamorphose | power +1 + l'**élément change** (choisi au 1ᵉʳ cran, `char.spellElements`) — contourne les résistances |
+
+**Héritage combiné** : un sort amplifié avant l'ajout des voies cumule
+Puissance+Maîtrise au runtime (aucun nerf silencieux) ; la Bibliothèque
+propose de **trancher** en choisissant une voie avec **+1 niveau offert**
+(`migrateLegacySpellPath`). L'état vit sur le personnage
+(`spellUpgrades`/`spellPaths`/`spellElements`, sérialisés).
+
 ### Sorts de Maison — palier 17 « Mythe »
 
 ✅ (`data.js` / `battle-spells.js`) Enseignés lors du franchissement du palier

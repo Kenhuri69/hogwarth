@@ -483,6 +483,13 @@ const ITEMS = [
   // Lot E2 — 1er epic du slot belt (étude §5.2/§6.7), acte III / Hogsmeade corrompu
   { id:"ceinture_aurors",      name:"Ceinturon des Aurors",   icon:"➿", desc:"DEF+3 END+3 · Crit phys. +4 %",                type:"acc",  slot:"belt",    family:"belt_auror",  rarity:"epic",     bonusDef:3, bonusEnd:3, bonusCritChance:4, power:3, price:900, tint:"#c8a24a" },
   { id:"orbe_runique",         name:"Orbe Runique",           icon:"🔮", desc:"MAG+3 · +10 % dégâts de tous les éléments · 🏺 Décharge runique (1×/combat : foudre sur une cible)",    type:"acc",  slot:"trinket", formType:"orbe",      rarity:"epic",     bonusMag:3, bonusElemDmg:{ tous:0.10 }, power:3, price:1200, tint:"#9b59d0", activeEffect:{ id:"nova_runique", label:"Décharge runique", charges:1, target:"enemy", resolve:"elemBurst", power:12, element:"foudre" } },
+  // ── Lot 2 revue 2026-07 — 3 artefacts actifs (nouveaux résolveurs) ──
+  // Élargit l'espace de build des artefacts : tempo (hasteGroup, Célérité),
+  // anti-tank (sapDefense, DEF ennemie −25 %), soutien (succorGroup, PV/PM
+  // groupe). Résolveurs dans battle.js — useActiveArtifact.
+  { id:"sablier_fele",         name:"Sablier Fêlé",           icon:"⏳", desc:"AGI+3 · Célérité +4 · 🏺 Appel du Temps (1×/combat : charge la jauge de Célérité du groupe)", type:"acc", slot:"trinket", formType:"orbe", rarity:"epic", bonusAgi:3, bonusCelerite:4, power:3, price:1250, tint:"#c9a84c", activeEffect:{ id:"appel_temps", label:"Appel du Temps", charges:1, target:"allyAll", resolve:"hasteGroup", power:0.5 } },
+  { id:"poincon_gobelin",      name:"Poinçon Gobelin",        icon:"🗡️", desc:"ATK+3 STR+2 · 🏺 Entaille d'armure (1×/combat : DEF d'un ennemi −25 % pour le combat)", type:"acc", slot:"belt", formType:"gantelets", rarity:"epic", bonusAtk:3, bonusStr:2, power:3, price:1150, tint:"#8a6840", activeEffect:{ id:"entaille_armure", label:"Entaille d'armure", charges:1, target:"enemy", resolve:"sapDefense", power:0.25 } },
+  { id:"flasque_source",       name:"Flasque de la Source",   icon:"⛲", desc:"DEF+2 · Régen +1 PM/tour · 🏺 Eau de la Source (1×/combat : rend 12 % PV/PM au groupe)", type:"acc", slot:"amulet", formType:"talisman", rarity:"epic", bonusDef:2, regenSp:1, power:2, price:1250, tint:"#4fb6e8", activeEffect:{ id:"eau_source", label:"Eau de la Source", charges:1, target:"allyAll", resolve:"succorGroup", power:0.12 } },
   // ── Artefacts & Reliquaires 2.0 — P2 variantes Premium (plan §1.5) ──
   // Variantes recoloriées par Maison d'un artefact de base, stats PRÉ-CUITES
   // (base × PREMIUM_MULT[rarity], arrondi par premiumStat — décision §2.1 n°2 :
