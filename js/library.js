@@ -20,10 +20,23 @@
 // l'Apothicaire Ténébreux (Boucle). Sink endgame profond et arbitré (Forge vs
 // Bibliothèque puisent le même stock).
 const LIBRARY_MAX_LEVEL = 8;
-// C3b — deux voies d'amplification, verrouillées au 1er upgrade (char.spellPaths[name]) :
+// Lot 2 revue 2026-07 — QUATRE voies d'amplification (char.spellPaths[name]),
+// choisies au 1er upgrade et RE-forgeables contre or (respec — fin du lock C1) :
 //   'power' (défaut/legacy) → power +2 × level.
 //   'focus'                 → cost −1 × level + chance +0.05 × level.
+//   'amplitude'             → power +1 × level + éclaboussure +8 % / 2 crans
+//                             sur les ennemis adjacents (_spellForCaster).
+//   'meta'  (Métamorphose)  → power +1 × level + l'élément du sort devient
+//                             celui choisi au 1er cran (char.spellElements) —
+//                             contourne les résistances.
+// Migration héritage (C2) : un sort upgradé avant C3b (sans voie) garde son
+// cumul au runtime, mais la Bibliothèque lui propose de choisir une voie
+// avec +1 niveau OFFERT en compensation (migrateLegacySpellPath).
 const LIBRARY_FOCUS_CHANCE_PER_LEVEL = 0.05;
+const LIBRARY_AMPLITUDE_SPLASH_PER_2 = 0.08;
+const LIBRARY_RESPEC_FRACTION = 0.4;
+const LIBRARY_ELEMENTS = ['feu', 'glace', 'foudre', 'lumière', 'ténèbres'];
+const LIBRARY_PATH_LABELS = { power: 'Puissance', focus: 'Maîtrise', amplitude: 'Amplitude', meta: 'Métamorphose' };
 // Règle de coût : gold Bibliothèque = 1,5 × gold Forge ; pages = essence Forge ;
 // même nombre de Primordiale (cf. library-t5.md).
 const LIBRARY_COSTS = {
@@ -97,11 +110,94 @@ function _libraryProgressSummary() {
 function _ensureSpellUpgradesInit() {
   if (typeof party === 'undefined') return;
   for (const c of party) {
-    if (c && !c.spellUpgrades) c.spellUpgrades = {};
-    if (c && !c.spellPaths)    c.spellPaths = {};   // C3b — voie par sort
+    if (c && !c.spellUpgrades)  c.spellUpgrades = {};
+    if (c && !c.spellPaths)     c.spellPaths = {};    // C3b — voie par sort
+    if (c && !c.spellElements)  c.spellElements = {}; // Lot 2 — élément Métamorphose
   }
 }
 window._ensureSpellUpgradesInit = _ensureSpellUpgradesInit;
+
+// ── Respec & migration héritage (Lot 2 revue 2026-07) ─────────
+// Gold cumulé investi dans un sort amplifié au niveau `lvl` (PUR).
+function _libraryInvestedGold(lvl) {
+  let total = 0;
+  for (let t = 1; t <= (lvl | 0); t++) {
+    const cost = LIBRARY_COSTS[t];
+    if (cost) total += cost.gold | 0;
+  }
+  return total;
+}
+window._libraryInvestedGold = _libraryInvestedGold;
+
+// Coût du respec d'un sort (PUR) : fraction du gold cumulé investi.
+function _libraryRespecCost(lvl) {
+  return Math.ceil(_libraryInvestedGold(lvl) * LIBRARY_RESPEC_FRACTION);
+}
+window._libraryRespecCost = _libraryRespecCost;
+
+// Change la voie d'un sort déjà amplifié (niveau conservé) contre or.
+// `element` requis pour la voie 'meta'.
+function reforgeSpellPathAtLibrary(charIdx, spellName, newPath, element) {
+  const c = party[charIdx];
+  if (!c) return false;
+  _ensureSpellUpgradesInit();
+  const lvl = getSpellUpgradeLevel(c, spellName);
+  if (lvl <= 0) return false;
+  if (!LIBRARY_PATH_LABELS[newPath]) return false;
+  if (newPath === c.spellPaths[spellName]) return false;
+  if (newPath === 'meta' && !LIBRARY_ELEMENTS.includes(element)) return false;
+  const cost = _libraryRespecCost(lvl);
+  if ((player.gold | 0) < cost) {
+    addMsg(`Reforger la voie : ${cost} Gallions requis (vous en avez ${player.gold | 0}).`, 'bad');
+    return false;
+  }
+  player.gold -= cost;
+  c.spellPaths[spellName] = newPath;
+  if (newPath === 'meta') c.spellElements[spellName] = element;
+  else delete c.spellElements[spellName];
+  addMsg(`♻️ ${spellName} : voie reforgée → ${LIBRARY_PATH_LABELS[newPath]}${element ? ` (${element})` : ''} (niv +${lvl} conservé).`, 'magic');
+  if (typeof updateUI === 'function') updateUI();
+  _libraryUiExpand = null;
+  openLibrary();
+  if (typeof autoSave === 'function') autoSave('library-respec');
+  return true;
+}
+window.reforgeSpellPathAtLibrary = reforgeSpellPathAtLibrary;
+
+// Migration héritage (C2) : un sort amplifié AVANT C3b (aucune voie posée)
+// cumule power+focus au runtime — strictement supérieur aux voies pures.
+// La Bibliothèque propose de trancher : le joueur choisit une voie et reçoit
+// +1 niveau OFFERT en compensation (borné au plafond). Gratuit, one-shot.
+// Sans interaction, le comportement combiné persiste (zéro nerf silencieux).
+function migrateLegacySpellPath(charIdx, spellName, path, element) {
+  const c = party[charIdx];
+  if (!c) return false;
+  _ensureSpellUpgradesInit();
+  const lvl = getSpellUpgradeLevel(c, spellName);
+  if (lvl <= 0) return false;
+  if (c.spellPaths[spellName]) return false;      // pas un legacy
+  if (!LIBRARY_PATH_LABELS[path]) return false;
+  if (path === 'meta' && !LIBRARY_ELEMENTS.includes(element)) return false;
+  c.spellPaths[spellName] = path;
+  if (path === 'meta') c.spellElements[spellName] = element;
+  c.spellUpgrades[spellName] = Math.min(LIBRARY_MAX_LEVEL, lvl + 1);
+  addMsg(`📚 ${spellName} : héritage tranché → voie ${LIBRARY_PATH_LABELS[path]}${element ? ` (${element})` : ''}, +1 niveau offert (niv ${c.spellUpgrades[spellName]}).`, 'magic');
+  if (typeof updateUI === 'function') updateUI();
+  _libraryUiExpand = null;
+  openLibrary();
+  if (typeof autoSave === 'function') autoSave('library-legacy');
+  return true;
+}
+window.migrateLegacySpellPath = migrateLegacySpellPath;
+
+// État UI : panneau déplié (sous-choix d'élément / respec) — clé
+// `${charIdx}:${nom du sort}:<mode>`.
+let _libraryUiExpand = null;
+function libraryToggleExpand(key) {
+  _libraryUiExpand = (_libraryUiExpand === key) ? null : key;
+  openLibrary();
+}
+window.libraryToggleExpand = libraryToggleExpand;
 
 function getSpellUpgradeLevel(char, spellName) {
   if (!char || !char.spellUpgrades) return 0;
@@ -117,7 +213,7 @@ function getSpellPath(char, spellName) {
 }
 window.getSpellPath = getSpellPath;
 
-function upgradeSpellAtLibrary(charIdx, spellName, path) {
+function upgradeSpellAtLibrary(charIdx, spellName, path, element) {
   const c = party[charIdx];
   if (!c) return false;
   _ensureSpellUpgradesInit();
@@ -135,8 +231,15 @@ function upgradeSpellAtLibrary(charIdx, spellName, path) {
     addMsg(`${spellName} : niveau maximum atteint.`, '');
     return false;
   }
-  // La voie est verrouillée au 1er upgrade ; ensuite on suit c.spellPaths[spellName].
-  if (current === 0) c.spellPaths[spellName] = (path === 'focus') ? 'focus' : 'power';
+  // La voie est choisie au 1er upgrade (modifiable ensuite via
+  // reforgeSpellPathAtLibrary) ; les upgrades suivants la suivent.
+  if (current === 0) {
+    c.spellPaths[spellName] = LIBRARY_PATH_LABELS[path] ? path : 'power';
+    if (c.spellPaths[spellName] === 'meta') {
+      if (!LIBRARY_ELEMENTS.includes(element)) { delete c.spellPaths[spellName]; return false; }
+      c.spellElements[spellName] = element;
+    }
+  }
   const target = current + 1;
   const cost   = LIBRARY_COSTS[target];
   if (!cost) return false;
@@ -159,8 +262,9 @@ function upgradeSpellAtLibrary(charIdx, spellName, path) {
   if (needPrim > 0) _consumeLibPrimordiale(needPrim);
   c.spellUpgrades[spellName] = target;
   if (typeof AudioSystem !== 'undefined' && AudioSystem.playLevelUp) AudioSystem.playLevelUp();
-  const voie = c.spellPaths[spellName] === 'focus' ? 'Maîtrise' : 'Puissance';
+  const voie = LIBRARY_PATH_LABELS[c.spellPaths[spellName]] || 'Puissance';
   addMsg(`${getSpellIconHtml(spellName, 'ui-icon-md')} ${c.name} amplifie ${spellName} (niv ${target}, voie ${voie}) !`, 'magic');
+  _libraryUiExpand = null;
   if (typeof updateUI === 'function') updateUI();
   openLibrary();
   return true;
@@ -247,8 +351,8 @@ function openLibrary() {
       ? getSpellIconHtml(spell, 'ui-icon-md') : (spell.icon || '✨');
     const lvlBadge  = lvl > 0 ? `<span class="forge-lvl-badge">+${lvl}</span>` : '';
     const nameEsc   = name.replace(/'/g, "\\'");
-    const path      = getSpellPath(c, name);   // 'power' | 'focus' | undefined (legacy)
-    const voieLbl   = path === 'focus' ? 'Maîtrise' : 'Puissance';
+    const path      = getSpellPath(c, name);   // voie | undefined (legacy)
+    const voieLbl   = LIBRARY_PATH_LABELS[path] || 'Puissance';
     const costLine = (cost && !utility)
       ? `<div class="library-cost">${cost.gold} g · ${cost.pages} 📜${cost.primordiale ? ` · ${cost.primordiale} 🔮` : ''}</div>`
       : '';
@@ -257,29 +361,100 @@ function openLibrary() {
     const dis = affordable ? '' : 'disabled';
     // Aperçu de la voie Maîtrise : cost réduit (+ fiabilité de statut si applicable).
     const focusPreview = `cost ${cstNow} → <b>${cstNext}</b> SP${hasChance ? ` · statut +${Math.round(LIBRARY_FOCUS_CHANCE_PER_LEVEL * 100)}%` : ''}`;
+    // Métamorphose : réservée aux sorts élémentaires non-physiques.
+    const canMeta   = !!(spell.element && spell.element !== 'physique');
+    const expandKey = `${_libraryCharIdx}:${name}`;
+    // Boutons d'élément pour Métamorphose (exclut l'élément actuel du sort).
+    const metaEls   = LIBRARY_ELEMENTS.filter(el => el !== spell.element);
+    const metaBtns  = (fnTpl, disA) => metaEls.map(el =>
+      `<button class="library-upgrade-btn ${disA}" ${disA}
+         onclick="${fnTpl.replace('__EL__', el)}">${el}</button>`).join('');
     let previewLine = '', btn = '';
     if (utility) {
       previewLine = `<div class="library-preview forge-noupgrade">Effet utilitaire — non amplifiable</div>`;
     } else if (maxed) {
       previewLine = `<div class="library-preview forge-maxed">Niveau MAX (${voieLbl})</div>`;
     } else if (lvl === 0) {
-      // 1er upgrade : choix entre les deux voies.
+      // 1er upgrade : choix entre les QUATRE voies (Lot 2). Métamorphose
+      // ouvre un sous-choix d'élément.
       previewLine = `<div class="library-preview forge-choose">Choisir une voie :</div>`;
-      btn = `<div class="library-path-choice">
-               <button class="library-upgrade-btn ${dis}" ${dis}
-                 onclick="upgradeSpellAtLibrary(${_libraryCharIdx}, '${nameEsc}', 'power')">⚡ +Puissance</button>
-               <button class="library-upgrade-btn ${dis}" ${dis}
-                 onclick="upgradeSpellAtLibrary(${_libraryCharIdx}, '${nameEsc}', 'focus')">🎯 Maîtrise</button>
-             </div>`;
+      if (_libraryUiExpand === `${expandKey}:meta`) {
+        btn = `<div class="library-path-choice">
+                 <div class="library-preview">🜍 Métamorphose — nouvel élément :</div>
+                 ${metaBtns(`upgradeSpellAtLibrary(${_libraryCharIdx}, '${nameEsc}', 'meta', '__EL__')`, dis)}
+                 <button class="library-upgrade-btn" onclick="libraryToggleExpand('${expandKey}:meta')">↩</button>
+               </div>`;
+      } else {
+        btn = `<div class="library-path-choice">
+                 <button class="library-upgrade-btn ${dis}" ${dis}
+                   onclick="upgradeSpellAtLibrary(${_libraryCharIdx}, '${nameEsc}', 'power')">⚡ +Puissance</button>
+                 <button class="library-upgrade-btn ${dis}" ${dis}
+                   onclick="upgradeSpellAtLibrary(${_libraryCharIdx}, '${nameEsc}', 'focus')">🎯 Maîtrise</button>
+                 <button class="library-upgrade-btn ${dis}" ${dis}
+                   onclick="upgradeSpellAtLibrary(${_libraryCharIdx}, '${nameEsc}', 'amplitude')">💫 Amplitude</button>
+                 ${canMeta ? `<button class="library-upgrade-btn ${dis}" ${dis}
+                   onclick="libraryToggleExpand('${expandKey}:meta')">🜍 Métamorphose</button>` : ''}
+               </div>`;
+      }
+    } else if (!path) {
+      // Héritage combiné (pré-C3b) : proposer de trancher, +1 niveau offert.
+      previewLine = `<div class="library-preview forge-choose">Héritage combiné — choisir une voie (+1 niveau offert) :</div>`;
+      if (_libraryUiExpand === `${expandKey}:legacy-meta`) {
+        btn = `<div class="library-path-choice">
+                 <div class="library-preview">🜍 Métamorphose — nouvel élément :</div>
+                 ${metaBtns(`migrateLegacySpellPath(${_libraryCharIdx}, '${nameEsc}', 'meta', '__EL__')`, '')}
+                 <button class="library-upgrade-btn" onclick="libraryToggleExpand('${expandKey}:legacy-meta')">↩</button>
+               </div>`;
+      } else {
+        btn = `<div class="library-path-choice">
+                 <button class="library-upgrade-btn"
+                   onclick="migrateLegacySpellPath(${_libraryCharIdx}, '${nameEsc}', 'power')">⚡ Puissance</button>
+                 <button class="library-upgrade-btn"
+                   onclick="migrateLegacySpellPath(${_libraryCharIdx}, '${nameEsc}', 'focus')">🎯 Maîtrise</button>
+                 <button class="library-upgrade-btn"
+                   onclick="migrateLegacySpellPath(${_libraryCharIdx}, '${nameEsc}', 'amplitude')">💫 Amplitude</button>
+                 ${canMeta ? `<button class="library-upgrade-btn"
+                   onclick="libraryToggleExpand('${expandKey}:legacy-meta')">🜍 Métamorphose</button>` : ''}
+               </div>`;
+      }
     } else {
-      // Voie verrouillée : aperçu + bouton unique. path indéfini = legacy combiné.
+      // Voie choisie : aperçu + bouton unique + respec (Reforger la voie).
+      const ampNow  = Math.round(LIBRARY_AMPLITUDE_SPLASH_PER_2 * Math.floor(lvl / 2) * 100);
+      const ampNext = Math.round(LIBRARY_AMPLITUDE_SPLASH_PER_2 * Math.floor((lvl + 1) / 2) * 100);
       previewLine = (path === 'focus')
         ? `<div class="library-preview">${focusPreview}</div>`
-        : (path === 'power')
-        ? `<div class="library-preview">power ${pwrNow} → <b>${pwrNext}</b></div>`
-        : `<div class="library-preview">power ${pwrNow} → <b>${pwrNext}</b> · cost ${cstNow} → <b>${cstNext}</b> SP</div>`;
+        : (path === 'amplitude')
+        ? `<div class="library-preview">💫 power ${(spell.power | 0) + lvl} → <b>${(spell.power | 0) + lvl + 1}</b> · splash ${ampNow}% → <b>${ampNext}%</b></div>`
+        : (path === 'meta')
+        ? `<div class="library-preview">🜍 ${c.spellElements[name] || spell.element} · power ${(spell.power | 0) + lvl} → <b>${(spell.power | 0) + lvl + 1}</b></div>`
+        : `<div class="library-preview">power ${pwrNow} → <b>${pwrNext}</b></div>`;
+      const respecCost   = _libraryRespecCost(lvl);
+      const respecAfford = (player.gold | 0) >= respecCost;
+      const respecDis    = respecAfford ? '' : 'disabled';
+      let respecUi;
+      if (_libraryUiExpand === `${expandKey}:respec-meta`) {
+        respecUi = `<div class="library-path-choice">
+            <div class="library-preview">🜍 Métamorphose — nouvel élément :</div>
+            ${metaBtns(`reforgeSpellPathAtLibrary(${_libraryCharIdx}, '${nameEsc}', 'meta', '__EL__')`, respecDis)}
+            <button class="library-upgrade-btn" onclick="libraryToggleExpand('${expandKey}:respec-meta')">↩</button>
+          </div>`;
+      } else if (_libraryUiExpand === `${expandKey}:respec`) {
+        const others = Object.keys(LIBRARY_PATH_LABELS)
+          .filter(p => p !== path && (p !== 'meta' || canMeta));
+        respecUi = `<div class="library-path-choice">
+            ${others.map(p => p === 'meta'
+              ? `<button class="library-upgrade-btn ${respecDis}" ${respecDis}
+                   onclick="libraryToggleExpand('${expandKey}:respec-meta')">🜍 ${LIBRARY_PATH_LABELS[p]}</button>`
+              : `<button class="library-upgrade-btn ${respecDis}" ${respecDis}
+                   onclick="reforgeSpellPathAtLibrary(${_libraryCharIdx}, '${nameEsc}', '${p}')">${LIBRARY_PATH_LABELS[p]}</button>`).join('')}
+            <button class="library-upgrade-btn" onclick="libraryToggleExpand('${expandKey}:respec')">↩</button>
+          </div>`;
+      } else {
+        respecUi = `<button class="library-upgrade-btn ${respecDis}" ${respecDis}
+            onclick="libraryToggleExpand('${expandKey}:respec')">♻️ Reforger (${respecCost}g)</button>`;
+      }
       btn = `<button class="library-upgrade-btn ${dis}" ${dis}
-               onclick="upgradeSpellAtLibrary(${_libraryCharIdx}, '${nameEsc}')">Amplifier (${voieLbl})</button>`;
+               onclick="upgradeSpellAtLibrary(${_libraryCharIdx}, '${nameEsc}')">Amplifier (${voieLbl})</button>${respecUi}`;
     }
     return `
       <div class="library-spell">

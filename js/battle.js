@@ -988,6 +988,44 @@ function useActiveArtifact(charIdx, targetIdx) {
     addMsg(`🏺 ${art.label} : bouclier de groupe.`, 'good');
     UX_safe.logCombat(`🏺 <b>${char.name}</b> — ${art.label} protège le groupe (${turns} t)`, 'magic');
     updateUI();
+  } else if (art.resolve === 'hasteGroup') {
+    // Lot 2 — Appel du Temps : charge la jauge de Célérité des héros vivants
+    // (`power` par héros, défaut 0.5) — actions supplémentaires accélérées.
+    const gain = (typeof art.power === 'number') ? art.power : 0.5;
+    party.slice(0, partySize).forEach((c, i) => {
+      if (c.hp <= 0) return;
+      celeriteGauge[i] = (celeriteGauge[i] || 0) + gain;
+    });
+    setBattleLog(`🏺 ${char.name} libère ${art.label} : le temps s'accélère (+${gain} Célérité) !`);
+    addMsg(`🏺 ${art.label} : jauge de Célérité chargée.`, 'good');
+    UX_safe.logCombat(`🏺 <b>${char.name}</b> — ${art.label} accélère le groupe (+${gain} ⚡)`, 'magic');
+  } else if (art.resolve === 'sapDefense') {
+    // Lot 2 — Entaille d'armure : réduit la DEF d'un ennemi de `power`
+    // (fraction, défaut 0.25) pour le reste du combat.
+    let enemy = (targetIdx != null) ? enemyGroup[targetIdx] : null;
+    if (!enemy || enemy.currentHp <= 0) enemy = livingEnemies()[0];
+    if (enemy) {
+      const frac   = (typeof art.power === 'number') ? art.power : 0.25;
+      const before = enemy.def | 0;
+      enemy.def    = Math.max(0, Math.floor(before * (1 - frac)));
+      setBattleLog(`🏺 ${char.name} entaille l'armure de ${enemy.name} : DEF ${before} → ${enemy.def} !`);
+      addMsg(`🏺 ${art.label} : DEF de ${enemy.name} réduite (${before} → ${enemy.def}).`, 'good');
+      UX_safe.logCombat(`🏺 <b>${char.name}</b> — ${art.label} sape ${enemy.name} (DEF ${before} → ${enemy.def})`, 'magic');
+      renderEnemyGroup();
+    }
+  } else if (art.resolve === 'succorGroup') {
+    // Lot 2 — Eau de la Source : rend `power` (fraction, défaut 0.12) des
+    // PV/PM max aux héros vivants.
+    const frac = (typeof art.power === 'number') ? art.power : 0.12;
+    party.slice(0, partySize).forEach(c => {
+      if (c.hp <= 0) return;
+      c.hp = Math.min(c.hpMax, c.hp + Math.ceil(c.hpMax * frac));
+      c.sp = Math.min(c.spMax, c.sp + Math.ceil(c.spMax * frac));
+    });
+    setBattleLog(`🏺 ${char.name} fait circuler ${art.label} : le groupe reprend son souffle (+${Math.round(frac * 100)} % PV/PM) !`);
+    addMsg(`🏺 ${art.label} : groupe restauré.`, 'good');
+    UX_safe.logCombat(`🏺 <b>${char.name}</b> — ${art.label} restaure le groupe (+${Math.round(frac * 100)} %)`, 'good');
+    updateUI();
   }
   advanceBattleChar();
 }
