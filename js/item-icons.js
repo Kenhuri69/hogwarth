@@ -43,6 +43,11 @@ const ITEM_ICON_REGISTRY = {
   orbe_runique:         'img/icons/items/amulette.png',
   cristal_focalisation: 'img/icons/items/amulette.png',
   talisman_fondateurs:  'img/icons/items/amulette.png',
+  // Lot 2 revue 2026-07 — artefacts actifs (repli famille proche ; icônes
+  // dédiées = tâche d'art future).
+  sablier_fele:         'img/icons/items/retourneur_temps.png',
+  poincon_gobelin:      'img/icons/items/ceinture_alchimiste.png',
+  flasque_source:       'img/icons/items/larmes_phenix.png',
   gantelets_combat:     'img/icons/items/gants_apprenti.png',
   gantelets_aurors:     'img/icons/items/gants_apprenti.png',
   baton_apprenti:       'img/icons/items/wand1.png',
