@@ -108,6 +108,9 @@ function _finishIntro() {
   if (window.CIN_safe) window.CIN_safe.introAmbiance(false);
   // Acceptation auto de la 1re quête : c'est le contrat narratif de l'intro.
   if (typeof acceptQuest === 'function') acceptQuest('intro_tutoriel');
+  // Quête principale « La Descente » (fil d'Ariane) : amorcée dès l'intro,
+  // la chaîne avance ensuite toute seule (_ensureMainQuestProgress).
+  if (typeof acceptQuest === 'function') acceptQuest('descente_1');
   // Marquer le PNJ guide comme rencontré : le greeting ne se rejouera pas
   // lorsque le joueur le retrouvera dans le donjon (state.questActive).
   if (typeof seenNpcs !== 'undefined') seenNpcs.add('dumbledore');

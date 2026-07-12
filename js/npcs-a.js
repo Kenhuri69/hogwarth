@@ -94,6 +94,91 @@ NPCS.push(
       }
     }
   },
+  // ── Portraits-relais de Dumbledore (Lot 1 revue 2026-07, trou A1) ──
+  // Dans le canon, les portraits voyagent de cadre en cadre : ces trois
+  // relais (ét. 4 / 7 / 10) permettent d'accepter ET de remettre la chaîne
+  // d'épreuves + les Éclats SANS remonter à l'étage 1 — le fil narratif
+  // suit la descente au lieu de la contredire. L'état de quête est global :
+  // une remise à un relais vaut remise au bureau (mêmes questsGiven/TurnedIn
+  // que l'entrée `dumbledore`).
+  {
+    id:    "dumbledore_relais_4",
+    name:  "Portrait de Dumbledore",
+    title: "Cadre-relais des Cachots",
+    sprite: "mage",
+    icon:  "🖼️",
+    portraitImg: "img/npc/dumbledore.png",
+    placement: { floor: 4, anchor: "any" },
+    questsGiven:    ["dumbledore_eveil", "dumbledore_courage",
+                     "dumbledore_resistance", "dumbledore_revelation",
+                     "eclats_clef_voute"],
+    questsTurnedIn: ["intro_tutoriel", "dumbledore_eveil", "dumbledore_courage",
+                     "dumbledore_resistance", "dumbledore_revelation",
+                     "eclats_clef_voute"],
+    dialogues: {
+      greeting: [
+        "Ne t'étonne pas de me trouver ici : les portraits voyagent de cadre en cadre, comme toi d'escalier en escalier. Je descends avec toi — d'une certaine façon.",
+        "Inutile de remonter jusqu'à mon bureau. Ce que tu m'apportes, je le reçois ici ; ce que j'ai à te confier, un cadre suffit à le dire."
+      ],
+      idle:        "Je veille depuis ce cadre. Continue ta descente — je te suivrai.",
+      questOffer:  "La descente ne doit pas s'interrompre. Voici l'épreuve suivante — je te la confie depuis ce cadre.",
+      questActive: "Poursuis, jeune sorcier. Je te suis de cadre en cadre.",
+      questReady:  "Donne — un cadre suffit à recevoir ce que tu rapportes. Voici ta récompense, bien méritée.",
+      questDone:   "Continue de descendre. Où qu'un cadre pende, je veille."
+    }
+  },
+  {
+    id:    "dumbledore_relais_7",
+    name:  "Portrait de Dumbledore",
+    title: "Cadre-relais des Profondeurs",
+    sprite: "mage",
+    icon:  "🖼️",
+    portraitImg: "img/npc/dumbledore.png",
+    placement: { floor: 7, anchor: "any" },
+    questsGiven:    ["dumbledore_eveil", "dumbledore_courage",
+                     "dumbledore_resistance", "dumbledore_revelation",
+                     "eclats_clef_voute"],
+    questsTurnedIn: ["intro_tutoriel", "dumbledore_eveil", "dumbledore_courage",
+                     "dumbledore_resistance", "dumbledore_revelation",
+                     "eclats_clef_voute"],
+    dialogues: {
+      greeting: [
+        "Un cadre oublié, si profond ? Les Profondeurs furent cartographiées, jadis — puis on a préféré oublier. Moi, je me souviens, et je descends avec toi.",
+        "L'école s'arrête là-haut, mais pas moi. Ce que tu rapportes, remets-le ici — chaque pas vers le bas compte davantage qu'un aller-retour."
+      ],
+      idle:        "Même ici, un cadre tient au mur. Je veille. Descends.",
+      questOffer:  "L'épreuve suivante t'attend plus bas. Je te la confie d'ici — épargne tes jambes pour la descente.",
+      questActive: "Ne remonte pas pour moi, jeune sorcier. Je te suis de cadre en cadre.",
+      questReady:  "Remets-le-moi ici. Voilà — et garde ton souffle pour ce qui t'attend dessous.",
+      questDone:   "Le fond approche. Où qu'un cadre pende, je veille."
+    }
+  },
+  {
+    id:    "dumbledore_relais_10",
+    name:  "Portrait de Dumbledore",
+    title: "Cadre-relais du Dixième Étage",
+    sprite: "mage",
+    icon:  "🖼️",
+    portraitImg: "img/npc/dumbledore.png",
+    placement: { floor: 10, anchor: "any" },
+    questsGiven:    ["dumbledore_eveil", "dumbledore_courage",
+                     "dumbledore_resistance", "dumbledore_revelation",
+                     "eclats_clef_voute"],
+    questsTurnedIn: ["intro_tutoriel", "dumbledore_eveil", "dumbledore_courage",
+                     "dumbledore_resistance", "dumbledore_revelation",
+                     "eclats_clef_voute"],
+    dialogues: {
+      greeting: [
+        "Le dernier cadre avant le fond. Au-delà, la peinture s'écaille et les murs n'écoutent plus. C'est ici que je t'attends — pas plus haut.",
+        "Quoi que tu doives me remettre, fais-le maintenant. Et quoi qu'il arrive derrière cette dernière porte : tu n'y descends pas seul. Je suis là, dans le cadre."
+      ],
+      idle:        "L'ombre se reforme tout près. Prends le temps de te préparer — puis descends.",
+      questOffer:  "Une dernière épreuve, alors — puisque tu es déjà là, autant te la confier au plus près du fond.",
+      questActive: "Elle t'attend, tout près. Frappe juste, et reviens me le dire — ce cadre-ci suffira.",
+      questReady:  "Remets-le-moi. C'est bien. Ce que tu viens d'accomplir pèsera dans ce qui s'ouvre derrière la dernière porte.",
+      questDone:   "Va, maintenant. Poudlard descend avec toi — jusqu'au fond."
+    }
+  },
   {
     id:    "pomfresh",
     name:  "Madame Pomfresh",

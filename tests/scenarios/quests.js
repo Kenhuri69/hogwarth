@@ -1827,4 +1827,109 @@ async function scenarioSignatureQuestBadge() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioChainedQuest, scenarioHeadlessHunt, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioFarmingQuests, scenarioDelayedSearch, scenarioCleVoute, scenarioQuestFanfare, scenarioLoopNpcQuests, scenarioLoopNpcQuests2, scenarioLoopNpcQuests3, scenarioSignatureQuestBadge, scenarioDeliveryQuestLetter] };
+// ── Quête principale « La Descente » (fil d'Ariane — Lot 1 revue 2026-07) ──
+// Chaîne descente_1→finale : auto-acceptée, épinglée 🧭 en tête du tracker,
+// étapes floor auto-remises (autoTurnIn — jamais de retour PNJ), maillon
+// suivant enchaîné automatiquement, finale close par le kill de Voldemort.
+// Garde-fous : goDeeper jamais gaté par la chaîne ; no-op post-victoire.
+async function scenarioMainQuestDescente() {
+  console.log('\n── Scénario : quête principale « La Descente » (fil d\'Ariane) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  const r = await page.evaluate(() => {
+    const out = { threw: false };
+    const chainActive = () => activeQuests.find(q => q.id && q.id.startsWith('descente_'));
+    try {
+      // T1 : amorçage — via checkFloorQuests(1) (couvre aussi la migration de save).
+      activeQuests = activeQuests.filter(q => !q.id.startsWith('descente_'));
+      ['descente_1', 'descente_2', 'descente_3', 'descente_finale']
+        .forEach(id => completedQuests.delete(id));
+      checkFloorQuests(1);
+      const q1 = chainActive();
+      out.step1Active  = !!q1 && q1.id === 'descente_1';
+      out.step1IsMain  = !!(q1 && q1.main);
+      out.step1Floor   = q1 && q1.objectives[0].type === 'floor' && q1.objectives[0].floor === 4;
+      // T2 : tracker — quête principale épinglée avec le pictogramme 🧭.
+      updateQuestTracker();
+      const trackerHtml = document.getElementById('quest-tracker').innerHTML;
+      out.trackerPinned = trackerHtml.indexOf('🧭') !== -1
+        && trackerHtml.indexOf('La Descente I') !== -1;
+      // T3 : franchir l'étage 4 → auto-remise de I + enchaînement sur II.
+      currentFloor = 4; checkFloorQuests(4);
+      out.step1Done   = completedQuests.has('descente_1');
+      out.step2Active = !!activeQuests.find(q => q.id === 'descente_2');
+      // T4 : rattrapage multi-étages (save avancé) — sauter à l'étage 10.
+      currentFloor = 10; checkFloorQuests(10);
+      out.step23Done   = completedQuests.has('descente_2') && completedQuests.has('descente_3');
+      out.finaleActive = !!activeQuests.find(q => q.id === 'descente_finale');
+      // T5 : kill Voldemort → la finale se remet toute seule.
+      checkKillQuests('voldemort_revenu');
+      out.finaleDone     = completedQuests.has('descente_finale');
+      out.chainAllClear  = !chainActive();
+      // T6 : post-victoire → la chaîne ne se ré-amorce jamais.
+      victoryAchieved = true;
+      checkFloorQuests(11);
+      out.noRespawnPostVictory = !chainActive();
+      victoryAchieved = false;
+    } catch (e) { out.threw = true; out.err = String(e); }
+    return out;
+  });
+  console.log('  Quête principale:', r);
+  assert(!r.threw, 'Descente throw: ' + (r.err || ''));
+  assert(r.step1Active && r.step1IsMain && r.step1Floor, 'descente_1 non amorcée/flaggée main');
+  assert(r.trackerPinned, 'quête principale non épinglée 🧭 dans le tracker');
+  assert(r.step1Done && r.step2Active, 'auto-remise étage 4 / enchaînement II en échec');
+  assert(r.step23Done && r.finaleActive, 'rattrapage multi-étages (II+III) en échec');
+  assert(r.finaleDone && r.chainAllClear, 'finale non close par le kill de Voldemort');
+  assert(r.noRespawnPostVictory, 'la chaîne se ré-amorce post-victoire');
+  if (errors.length) { errors.forEach(e => console.log('  ⚠️ ', e)); throw new Error('erreurs JS pendant Descente'); }
+  console.log('  ✅ Quête principale « La Descente » OK');
+  await browser.close();
+}
+
+// ── Portraits-relais de Dumbledore (Lot 1 revue 2026-07, trou A1) ──
+// 3 relais (ét. 4/7/10) partagent l'état de quête de Dumbledore : la chaîne
+// d'épreuves et les Éclats se remettent au relais SANS remonter à l'étage 1.
+async function scenarioDumbledoreRelais() {
+  console.log('\n── Scénario : portraits-relais de Dumbledore (ét. 4/7/10) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  const r = await page.evaluate(() => {
+    const out = { threw: false };
+    try {
+      // T1 : les 3 relais existent au bon étage.
+      out.relais = [4, 7, 10].map(f => {
+        const npc = getNpcById(`dumbledore_relais_${f}`);
+        return !!npc && npc.placement.floor === f
+          && npc.questsTurnedIn.includes('dumbledore_eveil')
+          && npc.questsTurnedIn.includes('eclats_clef_voute')
+          && getNpcsForFloor(f).some(n => n.id === `dumbledore_relais_${f}`);
+      });
+      // T2 : remise au relais sans remonter — accepter dumbledore_eveil
+      // (chaîne : intro_tutoriel remise d'abord), tuer la cible, vérifier
+      // que le relais de l'étage 4 est « completable ».
+      completedQuests.add('intro_tutoriel');
+      acceptQuest('dumbledore_eveil');
+      checkKillQuests('boggart');
+      const relay = getNpcById('dumbledore_relais_4');
+      out.relayState = getNpcQuestState(relay); // 'ready' = remettable ici
+      // Remise effective via le flux PNJ standard.
+      const before = completedQuests.has('dumbledore_eveil');
+      turnInQuestById('dumbledore_eveil');
+      out.turnedAtRelay = !before && completedQuests.has('dumbledore_eveil');
+    } catch (e) { out.threw = true; out.err = String(e); }
+    return out;
+  });
+  console.log('  Relais:', r);
+  assert(!r.threw, 'Relais throw: ' + (r.err || ''));
+  assert(r.relais.every(Boolean), 'un relais manque ou est mal placé (4/7/10)');
+  assert(r.relayState === 'ready', `relais ét.4 devrait être ready (got ${r.relayState})`);
+  assert(r.turnedAtRelay, 'remise de dumbledore_eveil au relais en échec');
+  if (errors.length) { errors.forEach(e => console.log('  ⚠️ ', e)); throw new Error('erreurs JS pendant Relais'); }
+  console.log('  ✅ Portraits-relais OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioChainedQuest, scenarioHeadlessHunt, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioFarmingQuests, scenarioDelayedSearch, scenarioCleVoute, scenarioQuestFanfare, scenarioLoopNpcQuests, scenarioLoopNpcQuests2, scenarioLoopNpcQuests3, scenarioSignatureQuestBadge, scenarioDeliveryQuestLetter, scenarioMainQuestDescente, scenarioDumbledoreRelais] };

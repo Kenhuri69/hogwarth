@@ -112,8 +112,23 @@ une quête acceptée est un clone en cours (`activeQuests`). Objectifs supporté
   Dumbledore.
 - **Liens :** amorce de la **chaîne Dumbledore** (`dumbledore_*`).
 
+### Quête principale « La Descente » *(`descente_1` → `_2` → `_3` → `_finale`)* ✅
+- **Nature :** fil d'Ariane de la colonne vertébrale (Lot 1 revue 2026-07) —
+  4 étapes trackées (`floor` 4 → 7 → 10 → `kill voldemort_revenu`), flag
+  `main` (épinglée 🧭 en tête du tracker), **auto-acceptée** à la fin de
+  l'intro et **auto-remise** (`autoTurnIn`) : la remise EST la descente,
+  aucun retour PNJ. Chaîne pilotée par `_ensureMainQuestProgress`
+  (`quests.js`) — un save avancé rattrape automatiquement son étape.
+- **Garde-fou :** **non-gating** — le seul verrou de la descente reste
+  `victoryAchieved` ([04 §4.7](04-structure-actes-et-etages.md)) ; récompenses
+  légères (xp/or). Post-victoire, la chaîne s'efface au profit de la
+  **boussole d'endgame**.
+
 ### Chaîne de Dumbledore *(`dumbledore_eveil` → `_courage` → `_resistance` → `_revelation`)*
 - **Donneur / lieu :** ✅ Dumbledore (Hall, ét. 1), cibles en profondeur.
+  ✅ **Portraits-relais** (Lot 1) : trois cadres-relais aux étages **4/7/10**
+  (`dumbledore_relais_{4,7,10}`, `npcs-a.js`) acceptent ET remettent toute la
+  chaîne + les Éclats — le fil suit la descente, plus de backtracking forcé.
 - **Accroche :** 💡 quatre épreuves d'audace qui **escortent la descente** :
   affronter sa peur (Épouvantard), la bravoure (Mangemorts), l'élite, puis
   l'ombre (Bellatrix).

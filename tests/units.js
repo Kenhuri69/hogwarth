@@ -768,8 +768,9 @@ function loadNpcs() {
     ['FLOOR_SCRIPTED_BEATS', 'getScriptedFloorBeat']);
   const { FLOOR_SCRIPTED_BEATS, getScriptedFloorBeat } = pure;
 
-  // Étages retenus (arbitrage) : 1, 4, 8.
-  for (const f of [1, 4, 8]) {
+  // Étages retenus (arbitrage 2026-06-08 + Lot 1 revue 2026-07) :
+  // 1, 4, 7, 8, 9 (pré-victoire) + 12, 13 (début de Boucle).
+  for (const f of [1, 4, 7, 8, 9, 12, 13]) {
     const beat = getScriptedFloorBeat(f);
     check(`beat étage ${f} défini`, beat && typeof beat === 'object');
     check(`beat étage ${f} a un id`, beat && typeof beat.id === 'string' && beat.id.length > 0);
@@ -777,16 +778,16 @@ function loadNpcs() {
     check(`beat étage ${f} a un toast`, beat && typeof beat.toast === 'string' && beat.toast.length > 0);
   }
   // Étages non scénarisés → null (10/11 exclus volontairement).
-  for (const f of [2, 3, 5, 6, 7, 9, 10, 11, 14, 99]) {
+  for (const f of [2, 3, 5, 6, 10, 11, 14, 99]) {
     check(`beat étage ${f} = null`, getScriptedFloorBeat(f) === null);
   }
   check('beat étage 0 = null',     getScriptedFloorBeat(0) === null);
   check('beat étage NaN = null',   getScriptedFloorBeat(NaN) === null);
   check('beat étage undef = null', getScriptedFloorBeat() === null);
   // Cohérence dict ↔ résolveur.
-  check('FLOOR_SCRIPTED_BEATS a 1/4/8 + Ruines 15/21',
+  check('FLOOR_SCRIPTED_BEATS a 1/4/7/8/9 + Boucle 12/13 + Ruines 15/21',
     JSON.stringify(Object.keys(FLOOR_SCRIPTED_BEATS).map(Number).sort((a, b) => a - b))
-      === JSON.stringify([1, 4, 8, 15, 21]));
+      === JSON.stringify([1, 4, 7, 8, 9, 12, 13, 15, 21]));
 
   // ── Orchestrateur one-shot : seenScriptedBeat injecté + stubs d'affichage ──
   const seen = new Set();
@@ -1970,6 +1971,7 @@ function loadNpcs() {
   let orphanOk = true, badOrphan = '';
   for (const t of QUEST_TEMPLATES) {
     if (t.houseSetQuest || t.houseSignatureQuest || t.houseMytheQuest) continue; // débloqués par tier, pas via questsGiven
+    if (t.main) continue; // quête principale « La Descente » : auto-acceptée (intro + _ensureMainQuestProgress), jamais offerte par un PNJ
     if (!givenByNpc.has(t.id)) { orphanOk = false; badOrphan = t.id; }
   }
   check('quêtes: aucun template orphelin (donné par un NPC)' + (orphanOk ? '' : ` (${badOrphan})`), orphanOk);

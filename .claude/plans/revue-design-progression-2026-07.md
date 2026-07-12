@@ -643,3 +643,27 @@ Lot 6 (équilibrage global & QA de synthèse) ── ferme le tout
   - [x] 0.6 `HOUSE_SIGNATURE_FLOORS` aligné sur l'étage des donneurs
     (Serdaigle 2→6, Poufsouffle 2→3, commentaire source) + fixtures de test
     mises à jour (`tests/scenarios/houses.js` ×3).
+- **2026-07-11 — Lot 1 exécuté** (PR #727 du Lot 0 mergée au préalable) :
+  - [x] 1.1 Quête principale « La Descente » : 4 templates `descente_1..finale`
+    (`main`+`autoTurnIn`, quests-templates.js), chaîne pilotée par
+    `_ensureMainQuestProgress`/`_autoTurnInReadyQuests`/`_markFloorSteps`
+    (refactor de `checkFloorQuests`, hook `checkKillQuests`), amorçage à la
+    fin de l'intro (intro.js), épinglage 🧭 + progression d'étage dans le
+    tracker (ui.js). Non-gating vérifié (aucune modification de goDeeper).
+  - [x] 1.2 Portraits-relais `dumbledore_relais_{4,7,10}` (npcs-a.js) :
+    mêmes questsGiven/TurnedIn que Dumbledore (chaîne + Éclats), dialogues
+    dédiés « de cadre en cadre ». Choix retenu : PNJ délégués (❓2 tranché —
+    additif, zéro risque sur npcPlacements).
+  - [x] 1.3 Beats étages 7 (seuil_profondeurs), 9 (souffle_incomplet),
+    12 (boucle_apprend), 13 (boucle_souvient) dans FLOOR_SCRIPTED_BEATS.
+    **Écarts au plan** : étage 11 NON ajouté (arbitrage 2026-06-08 maintenu —
+    le Gardien de la Boucle a son dialogue dédié) ; floorLines 2/3/5/6 NON
+    ajoutées (l'ambiance zonée ZONE_AMBIANCE couvre déjà ces étages par
+    tranche — multiplier les beats diluerait les moments one-shot).
+  - [ ] 1.4 Intervention de Sirius au climax — **non lancé** (❓5 en attente
+    de validation utilisateur).
+  - [x] 1.5 Docs amendées : 04 §4.4 (étages-scènes tranché ✅ + fil d'Ariane),
+    04 « Points à trancher » #1 clos, 08 (section quête principale + relais).
+  - [x] Tests : units beats réalignés (1/4/7/8/9/12/13/15/21) ; 2 nouveaux
+    scénarios smoke `scenarioMainQuestDescente` + `scenarioDumbledoreRelais`
+    (tests/scenarios/quests.js).

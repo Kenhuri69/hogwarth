@@ -576,6 +576,8 @@ function updateQuestTracker() {
     el.innerHTML = '<div class="quest-tracker-empty">Aucune quête active</div>';
     return;
   }
+  // Quête principale (flag `main`, clone du template) épinglée en tête.
+  pending.sort((a, b) => (b.main ? 1 : 0) - (a.main ? 1 : 0));
   el.innerHTML = pending.map(q => {
     const step = (typeof getActiveStep === 'function') ? getActiveStep(q) : (q.objectives || []).find(o => !o.completed);
     if (!step) return '';
@@ -583,14 +585,19 @@ function updateQuestTracker() {
     if (step.type === 'kill') {
       pct = Math.min(1, step.progress / step.amount);
       prog = `${step.progress}/${step.amount}`;
+    } else if (step.type === 'floor') {
+      const cur = (typeof currentFloor === 'number') ? Math.max(1, Math.min(currentFloor, step.floor)) : 1;
+      pct = Math.min(1, cur / step.floor);
+      prog = `Ét. ${cur}/${step.floor}`;
     } else {
       const count = (player.inventory || []).filter(i => i.id === step.itemId).length;
       pct = Math.min(1, count / step.amount);
       prog = `${count}/${step.amount}`;
     }
+    const isMain = !!q.main;
     const barW = Math.round(pct * 100);
-    return `<div style="background:#0a0705;border:1px solid #2a1a08;border-radius:3px;padding:5px 6px;">
-      <div style="font-family:'Cinzel',serif;font-size:9px;color:var(--gold-light);letter-spacing:0.5px;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${q.title}">${q.title}</div>
+    return `<div style="background:#0a0705;border:1px solid ${isMain ? 'var(--gold-dark)' : '#2a1a08'};border-radius:3px;padding:5px 6px;">
+      <div style="font-family:'Cinzel',serif;font-size:9px;color:var(--gold-light);letter-spacing:0.5px;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${q.title}">${isMain ? '🧭 ' : ''}${q.title}</div>
       <div style="display:flex;justify-content:space-between;font-size:9px;color:#6a5030;margin-bottom:3px;">
         <span>${q.giver}</span><span style="color:#8a7050">${prog}</span>
       </div>

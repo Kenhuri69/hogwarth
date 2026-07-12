@@ -908,15 +908,18 @@ window.checkKillQuests = function(monsterId) {
     if (step.progress >= step.amount) {
       step.completed = true;
       const next = getActiveStep(q);
+      const tpl = getQuestTemplate(q.id);
       if (next) {
         addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/quest.png" alt=""> Étape suivante : « ${q.title} »`, 'magic');
-      } else {
+      } else if (!tpl || !tpl.autoTurnIn) {
         addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/quest.png" alt=""> Quête « ${q.title} » prête — retourne voir ${q.giver}.`, 'good');
       }
     } else {
       addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/quest.png" alt=""> Quête « ${q.title} » : ${step.progress}/${step.amount}`, '');
     }
   });
+  // Remise auto des quêtes autoTurnIn devenues prêtes (ex. descente_finale).
+  _autoTurnInReadyQuests();
 };
 
 // ── Appelée à la sortie réussie d'une Poche du Sceau ─────────
@@ -962,22 +965,70 @@ window.checkPageQuest = function() {
   if (typeof updateQuestTracker === 'function') updateQuestTracker();
 };
 
-// ── Appelée à chaque entrée d'étage (goDeeper / restoration) ──
+// ── Quête principale « La Descente » (fil d'Ariane — Lot 1 revue 2026-07) ──
+// Chaîne d'ids ordonnée ; les templates portent `main` (épinglage tracker)
+// et `autoTurnIn` (remise automatique — la remise EST la descente).
+const MAIN_QUEST_CHAIN = ['descente_1', 'descente_2', 'descente_3', 'descente_finale'];
+
+// Remet automatiquement les quêtes `autoTurnIn` dont TOUTES les étapes sont
+// complètes. Parcours inversé : completeQuest splice activeQuests par index.
+function _autoTurnInReadyQuests() {
+  for (let i = activeQuests.length - 1; i >= 0; i--) {
+    const q = activeQuests[i];
+    const tpl = getQuestTemplate(q.id);
+    if (!tpl || !tpl.autoTurnIn) continue;
+    if (!q.objectives.every(o => o.completed)) continue;
+    completeQuest(i);
+  }
+}
+window._autoTurnInReadyQuests = _autoTurnInReadyQuests;
+
+// Fait avancer la chaîne principale : accepte le prochain maillon non remis.
+// No-op post-victoire (la boussole d'endgame prend le relais du guidage) et
+// si un maillon est déjà actif. Boucle bornée : sur un save avancé, un
+// maillon accepté dont l'étage est déjà atteint se complète immédiatement
+// (_markFloorSteps + auto-remise) et la chaîne rattrape l'étage courant.
+function _ensureMainQuestProgress(floor) {
+  if (typeof victoryAchieved !== 'undefined' && victoryAchieved) return;
+  for (let guard = 0; guard < MAIN_QUEST_CHAIN.length; guard++) {
+    if (activeQuests.some(q => MAIN_QUEST_CHAIN.includes(q.id))) return;
+    const next = MAIN_QUEST_CHAIN.find(id => !completedQuests.has(id));
+    if (!next) return;
+    if (!acceptQuest(next)) return;
+    _markFloorSteps(floor);
+    _autoTurnInReadyQuests();
+  }
+}
+window._ensureMainQuestProgress = _ensureMainQuestProgress;
+
 // Marque comme accomplies les étapes "floor" dont la cible est atteinte.
-window.checkFloorQuests = function(floor) {
+// Le rappel « retourne voir le donneur » est supprimé pour les quêtes
+// autoTurnIn (aucune remise PNJ — elle suit immédiatement).
+function _markFloorSteps(floor) {
   activeQuests.forEach((q) => {
+    const tpl = getQuestTemplate(q.id);
     for (const step of q.objectives) {
       if (step.completed)         continue;
       if (step.type   !== 'floor') continue;
       if (floor      >= step.floor) {
         step.progress  = step.amount;
         step.completed = true;
-        addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/quest.png" alt=""> Quête « ${q.title} » prête — retourne voir ${q.giver}.`, 'good');
+        if (!tpl || !tpl.autoTurnIn) {
+          addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/quest.png" alt=""> Quête « ${q.title} » prête — retourne voir ${q.giver}.`, 'good');
+        }
       }
     }
   });
+}
+
+// ── Appelée à chaque entrée d'étage (goDeeper / restoration) ──
+window.checkFloorQuests = function(floor) {
+  _markFloorSteps(floor);
   // Ouvre la Quête Signature de Maison au franchissement de l'étage déclencheur.
   _maybeUnlockSignature(floor);
+  // Remise auto (quêtes autoTurnIn) puis avancée de la quête principale.
+  _autoTurnInReadyQuests();
+  _ensureMainQuestProgress(floor);
 };
 
 // ── Helpers besace d'herboriste (étapes "herb") ──────────────────
