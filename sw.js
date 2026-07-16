@@ -16,7 +16,7 @@
 //     individuel suffit pour eux.
 // =======================================================================
 
-const CACHE_VERSION = 'hogwarth-v257';
+const CACHE_VERSION = 'hogwarth-v258';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Précache minimal (~1 Mo) : shell HTML/CSS/JS + premier visuel.
@@ -64,22 +64,22 @@ const PRECACHE_URLS = [
   './js/data.js?v=65',
   './js/data-characters.js?v=1',
   './js/data-spells.js?v=1',
-  './js/data-items.js?v=5',
+  './js/data-items.js?v=6',
   './js/data-world.js?v=1',
   './js/data-icon-recipes.js?v=1',
   './js/floor-themes.js?v=2',
   './js/floor-ambiance.js?v=20',
   './js/floor-events.js?v=2',
   './js/room-flavor.js?v=1',
-  './js/item-icons.js?v=50',
+  './js/item-icons.js?v=51',
   './js/state.js?v=48',
-  './js/hero-barks.js?v=13',
+  './js/hero-barks.js?v=14',
   './js/ui.js?v=26',
   './js/modal-a11y.js?v=2',
   './js/ui-character-sheet.js?v=18',
   './js/ui-settings.js?v=7',
   './js/keybindings.js?v=1',
-  './js/ui-bestiary.js?v=8',
+  './js/ui-bestiary.js?v=9',
   './js/ui-codex.js?v=12',
   './js/dungeon-scaling.js?v=10',
   './js/dungeon.js?v=22',
@@ -113,7 +113,7 @@ const PRECACHE_URLS = [
   './js/npc-dialog.js?v=24',
   './js/karaoke.js?v=1',
   './js/intro.js?v=4',
-  './js/shop.js?v=19',
+  './js/shop.js?v=20',
   './js/save-slots.js?v=4',
   './js/save.js?v=52',
   './js/save-visit-snapshot.js?v=2',

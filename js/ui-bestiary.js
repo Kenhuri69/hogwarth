@@ -108,6 +108,14 @@ function filterBestiary() {
   if (!grid) return;
   grid.innerHTML = '';
 
+  // Compteur de complétion global (indépendant des filtres) — objectif de
+  // collection, pendant du compteur Codex (#codex-progress).
+  const prog = document.getElementById('bestiary-progress');
+  if (prog) {
+    const seen = MONSTERS.reduce((n, m) => n + (seenMonsters.has(m.id) ? 1 : 0), 0);
+    prog.textContent = `🐾 ${seen} / ${MONSTERS.length} découverts`;
+  }
+
   const filtered = MONSTERS.filter(m => {
     const matchSearch = !search      || m.name.toLowerCase().includes(search) || (m.lore || '').toLowerCase().includes(search);
     const matchCat    = !cat         || m.category === cat;

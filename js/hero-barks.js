@@ -83,6 +83,8 @@ const HERO_BARKS = {
     darkBossDown: ["Deux fois à terre. À ce stade, ta défaite est presque une tradition — la mienne."],
     houseTier:  ["Voilà ce que valent les vrais. Prenez-en de la graine."],
     tierTransition: ["Plus on descend, plus ça sent ma famille. Charmant."],
+    // Enjeu intime (05 §5.4.2 / §5.2) — prouver qu'il vaut mieux que son nom, au seuil 3↔4.
+    descentStake: ["On attend d'un Malefoy qu'il regarde les autres descendre. Justement — je préfère qu'on me voie en bas, debout, qu'en haut, à l'abri."],
     // Beat scénarisé (05 §5.4.2) — première rencontre d'un Mangemort.
     firstMangemort: ["Ce masque… je l'ai déjà vu à ma table de Noël."],
     houseTension: {
@@ -101,7 +103,9 @@ const HERO_BARKS = {
     darkBoss:   ["Je t'ai déjà attrapé une fois. Tu n'es pas devenu plus rapide en mourant."],
     darkBossDown: ["Rattrapé, encore. La mort ne t'a rien appris sur la vitesse."],
     houseTier:  ["Un cran de plus. Mes réflexes suivent, eux."],
-    tierTransition: ["Le terrain s'ouvre autrement. Adaptons notre vol."]
+    tierTransition: ["Le terrain s'ouvre autrement. Adaptons notre vol."],
+    // Enjeu intime (05 §5.4.2 / §5.2) — rattraper ce qui a fui vers le fond, au seuil 3↔4.
+    descentStake: ["Quelque chose a filé vers le bas — une réponse, un visage. J'attrape toujours ce qui fuit. Toujours."]
   },
   cedric: {
     bossAppear: ["Un tournoi de plus. On le passe ensemble ou pas du tout."],
@@ -118,6 +122,8 @@ const HERO_BARKS = {
     tierTransition: ["Plus de salles de classe en dessous. À partir d'ici, on passe l'examen."],
     // Beat scénarisé (05 §5.4.2) — transition 3↔4, on quitte l'école.
     leaveSchool: ["Plus de salles de classe en dessous. À partir d'ici, on ne révise plus : on passe l'examen."],
+    // Enjeu intime (05 §5.4.2 / §5.2) — une parole donnée, au seuil 3↔4.
+    descentStake: ["Un champion ne descend pas pour la gloire — il descend parce qu'il a dit qu'il le ferait. J'ai donné ma parole. On y va."],
     houseTension: {
       Poufsouffle: ["Plus de salles de classe en dessous. À partir d'ici, on passe l'examen."]
     }
@@ -207,7 +213,9 @@ const HERO_BARKS = {
     darkBoss:   ["Je t'ai déjà réduit en cendres. La Boucle a juste rallumé la mèche."],
     darkBossDown: ["En cendres, encore. Rallume la mèche si tu veux — j'ai des braises à revendre."],
     houseTier:  ["La braise monte. Notre Maison aussi."],
-    tierTransition: ["Ça chauffe en descendant. J'aime ça."]
+    tierTransition: ["Ça chauffe en descendant. J'aime ça."],
+    // Enjeu intime (05 §5.4.2 / §5.2) — éteindre le dragon avant qu'il ne remonte, au seuil 3↔4.
+    descentStake: ["Un dragon qu'on n'affronte pas finit par tout brûler. Je descends éteindre celui-là avant qu'il ne remonte."]
   },
   jeanne: {
     bossAppear: ["Oh, il est tout grognon. On va lui chanter quelque chose."],
@@ -221,7 +229,9 @@ const HERO_BARKS = {
     darkBoss:   ["On t'a déjà chanté ton requiem une fois. Tu veux le bis ?"],
     darkBossDown: ["Bis chanté ! Ton requiem connaît la mélodie par cœur, maintenant."],
     houseTier:  ["Notre Maison scintille un peu plus ! Joli, non ?"],
-    tierTransition: ["Nouvel étage ! Les échos résonnent différemment ici."]
+    tierTransition: ["Nouvel étage ! Les échos résonnent différemment ici."],
+    // Enjeu intime (05 §5.4.2 / §5.2) — rendre sa voix au château, au seuil 3↔4.
+    descentStake: ["En bas, plus personne ne chante. Alors je descends — quelqu'un doit rendre sa voix au château, et j'ai la plus jolie."]
   },
   margaux: {
     bossAppear: ["Oh ! Une grosse bête. J'ai lu un sort pour ça, attends…"],
@@ -235,7 +245,9 @@ const HERO_BARKS = {
     darkBoss:   ["Attends… je t'ai déjà vaincu, toi ! Le ciel n'oublie pas une page lue."],
     darkBossDown: ["Re-vaincu ! Le ciel n'oublie pas une page — et moi non plus."],
     houseTier:  ["Serdaigle monte d'un cran ! L'aigle aime ça."],
-    tierTransition: ["Nouvel étage — de nouvelles constellations à déchiffrer."]
+    tierTransition: ["Nouvel étage — de nouvelles constellations à déchiffrer."],
+    // Enjeu intime (05 §5.4.2 / §5.2) — lire la dernière page avant qu'elle ne s'efface, au seuil 3↔4.
+    descentStake: ["Mon grimoire s'assombrit page après page à mesure qu'on descend. Je veux lire la dernière avant qu'elle ne s'efface."]
   },
   agathe: {
     bossAppear: ["Même ici, quelque chose peut pousser. Tenons bon."],
@@ -249,7 +261,9 @@ const HERO_BARKS = {
     darkBoss:   ["Je t'ai déjà couché en terre une fois. Tu repousses bien mal."],
     darkBossDown: ["Recouché en terre. Repousse si tu veux : je sais désherber."],
     houseTier:  ["Notre Maison fleurit, même sous la pierre."],
-    tierTransition: ["La terre change de souffle. On s'y adapte, comme toujours."]
+    tierTransition: ["La terre change de souffle. On s'y adapte, comme toujours."],
+    // Enjeu intime (05 §5.4.2 / §5.2) — semer la vie là où elle manque le plus, au seuil 3↔4.
+    descentStake: ["Rien ne pousse là où je vais — c'est bien pour ça qu'il faut y descendre. Là où la vie manque le plus, c'est là qu'on la sème."]
   },
   olivier: {
     bossAppear: ["Une cible de plus à foudroyer. Au travail."],
@@ -264,6 +278,8 @@ const HERO_BARKS = {
     darkBossDown: ["Foudroyé, deuxième prise. Plus rapide, comme promis."],
     houseTier:  ["Plus de puissance pour la Maison. Je sais quoi en faire."],
     tierTransition: ["Terrain neuf à foudroyer. Restons concentrés."],
+    // Enjeu intime (05 §5.4.2 / §5.2) — l'orage tombe là où l'air est le plus lourd, au seuil 3↔4.
+    descentStake: ["L'orage ne choisit pas où il tombe : il tombe là où l'air est le plus lourd. En bas, donc. Je descends avec lui."],
     houseTension: {
       Poufsouffle: ["On perd du temps à les ramener. (…) Non. Tu as raison. On les ramène."]
     }
@@ -280,7 +296,9 @@ const HERO_BARKS = {
     darkBoss:   ["Je t'ai déjà arrêté net une fois. Reviens autant que tu veux — le mur tient."],
     darkBossDown: ["Arrêté net, encore. Le mur tient. Il tiendra autant de fois qu'il faudra."],
     houseTier:  ["La Maison s'enracine. On ne lâche personne."],
-    tierTransition: ["Sol nouveau, mêmes racines. On tient."]
+    tierTransition: ["Sol nouveau, mêmes racines. On tient."],
+    // Enjeu intime (05 §5.4.2 / §5.2) — ne pas laisser les siens descendre seuls, au seuil 3↔4.
+    descentStake: ["On ne laisse pas les siens descendre seuls dans le froid. Je passe devant — c'est tout ce que je sais faire, et je le fais bien."]
   },
   chatillon: {
     bossAppear: ["Bruyant. Il ne verra pas venir l'ombre qui l'attend."],
@@ -295,6 +313,8 @@ const HERO_BARKS = {
     darkBossDown: ["Retombé dans l'ombre. Cette fois, fais-moi plaisir : n'en ressors pas."],
     houseTier:  ["Serpentard remonte la lumière. Ironique, et délicieux."],
     tierTransition: ["L'ombre s'épaissit. Tant mieux."],
+    // Enjeu intime (05 §5.4.2 / §5.2) — l'ombre le sert là où la lumière renonce, au seuil 3↔4.
+    descentStake: ["La lumière renonce toujours la première, en bas. Moi, l'ombre m'y suit — autant descendre là où elle me sert."],
     houseTension: {
       Gryffondor:  ["Tout ce courage… et personne pour regarder dans le dos. Heureusement, moi si."]
     }
