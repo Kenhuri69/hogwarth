@@ -604,10 +604,10 @@ Lot 6 (équilibrage global & QA de synthèse) ── ferme le tout
 
 ## Points ❓ à trancher avant/pendant les lots (récapitulatif)
 
-1. Gate « Veilleur → escalier x0 » ou Veilleur optionnel (§3.2) — recommandation : **gate interne au Cycle** (précédent : `reflet_mythe`).
-2. Multi-placement vs PNJ délégués pour les portraits-relais (§2.3) — recommandation : **délégués** (additif, sans risque).
-3. Compensation de migration legacy (§5.1) — recommandation : +1 niveau gratuit.
-4. Cedric : Duelliste ou Gardien (§6.2) — recommandation : Gardien.
+1. ✅ **Tranché (2026-07-12)** : Gate « Veilleur → escalier x0 » = **gate interne au Cycle** (l'escalier x0 reste scellé tant que le Veilleur n'est pas vaincu ; précédent `reflet_mythe`). (§3.2)
+2. ✅ Tranché (Lot 1) : **PNJ délégués** pour les portraits-relais (additif, sans risque). (§2.3)
+3. ✅ Tranché (Lot 2) : migration legacy = **+1 niveau offert**. (§5.1)
+4. ✅ **Tranché (2026-07-12)** : Cedric = **Gardien** (effectifs 3/5/2/4/3, cohérent Poufsouffle). (§6.2)
 5. Intervention de Sirius au climax (§2.5) — version minimale ou abandon.
 6. Classement de profondeur HoF (§3.6) — nécessite migration Supabase.
 7. Respec global de l'arbre (§6.1) — recommandation : 1 respec offert par victoire, sinon payant en Marques.
