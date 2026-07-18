@@ -765,6 +765,10 @@ NPCS.push(
     icon:  "♾️",
     portraitImg: "img/npc/gardien_boucle.png",
     placement: { floor: 11, anchor: "first-room" },
+    // A4 — Consécration d'Éclats au Sceau : débouché cosmétique cross-run pour
+    // le compteur d'Éclats (répétable, pas de oneShot). Cf. profile.js
+    // recordConsecratedEclats + handler npc-dialog.js.
+    specialAction: { id: "consecrate_eclats", type: "consecrate_eclats", label: "🔹 Consacrer les Éclats au Sceau" },
     questsGiven:    ["purge_loups", "purge_acromantules", "purge_mangemorts", "purge_moremplis", "endurer_poches", "purge_givre", "purge_spectres", "chasse_basilic_ancestral", "prime_boss_gardien"],
     questsTurnedIn: ["purge_loups", "purge_acromantules", "purge_mangemorts", "purge_moremplis", "endurer_poches", "purge_givre", "purge_spectres", "chasse_basilic_ancestral", "prime_boss_gardien"],
     // Prime de boss premium (cadence longue, everyLevels:3) — invoque le

@@ -325,6 +325,34 @@ const CODEX_ENTRIES = [
       Poufsouffle: "Le parchemin retient de toi la leçon de Helga : tu n'as laissé personne derrière, jusqu'au plus profond.",
     } },
   },
+  // Épilogues des DEUX autres fins (A3 — revue 2026-07) : chaque conclusion de
+  // partie laisse sa propre « dernière ligne » au Codex, révélée par son robinet
+  // `ending`. Précédence computeEndingType : cycle_broken > victory_pact >
+  // victory — le Codex PERSISTANT (unlockedCodexEntries) conserve chaque épilogue
+  // révélé, si bien qu'au fil de ses parties le joueur collectionne les 3 fins.
+  // Cosmétique pur (miroir de `endingsSeen` du profil), jamais un gate.
+  {
+    id: 'epilogue_victoire', category: 'histoire', icon: '🌀', act: 4,
+    title: "Épilogue — la veille sans fin",
+    links: ['epilogue', 'boucle_tenebreuse', 'briser_cycle'],
+    unlockConditions: [{ type: 'victory' }],
+    revealedBy: [{ type: 'ending', value: 'victory' }],
+    textVersions: {
+      veiled: "Tu as vaincu l'Ombre du haut — et pourtant le grand escalier reste ouvert vers le bas. Le parchemin hésite : ta partie n'a pas de dernière ligne tant que tu choisis de redescendre.",
+      revealed: "Tu as gagné, et tu n'as pas refermé la porte. Voldemort est tombé, mais tu portes la Boucle comme une veille : chaque nuit, tu redescends éprouver ce que les Quatre ont enfoui, sans jamais le sceller ni le réveiller tout à fait. Ce n'est pas un échec — c'est un choix. Certains gardiens ne cherchent pas la paix : ils cherchent à rester assez près du fond pour l'entendre respirer, et remonter chaque fois plus lucides. Ta légende ne se termine pas ; elle recommence, volontairement.",
+    },
+  },
+  {
+    id: 'epilogue_pacte', category: 'histoire', icon: '⚖️', act: 4,
+    title: "Épilogue — la main serrée dans le noir",
+    links: ['epilogue', 'voix_salazar', 'echo_salazar'],
+    unlockConditions: [{ type: 'victory' }],
+    revealedBy: [{ type: 'ending', value: 'victory_pact' }],
+    textVersions: {
+      veiled: "Il y avait une autre voie, plus basse, plus froide. Tu as serré une main tendue depuis les Cachots pour l'emprunter. Le parchemin note le marché — mais pas encore ce qu'il te coûtera.",
+      revealed: "Tu as vaincu, oui — mais pas seul, et pas gratuitement. Le Pacte de Salazar t'a ouvert une porte que le courage seul n'aurait pas forcée, et la lucidité qu'on t'admire a un revers : tu sais désormais à qui tu dois ta victoire, et ce que valent les serments prêtés dans le noir. La Boucle reste ouverte ; ta dette aussi. C'est ainsi que finit cette légende-là : non par une trahison, non par une gloire pure, mais par une main serrée dont tu sens encore le froid en remontant.",
+    },
+  },
 
   // ── 🗺️ Lieux & Géographie ──────────────────────────────────
   {

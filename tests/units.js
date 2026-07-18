@@ -1735,6 +1735,19 @@ function loadNpcs() {
     computeProfileTitles({ sealedDeaths: 1 }).includes('Scellé dans la Boucle'));
   check('titres: sealedDeaths 0 → pas de titre Scellé',
     !computeProfileTitles({ sealedDeaths: 0 }).includes('Scellé dans la Boucle'));
+
+  // Consécration d'Éclats (A4) — un seul titre = palier le plus haut atteint.
+  check('titres: 0 Éclat consacré → aucun titre de consécration',
+    !computeProfileTitles({ eclatsConsecrated: 0 }).some(t => /Sceau|Consacré/.test(t)));
+  check('titres: 14 consacrés → pas encore de titre',
+    !computeProfileTitles({ eclatsConsecrated: 14 }).some(t => /Offrant|Consacré|Pilier/.test(t)));
+  check('titres: 15 consacrés → Offrant du Sceau',
+    computeProfileTitles({ eclatsConsecrated: 15 }).includes('Offrant du Sceau'));
+  check('titres: 60 consacrés → Porteur Consacré',
+    computeProfileTitles({ eclatsConsecrated: 60 }).includes('Porteur Consacré'));
+  check('titres: 250 consacrés → Pilier du Sceau (un seul palier)',
+    computeProfileTitles({ eclatsConsecrated: 250 }).filter(t => /Offrant|Consacré|Pilier/.test(t)).length === 1
+    && computeProfileTitles({ eclatsConsecrated: 250 }).includes('Pilier du Sceau'));
 })();
 
 // ============================================================
