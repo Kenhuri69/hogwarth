@@ -1173,6 +1173,127 @@ MONSTERS.push(
   },
 
   // ════════════════════════════════════════════
+  // BOUCLE — Faune native des Ruines Anciennes (Avant-Monde, ét. 13-16)
+  // Thème A / A1 (revue 2026-07) : comble la falaise minFloor 13-16 (0 monstre
+  // natif) au lieu de recycler la faune 1-10. Créatures antérieures à l'école /
+  // aux runes / aux Fondateurs, cohérentes avec le Dormeur des Fondations et les
+  // « coutures du réel » (codex : dormeur_fondations, cle_de_voute). Non-boss
+  // (weight 3-5), stats ≈ faune 8-9 (scaleMonster gère la Boucle). Sans imgSrc →
+  // fallback SVG catégorie ; PNG painterly = suivi (prompts nano-banana).
+  // Cf. .claude/plans/endgame-fresh-A1-ruins-fauna.md
+  // ════════════════════════════════════════════
+  {
+    id:       "larve_fondations",
+    name:     "Larve des Fondations",
+    icon:     "🐛",
+    category: "créature",
+    desc:     "La pierre se soulève et se fend : une masse pâle et aveugle s'extrait des fondations, plus vieille que toute racine.",
+    lore:     "Née avant la lumière, la Larve des Fondations creuse la roche de l'Avant-Monde depuis un âge sans nom. Elle n'a pas d'yeux — elle n'en a jamais eu besoin, là où rien n'a jamais brillé. Sa mâchoire dissout la pierre et l'acier avec la même lenteur patiente.",
+    habitat:  "Les veines de roche primordiale, sous la plus basse assise des Ruines.",
+    anecdote: "Les runes des Fondateurs ne la nomment pas : on ne grave pas ce qui existait avant l'écriture.",
+    danger:   8,
+    minFloor: 13, maxFloor: null, weight: 5,
+    hp: 98, atk: 17, def: 11, mag: 4, agi: 6, lck: 5,
+    scale: 0.30,
+    abilities: [
+      { name: "Morsure Dissolvante", icon: "🩸", desc: "Une mâchoire qui ronge la chair comme la pierre", effect: "status", statusId: "bleed", power: 7, chance: 0.35, turns: 3 },
+      { name: "Broyeur d'Assises",   icon: "🦴", desc: "Elle affaiblit la garde en broyant tout appui",   effect: "weaken", power: 5, chance: 0.25 }
+    ],
+    ai: "aggressive",
+    resist: ["ténèbres", "physique"],
+    weak:   ["lumière"],
+    xp: 96, gold: { min: 40, max: 65 },
+    drops: [
+      { itemId: "essence_tenebres", chance: 0.35 },
+      { itemId: "potion_m",         chance: 0.20 },
+      { itemId: "eclat_vitalite",   chance: 0.10 }
+    ]
+  },
+  {
+    id:       "golem_runique_primordial",
+    name:     "Golem de Rune Primordiale",
+    icon:     "🗿",
+    category: "être magique",
+    desc:     "Un bloc de basalte gravé de signes plus anciens que les runes se dresse en grondant — un gardien que les Fondateurs ont trouvé là, pas fabriqué.",
+    lore:     "Avant que Rowena ne codifie la moindre rune, quelque chose gravait déjà la pierre de l'Avant-Monde. Le Golem de Rune Primordiale est l'un de ces gardiens sans maître : il ne défend aucun trésor, seulement le sommeil de ce qui repose plus bas. Ses coups ébranlent les Ruines ; sa garde de basalte encaisse la foudre sans broncher.",
+    habitat:  "Les seuils gravés des galeries scellées, immobile jusqu'à ce qu'on approche.",
+    anecdote: "Les glyphes qui le couvrent ressemblent à des runes — mais aucun runologue vivant ne sait les lire, et ceux qui ont essayé n'en parlent plus.",
+    danger:   9,
+    minFloor: 14, maxFloor: null, weight: 4,
+    hp: 122, atk: 20, def: 16, mag: 8, agi: 4, lck: 4,
+    scale: 0.30,
+    abilities: [
+      { name: "Poing de Basalte",  icon: "💫", desc: "Un coup si lourd qu'il étourdit", effect: "status", statusId: "stun", power: 0, chance: 0.24, turns: 1 },
+      { name: "Glyphe d'Usure",    icon: "🔻", desc: "Une rune qui érode la défense",   effect: "weaken", power: 6, chance: 0.30 }
+    ],
+    ai: "cautious",
+    resist: ["physique", "foudre"],
+    weak:   ["glace"],
+    xp: 118, gold: { min: 55, max: 85 },
+    drops: [
+      { itemId: "page_grimoire",     chance: 0.35 },
+      { itemId: "essence_tenebres",  chance: 0.30 },
+      { itemId: "eclat_vitalite",    chance: 0.12 }
+    ]
+  },
+  {
+    id:       "suture_du_reel",
+    name:     "Suture du Réel",
+    icon:     "🌀",
+    category: "être magique",
+    desc:     "L'air se déchire sans bruit : une couture de lumière noire flotte là où le réel a cédé, et elle vous a remarqués.",
+    lore:     "Chaque tour de la Boucle arrache au réel une « couture » — un bout de mémoire et de futur avorté. La plupart dérivent, inertes. Certaines, trop près du Sceau, s'éveillent et cherchent à se recoudre à même le vivant. Défaire une Suture, c'est refuser d'en devenir le fil.",
+    habitat:  "Les fractures d'espace des étages profonds, là où la spirale mord le plus fort.",
+    anecdote: "Les Porteurs d'Éclats disent qu'une Suture « regarde » — non pas avec des yeux, mais comme un ourlet cherche l'aiguille.",
+    danger:   9,
+    minFloor: 15, maxFloor: null, weight: 4,
+    hp: 84, atk: 10, def: 6, mag: 23, agi: 12, lck: 8,
+    scale: 0.30,
+    abilities: [
+      { name: "Déchirure",       icon: "🌑", desc: "Une entaille dans le réel qui saigne de la magie brute", effect: "damage", power: 15, chance: 0.55 },
+      { name: "Défil du Réel",   icon: "✂️", desc: "Elle défait un renfort comme on découd un ourlet",       effect: "dispel", power: 0,  chance: 0.30 },
+      { name: "Vertige de Faille",icon: "😱", desc: "L'abîme entrevu glace l'esprit",                         effect: "status", statusId: "fear", power: 0, chance: 0.22, turns: 2 }
+    ],
+    ai: "random",
+    resist: ["ténèbres", "lumière"],
+    weak:   ["physique"],
+    xp: 120, gold: { min: 50, max: 80 },
+    drops: [
+      { itemId: "page_grimoire",     chance: 0.40 },
+      { itemId: "essence_tenebres",  chance: 0.30 },
+      { itemId: "potion_l",          chance: 0.12 }
+    ]
+  },
+  {
+    id:       "souffle_du_dormeur",
+    name:     "Souffle du Dormeur",
+    icon:     "🌫️",
+    category: "fantôme",
+    desc:     "Le chant runique se tait. À sa place, une brume tiède et lente vous enveloppe — l'expiration de quelque chose d'immense qui dort.",
+    lore:     "On n'affronte pas le Dormeur des Fondations : on croise seulement son souffle. Chaque expiration de la présence endormie condense la magie brute en une brume qui cherche à respirer à votre place. La chasser ne la tue pas — rien ne meurt de ce qui n'a jamais tout à fait vécu — mais elle vous laisse remonter d'un pas.",
+    habitat:  "Le seuil de l'Avant-Monde, là où le battement remplace le silence.",
+    anecdote: "Ceux qui l'ont respirée trop longtemps décrivent le même rêve : une pierre qui bat, et l'envie terrible de s'y coucher.",
+    danger:   10,
+    minFloor: 16, maxFloor: null, weight: 3,
+    hp: 104, atk: 12, def: 8, mag: 25, agi: 9, lck: 7,
+    scale: 0.32,
+    abilities: [
+      { name: "Aspiration Lente", icon: "🩸", desc: "La brume respire votre vie et s'en nourrit", effect: "drain",  power: 16, chance: 0.45 },
+      { name: "Vertige du Fond",  icon: "😱", desc: "Le rêve du Dormeur appelle vers le bas",      effect: "status", statusId: "fear", power: 0, chance: 0.28, turns: 2 },
+      { name: "Exhalaison Brute", icon: "🌑", desc: "Un souffle de magie sans forme ni nom",       effect: "damage", power: 17, chance: 0.40 }
+    ],
+    ai: "cautious",
+    resist: ["ténèbres"],
+    weak:   ["lumière"],
+    xp: 134, gold: { min: 55, max: 90 },
+    drops: [
+      { itemId: "essence_tenebres",  chance: 0.45 },
+      { itemId: "page_grimoire",     chance: 0.35 },
+      { itemId: "larme_phenix_mineure", chance: 0.10 }
+    ]
+  },
+
+  // ════════════════════════════════════════════
   // BOUCLE — Gardiens des Chambres des Fondateurs (ét. 17+)
   // Phase 3, Lot 1 (données). Un gardien epic par Fondateur/Maison, thématisé
   // par élément. Apparaissent en Boucle (minFloor 17 → post-victoire). Le
