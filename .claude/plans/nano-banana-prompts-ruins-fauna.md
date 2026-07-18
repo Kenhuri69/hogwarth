@@ -151,6 +151,22 @@ no text, no watermark, no signature, no border frame, no ground line
 > Si le fond n'est pas transparent (damier aplati Gemini/Nano Banana) →
 > `process_monster_png.py` (rembg) détoure au dépôt.
 
+## ✅ LIVRÉ (2026-07-16) — 5 sprites déposés & câblés
+
+Les 5 PNG ont été générés (images fournies par l'utilisateur) puis détourés et
+déposés dans `img/monsters/`, `imgSrc` câblé dans `monsters-high.js`.
+
+- **Détourage** : rembg/birefnet **indisponible** (téléchargement du modèle
+  bloqué 403 par le proxy) → détourage **par saturation** (le fond, damier
+  peint « aplati » ou gris uni, est du gris pur neutre R=G=B ; les sujets sont
+  colorés). Script ad-hoc `scratchpad/key_grey.py` : masque bg = `sat ≤ tol &
+  lum ∈ [bande]`, sans logique de composant (préserve brume/lueurs/faille) ;
+  translucides sans rebouchage de trous. Résultats 512² RGBA 177-221 KB.
+- **Qualité** : golem & antécesseur excellents ; larve/souffle/suture très
+  bons (résidus de damier ténus dans les lueurs translucides, négligeables à
+  80 px). `scenarioMonsterImages` : 83 monstres imgSrc, tous chargent 512²+alpha.
+- Cache : `monsters-high.js` v5→6, `CACHE_VERSION` v260→261.
+
 ## Checklist post-génération (par créature)
 1. Générer, vérifier cadrage/marge/silhouette lisible à 80×80.
 2. `process_monster_png.py --id <id>` (détourage + 512² + specs IMG_STYLE).
