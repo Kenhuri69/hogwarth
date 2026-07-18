@@ -104,6 +104,7 @@ function _serializeState() {
     ngPlusLevel,
     ngPlusTitle,
     accumulatedEclats,
+    eclatsSpent,
     eclatMilestones: Array.from(eclatMilestones),
     // Escape Game via pièges (escape-game-traps.md, Lot 1) — Poches du Sceau.
     // Un save pris DANS une poche reprend correctement : l'état live (dungeon
@@ -439,6 +440,9 @@ function _applyState(gs) {
   // Boucle Ténébreuse — Porteur d'Éclats : saves antérieures au flag → 0.
   if (typeof accumulatedEclats !== 'undefined') {
     accumulatedEclats = (typeof gs.accumulatedEclats === 'number') ? gs.accumulatedEclats : 0;
+  }
+  if (typeof eclatsSpent !== 'undefined') {
+    eclatsSpent = (typeof gs.eclatsSpent === 'number') ? gs.eclatsSpent : 0;   // A4 — saves antérieures → 0
   }
   // Paliers d'Éclats célébrés (héritage P0) : saves antérieures → vide.
   if (typeof eclatMilestones !== 'undefined') {

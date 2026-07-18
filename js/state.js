@@ -884,6 +884,11 @@ let ngPlusTitle = '';
 // Le niveau de Boucle `loopNumber` (dungeon-scaling.js) reste DÉRIVÉ de
 // floorReached — non persisté. Sérialisé via _serializeState / _applyState.
 let accumulatedEclats = 0;
+// Éclats consacrés au Sceau ce run (A4) — compteur SÉPARÉ : `accumulatedEclats`
+// n'est JAMAIS décrémenté (préserve les seuils Briser-le-Cycle / Codex). Le
+// disponible = accumulatedEclats − eclatsSpent. La consécration (Gardien de la
+// Boucle) transfère le disponible vers le profil persistant (cosmétique).
+let eclatsSpent = 0;
 
 // ── Escape Game via pièges — Poches du Sceau (escape-game-traps.md, Lot 1) ──
 // Étage caché temporaire déclenché par un piège (étages 11+, Boucle Ténébreuse).

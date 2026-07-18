@@ -16,7 +16,7 @@
 //     individuel suffit pour eux.
 // =======================================================================
 
-const CACHE_VERSION = 'hogwarth-v262';
+const CACHE_VERSION = 'hogwarth-v263';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Précache minimal (~1 Mo) : shell HTML/CSS/JS + premier visuel.
@@ -57,7 +57,7 @@ const PRECACHE_URLS = [
   './js/monsters-high.js?v=6',
   './js/npcs.js?v=43',
   './js/npcs-a.js?v=7',
-  './js/npcs-b.js?v=5',
+  './js/npcs-b.js?v=6',
   './js/npcs-helpers.js?v=4',
   './js/riddles.js?v=3',
   './js/codex.js?v=21',
@@ -72,7 +72,7 @@ const PRECACHE_URLS = [
   './js/floor-events.js?v=2',
   './js/room-flavor.js?v=1',
   './js/item-icons.js?v=51',
-  './js/state.js?v=48',
+  './js/state.js?v=49',
   './js/hero-barks.js?v=14',
   './js/ui.js?v=26',
   './js/modal-a11y.js?v=2',
@@ -110,21 +110,21 @@ const PRECACHE_URLS = [
   './js/quests-templates.js?v=26',
   './js/quests.js?v=25',
   './js/quests-riddles.js?v=3',
-  './js/npc-dialog.js?v=24',
+  './js/npc-dialog.js?v=25',
   './js/karaoke.js?v=1',
   './js/intro.js?v=4',
   './js/shop.js?v=20',
   './js/save-slots.js?v=4',
-  './js/save.js?v=52',
+  './js/save.js?v=53',
   './js/save-visit-snapshot.js?v=2',
-  './js/profile.js?v=5',
+  './js/profile.js?v=6',
   './js/save-ui.js?v=9',
   './js/ironman.js?v=5',
   './js/hall-of-fame.js?v=5',
   './js/multiplayer.js?v=9',
   './js/multiplayer-social.js?v=1',
   './js/multiplayer-visits.js?v=1',
-  './js/main.js?v=37',
+  './js/main.js?v=38',
   './js/endgame.js?v=10',
   './js/break-cycle.js?v=4',
   './js/forge.js?v=8',

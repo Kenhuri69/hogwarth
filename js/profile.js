@@ -34,9 +34,21 @@ function _profileEmpty() {
     // Livre de Maîtrise a été lu. PUREMENT cosmétique : le buff (+12 %) reste
     // `elementalMastery`, within-run — cette liste n'est JAMAIS lue par un
     // calcul de gameplay (garde-fou cardinal ci-dessus).
-    masteredElements: []
+    masteredElements: [],
+    // Éclats consacrés au Sceau (A4) — total CROSS-RUN d'Éclats offerts au
+    // Gardien de la Boucle. Donne un débouché durable au compteur d'Éclats
+    // (within-run) sans toucher `accumulatedEclats` (qui gâte les seuils
+    // Briser-le-Cycle / Codex). PUREMENT cosmétique : ne débloque que des titres.
+    eclatsConsecrated: 0
   };
 }
+
+// Paliers cosmétiques de consécration (A4) — Éclats offerts cumulés → titre.
+const ECLATS_CONSECRATION_TITLES = [
+  { at: 200, title: 'Pilier du Sceau' },
+  { at: 60,  title: 'Porteur Consacré' },
+  { at: 15,  title: 'Offrant du Sceau' },
+];
 
 function _profileRead() {
   try {
@@ -59,6 +71,8 @@ function _profileRead() {
     base.masteredElements = Array.isArray(obj.masteredElements)
       ? PROFILE_MASTERY_ELEMENTS.filter(e => obj.masteredElements.includes(e))
       : [];
+    base.eclatsConsecrated = (typeof obj.eclatsConsecrated === 'number' && obj.eclatsConsecrated >= 0)
+      ? Math.floor(obj.eclatsConsecrated) : 0;
     return base;
   } catch (e) {
     return _profileEmpty();
@@ -93,6 +107,10 @@ function computeProfileTitles(profile) {
   }
   // Escape Game (Lot 3) — héritage d'une mort en Poche du Sceau (Ironman).
   if ((profile.sealedDeaths | 0) >= 1) titles.push('Scellé dans la Boucle');
+  // Consécration d'Éclats (A4) — un seul titre : le palier le plus haut atteint.
+  const cons = profile.eclatsConsecrated | 0;
+  const consTitle = ECLATS_CONSECRATION_TITLES.find(t => cons >= t.at);
+  if (consTitle) titles.push(consTitle.title);
   return titles;
 }
 
@@ -141,6 +159,20 @@ function recordSealedDeathToProfile() {
   p.sealedDeaths = (p.sealedDeaths | 0) + 1;
   p.titles = computeProfileTitles(p);
   return _profileWrite(p);
+}
+
+// Consécration d'Éclats au Sceau (A4) — ajoute `n` Éclats offerts au total
+// CROSS-RUN et rafraîchit les titres. Retourne le nouveau total (ou l'actuel
+// si `n` invalide). PUREMENT cosmétique — aucun gate de gameplay ne le lit.
+function recordConsecratedEclats(n) {
+  const add = (typeof n === 'number' && n > 0) ? Math.floor(n) : 0;
+  const p = _profileRead();
+  if (add > 0) {
+    p.eclatsConsecrated = (p.eclatsConsecrated | 0) + add;
+    p.titles = computeProfileTitles(p);
+    _profileWrite(p);
+  }
+  return p.eclatsConsecrated | 0;
 }
 
 // PUR & testable (units.js) — union d'un élément dans la collection, en

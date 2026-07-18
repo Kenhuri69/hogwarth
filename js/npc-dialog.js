@@ -700,6 +700,29 @@ function triggerNpcSpecialAction(npcId) {
     }
     return;
   }
+  // consecrate_eclats (A4) : le Gardien de la Boucle reçoit les Éclats NEUFS
+  // (disponible = accumulatedEclats − eclatsSpent) et les grave au profil
+  // persistant (titres cosmétiques). `accumulatedEclats` n'est JAMAIS réduit →
+  // les seuils Briser-le-Cycle / Codex restent intacts. Répétable.
+  if (action.type === 'consecrate_eclats') {
+    const acc   = (typeof accumulatedEclats === 'number') ? accumulatedEclats : 0;
+    const spent = (typeof eclatsSpent === 'number') ? eclatsSpent : 0;
+    const avail = Math.max(0, acc - spent);
+    if (avail <= 0) {
+      if (typeof addMsg === 'function') addMsg("Tu n'as aucun Éclat neuf à consacrer. Descends plus loin, puis reviens.", 'info');
+      return;
+    }
+    if (typeof eclatsSpent !== 'undefined') eclatsSpent = acc;   // tout le disponible est consacré
+    let total = avail;
+    if (typeof recordConsecratedEclats === 'function') total = recordConsecratedEclats(avail);
+    if (typeof addMsg === 'function') {
+      addMsg(`🔹 Tu consacres ${avail} Éclat${avail > 1 ? 's' : ''} au Sceau. Le Gardien s'incline : « ${total} en tout, gravés dans la trame. Ils t'y survivront. »`, 'good');
+    }
+    if (typeof AudioSystem !== 'undefined' && AudioSystem.playLevelUp) AudioSystem.playLevelUp();
+    if (typeof updateUI === 'function') updateUI();
+    safeCall('autoSave', 'consecrate-eclats');
+    return;
+  }
   // open_brewing : ouvre la modale de concoction. Répétable (pas de garde
   // _isSpecialActionSpent). Le gating réel passe par la quête de
   // déverrouillage (_isBrewingUnlocked).
