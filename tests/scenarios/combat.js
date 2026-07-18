@@ -62,6 +62,31 @@ async function scenarioStatusEffects() {
   assert(t3.statusCount === 0,  'statut non retiré après expiration');
   assert(!t3.pillExists,        'pilule reste affichée après expiration');
 
+  // T3bis (B3) : riders offensifs distincts des DoT (cible ennemie).
+  const tb3 = await page.evaluate(() => {
+    const e = enemyGroup[0];
+    // 🩸 bleed sur ennemi : escalade +BLEED_RAMP/tour (6 → 8 → 10)
+    e.currentHp = 500; e.resist = []; e.weak = []; e.statusEffects = [];
+    applyStatus(e, 'bleed', 6, 5);
+    const h0 = e.currentHp; tickStatuses(e, true); const d1 = h0 - e.currentHp;
+    const h1 = e.currentHp; tickStatuses(e, true); const d2 = h1 - e.currentHp;
+    const h2 = e.currentHp; tickStatuses(e, true); const d3 = h2 - e.currentHp;
+    // 🔥 burn ignore la résistance ; ☠️ poison résisté est atténué (contraste)
+    e.currentHp = 500; e.statusEffects = []; e.resist = ['burn'];
+    applyStatus(e, 'burn', 10, 3);
+    const hb = e.currentHp; tickStatuses(e, true); const dBurn = hb - e.currentHp;
+    e.currentHp = 500; e.statusEffects = []; e.resist = ['poison'];
+    applyStatus(e, 'poison', 10, 3);
+    const hp = e.currentHp; tickStatuses(e, true); const dPoison = hp - e.currentHp;
+    e.statusEffects = []; e.resist = [];
+    return { d1, d2, d3, dBurn, dPoison };
+  });
+  console.log('  T3bis B3 :', tb3);
+  assert(tb3.d1 === 6 && tb3.d2 === 8 && tb3.d3 === 10,
+    `bleed doit escalader 6/8/10 sur ennemi, obtenu ${tb3.d1}/${tb3.d2}/${tb3.d3}`);
+  assert(tb3.dBurn === 10, `burn doit ignorer la résistance (10 plein), obtenu ${tb3.dBurn}`);
+  assert(tb3.dPoison < 10, `poison résisté doit être atténué, obtenu ${tb3.dPoison}`);
+
   // T4 : endBattle nettoie tout
   const t4 = await page.evaluate(() => {
     applyStatus(enemyGroup[0], 'poison', 3, 5);
