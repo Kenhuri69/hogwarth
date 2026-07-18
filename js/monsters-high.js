@@ -1186,6 +1186,7 @@ MONSTERS.push(
     id:       "larve_fondations",
     name:     "Larve des Fondations",
     icon:     "🐛",
+    imgSrc:   "img/monsters/larve_fondations.png",
     category: "créature",
     desc:     "La pierre se soulève et se fend : une masse pâle et aveugle s'extrait des fondations, plus vieille que toute racine.",
     lore:     "Née avant la lumière, la Larve des Fondations creuse la roche de l'Avant-Monde depuis un âge sans nom. Elle n'a pas d'yeux — elle n'en a jamais eu besoin, là où rien n'a jamais brillé. Sa mâchoire dissout la pierre et l'acier avec la même lenteur patiente.",
@@ -1213,6 +1214,7 @@ MONSTERS.push(
     id:       "golem_runique_primordial",
     name:     "Golem de Rune Primordiale",
     icon:     "🗿",
+    imgSrc:   "img/monsters/golem_runique_primordial.png",
     category: "être magique",
     desc:     "Un bloc de basalte gravé de signes plus anciens que les runes se dresse en grondant — un gardien que les Fondateurs ont trouvé là, pas fabriqué.",
     lore:     "Avant que Rowena ne codifie la moindre rune, quelque chose gravait déjà la pierre de l'Avant-Monde. Le Golem de Rune Primordiale est l'un de ces gardiens sans maître : il ne défend aucun trésor, seulement le sommeil de ce qui repose plus bas. Ses coups ébranlent les Ruines ; sa garde de basalte encaisse la foudre sans broncher.",
@@ -1240,6 +1242,7 @@ MONSTERS.push(
     id:       "suture_du_reel",
     name:     "Suture du Réel",
     icon:     "🌀",
+    imgSrc:   "img/monsters/suture_du_reel.png",
     category: "être magique",
     desc:     "L'air se déchire sans bruit : une couture de lumière noire flotte là où le réel a cédé, et elle vous a remarqués.",
     lore:     "Chaque tour de la Boucle arrache au réel une « couture » — un bout de mémoire et de futur avorté. La plupart dérivent, inertes. Certaines, trop près du Sceau, s'éveillent et cherchent à se recoudre à même le vivant. Défaire une Suture, c'est refuser d'en devenir le fil.",
@@ -1268,6 +1271,7 @@ MONSTERS.push(
     id:       "souffle_du_dormeur",
     name:     "Souffle du Dormeur",
     icon:     "🌫️",
+    imgSrc:   "img/monsters/souffle_du_dormeur.png",
     category: "fantôme",
     desc:     "Le chant runique se tait. À sa place, une brume tiède et lente vous enveloppe — l'expiration de quelque chose d'immense qui dort.",
     lore:     "On n'affronte pas le Dormeur des Fondations : on croise seulement son souffle. Chaque expiration de la présence endormie condense la magie brute en une brume qui cherche à respirer à votre place. La chasser ne la tue pas — rien ne meurt de ce qui n'a jamais tout à fait vécu — mais elle vous laisse remonter d'un pas.",
@@ -1290,6 +1294,50 @@ MONSTERS.push(
       { itemId: "essence_tenebres",  chance: 0.45 },
       { itemId: "page_grimoire",     chance: 0.35 },
       { itemId: "larme_phenix_mineure", chance: 0.10 }
+    ]
+  },
+
+  // ── Boss natif des Ruines (Avant-Monde) — A2 (revue 2026-07) ───────
+  // « L'Antécesseur » : entité d'avant l'écriture que les Fondateurs durent
+  // lier EN PREMIER pour bâtir le Sceau. Distinct du Dormeur (jamais affronté)
+  // et des Gardiens des Chambres (17+). Caster-hybride qui « défait » le réel
+  // (cohérent avec suture_du_reel). Boss weight-1 du pool, comme basilic/magyar
+  // (spawn naturel rare, pas de placement dur). atk<1,5×mag → pas de Broyer.
+  // Cf. .claude/plans/endgame-fresh-A2-ruins-miniboss.md
+  {
+    id:       "antecesseur",
+    epic:     true,
+    name:     "L'Antécesseur",
+    icon:     "👁️",
+    imgSrc:   "img/monsters/antecesseur.png",
+    category: "être magique",
+    desc:     "La pierre oublie sa forme. Là où le regard glisse, une silhouette se compose de ce qui manque — quelque chose qui existait avant qu'on sût le nommer vous fait face.",
+    lore:     "Avant l'écriture, donc avant les runes, donc avant les Fondateurs, il y avait déjà l'Antécesseur. Les Quatre ne l'ont pas vaincu : ils l'ont lié en premier, comme on pose la première pierre d'un mur, pour pouvoir sceller le reste par-dessus. La fracture de la Clé de Voûte l'a laissé remonter à mi-chemin du réveil — assez pour défaire ce que le monde a appris depuis, un fil à la fois.",
+    habitat:  "Le seuil le plus ancien des Ruines, là où les glyphes eux-mêmes s'effacent.",
+    anecdote: "Rowena aurait écrit une seule ligne à son sujet, puis l'aurait brûlée : « Ce qui précède le mot ne se laisse pas écrire — il se contente de nous précéder. »",
+    danger:   11,
+    minFloor: 15, maxFloor: null, weight: 1,
+    hp: 178, atk: 22, def: 15, mag: 22, agi: 9, lck: 8,
+    scale: 0.36,
+    abilities: [
+      { name: "Verbe d'Avant l'Écriture", icon: "🌑", desc: "Un mot antérieur au langage, qui blesse le sens même", effect: "damage", power: 20, chance: 0.55 },
+      { name: "Défaire",                   icon: "✂️", desc: "Il découd un renfort comme on efface une ligne",       effect: "dispel", power: 0,  chance: 0.35 },
+      { name: "Regard du Vide",            icon: "😱", desc: "Voir ce qui précède le monde glace l'esprit",          effect: "status", statusId: "fear", power: 0, chance: 0.25, turns: 2 },
+      { name: "Résorption",                icon: "💜", desc: "Il réabsorbe un pan de réel et s'en recompose",         effect: "heal",   power: 26, chance: 0.20 }
+    ],
+    ai: "cautious",
+    phases: [
+      { atPct: 0.5,  atkMult: 1.20, msg: "L'Antécesseur se souvient d'un âge sans loi — ses coups cessent d'obéir aux vôtres." },
+      { atPct: 0.25, atkMult: 1.20, msg: "Le seuil vacille : ce qui précède le monde refuse de retourner dormir." }
+    ],
+    resist: ["ténèbres", "physique"],
+    weak:   ["lumière"],
+    xp: 300, gold: { min: 150, max: 240 },
+    drops: [
+      { itemId: "essence_tenebres",      chance: 0.80 },
+      { itemId: "page_grimoire",         chance: 0.55 },
+      { itemId: "eclat_vitalite",        chance: 0.22 },
+      { itemId: "larme_phenix_mineure",  chance: 0.15 }
     ]
   },
 
