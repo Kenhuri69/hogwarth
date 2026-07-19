@@ -34,6 +34,11 @@ function mitigatedDamage(rawAtk, def) {
 // (turns = nombre de tours sautés) est décrémentée par consumeStun() au
 // point de saut, jamais par tickStatuses (sinon l'expiry l'annulerait
 // avant qu'il ne serve).
+// Riders distincts des 4 DoT (Thème B / B3, phase 1) — différencient burn et
+// bleed sans toucher la baseline des autres. Contenus dans le bloc de tick de
+// tickStatuses (aucun autre site combat). Poison (anti-heal) & gel (contrôle) =
+// phase 2. Cf. .claude/plans/dot-differentiation-B3.md
+const BLEED_RAMP = 2;   // 🩸 Saignement : +2 dégâts par tour écoulé (escalade)
 const STATUS_DEFS = {
   burn:   { icon: '🔥',   label: 'Brûlure',           color: '#e85a2c' },
   poison: { icon: '☠️',   label: 'Empoisonné',        color: '#7ab836' },
@@ -326,7 +331,19 @@ function tickStatuses(target, isEnemy) {
     // Statuts DoT : burn / poison / bleed / gel → dégâts par tour
     if (s.id === 'burn' || s.id === 'poison' || s.id === 'bleed' || s.id === 'gel') {
       let dmg = s.power;
-      if (isEnemy && target.resist?.includes(s.id)) dmg = Math.floor(dmg * RESIST_MULTIPLIER);
+      // 🩸 Bleed (B3) — rider « hémorragie » OFFENSIF (cible ennemie seulement) :
+      // le tick croît de BLEED_RAMP par tour écoulé → récompense la pression
+      // soutenue du joueur. Le bleed subi par un héros reste plat (baseline
+      // inchangée → aucun impact difficulté/sim). `_ticks` combat-scopé.
+      if (s.id === 'bleed' && isEnemy) {
+        s._ticks = (s._ticks || 0) + 1;
+        dmg += (s._ticks - 1) * BLEED_RAMP;
+      }
+      // 🔥 Burn (B3) — rider « feu inévitable » OFFENSIF : sur un ennemi, la
+      // brûlure ignore sa résistance élémentaire (mais pas sa faiblesse). Les
+      // autres DoT restent atténués par resist. Purement offensif → baseline
+      // du DoT subi par le joueur inchangée.
+      if (isEnemy && target.resist?.includes(s.id) && s.id !== 'burn') dmg = Math.floor(dmg * RESIST_MULTIPLIER);
       if (isEnemy && target.weak?.includes(s.id))   dmg = Math.floor(dmg * WEAK_MULTIPLIER);
       // Rework D3 — résistance aux DoT : l'END du joueur atténue chaque tick
       // de floor(END/12). N'affecte que les héros (DoT subi), pas les ennemis.
