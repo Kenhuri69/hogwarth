@@ -26,11 +26,16 @@ valide sans retouche.
   resist vs poison atténué). Full smoke + units.
 - Cache : `battle.js` ?v + `CACHE_VERSION`.
 
-## Phase 2 (follow-up)
-- ☠️ **poison** : −50 % aux soins de la cible (anti-heal) — touche les sites de
-  soin (battle-spells heal/drain, phase heal, regen tick).
-- ❄️ **gel** : −20 % ATK du combattant gelé (contrôle) — touche executeAttack +
-  attaques ennemies. Ces deux-là ont une surface plus large → lot séparé.
+## Phase 2 — LIVRÉ ✅ (2026-07-16)
+Mêmes principes offensifs/player-favorable (l'ennemi affligé est affaibli →
+zéro durcissement, zéro edit sim). Helpers PURS `_enemyHealMult`/`_enemyEffAtk`
+(battle.js) :
+- ☠️ **poison** : soins de l'ennemi empoisonné × `POISON_HEAL_MULT=0.5` —
+  appliqué aux 4 sites de soin ennemi (heal, drain auto-soin, potion,
+  soin de phase). La ponction de PV du drain reste pleine ; seul l'auto-soin baisse.
+- ❄️ **gel** : ATK de l'ennemi gelé × `GEL_ATK_MULT=0.8` — appliqué aux
+  attaques ennemies (`_enemyEffAtk`, 4 sites `mitigatedDamage`).
+- Smoke : T3ter (gel 20→16, poison soin ×0,5). Cache : battle + battle-spells + CACHE_VERSION.
 
 ## Journal
 - **2026-07-16** — B3 phase 1 livrée (bleed escalade + burn inévitable,
