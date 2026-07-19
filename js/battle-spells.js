@@ -158,7 +158,9 @@ function tryEnemyAbility(enemy, target, charIdx, appendLog) {
       break;
     }
     case 'heal': {
-      const restored = Math.min(enemy.hp, enemy.currentHp + ability.power) - enemy.currentHp;
+      // B3 — poison réduit le soin de l'ennemi (anti-heal).
+      const healPow = Math.round(ability.power * (typeof _enemyHealMult === 'function' ? _enemyHealMult(enemy) : 1));
+      const restored = Math.min(enemy.hp, enemy.currentHp + healPow) - enemy.currentHp;
       enemy.currentHp += restored;
       appendLog(`${ability.icon} ${enemy.name} — ${ability.name} : +${restored} PV ! `);
       const healIdx = enemyGroup.indexOf(enemy);
@@ -171,7 +173,9 @@ function tryEnemyAbility(enemy, target, charIdx, appendLog) {
       // Potion bue par l'ennemi : soin (ou buff) à charges limitées par
       // instance. `power` = PV rendus ; `buffAtk` (optionnel) = ATK gagnée.
       _enemyPotionConsume(enemy, ability);
-      const restored = Math.min(enemy.hp, enemy.currentHp + (ability.power || 0)) - enemy.currentHp;
+      // B3 — poison réduit aussi le soin bu en potion (anti-heal).
+      const potHeal  = Math.round((ability.power || 0) * (typeof _enemyHealMult === 'function' ? _enemyHealMult(enemy) : 1));
+      const restored = Math.min(enemy.hp, enemy.currentHp + potHeal) - enemy.currentHp;
       enemy.currentHp += restored;
       if (ability.buffAtk) enemy.atk = (enemy.atk || 0) + ability.buffAtk;
       const left = _enemyPotionLeft(enemy, ability);
@@ -220,7 +224,10 @@ function tryEnemyAbility(enemy, target, charIdx, appendLog) {
     case 'drain': {
       const drained = Math.min(target.hp, Math.max(1, Math.floor(ability.power * _resistMult(target))));
       target.hp       = Math.max(0, target.hp - drained);
-      enemy.currentHp = Math.min(enemy.hp, enemy.currentHp + Math.floor(drained / 2));
+      // B3 — poison réduit l'auto-soin par drain (anti-heal). La ponction de PV
+      // sur la cible reste pleine ; seule la part récupérée par l'ennemi baisse.
+      const selfHeal  = Math.floor(drained / 2 * (typeof _enemyHealMult === 'function' ? _enemyHealMult(enemy) : 1));
+      enemy.currentHp = Math.min(enemy.hp, enemy.currentHp + selfHeal);
       appendLog(`${ability.icon} ${enemy.name} — ${ability.name} → draine ${drained} PV de ${target.name} ! `);
       const drainIdx = enemyGroup.indexOf(enemy);
       UX_safe.floatDmg('ally', drained, 'dmg');

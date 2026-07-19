@@ -87,6 +87,20 @@ async function scenarioStatusEffects() {
   assert(tb3.dBurn === 10, `burn doit ignorer la résistance (10 plein), obtenu ${tb3.dBurn}`);
   assert(tb3.dPoison < 10, `poison résisté doit être atténué, obtenu ${tb3.dPoison}`);
 
+  // T3ter (B3 phase 2) : gel −ATK ennemi + poison anti-heal (helpers purs).
+  const tb3b = await page.evaluate(() => {
+    const e = { atk: 20, statusEffects: [] };
+    const r = { atkClean: _enemyEffAtk(e), healClean: _enemyHealMult(e) };
+    e.statusEffects = [{ id: 'gel', turns: 2 }];
+    r.atkGel = _enemyEffAtk(e);
+    e.statusEffects = [{ id: 'poison', turns: 2 }];
+    r.healPoison = _enemyHealMult(e);
+    return r;
+  });
+  console.log('  T3ter B3ph2 :', tb3b);
+  assert(tb3b.atkClean === 20 && tb3b.atkGel === 16, `gel doit réduire ATK 20→16, obtenu ${tb3b.atkGel}`);
+  assert(tb3b.healClean === 1 && tb3b.healPoison === 0.5, `poison doit réduire le soin ×0,5, obtenu ${tb3b.healPoison}`);
+
   // T4 : endBattle nettoie tout
   const t4 = await page.evaluate(() => {
     applyStatus(enemyGroup[0], 'poison', 3, 5);

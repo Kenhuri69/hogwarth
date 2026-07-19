@@ -39,6 +39,19 @@ function mitigatedDamage(rawAtk, def) {
 // tickStatuses (aucun autre site combat). Poison (anti-heal) & gel (contrôle) =
 // phase 2. Cf. .claude/plans/dot-differentiation-B3.md
 const BLEED_RAMP = 2;   // 🩸 Saignement : +2 dégâts par tour écoulé (escalade)
+// B3 phase 2 — riders offensifs (l'ennemi affligé est affaibli ; player-favorable) :
+const POISON_HEAL_MULT = 0.5;  // ☠️ soins de la cible empoisonnée × 0,5 (anti-heal)
+const GEL_ATK_MULT     = 0.8;  // ❄️ ATK du combattant gelé × 0,8 (contrôle)
+function _hasStatus(t, id) {
+  return !!(t && Array.isArray(t.statusEffects) && t.statusEffects.some(s => s.id === id));
+}
+// Soin effectif d'un ennemi (réduit s'il est empoisonné). PUR/défensif.
+function _enemyHealMult(enemy) { return _hasStatus(enemy, 'poison') ? POISON_HEAL_MULT : 1; }
+// ATK effective d'un ennemi (réduite s'il est gelé). PUR/défensif.
+function _enemyEffAtk(enemy) {
+  const a = (enemy && typeof enemy.atk === 'number') ? enemy.atk : 0;
+  return _hasStatus(enemy, 'gel') ? Math.round(a * GEL_ATK_MULT) : a;
+}
 const STATUS_DEFS = {
   burn:   { icon: '🔥',   label: 'Brûlure',           color: '#e85a2c' },
   poison: { icon: '☠️',   label: 'Empoisonné',        color: '#7ab836' },
@@ -567,7 +580,7 @@ function _enemyPhysicalHit(enemy, target, charIdx) {
     // bloque ET renvoie une fraction du coup à l'assaillant. Défensif.
     let reflectMsg = '';
     if (typeof _shieldReflect !== 'undefined' && _shieldReflect[charIdx] > 0) {
-      const raw = mitigatedDamage(enemy.atk + Math.floor(Math.random() * 3), target.def);
+      const raw = mitigatedDamage(_enemyEffAtk(enemy) + Math.floor(Math.random() * 3), target.def);
       const back = Math.max(1, Math.floor(raw * _shieldReflect[charIdx]));
       enemy.currentHp = Math.max(0, enemy.currentHp - back);
       _shieldReflect[charIdx] = (shieldTurns[charIdx] > 0) ? _shieldReflect[charIdx] : 0;
@@ -584,7 +597,7 @@ function _enemyPhysicalHit(enemy, target, charIdx) {
     return `💨 ${target.name} esquive l'attaque de ${enemy.name} ! `;
   }
   if (guardTurns[charIdx] > 0) {
-    const dmg = mitigatedDamage(enemy.atk + Math.floor(Math.random() * 3), target.def);
+    const dmg = mitigatedDamage(_enemyEffAtk(enemy) + Math.floor(Math.random() * 3), target.def);
     const mitigated = Math.max(0, Math.floor(dmg / 2 * _resistMult(target)));
     target.hp = Math.max(0, target.hp - mitigated);
     UX_safe.floatDmg('ally', mitigated, 'dmg');
@@ -595,7 +608,7 @@ function _enemyPhysicalHit(enemy, target, charIdx) {
     guardTurns[charIdx] = Math.max(0, guardTurns[charIdx] - 1);
     return `🛡️ ${target.name} mitige : -${mitigated} (au lieu de -${dmg}). ` + _tryGuardCounter(target, enemy);
   }
-  const raw = mitigatedDamage(enemy.atk + Math.floor(Math.random() * 3), target.def);
+  const raw = mitigatedDamage(_enemyEffAtk(enemy) + Math.floor(Math.random() * 3), target.def);
   const dmg = Math.max(0, Math.floor(raw * _resistMult(target)));
   target.hp = Math.max(0, target.hp - dmg);
   UX_safe.floatDmg('ally', dmg === 0 ? 0 : dmg, dmg === 0 ? 'miss' : 'dmg');
@@ -1444,7 +1457,7 @@ function _checkBossPhases(enemy) {
     enemy._phaseIdx = i + 1;
     if (ph.atkMult) enemy.atk = Math.round((enemy.atk || 0) * ph.atkMult);
     if (ph.magMult && enemy.mag) enemy.mag = Math.round(enemy.mag * ph.magMult);
-    if (ph.healPct) enemy.currentHp = Math.min(maxHp, enemy.currentHp + Math.round(maxHp * ph.healPct));
+    if (ph.healPct) enemy.currentHp = Math.min(maxHp, enemy.currentHp + Math.round(maxHp * ph.healPct * _enemyHealMult(enemy)));
     if (ph.gainAbility) { enemy.abilities = enemy.abilities || []; enemy.abilities.push({ ...ph.gainAbility }); }
     const msg = ph.msg || `${enemy.name} entre dans une rage nouvelle !`;
     out += `⚡ ${msg} `;
@@ -1499,7 +1512,7 @@ function enemyTurn() {
       const others = livingEnemies().filter(e => e !== enemy);
       if (others.length) {
         const victim = others[Math.floor(Math.random() * others.length)];
-        const dmg = mitigatedDamage(enemy.atk + Math.floor(Math.random() * 3), victim.def);
+        const dmg = mitigatedDamage(_enemyEffAtk(enemy) + Math.floor(Math.random() * 3), victim.def);
         victim.currentHp = Math.max(0, victim.currentHp - dmg);
         log += `🌀 ${enemy.name}, asservi, frappe ${victim.name} : -${dmg} PV ! `;
         UX_safe.floatDmg(`enemy:${enemyGroup.indexOf(victim)}`, dmg, 'dmg');
