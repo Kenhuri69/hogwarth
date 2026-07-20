@@ -1794,6 +1794,34 @@ function loadNpcs() {
 })();
 
 // ============================================================
+// 11quater-ter. profile.js — Hauts Faits (Thème D, succès)
+//    computeAchievements PUR : dérivé du profil, aucun effet gameplay.
+// ============================================================
+(function testProfileAchievements() {
+  const { computeAchievements, PROFILE_ACHIEVEMENTS } = loadModule(
+    'js/profile.js', ['computeAchievements', 'PROFILE_ACHIEVEMENTS']);
+
+  check('hauts faits: registre non vide', Array.isArray(PROFILE_ACHIEVEMENTS) && PROFILE_ACHIEVEMENTS.length >= 10);
+  check('hauts faits: profil vierge → aucun', computeAchievements({}).length === 0);
+  check('hauts faits: 1re victoire → first_victory',
+    computeAchievements({ victories: 1 }).includes('first_victory'));
+  check('hauts faits: 3 victoires → vétéran + vainqueur',
+    ['first_victory', 'veteran'].every(id => computeAchievements({ victories: 3 }).includes(id)));
+  check('hauts faits: étage 14 → ruins_delver (pas abyss_walker)',
+    computeAchievements({ deepestFloor: 14 }).includes('ruins_delver')
+    && !computeAchievements({ deepestFloor: 14 }).includes('abyss_walker'));
+  check('hauts faits: étage 21 → abyss_walker + ruins_delver',
+    ['ruins_delver', 'abyss_walker'].every(id => computeAchievements({ deepestFloor: 21 }).includes(id)));
+  check('hauts faits: 6 maîtrises → archmage + élémentaliste',
+    ['elementalist', 'archmage_elem'].every(id =>
+      computeAchievements({ masteredElements: ['feu','glace','foudre','lumière','ténèbres','physique'] }).includes(id)));
+  check('hauts faits: 200 Éclats consacrés → pilier + offrant',
+    ['offrant', 'pilier'].every(id => computeAchievements({ eclatsConsecrated: 200 }).includes(id)));
+  check('hauts faits: ids uniques',
+    new Set(PROFILE_ACHIEVEMENTS.map(a => a.id)).size === PROFILE_ACHIEVEMENTS.length);
+})();
+
+// ============================================================
 // 12. monsters.js — Basilic Ancestral (boss Boucle profonde)
 //    Vérifie l'enregistrement + le gating d'étage effectif + le statut
 //    de « brute » (→ Broyer auto). Données pures.

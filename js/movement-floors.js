@@ -437,6 +437,8 @@ function goDeeper() {
     },
     onArrive() {
       addMsg(`Niveau ${currentFloor} atteint !`, 'good');
+      // Hauts Faits (Thème D) — record cross-run de profondeur (succès de descente).
+      if (typeof recordDeepestFloor === 'function') recordDeepestFloor(currentFloor);
       // Jardin d'herbes (Potions P6.b3) : la descente fait mûrir le jardin
       // éveillé de GARDEN_DESCENT_BONUS herbes (plafond GARDEN_CAP).
       if (typeof gardenDiscovered !== 'undefined' && gardenDiscovered
