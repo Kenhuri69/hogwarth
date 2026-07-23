@@ -5,6 +5,41 @@
 // endgame ENDGAME_SCALING) et buildEcho (combat astral). Purs : aucune
 // mutation de l'état de jeu. Chargé AVANT dungeon.js. Cf. ENDGAME_PLAN.md §7.
 // ============================================================
+// ── PRNG seedé pour la GÉNÉRATION (Défi Quotidien — étape 1) ──
+// `dgRand()` est le tirage [0,1) utilisé par toute la génération de donjon
+// (dungeon.js / dungeon-spawning.js) + les tirages de spawn de scaleMonster.
+// Par défaut il délègue à Math.random → comportement IDENTIQUE hors défi.
+// `setWorldSeed(seed)` installe un mulberry32 seedé → génération DÉTERMINISTE
+// (même donjon + mêmes spawns à seed égale). N'affecte PAS le combat (le RNG
+// live de battle.js reste Math.random). Chargé AVANT dungeon.js → dgRand est
+// défini quand la génération tourne. Cf. .claude/plans/daily-challenge.md
+let _worldPrng = null;
+function _mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+// Hash FNV-1a 32 bits → seed entière stable pour une chaîne (ex. date du jour).
+function _hashSeed(str) {
+  let h = 2166136261 >>> 0;
+  const s = String(str);
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+// Chaîne de seed canonique du jour (UTC) : 'AAAA-MM-JJ'. PUR (args explicites).
+function dailySeedString(y, m, d) {
+  return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+}
+function setWorldSeed(seed) {
+  _worldPrng = _mulberry32((typeof seed === 'number') ? (seed >>> 0) : _hashSeed(seed));
+}
+function clearWorldSeed() { _worldPrng = null; }
+// Tirage de génération : seedé si un monde est actif, sinon Math.random.
+function dgRand() { return _worldPrng ? _worldPrng() : Math.random(); }
+// ============================================================
 // ── Configuration du scaling endgame (Boucle Ténébreuse) ─────
 // Formule récursive appliquée aux monstres post-victoire (floor 11+).
 //
@@ -81,7 +116,7 @@ function _endgameRecurse(stat, n, fixEff, scal) {
 // Tirage pondéré selon la propriété weight de chaque monstre
 function weightedPick(pool) {
   const total = pool.reduce((s, m) => s + (m.weight || 1), 0);
-  let r = Math.random() * total;
+  let r = dgRand() * total;
   for (const m of pool) { r -= (m.weight || 1); if (r <= 0) return m; }
   return pool[pool.length - 1];
 }
@@ -277,7 +312,7 @@ function scaleMonster(base, floor, opts) {
   monster.xp  = Math.floor(recurse(base.xp  * mult, 'xp'));
   if (typeof base.gold === 'object') {
     const { min, max } = base.gold;
-    monster.gold = Math.floor(recurse((min + Math.random() * (max - min)) * mult, 'gold'));
+    monster.gold = Math.floor(recurse((min + dgRand() * (max - min)) * mult, 'gold'));
   } else {
     monster.gold = Math.floor(recurse(base.gold * mult, 'gold'));
   }
@@ -290,7 +325,7 @@ function scaleMonster(base, floor, opts) {
 
   // ── Variante visuelle ────────────────────────────────────────
   // 4 % de chance d'obtenir un monstre "shiny" (rare doré)
-  const shinyRoll = Math.random();
+  const shinyRoll = dgRand();
   if (shinyRoll < 0.04) {
     monster.variant = 'shiny';
     monster.name    = '✨ ' + base.name;

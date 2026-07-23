@@ -4326,4 +4326,29 @@ async function scenarioEscapeRewards() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioEscapePocket, scenarioEscapeRiddleSolve, scenarioEscapeMalus, scenarioEscapeMirror, scenarioEscapeWarden, scenarioEscapeIronman, scenarioEscapeRewards, scenarioCh13EndgamePivot, scenarioScriptedFloorBeats, scenarioVoixDesRuines, scenarioDungeonLife, scenarioFountain, scenarioRefuge, scenarioSoloSoftlock, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioRespawn20Percent, scenarioVictoryTrigger, scenarioStairsGated, scenarioFinalBossGuaranteed, scenarioChamberGuardians, scenarioChamberGuardianPolish, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryRespec, scenarioForgeLibraryAudit, scenarioFloorTheming, scenarioZoneDEchoes, scenarioZoneDFx, scenarioFounderChamber, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioRoomOfRequirement, scenarioStairsReachable, scenarioHouseRoomBias] };
+async function scenarioDailySeedDeterminism() {
+  console.log('\n── Scénario : génération déterministe (seed monde — Défi Quotidien ét.1) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+  const r = await page.evaluate(() => {
+    const sig = () => JSON.stringify({
+      d: dungeon,
+      e: enemyMap.map(row => row.map(c => (c && c.id) ? c.id : 0)),
+    });
+    setWorldSeed('daily-test-1'); generateDungeon(3); const a = sig();
+    setWorldSeed('daily-test-1'); generateDungeon(3); const b = sig();
+    setWorldSeed('daily-test-2'); generateDungeon(3); const c = sig();
+    clearWorldSeed(); generateDungeon(3);
+    const okClear = Array.isArray(dungeon) && dungeon.length > 0;
+    return { same: a === b, diff: a !== c, okClear };
+  });
+  console.log('  déterminisme →', r);
+  assert(r.same,   'même seed → donjon + spawns identiques');
+  assert(r.diff,   'seed différente → génération différente');
+  assert(r.okClear, 'clearWorldSeed → génération non-seedée OK (repli Math.random)');
+  if (errors.length) { errors.forEach(e => console.log('  ⚠️ ', e)); throw new Error(`${errors.length} erreurs JS (seed monde)`); }
+  console.log('  ✅ Génération déterministe (seed monde) OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioDailySeedDeterminism, scenarioEscapePocket, scenarioEscapeRiddleSolve, scenarioEscapeMalus, scenarioEscapeMirror, scenarioEscapeWarden, scenarioEscapeIronman, scenarioEscapeRewards, scenarioCh13EndgamePivot, scenarioScriptedFloorBeats, scenarioVoixDesRuines, scenarioDungeonLife, scenarioFountain, scenarioRefuge, scenarioSoloSoftlock, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioRespawn20Percent, scenarioVictoryTrigger, scenarioStairsGated, scenarioFinalBossGuaranteed, scenarioChamberGuardians, scenarioChamberGuardianPolish, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryRespec, scenarioForgeLibraryAudit, scenarioFloorTheming, scenarioZoneDEchoes, scenarioZoneDFx, scenarioFounderChamber, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioRoomOfRequirement, scenarioStairsReachable, scenarioHouseRoomBias] };

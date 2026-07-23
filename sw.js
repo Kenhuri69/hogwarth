@@ -16,7 +16,7 @@
 //     individuel suffit pour eux.
 // =======================================================================
 
-const CACHE_VERSION = 'hogwarth-v267';
+const CACHE_VERSION = 'hogwarth-v268';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Précache minimal (~1 Mo) : shell HTML/CSS/JS + premier visuel.
@@ -69,7 +69,7 @@ const PRECACHE_URLS = [
   './js/data-icon-recipes.js?v=1',
   './js/floor-themes.js?v=2',
   './js/floor-ambiance.js?v=20',
-  './js/floor-events.js?v=2',
+  './js/floor-events.js?v=3',
   './js/room-flavor.js?v=1',
   './js/item-icons.js?v=51',
   './js/state.js?v=49',
@@ -81,9 +81,9 @@ const PRECACHE_URLS = [
   './js/keybindings.js?v=1',
   './js/ui-bestiary.js?v=9',
   './js/ui-codex.js?v=12',
-  './js/dungeon-scaling.js?v=10',
-  './js/dungeon.js?v=22',
-  './js/dungeon-spawning.js?v=2',
+  './js/dungeon-scaling.js?v=11',
+  './js/dungeon.js?v=23',
+  './js/dungeon-spawning.js?v=3',
   './js/textures.js?v=2',
   './js/renderer.js?v=19',
   './js/renderer-effects.js?v=13',

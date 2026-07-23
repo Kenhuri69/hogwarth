@@ -22,7 +22,7 @@ function _placeNpcInRoom(npc, room, isSpawnRoom) {
   }
   if (!candidates.length) return false;
   const center = candidates.find(c => c.x === room.cx && c.y === room.cy);
-  const pick   = center || candidates[Math.floor(Math.random() * candidates.length)];
+  const pick   = center || candidates[Math.floor(dgRand() * candidates.length)];
   dungeon[pick.y][pick.x] = CELL.NPC;
   npcPlacements.set(`${pick.x},${pick.y}`, npc.id);
   // Révèle la case sur la minimap dès le départ : les PNJ sont des
@@ -135,14 +135,14 @@ function _findWallPocket() {
       }
     }
   }
-  return cands.length ? cands[Math.floor(Math.random() * cands.length)] : null;
+  return cands.length ? cands[Math.floor(dgRand() * cands.length)] : null;
 }
 
 // Mélange Fisher-Yates en place — réutilisé par la génération des
 // puzzles runiques (choix des cases + ordre de séquence).
 function _shuffleInPlace(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(dgRand() * (i + 1));
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
   return arr;
@@ -170,7 +170,7 @@ function _generateRunePuzzle(rooms) {
   // L'événement d'étage « Étage runique » force la génération (Phase 4.2).
   const forced = (typeof currentFloorEvent !== 'undefined'
     && (currentFloorEvent === 'runique' || currentFloorEvent === 'sceau_fissure'));
-  if (!forced && Math.random() >= 0.20) return;
+  if (!forced && dgRand() >= 0.20) return;
   const pocket = _findWallPocket();
   if (!pocket) return;
   const floorCells = [];
@@ -190,7 +190,7 @@ function _generateRunePuzzle(rooms) {
   dungeon[pocket.w2y][pocket.w2x] = CELL.CHEST;
   const runeKeys = runeCells.map(([rx, ry]) => `${rx},${ry}`);
   let order = null, hint = null, hintCell = null;
-  if (Math.random() < 0.5) {
+  if (dgRand() < 0.5) {
     order    = _shuffleInPlace([0, 1, 2]);
     hint     = _buildRuneHint(order);
     const hc = floorCells[3];
@@ -217,7 +217,7 @@ function _generateRuneStele(rooms) {
   // n'a pu être posée (cf. generateDungeon — Phase 4.2/4.3).
   const forced = (typeof currentFloorEvent !== 'undefined'
     && (currentFloorEvent === 'runique' || currentFloorEvent === 'sceau_fissure'));
-  if (!forced && Math.random() >= 0.30) return;
+  if (!forced && dgRand() >= 0.30) return;
   const pocket = _findWallPocket();
   if (!pocket) return;
   const floorCells = [];
@@ -233,7 +233,7 @@ function _generateRuneStele(rooms) {
   const [sx, sy] = floorCells[0];
   dungeon[sy][sx] = CELL.STELE;
   dungeon[pocket.w2y][pocket.w2x] = CELL.CHEST;
-  const riddle = RIDDLES[Math.floor(Math.random() * RIDDLES.length)];
+  const riddle = RIDDLES[Math.floor(dgRand() * RIDDLES.length)];
   runeStele = {
     cell:       `${sx},${sy}`,
     riddleId:   riddle.id,
@@ -268,10 +268,10 @@ function generateDungeon(floor) {
   for (let i = 0; i < ROOM_COUNT; i++) {
     let pick = null, free = false;
     for (let attempt = 0; attempt < 40 && !free; attempt++) {
-      const rw = 3 + (Math.random() < 0.35 ? 1 : 0);
-      const rh = 3 + (Math.random() < 0.35 ? 1 : 0);
-      const rx = 1 + Math.floor(Math.random() * (MAP_W - rw - 2));
-      const ry = 1 + Math.floor(Math.random() * (MAP_H - rh - 2));
+      const rw = 3 + (dgRand() < 0.35 ? 1 : 0);
+      const rh = 3 + (dgRand() < 0.35 ? 1 : 0);
+      const rx = 1 + Math.floor(dgRand() * (MAP_W - rw - 2));
+      const ry = 1 + Math.floor(dgRand() * (MAP_H - rh - 2));
       const cand = { x: rx, y: ry, w: rw, h: rh };
       const tooClose = rooms.some(o =>
         rx < o.x + o.w + 1 && rx + rw + 1 > o.x &&
@@ -334,12 +334,12 @@ function generateDungeon(floor) {
   for (const r of rooms) {
     if (r.kind === 'spine') {
       if (currentFloorEvent === 'marche') { dungeon[r.cy][r.cx] = CELL.SHOP; continue; }
-      const roll = Math.random();
+      const roll = dgRand();
       if (roll < chestP)             dungeon[r.cy][r.cx] = CELL.CHEST;
       else if (roll < chestP + 0.20) dungeon[r.cy][r.cx] = CELL.SHOP;
     } else if (r.kind === 'branch') {
       // Cul-de-sac : autel (~25 %) ou coffre garanti — récompense du détour.
-      dungeon[r.cy][r.cx] = (Math.random() < 0.25) ? CELL.ALTAR : CELL.CHEST;
+      dungeon[r.cy][r.cx] = (dgRand() < 0.25) ? CELL.ALTAR : CELL.CHEST;
     }
   }
 
@@ -368,11 +368,11 @@ function generateDungeon(floor) {
       }
     }
     for (let i = trapCells.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
+      const j = Math.floor(dgRand() * (i + 1));
       [trapCells[i], trapCells[j]] = [trapCells[j], trapCells[i]];
     }
     // « Étage piégé » : +2 pièges au-dessus de la base de 1-2.
-    let trapCount = 1 + (Math.random() < 0.5 ? 1 : 0);
+    let trapCount = 1 + (dgRand() < 0.5 ? 1 : 0);
     if (currentFloorEvent === 'pieges') trapCount += 2;
     for (let i = 0; i < trapCount && i < trapCells.length; i++) {
       dungeon[trapCells[i][1]][trapCells[i][0]] = CELL.TRAP;
@@ -393,7 +393,7 @@ function generateDungeon(floor) {
     vaultPlaced = true;
   }
   secretWalls = new Set();
-  if (Math.random() < 0.5) {
+  if (dgRand() < 0.5) {
     const secret = _findWallPocket();
     if (secret) {
       // w1 reste CELL.WALL — mur secret, indiscernable jusqu'à la fouille.
@@ -411,7 +411,7 @@ function generateDungeon(floor) {
   const isFountainFloor = floor >= 2 && (floor - 2) % 3 === 0;
   if (isFountainFloor && rooms.length >= 3) {
     const candidates = rooms.slice(1, rooms.length - 1);
-    const room       = candidates[Math.floor(Math.random() * candidates.length)];
+    const room       = candidates[Math.floor(dgRand() * candidates.length)];
     dungeon[room.cy][room.cx] = CELL.FOUNTAIN;
   }
 
@@ -423,7 +423,7 @@ function generateDungeon(floor) {
   if (typeof chosenHouse !== 'undefined' && chosenHouse
       && floor >= 2 && !isFountainFloor && rooms.length >= 3) {
     const candidates = rooms.slice(1, rooms.length - 1);
-    const room       = candidates[Math.floor(Math.random() * candidates.length)];
+    const room       = candidates[Math.floor(dgRand() * candidates.length)];
     dungeon[room.cy][room.cx] = CELL.REFUGE;
   }
 
@@ -448,7 +448,7 @@ function generateDungeon(floor) {
       }
     }
     if (floorCells.length) {
-      const [gx, gy] = floorCells[Math.floor(Math.random() * floorCells.length)];
+      const [gx, gy] = floorCells[Math.floor(dgRand() * floorCells.length)];
       dungeon[gy][gx] = CELL.GARDEN;
       hiddenGardens.add(`${floor},${gx},${gy}`);
     }
@@ -467,13 +467,13 @@ function generateDungeon(floor) {
   if (typeof victoryAchieved !== 'undefined' && victoryAchieved && rooms.length >= 3) {
     const intermediate = rooms.slice(1, rooms.length - 1);
     if (forgeFloors.includes(floor)) {
-      const room = intermediate[Math.floor(Math.random() * intermediate.length)];
+      const room = intermediate[Math.floor(dgRand() * intermediate.length)];
       dungeon[room.cy][room.cx] = CELL.FORGE;
     } else if (libraryFloors.includes(floor)) {
-      const room = intermediate[Math.floor(Math.random() * intermediate.length)];
+      const room = intermediate[Math.floor(dgRand() * intermediate.length)];
       dungeon[room.cy][room.cx] = CELL.LIBRARY;
     } else if (cauldronFloors.includes(floor)) {
-      const room = intermediate[Math.floor(Math.random() * intermediate.length)];
+      const room = intermediate[Math.floor(dgRand() * intermediate.length)];
       dungeon[room.cy][room.cx] = CELL.CAULDRON;
     }
   }
@@ -558,7 +558,7 @@ function generateDungeon(floor) {
   //      que chaque spawn forcé montre vraiment une quête actionnable.
   //   2) PNJ ambiant vendeur/lore (50 %) : saveur d'exploration.
   // Cf. .claude/plans/repeatable-quest-spawn.md.
-  if (Math.random() < 0.70 && typeof getRandomQuestGiversForFloor === 'function') {
+  if (dgRand() < 0.70 && typeof getRandomQuestGiversForFloor === 'function') {
     let givers = getRandomQuestGiversForFloor(floor);
     if (typeof getNpcQuestState === 'function') {
       givers = givers.filter(n => {
@@ -567,15 +567,15 @@ function generateDungeon(floor) {
       });
     }
     if (givers.length) {
-      const npc = givers[Math.floor(Math.random() * givers.length)];
+      const npc = givers[Math.floor(dgRand() * givers.length)];
       _placeRandomNpcInRooms(npc, rooms, occupied);
     }
   }
 
-  if (Math.random() < 0.50 && typeof getRandomAmbientNpcsForFloor === 'function') {
+  if (dgRand() < 0.50 && typeof getRandomAmbientNpcsForFloor === 'function') {
     const pool = getRandomAmbientNpcsForFloor(floor);
     if (pool.length) {
-      const npc = pool[Math.floor(Math.random() * pool.length)];
+      const npc = pool[Math.floor(dgRand() * pool.length)];
       _placeRandomNpcInRooms(npc, rooms, occupied);
     }
   }
@@ -584,7 +584,7 @@ function generateDungeon(floor) {
   // Spawn rare et dédié sur les étages 11+ (boucle ténébreuse).
   // 10 % par génération — déclenché indépendamment des pools ambiants.
   // Voir .claude/plans/game-economy-gold-audit.md §5.6 Piste E.
-  if (floor >= 11 && Math.random() < 0.10 && typeof getNpcById === 'function') {
+  if (floor >= 11 && dgRand() < 0.10 && typeof getNpcById === 'function') {
     const npc = getNpcById('marchand_ombre');
     if (npc) _placeRandomNpcInRooms(npc, rooms, occupied);
   }
@@ -602,9 +602,9 @@ function generateDungeon(floor) {
   const enemyChance = (currentFloorEvent === 'hante' || currentFloorEvent === 'givre_ancien') ? 0.85
                     : currentFloorEvent === 'calme' ? 0.30 : 0.60;
   for(let r of rooms.slice(1)) {
-    if(Math.random()<enemyChance) {
-      const ex = r.x+Math.floor(Math.random()*r.w);
-      const ey = r.y+Math.floor(Math.random()*r.h);
+    if(dgRand()<enemyChance) {
+      const ex = r.x+Math.floor(dgRand()*r.w);
+      const ey = r.y+Math.floor(dgRand()*r.h);
       // Jamais d'ennemi sur la case de spawn : avec un chevauchement de
       // dernier recours, une salle de `slice(1)` peut couvrir le centre
       // de la salle de départ. Garde cohérente avec _ensureStairsExist
@@ -624,7 +624,7 @@ function generateDungeon(floor) {
       for (let x = 0; x < MAP_W; x++)
         if (enemyMap[y][x]) mobs.push(enemyMap[y][x]);
     if (mobs.length) {
-      const bearer = mobs[Math.floor(Math.random() * mobs.length)];
+      const bearer = mobs[Math.floor(dgRand() * mobs.length)];
       bearer.drops = (bearer.drops || []).concat([{ itemId: 'cle_donjon', chance: 1 }]);
     }
   }

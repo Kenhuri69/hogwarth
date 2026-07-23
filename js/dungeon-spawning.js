@@ -27,7 +27,7 @@ function spawnQuestMonsters(targetMonsterId, extraRandomCount) {
   if (!free.length) return 0;
 
   for (let i = free.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(dgRand() * (i + 1));
     [free[i], free[j]] = [free[j], free[i]];
   }
 
@@ -71,7 +71,7 @@ function spawnFarmingMonsters(targetMonsterId, count) {
     }
   }
   for (let i = free.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(dgRand() * (i + 1));
     [free[i], free[j]] = [free[j], free[i]];
   }
   let placed = 0;
@@ -165,7 +165,7 @@ function _ensureStairsExist(floor) {
 
   // Shuffle Fisher-Yates pour des placements non corrélés
   for (let i = free.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(dgRand() * (i + 1));
     [free[i], free[j]] = [free[j], free[i]];
   }
 
@@ -234,7 +234,7 @@ function _ensureFinalBossPresent(floor) {
       - ((b.x - stairs.x) ** 2 + (b.y - stairs.y) ** 2));
   } else {
     for (let i = free.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
+      const j = Math.floor(dgRand() * (i + 1));
       [free[i], free[j]] = [free[j], free[i]];
     }
   }
@@ -290,7 +290,7 @@ function _ensureChamberGuardiansPresent(floor) {
     }
   }
   for (let i = free.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(dgRand() * (i + 1));
     [free[i], free[j]] = [free[j], free[i]];
   }
 
@@ -371,5 +371,5 @@ function _findFreeNpcCell(preferEarly) {
     candidates.sort((a, b) => (a.x * a.x + a.y * a.y) - (b.x * b.x + b.y * b.y));
     return candidates[0];
   }
-  return candidates[Math.floor(Math.random() * candidates.length)];
+  return candidates[Math.floor(dgRand() * candidates.length)];
 }

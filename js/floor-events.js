@@ -41,14 +41,14 @@ const FLOOR_EVENT_CHANCE = 0.35;
 // pondéré parmi FLOOR_EVENTS éligibles à l'étage `floor` (filtre
 // minFloor/maxFloor). Appelé par generateDungeon avec l'étage courant.
 function rollFloorEvent(floor) {
-  if (Math.random() >= FLOOR_EVENT_CHANCE) return null;
+  if (dgRand() >= FLOOR_EVENT_CHANCE) return null;
   const f = (typeof floor === 'number' && isFinite(floor)) ? floor : 1;
   const pool = FLOOR_EVENTS.filter(e =>
     (e.minFloor === undefined || f >= e.minFloor) &&
     (e.maxFloor === undefined || f <= e.maxFloor));
   if (!pool.length) return null;
   const total = pool.reduce((s, e) => s + e.weight, 0);
-  let r = Math.random() * total;
+  let r = dgRand() * total;
   for (const e of pool) {
     r -= e.weight;
     if (r <= 0) return e.id;
