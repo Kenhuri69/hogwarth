@@ -176,7 +176,7 @@
   color: #e7d6b0;
   box-shadow: 0 6px 28px rgba(0, 0, 0, 0.7);
 }
-#help-menu-x {
+#help-menu-x, #mech-gloss-x {
   position: absolute;
   top: 6px;
   right: 8px;
@@ -188,7 +188,7 @@
   line-height: 1;
   padding: 2px 4px;
 }
-#help-menu-x:hover { color: var(--gold-light, #f0d080); }
+#help-menu-x:hover, #mech-gloss-x:hover { color: var(--gold-light, #f0d080); }
 #help-menu-title {
   font-family: 'Cinzel', serif;
   font-size: 16px;

@@ -446,6 +446,9 @@ function _hmBuildDom() {
           '<span class="help-menu-ico">📖</span>Tout le guide' +
         '</button>' +
         sectionBtns +
+        '<button type="button" class="help-menu-item" data-section="glossary">' +
+          '<span class="help-menu-ico">📐</span>Mécaniques du jeu (glossaire)' +
+        '</button>' +
       '</div>' +
     '</div>';
   document.body.appendChild(root);
@@ -470,14 +473,87 @@ function closeHelpMenu() {
   if (root) root.remove();
 }
 
-// Lance la section choisie (index) ou le tour complet ('all').
+// Lance la section choisie (index), le tour complet ('all') ou le glossaire
+// des mécaniques ('glossary' — panneau statique, pas un tour spotlight).
 function helpMenuStart(which) {
   closeHelpMenu();
+  if (which === 'glossary') { openMechanicsGlossary(); return; }
   if (which === 'all') { startHelpTour(); return; }
   const sec = HELP_TOUR_SECTIONS[which | 0];
   if (!sec) { startHelpTour(); return; }
   const slice = HELP_TOUR_STEPS.slice(sec.start, sec.end);
   startHelpTour(slice, { voiceOffset: sec.start, hideOptout: true });
+}
+
+// ── Glossaire des mécaniques (D3) ──────────────────────────────
+// Panneau de RÈGLES statique (distinct du Codex, qui documente le lore/contenu).
+// Répond au constat « l'onboarding n'apprend que les boutons, pas les systèmes
+// profonds ». Réutilise le style de la carte du menu d'aide (zéro CSS neuf) ;
+// scroll interne. Purement informatif.
+const MECHANICS_GLOSSARY = [
+  { icon: '🔥❄️⚡', title: 'Éléments & faiblesses',
+    body: "Chaque sort porte un élément (feu, glace, foudre, lumière, ténèbres, physique). " +
+          "Un ennemi 💥 <b>faible</b> subit ×1,5 ; 🔰 <b>résistant</b>, ×0,5. Le bestiaire indique les deux — vise juste." },
+  { icon: '🩸', title: 'Les 4 dégâts-sur-la-durée (DoT)',
+    body: "Chacun a une identité : 🔥 <b>Brûlure</b> ignore la résistance de l'ennemi ; 🩸 <b>Saignement</b> " +
+          "s'aggrave à chaque tour ; ☠️ <b>Poison</b> réduit ses soins de moitié ; ❄️ <b>Engelures</b> baissent son attaque." },
+  { icon: '🍀', title: 'Fortune (Chance)',
+    body: "La CHANCE (LCK) alimente une Fortune qui améliore drops, or, fouilles, fuites et pièges. " +
+          "Des objets (Anneau du Trèfle, Médaillon de Chance…) et le Félix Felicis la renforcent." },
+  { icon: '⚡', title: 'Célérité (Agilité)',
+    body: "L'AGILITÉ (AGI) au-delà du plafond de crit alimente la Célérité : un compteur qui, une fois plein, " +
+          "offre une ACTION supplémentaire au héros dans le tour. Bottes du Lièvre, Cape du Funambule… la boostent." },
+  { icon: '🛡️', title: 'Garde & riposte',
+    body: "La Garde mitige de 50 % les coups physiques, s'empile (jusqu'à 3 paliers) et peut riposter. " +
+          "Elle restitue aussi des PM. Disponible un tour sur deux par personnage." },
+  { icon: '🔄', title: 'Postures de Duo',
+    body: "En duo : <b>Phalange</b> (défensif) attire les coups sur l'avant ; <b>Tenaille</b> (offensif) donne " +
+          "un bonus de dégâts quand les deux héros frappent la même cible. Bascule gratuite 1×/combat." },
+  { icon: '🏰', title: 'Paliers de Maison',
+    body: "Vaincre des ennemis fait monter ta Maison : paliers à 100/300/600/1000 points (bonus de stats + item légendaire). " +
+          "En endgame : Mythe (17), Apothéose (18, passif légendaire) puis série ★ N via le Don à la Maison." },
+  { icon: '🦴', title: 'Broyer (anti-tank)',
+    body: "Les « brutes » (grosse attaque) peuvent Broyer : des dégâts proportionnels à tes PV MAX, ignorant la DEF. " +
+          "Monter la DEF ne protège pas — Protego, si. Récompense l'esquive et la Garde." },
+  { icon: '💫😱', title: 'Étourdissement & Peur',
+    body: "💫 <b>Stun</b> fait sauter le prochain tour. 😱 <b>Peur</b> : 50 % de chance de perdre son tour, à chaque tour. " +
+          "Patronus Maxima dissipe la peur." },
+  { icon: '🎯', title: 'Deux critiques',
+    body: "Le crit PHYSIQUE dépend de la CHANCE (LCK, plafond 40 %) ; le crit de SORT dépend de l'AGILITÉ (AGI, plafond 35 %). " +
+          "L'équipement peut dépasser ces plafonds." },
+  { icon: '🌑', title: 'Boucle Ténébreuse & Éclats',
+    body: "Après la victoire, les étages 11+ rejouent le château, corrompu et plus dur. Chaque descente octroie un Éclat ; " +
+          "porte-en assez pour Briser le Cycle, ou consacre-les au Sceau (Gardien de la Boucle) pour des titres." },
+];
+
+function openMechanicsGlossary() {
+  if (document.getElementById('mech-gloss-overlay')) return;
+  const esc = (typeof htmlEscape === 'function') ? htmlEscape : (s => String(s));
+  const items = MECHANICS_GLOSSARY.map(g =>
+    '<div class="help-menu-item" style="display:block;text-align:left;cursor:default;white-space:normal">' +
+      '<div style="font-weight:bold;margin-bottom:3px"><span class="help-menu-ico">' + g.icon + '</span>' + esc(g.title) + '</div>' +
+      '<div style="font-size:0.86em;line-height:1.45;opacity:0.92">' + g.body + '</div>' +
+    '</div>'
+  ).join('');
+  const root = document.createElement('div');
+  root.id = 'mech-gloss-overlay';
+  root.innerHTML =
+    '<div id="help-menu-backdrop"></div>' +
+    '<div id="help-menu-card" role="dialog" aria-modal="true" aria-label="Mécaniques du jeu" ' +
+         'style="max-height:82vh;overflow-y:auto">' +
+      '<button id="mech-gloss-x" type="button" aria-label="Fermer">✕</button>' +
+      '<div id="help-menu-title">📐 Mécaniques du jeu</div>' +
+      '<div id="help-menu-list">' + items + '</div>' +
+    '</div>';
+  document.body.appendChild(root);
+  root.querySelector('#mech-gloss-x').addEventListener('click', closeMechanicsGlossary);
+  root.querySelector('#help-menu-backdrop').addEventListener('click', closeMechanicsGlossary);
+  root.style.display = 'block';
+}
+
+function closeMechanicsGlossary() {
+  const root = document.getElementById('mech-gloss-overlay');
+  if (root) root.remove();
 }
 
 // ============================================================
@@ -534,6 +610,8 @@ window.maybeAtelierTour     = maybeAtelierTour;
 window.openHelpMenu         = openHelpMenu;
 window.closeHelpMenu        = closeHelpMenu;
 window.helpMenuStart        = helpMenuStart;
+window.openMechanicsGlossary = openMechanicsGlossary;
+window.closeMechanicsGlossary = closeMechanicsGlossary;
 window.startHelpTour        = startHelpTour;
 window.maybeShowCombatTutorial = maybeShowCombatTutorial;
 window.helpTourNext         = helpTourNext;

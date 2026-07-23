@@ -880,13 +880,36 @@ async function scenarioHelpTour() {
   });
   console.log('  T9 menu sections →', t9);
   assert(t9.menuShown,                       'le menu « Quelle aide ? » doit s\'afficher');
-  assert(t9.itemCount === t9.sectionCount + 1, 'menu = Tout le guide + N sections');
+  assert(t9.itemCount === t9.sectionCount + 2, 'menu = Tout le guide + N sections + Glossaire');
   assert(t9.menuClosedAfter,                 'le menu doit se fermer au lancement d\'une section');
   assert(t9.active,                          'la section doit lancer le tour');
   assert(t9.title === t9.expectedTitle,      'la section doit démarrer à sa 1re étape d\'origine');
   assert(t9.count === 'Étape 1 / ' + t9.sliceLen, 'compteur de section incorrect (slice)');
   assert(t9.voiceOffset === t9.sectionStart, 'voiceOffset doit valoir section.start');
   assert(t9.allCount === 'Étape 1 / ' + t9.allTotal, '« Tout le guide » doit couvrir toutes les étapes');
+
+  // T10 (D3) : glossaire des mécaniques — bouton dans le menu + panneau statique.
+  const t10 = await page.evaluate(() => {
+    helpTourEnd();
+    openHelpMenu();
+    const glossBtn = document.querySelector('#help-menu-list .help-menu-item[data-section="glossary"]');
+    helpMenuStart('glossary');
+    const panel = document.getElementById('mech-gloss-overlay');
+    const rows = panel ? panel.querySelectorAll('#help-menu-list .help-menu-item').length : 0;
+    const menuClosed = !document.getElementById('help-menu-overlay');
+    const notATour = window._helpTourActive !== true;
+    closeMechanicsGlossary();
+    const closed = !document.getElementById('mech-gloss-overlay');
+    return { hasBtn: !!glossBtn, hasPanel: !!panel, rows, menuClosed, notATour, closed,
+             total: (typeof MECHANICS_GLOSSARY !== 'undefined') ? MECHANICS_GLOSSARY.length : 0 };
+  });
+  console.log('  T10 glossaire →', t10);
+  assert(t10.hasBtn,   'le menu doit proposer le bouton « Mécaniques »');
+  assert(t10.hasPanel && t10.rows === t10.total && t10.rows >= 10,
+         'le glossaire doit lister toutes ses entrées');
+  assert(t10.menuClosed, 'ouvrir le glossaire ferme le menu d\'aide');
+  assert(t10.notATour,   'le glossaire n\'est pas un tour spotlight');
+  assert(t10.closed,     'le glossaire doit se fermer');
 
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
