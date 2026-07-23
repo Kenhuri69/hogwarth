@@ -221,9 +221,37 @@ function loadNpcs() {
     '\n;exports.LOOP_SPAN = LOOP_SPAN;' +
     '\n;exports.weightedPick = weightedPick;' +
     '\n;exports.loopVariantTierName = loopVariantTierName;' +
-    '\n;exports.applyLoopVariant = applyLoopVariant;', sandbox, { filename: 'dungeon-scaling.js' });
+    '\n;exports.applyLoopVariant = applyLoopVariant;' +
+    '\n;exports.dgRand = dgRand;' +
+    '\n;exports.setWorldSeed = setWorldSeed;' +
+    '\n;exports.clearWorldSeed = clearWorldSeed;' +
+    '\n;exports._hashSeed = _hashSeed;' +
+    '\n;exports.dailySeedString = dailySeedString;', sandbox, { filename: 'dungeon-scaling.js' });
   const { effectiveFloor, endgameTierIndex, creatureCorruptionLevel, loopNumber, LOOP_SPAN, weightedPick,
-          loopVariantTierName, applyLoopVariant } = sandbox.exports;
+          loopVariantTierName, applyLoopVariant,
+          dgRand, setWorldSeed, clearWorldSeed, _hashSeed, dailySeedString } = sandbox.exports;
+
+  // ── PRNG seedé de génération (Défi Quotidien — étape 1) ──
+  check('dailySeedString: format AAAA-MM-JJ', dailySeedString(2026, 7, 3) === '2026-07-03');
+  check('_hashSeed: stable pour la même chaîne', _hashSeed('2026-07-03') === _hashSeed('2026-07-03'));
+  check('_hashSeed: distinct selon la chaîne',  _hashSeed('2026-07-03') !== _hashSeed('2026-07-04'));
+  // Déterminisme : même seed → même séquence.
+  setWorldSeed('daily-42');
+  const seqA = [dgRand(), dgRand(), dgRand(), dgRand(), dgRand()];
+  setWorldSeed('daily-42');
+  const seqB = [dgRand(), dgRand(), dgRand(), dgRand(), dgRand()];
+  check('dgRand: même seed → séquence identique', seqA.join(',') === seqB.join(','));
+  check('dgRand: valeurs dans [0,1)', seqA.every(x => x >= 0 && x < 1));
+  // Seed différente → séquence différente (quasi-certain).
+  setWorldSeed('daily-43');
+  const seqC = [dgRand(), dgRand(), dgRand(), dgRand(), dgRand()];
+  check('dgRand: seed différente → séquence différente', seqA.join(',') !== seqC.join(','));
+  // clearWorldSeed → repli Math.random (non déterministe) : deux longues
+  // séquences ne doivent pas coïncider.
+  clearWorldSeed();
+  const r1 = Array.from({ length: 8 }, () => dgRand());
+  const r2 = Array.from({ length: 8 }, () => dgRand());
+  check('clearWorldSeed: repli Math.random (non seedé)', r1.join(',') !== r2.join(','));
 
   // Pré-victoire : effectiveFloor est l'identité, palier 0 partout.
   sandbox.victoryAchieved = false;
