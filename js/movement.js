@@ -707,6 +707,13 @@ function handleCellEntry(cell) {
   const gardenHidden = cell === CELL.GARDEN
     && typeof gardenHiddenAt === 'function' && gardenHiddenAt(playerX, playerY);
 
+  // Étapes de quête "discover" (atteindre un type de lieu). Posé ici, en
+  // amont du routage par type de case, pour couvrir tous les lieux d'un
+  // seul appel. Pas en visite : le donjon observé n'est pas le sien.
+  if (!inVisit && typeof checkDiscoverQuests === 'function') {
+    checkDiscoverQuests(cell, playerX, playerY);
+  }
+
   if (cell === CELL.STAIRS_D || cell === CELL.STAIRS_U ||
       cell === CELL.SHOP     || cell === CELL.CHEST    ||
       cell === CELL.FOUNTAIN || cell === CELL.ALTAR    ||

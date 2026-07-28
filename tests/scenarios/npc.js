@@ -139,8 +139,17 @@ async function scenarioNpcIntegration() {
   assert(t2.ids.includes('dumbledore'),  'Dumbledore doit être présent à l\'étage 1');
 
   // T3 : flux dialogue — état "offer" → accept → "active" → ready → done
+  // On ISOLE Pomfresh sur la seule quête sous test : `getNpcQuestState`
+  // rend 'offer' dès qu'un PNJ a AUTRE CHOSE à proposer, si bien que
+  // l'état terminal 'done' n'est observable que si son carnet est vide
+  // par ailleurs. Sans cette isolation, le test cesserait de couvrir
+  // l'état 'done' au premier ajout de quête à ce PNJ — ce qui s'est
+  // produit au lot 3 (revue 2026-07-28).
   const t3 = await page.evaluate(() => {
     const npc = getNpcById('pomfresh');
+    for (const qid of (npc.questsGiven || [])) {
+      if (qid !== 'mandragore_pomfresh') availableQuests.delete(qid);
+    }
     const before = getNpcQuestState(npc);
     acceptQuest('mandragore_pomfresh');
     const afterAccept = getNpcQuestState(npc);

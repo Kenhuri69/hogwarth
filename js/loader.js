@@ -246,6 +246,8 @@ window.UX_safe = new Proxy({}, {
     { name: 'openSpells',         source: 'inventory-spells.js', kind: 'fn'  },
 
     // ── Quêtes ──
+    { name: 'checkDiscoverQuests', source: 'quests.js',      kind: 'fn'  },
+    { name: 'checkTalkQuests',    source: 'quests.js',       kind: 'fn'  },
     { name: 'openQuestLog',       source: 'quests.js',       kind: 'fn'  },
     { name: 'completeQuest',      source: 'quests.js',       kind: 'fn'  },
     { name: 'unlockHouseQuest',   source: 'quests.js',       kind: 'fn'  },

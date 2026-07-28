@@ -1312,5 +1312,105 @@ const QUEST_TEMPLATES = [
     location: "Refuge du Blaireau (étage 3) — vague en Acte II/III",
     houseSignatureQuest: true,
     house: "Poufsouffle"
+  },
+
+  // ══════════════════════════════════════════════════════════════
+  // DIVERSIFICATION DES VERBES (lot 3, revue 2026-07-28 · E1)
+  // ──────────────────────────────────────────────────────────────
+  // Le catalogue penchait à 66 % vers `kill`. Ces quêtes exploitent
+  // trois verbes non combattants :
+  //   · LIVRAISON — donnée par un PNJ, remise chez un AUTRE
+  //     (`questsGiven` ≠ `questsTurnedIn` + `grantOnAccept`). Mécanique
+  //     déjà en place mais utilisée une seule fois avant ce lot.
+  //   · `discover` — atteindre un TYPE de lieu (nouveau).
+  //   · `talk`     — consulter des PNJ nommés (nouveau).
+  // ══════════════════════════════════════════════════════════════
+
+  // ── LIVRAISONS ────────────────────────────────────────────────
+  {
+    id: "tue_loup_lupin",
+    title: "La potion du mois",
+    giver: "Madame Pomfresh",
+    desc: "La lune tourne, et Pomfresh n'a plus l'âge de descendre quatre étages en portant une fiole qui ne pardonne pas les chutes. Le Tue-Loup est prêt : porte-le au professeur Lupin avant la nuit. Elle ne demande pas ce qu'il en fera — elle sait.",
+    grantOnAccept: "potion_tue_loup",
+    objectives: [
+      { type: "item", itemId: "potion_tue_loup", amount: 1, progress: 0, completed: false }
+    ],
+    reward: { xp: 150, gold: 90, recipes: ["brew_elixir_immunite"] },
+    location: "Étage 4 — classe de Défense (remise à Lupin)"
+  },
+  {
+    id: "braise_hagrid",
+    title: "De quoi tenir jusqu'au printemps",
+    giver: "Horace Slughorn",
+    desc: "Slughorn a distillé une Essence de Chaleur — bien trop précieuse pour ses propres pieds, dit-il en riant. Les bêtes de Hagrid, elles, grelottent depuis que le froid des profondeurs remonte les escaliers. Descends-la-lui.",
+    grantOnAccept: "essence_chaleur",
+    objectives: [
+      { type: "item", itemId: "essence_chaleur", amount: 1, progress: 0, completed: false }
+    ],
+    reward: { xp: 170, gold: 100 },
+    location: "Étage 4 — lisière de la Forêt (remise à Hagrid)"
+  },
+  {
+    id: "givre_guipure",
+    title: "Une doublure qui tient le froid",
+    giver: "Mr Ollivander",
+    desc: "Ollivander a mis de côté un Cristal de Givre : inutile pour une baguette, parfait pour une doublure. Madame Guipure saura quoi en faire — et elle attend depuis trois semaines. Monte-le-lui.",
+    grantOnAccept: "cristal_givre",
+    objectives: [
+      { type: "item", itemId: "cristal_givre", amount: 1, progress: 0, completed: false }
+    ],
+    reward: { xp: 200, gold: 130 },
+    location: "Étage 5 — atelier de couture (remise à Madame Guipure)"
+  },
+
+  // ── DÉCOUVERTE DE LIEUX ───────────────────────────────────────
+  {
+    id: "sources_pomfresh",
+    title: "Les sources de l'infirmerie",
+    giver: "Madame Pomfresh",
+    desc: "L'infirmerie manque d'eau pure et Pomfresh refuse celle des cuisines. Repère trois fontaines encore vives dans le château : elle enverra quelqu'un les mettre en tonneau. Bois-en une gorgée en passant, tant qu'à faire.",
+    objectives: [
+      { type: "discover", cell: "FOUNTAIN", amount: 3, progress: 0, completed: false }
+    ],
+    reward: { xp: 220, gold: 120, item: "potion_m" },
+    location: "Fontaines du château (étages 2, 5, 8…)",
+    repeatable: { everyLevels: 4 },
+    repeatableReward: { xp: 160, gold: 110 }
+  },
+  {
+    id: "steles_flitwick",
+    title: "Le relevé des stèles",
+    giver: "Professeur Flitwick",
+    desc: "Flitwick recense les stèles d'énigme du donjon : leur formulation change d'un étage à l'autre, et il y voit la trace d'une même main. Trouve-lui deux stèles — inutile de résoudre quoi que ce soit, il veut seulement savoir où elles se dressent.",
+    objectives: [
+      { type: "discover", cell: "STELE", amount: 2, progress: 0, completed: false }
+    ],
+    reward: { xp: 280, gold: 150 },
+    location: "Stèles d'énigme (étages profonds)"
+  },
+
+  // ── CONSULTATIONS ─────────────────────────────────────────────
+  {
+    id: "enquete_mimi",
+    title: "Ce que les fantômes ne se disent pas",
+    giver: "Mimi Geignarde",
+    desc: "Mimi jure que quelque chose a changé sous les cachots, et que les autres fantômes le savent sans vouloir le dire — parce qu'ils la trouvent bruyante. Va leur parler à sa place : le Chevalier Fantôme, puis Sir Patrick. Reviens lui répéter mot pour mot.",
+    objectives: [
+      { type: "talk", npcIds: ["chevalier_godric", "sir_patrick"], amount: 2, progress: 0, completed: false }
+    ],
+    reward: { xp: 260, gold: 90 },
+    location: "Étages 2 à 6 — auprès des fantômes du château"
+  },
+  {
+    id: "conseil_mcgonagall",
+    title: "Le tour des directeurs de Maison",
+    giver: "Professeur McGonagall",
+    desc: "McGonagall veut convoquer un conseil, mais aucun de ses collègues ne remonte plus. Descends les consulter un par un — Rogue, Chourave, Flitwick — et rapporte-lui leur position. Elle tranchera après, pas avant.",
+    objectives: [
+      { type: "talk", npcIds: ["rogue", "sprout", "flitwick"], amount: 3, progress: 0, completed: false }
+    ],
+    reward: { xp: 340, gold: 180, stats: { lck: 1 } },
+    location: "Étages 3 à 6 — bureaux des directeurs de Maison"
   }
 ];
