@@ -44,6 +44,13 @@ jobs:
       - name: Garde-fou doc (modules CLAUDE.md ↔ index.html)
         run: node tools/check_doc_modules.js
 
+      # Références croisées entre registres de données (drops, quêtes, PNJ,
+      # sorts, recettes, sprites, icônes). Aucune n'est couverte par la suite
+      # smoke : un id renommé ou supprimé passerait toute la CI et ne se
+      # verrait qu'en jeu.
+      - name: Garde-fou d'intégrité du contenu (références croisées)
+        run: node tools/check_content_refs.js
+
       - name: Garde-fou d'équilibre (dérive de win-rate vs DIFFICULTY_REPORT.md)
         run: |
           if [ -n "${{ github.base_ref }}" ]; then

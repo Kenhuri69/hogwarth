@@ -63,11 +63,15 @@ que sur la foi des docs :
   units, smoke, pwa-smoke. 30 derniers runs `master` : **30 succès**, ~4,5 min.
 
 > **Le diagnostic est donc un diagnostic de *finition*, pas de fondations.**
-> Les vrais axes se rangent en trois familles nettes :
-> **(A) des finitions qui rendent du contenu déjà payé invisible au joueur**,
-> **(B) du poids et de la dette d'hygiène qui coûtent au chargement et au
-> dépôt**, **(C) un volet contenu dont les revues de juillet restent valides
-> — partiellement livré, mesuré ici à jour.**
+> Les vrais axes se rangent en deux familles nettes :
+> **(A) du poids et de la dette d'hygiène qui coûtent au chargement, au dépôt
+> et à la fiabilité de l'outillage**, **(B) un volet contenu dont les revues de
+> juillet restent valides — partiellement livré, mesuré ici à jour.**
+>
+> ⚠️ **Une troisième famille annoncée dans la première version de cette revue
+> — « du contenu déjà payé rendu invisible au joueur » (C1/C2, icônes de
+> sorts) — était une erreur de mesure et a été retirée** (§1). La couverture
+> d'icônes du jeu est complète.
 
 ### 0.3 Ce que cette revue ne garantit pas
 
@@ -87,55 +91,44 @@ que sur la foi des docs :
 
 ## 1 — AXES DE CORRECTION (bugs & incohérences vérifiés)
 
-### 🔴 C1 · 50 sortilèges sur 82 perdent leur icône hors de la fiche perso
+### ❌ C1 & C2 · RETIRÉS — constats erronés (corrigés le 2026-07-28)
 
-**Le constat le plus concret de cette revue.** Il existe **deux résolveurs
-d'icône de sort divergents** :
+> **Ces deux constats étaient faux et sont annulés.** Ils affirmaient que
+> 50 sorts sur 82 retombaient en emoji faute d'entrée dans
+> `SPELL_ICON_REGISTRY` (C1) et que 12 sorts n'avaient aucune icône (C2).
+> La vérification faite au moment d'exécuter le lot 1 établit l'inverse :
 
-| Résolveur | Fichier | Stratégie | Conséquence |
-|---|---|---|---|
-| `_renderSpellBadge()` | `ui-character-sheet.js:53` | registre **puis fallback slug** `img/icons/spells/<slug>.png` | trouve le PNG |
-| `getSpellIconHtml()` | `item-icons.js:851` | registre **seulement**, sinon `spell.icon` (emoji) | retombe en emoji |
+| | Annoncé (C1/C2) | **Réel vérifié** |
+|---|---|---|
+| Entrées de `SPELL_ICON_REGISTRY` | 32 / 82 | **82 / 82** |
+| Sorts retombant en emoji | 50 | **0** |
+| Sorts sans aucune icône | 12 | **0** |
+| Entrées pointant un fichier absent | — | **0** |
+| PNG de sorts orphelins | — | **0** |
+| Items sans icône | 39 « recettes » | **0** (SVG inline + PNG painterly + PNG legacy) |
 
-`SPELL_ICON_REGISTRY` ne contient que **32 des 82 sorts**. Or, sur les 50
-absents, **38 ont bel et bien leur PNG sur le disque** — trouvé par la voie
-slug de la fiche perso, ignoré par `getSpellIconHtml`.
+**La couverture d'icônes du jeu est complète.** Il n'y avait rien à corriger.
 
-`getSpellIconHtml` est utilisé sur **~28 call-sites** : modale des sorts
-(`inventory-spells.js:164` et `:649`), log de combat (`battle-spells.js`
-×4), messages d'apprentissage (`battle-rewards.js`, `inventory.js` ×3,
-`quests.js`, `main.js`), Bibliothèque, Atelier, Poches du Sceau. Donc :
-**un sort affiche son PNG dans la fiche perso et un emoji dans la modale de
-combat** — pour 38 sorts, dont des signatures de Maison et des sorts
-d'Éclats.
+**Cause de l'erreur** — la liste des clés du registre passait par un
+`tr -d "'\": "` qui supprimait *aussi les espaces* : tout nom composé
+(`Lumos Solem`, `Ferula Maxima`, `Cœur de Lion`…) devenait `LumosSolem` et ne
+correspondait plus à rien. Les « 50 manquants » étaient exactement les 50 noms
+multi-mots. Deux variantes du même piège ont suivi pendant la correction :
+une regex `["']([^"']+)["']` qui tronque `"Morsure d'Émeraude"` à l'apostrophe,
+puis l'oubli du 3ᵉ registre d'icônes (`ITEM_ICON_SVG_REGISTRY`, SVG inline —
+herbes et potions), qui faisait passer 36 items illustrés pour dépourvus.
 
-- **Correction** : centraliser un helper `spellIconPath(name)` (registre →
-  slug → null) consommé par les deux résolveurs. ~15 lignes, aucun
-  changement de données.
-- **Vérifier** : pour les 82 sorts, `getSpellIconHtml` et `_renderSpellBadge`
-  résolvent le **même** chemin ; scénario smoke qui l'assert sur un échantillon
-  (1 sort registre, 1 sort slug, 1 sort sans PNG).
+**Ce que cela change** — le §5 plaçait C1 au rang 1 et C2 au rang 5 : les deux
+sortent du classement. Le gain joueur attendu du lot 1 disparaît ; restent C3
+(poids de production) et A2 (garde-fou), qui eux tiennent.
 
-### 🟠 C2 · 12 sortilèges n'ont **aucune** icône — et ce sont les plus prestigieux
-
-Ni entrée de registre, ni PNG au slug. Rendu actuel : badge masqué
-(`onerror → display:none`) dans la fiche, emoji dans le reste de l'UI.
-
-`Avis Praesidium` · `Cœur de Lion` 🦁 · `Givre de Rowena` ❄️ ·
-`Marque du Pèlerin` · `Morsure d'Émeraude` · `Mémoire d'Outremonde` ·
-`Patronus Corporel` · `Rappel Astral` · `Sceau des Quatre` ·
-`Sceau du Voyageur` · `Soin du Blaireau` · `Éclat de Voûte`
-
-Ce ne sont pas des restes morts : ce sont les **4 signatures Premium de
-Maison** (Cœur de Lion / Givre de Rowena / Soin du Blaireau / Morsure
-d'Émeraude), les **2 sorts d'Éclats** (`requiresEclats:2/3`, palier maître),
-`Patronus Corporel`, et les sorts cross-plan. Autrement dit : le joueur
-atteint le sommet de sa progression de Maison et reçoit une case vide.
-
-- **Correction** : 12 PNG via le pipeline existant (`gen_element_spell_icons.py`
-  / `icon_factory.py`), palettes de Maison déjà standardisées dans `CLAUDE.md`.
-- **Vérifier** : `ls img/icons/spells/` couvre les 12 slugs ; badge visible
-  en fiche perso pour chaque signature de Maison.
+**Ce que cela apprend** — trois faux positifs d'affilée, tous issus d'un
+comptage `grep`/`sed` sur des données quotées. C'est précisément l'argument de
+**A2** : un garde-fou versionné, écrit une fois et relu, établit ces chiffres
+de façon fiable là où une commande jetable se trompe silencieusement — et se
+trompe *dans le sens rassurant du constat qu'on cherchait*.
+`node tools/check_content_refs.js` est désormais la source de vérité sur ces
+couvertures (livré, cf. `lot1-quick-wins-2026-07-28.md`).
 
 ### 🟠 C3 · 9,2 Mo de sources audio brutes publiées en production
 
@@ -443,29 +436,35 @@ sandbox) — ce qui pousse au contournement de la règle §7.
 ## 5 — Priorisation
 
 Classement par **valeur / coût**, en tenant compte de ce qui débloque le reste.
+**Mis à jour le 2026-07-28** après le retrait de C1/C2 (constats erronés, §1) et
+l'exécution du lot 1.
 
-| # | Axe | Type | Impact | Effort | Pourquoi ce rang |
-|---|---|---|---|---|---|
-| 1 | **C1** icônes de sorts — résolveur unifié | Correction | Fort | **XS** | ~15 lignes rendent visibles 38 PNG déjà payés |
-| 2 | **C3** `_raw/` hors production | Correction | Fort | **XS** | −9,2 Mo sur chaque déploiement, 1 ligne de CI |
-| 3 | **A2** `check_content_refs.js` en CI | Amélioration | Fort | **S** | verrouille une intégrité aujourd'hui parfaite mais nue |
-| 4 | **C4** chiffres de `CLAUDE.md` | Correction | Moyen | **XS** | évite de planifier sur un inventaire faux d'un facteur 5 |
-| 5 | **C2** 12 PNG de sorts manquants | Correction | Moyen-fort | **S** | pipeline existant ; touche le sommet de progression |
-| 6 | **A1** ESLint (non bloquant → bloquant) | Amélioration | Fort | **S** | fenêtre idéale : le socle est propre |
-| 7 | **P1** passe d'archivage des plans | Process | Moyen | **S** | rend la roadmap lisible avant le cycle suivant |
-| 8 | **E1** verbes de quête (`deliver`/`discover`/`choice`) | Enrichissement | **Fort** | M | seul axe qui change la texture du jeu ; briques déjà là |
-| 9 | **E3** WebP + arbitrage du précache | Enrichissement | Fort | M | cible « −40 % `img/` » du plan perf, non jouée |
-| 10 | **E2** rééquilibrage élémentaire (foudre/glace) | Enrichissement | Moyen | M | rend le système resist/weak réellement jouable early |
-| 11 | **E4** slots `wand`/armure | Enrichissement | Moyen | M | condition de loot pour un build physique viable |
-| 12 | **P2** parallélisation de la suite smoke | Process | Moyen | M | protège le respect de la règle §7 |
-| 13 | **A3**/**A4** helpers `activeParty` / REST MP | Amélioration | Faible | S | opportuniste, au fil des passages |
-| 14 | **C5** CSS morte · **A6** poids du dépôt | Nettoyage | Faible | S | hygiène, sans urgence |
+| # | Axe | Type | Impact | Effort | Statut | Pourquoi ce rang |
+|---|---|---|---|---|---|---|
+| 1 | **A2** `check_content_refs.js` en CI | Amélioration | Fort | **S** | ✅ livré | verrouille une intégrité parfaite mais nue — et fournit la mesure fiable que les comptages jetables ratent |
+| 2 | **C3** `_raw/` hors production | Correction | Fort | **XS** | ✅ livré | −9,2 Mo sur chaque déploiement, 1 ligne de CI |
+| 3 | **C4** chiffres de `CLAUDE.md` | Correction | Moyen | **XS** | ✅ livré | évite de planifier sur un inventaire faux d'un facteur 5 |
+| 4 | **A1** ESLint (non bloquant → bloquant) | Amélioration | Fort | **S** | ouvert | fenêtre idéale : le socle est propre |
+| 5 | **P1** passe d'archivage des plans | Process | Moyen | **S** | ouvert | rend la roadmap lisible avant le cycle suivant |
+| 6 | **E1** verbes de quête (`deliver`/`discover`/`choice`) | Enrichissement | **Fort** | M | ouvert | seul axe qui change la texture du jeu ; briques déjà là |
+| 7 | **E3** WebP + arbitrage du précache | Enrichissement | Fort | M | ouvert | cible « −40 % `img/` » du plan perf, non jouée |
+| 8 | **E2** rééquilibrage élémentaire (foudre/glace) | Enrichissement | Moyen | M | ouvert | rend le système resist/weak réellement jouable early |
+| 9 | **E4** slots `wand`/armure | Enrichissement | Moyen | M | ouvert | condition de loot pour un build physique viable |
+| 10 | **P2** parallélisation de la suite smoke | Process | Moyen | M | ouvert | protège le respect de la règle §7 |
+| 11 | **A3**/**A4** helpers `activeParty` / REST MP | Amélioration | Faible | S | ouvert | opportuniste, au fil des passages |
+| 12 | **C5** CSS morte · **A6** poids du dépôt | Nettoyage | Faible | S | ouvert | hygiène, sans urgence |
+| — | ~~C1 · C2 icônes de sorts~~ | — | — | — | ❌ retiré | constats erronés — la couverture d'icônes est complète (§1) |
 
-**Séquence recommandée** — un premier lot « quick wins » réunissant
-**1 · 2 · 3 · 4** (tous XS/S, aucun risque de régression fonctionnelle, effet
-immédiatement visible pour le joueur et pour la CI), puis **5 · 6 · 7** pour
-solidifier, puis l'arbitrage utilisateur sur les enrichissements **8 → 11**,
-qui sont les seuls à engager du design et méritent d'être tranchés un par un.
+**Séquence recommandée** — le **lot 1 (1 · 2 · 3) est livré**
+(`lot1-quick-wins-2026-07-28.md`). Suite : **4 · 5** pour solidifier l'outillage
+et la lisibilité de la roadmap, puis arbitrage utilisateur sur les
+enrichissements **6 → 9**, qui sont les seuls à engager du design et méritent
+d'être tranchés un par un.
+
+> **Note d'honnêteté sur la valeur du lot 1** : après retrait de C1/C2, il
+> n'apporte **aucun gain visible au joueur**. Son apport est de production
+> (−9,2 Mo publiés), d'outillage (un garde-fou qui n'existait pas) et de
+> fiabilité documentaire. Le premier axe à réel impact joueur est **E1**.
 
 ---
 
@@ -476,5 +475,9 @@ qui sont les seuls à engager du design et méritent d'être tranchés un par un
 - [~] `node tests/smoke.js` — 47/297 exécutés, 0 échec (runner séquentiel trop
       lent dans cet environnement ; CI `master` verte, cf. §0.3)
 - [x] Aucun JS/CSS modifié → bump de cache PWA (§8) non applicable
-- [ ] Arbitrage utilisateur sur la séquence du §5
+- [x] **Correction (2026-07-28)** : C1 & C2 retirés — constats erronés issus
+      d'un comptage `grep` défaillant sur des noms quotés (§1). La couverture
+      d'icônes est complète (82/82 sorts, 218/218 items).
+- [x] **Lot 1 livré** — A2 · C3 · C4 (cf. `lot1-quick-wins-2026-07-28.md`)
+- [ ] Arbitrage utilisateur sur la suite du §5 (A1 · P1, puis E1 → E4)
 - [ ] Conversion des axes retenus en plans dédiés

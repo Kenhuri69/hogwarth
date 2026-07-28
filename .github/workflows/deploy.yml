@@ -42,6 +42,10 @@ jobs:
           [ -s CNAME ] && cp CNAME _site/ || true
           cp -r css js img _site/
           [ -d audio ] && cp -r audio _site/ || true
+          # audio/voice/_raw/ = MP3 sources des voix (~9 Mo), référencés nulle
+          # part au runtime : le jeu ne lit que les .ogg encodés. On les garde
+          # dans le dépôt (traçabilité) mais on ne les publie pas.
+          rm -rf _site/audio/voice/_raw
           echo "Contenu publié :"
           du -sh _site _site/* | sort -h
 

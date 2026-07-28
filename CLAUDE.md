@@ -17,7 +17,7 @@ Vanilla JS / HTML5 Canvas, zéro dépendance, zéro build step.
 ## Structure des fichiers
 
 Les entrées `js/` ci-dessous suivent **l'ordre de chargement réel** des
-`<script src>` dans `index.html` (85 modules). La cohérence
+`<script src>` dans `index.html` (98 modules). La cohérence
 arborescence ↔ `index.html` est verrouillée par
 `node tools/check_doc_modules.js` (CI : tout module ajouté/retiré dans
 `index.html` sans mise à jour de cette section échoue).
@@ -310,7 +310,7 @@ js/
                       Aucune collecte auto, aucun réseau. Hooks défensifs aux
                       call-sites autoSave (endBattle/triggerDeath/castSpellInBattle/
                       goDeeper). Chargé tard, défensif. APRÈS help-tour.js
-  loader.js        →  Chargé EN AVANT-DERNIER. Vérifie ~55 globals attendus
+  loader.js        →  Chargé EN AVANT-DERNIER. Vérifie les globals attendus
                       (typeof entry.name), affiche bandeau rouge si critique
                       manquant. Exporte window.safeEl(id) + window.safeCall(fn,...args).
                       window.__loaderReport publié pour smoke test.
@@ -349,7 +349,7 @@ attendus se sont exécutés correctement et expose 2 helpers d'accès défensif.
 
 ### Manifeste
 
-Le `MANIFEST` dans `loader.js` énumère ~55 entrées `{ name, source, kind,
+Le `MANIFEST` dans `loader.js` énumère **365** entrées `{ name, source, kind,
 optional? }` :
 - `kind: 'fn'` → `typeof name === 'function'`
 - `kind: 'obj'` → `typeof name !== 'undefined'` (couvre `let`/`const`/`var`)
@@ -1036,7 +1036,9 @@ Idempotente, appliquée dans `_applyState` **avant** `recalculateStats` :
 
 ### Items équipables — vue par catégorie (data.js)
 
-> Liste non exhaustive — voir `js/data.js` pour le détail. **43 items** au total dont **29 équipables**.
+> Liste non exhaustive — voir `js/data-items.js` pour le détail. **218 items**
+> au total (+ 39 recettes `brew_*`) dont **121 équipables**. Compteurs vérifiés
+> par `node tools/check_content_refs.js`.
 
 | Slot      | Items représentatifs                                                   |
 |-----------|-----------------------------------------------------------------------|
@@ -1638,7 +1640,7 @@ tableau `MONSTERS` est la concaténation socle → low → mid → high).
 | `gold` | number\|{min,max} | Or de base (scalé automatiquement) |
 | `drops` | [{itemId, chance}] | Drops potentiels après victoire |
 
-### Monstres définis (78 au total)
+### Monstres définis (83 au total)
 | Étages | Monstres |
 |--------|---------|
 | 1–3    | Chat de Mme Norris, Luciole des Marais, Cornichon de Cornouailles, Portrait Hostile, Peeve, Mimi Geignarde, Serpent des Cachots |
@@ -2141,7 +2143,7 @@ plein combat = no-go).
   **Architecture modulaire** : `smoke.js` est un **runner mince** qui assemble
   et exécute les scénarios ; les helpers partagés vivent dans
   `tests/lib/harness.js` (`launchGame`, `startNewGame`, `startDummyFight`,
-  `assert`, `isIgnorableError`, `INDEX_URL`) et les 159 scénarios sont
+  `assert`, `isIgnorableError`, `INDEX_URL`) et les 297 scénarios sont
   répartis par domaine dans `tests/scenarios/<domaine>.js` (combat, dungeon,
   multiplayer, houses, potions, quests, spells, save, inventory, visuals,
   npc, controls, audio, fx, misc). Chaque scénario relance son propre
