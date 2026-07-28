@@ -3,7 +3,7 @@
 > **Statut** : plan vivant (guidelines §5) — créé le 2026-07-03.
 > Branche : `claude/hogwarth-final-polish-wrxhc5`.
 > Méthode : audit du **code réel** + réconciliation avec les plans existants
-> (`quest-system-revision.md`, `escape-game-traps.md`, `ux-polish-review.md`,
+> (`quest-system-revision.md`, `escape-game-traps.md`, `_archive/ux-polish-review.md`,
 > `perf-optimization.md`, `voix-manon-elara.md`, `docs/perf-lighthouse.md`,
 > `docs/playtest-3-boucles.md`). Règle cardinale : **renforcer, pas
 > reconstruire** — une grande partie de la demande est déjà livrée et mergée ;
@@ -21,7 +21,7 @@
 | 1.4 | Quête finale Manon → père + livre buff élémentaire | ✅ **Livré** — `manon_clair_de_lune` (prereq `manon_acte3`, kill 2 Détraqueurs), lien père (Lupin) au cœur des dialogues, récompense `livre_lumiere_patronus` (élément **Lumière** — le plus cohérent : Patronus/Lupin, contrepoint au givre maternel d'Élara) | Doc histoire à réconcilier (cf. 1.1) |
 | 1.5 | Livres spéciaux buffs élémentaires (un par élément), visibles sur le profil | ✅ **Livré côté partie** — 6 `masterybook` (+12 % permanent, `elementalMastery`), panneau « 📖 Maîtrises élémentaires » sur la **fiche perso**. ❌ Rien sur le **profil persistant** (Codex du Sorcier) | **P7** : collection cosmétique cross-run dans le Codex du Sorcier (zéro-héritage) |
 | 2.* | Poche du Sceau 11+, ~1/2-3 étages, 3 types + variantes Maison, lore Fondateurs, récompenses | ✅ **ENTIÈREMENT LIVRÉ** — Lots 0→5 + polish (PRs #698→#707, dont voix Fondateurs 2026-07-03). Constantes = rythme demandé | **Validation terrain** (télémétrie `BalanceLog`) — aucune implémentation |
-| 3.1 | Feedback combat/menus/inventaire/mobile | ✅ **Chantier clos** — `ux-polish-review.md` : 12 lots mergés (PRs #664→#682) | Rien (veille) |
+| 3.1 | Feedback combat/menus/inventaire/mobile | ✅ **Chantier clos** — `_archive/ux-polish-review.md` : 12 lots mergés (PRs #664→#682) | Rien (veille) |
 | 3.2 | Ambiances sonores & effets | ✅ **Complet** — 5 ambiances zonées + 5 musiques combat + `menu_theme`/`ending_break`, FX défensifs | Rien de majeur |
 | 3.3 | Chargement & fluidité GitHub Pages | 🔶 **Partiel** — pass Lighthouse fait (59→69, LCP 29,7 s→6,1 s), P2 runtime livré (log borné, cartes mutées, LRU étages, lazy bestiaire). **Compression images NON faite** (bloquée outillage, désormais dispo) | **P8** : compression `img/` ~45 Mo → ~20-25 Mo + re-pass Lighthouse |
 | 4.1 | README + Page GitHub (screenshots, contrôles, changelog) | 🔶 **Partiel** — README propre (features/stack/tests), meta/OG complets. ❌ 0 screenshot, pas de section Contrôles, pas de CHANGELOG | **P9** : README v2 + CHANGELOG.md |
@@ -225,7 +225,7 @@ Ordre : P5a → P6a → P7 → P6b → P5b → P-doc. Chaque item = 1 PR autonom
 ## ÉTAPE 1 — État & spécifications
 
 ### 3.1 Feedback combat / menus / inventaire / mobile ✅
-Chantier **clos le 2026-06-27** (`ux-polish-review.md`, 12 lots C1-C3/H1-H4/
+Chantier **clos le 2026-06-27** (`_archive/ux-polish-review.md`, 12 lots C1-C3/H1-H4/
 M1-M5, PRs #664→#682). Rien à rouvrir — toute retouche passera par la skill
 `ui-design-iterate` au cas par cas si le playtest (Lot 4) remonte un point.
 

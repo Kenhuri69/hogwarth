@@ -253,7 +253,7 @@ l'agent** (hors capacité) : les visuels sont à produire via les prompts livré
    réutilise `_loadSample`) joue `audio/ending_break.ogg` si présent, **repli
    sur `playVictory()`** sinon. `confirmBreakCycle` le préfère à `playVictory`.
    `audio/` non précaché (SWR) → pas de `?v`.
-4. ✅ **Prompts Gemini** — `.claude/plans/nano-banana-prompts-endings.md` :
+4. ✅ **Prompts Gemini** — `.claude/prompts/nano-banana-prompts-endings.md` :
    `ending_victory.jpg`, `ending_break_cycle.jpg`, `epilogue.png` (icône Codex,
    + suivi 1 ligne), `ending_spiral.jpg` (⏸️ différé, pas d'écran),
    `ending_break.ogg` (brief audio, hors Gemini).

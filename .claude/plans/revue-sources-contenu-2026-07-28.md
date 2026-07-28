@@ -393,7 +393,7 @@ soutenir un build physique.
 
 ## 4 — Hygiène de process
 
-### 🟡 P1 · 59 plans actifs pour 261 archivés
+### 🟡 P1 · 59 plans actifs pour 261 archivés  *(→ 47 après le lot 2)*
 
 `.claude/plans/` contient **59** `.md` actifs. Le workflow d'archivage existe
 (`plans-archiving-workflow.md`, périmètre validé 2026-06-12) et a bien tourné
@@ -406,7 +406,7 @@ Deux familles gonflent le compte sans être des plans de travail :
 - **13 `nano-banana-prompts-*.md`** = catalogues de prompts d'assets, pas des
   plans à statut ; ils n'ont ni case à cocher ni cycle de vie.
 - Plusieurs plans dont l'en-tête dit explicitement « LIVRÉS / CLOS »
-  (`potions-consumables-craft-2.0.md` : « 🏁 P7→P13 LIVRÉS … CLOS » ;
+  (`_archive/potions-consumables-craft-2.0.md` : « 🏁 P7→P13 LIVRÉS … CLOS » ;
   `voix-manon-elara.md` : « faite et câblée ») et qui restent en actif.
 
 Sur les 59, **28 n'ont aucune ligne de statut détectable** — impossible de
@@ -444,8 +444,8 @@ l'exécution du lot 1.
 | 1 | **A2** `check_content_refs.js` en CI | Amélioration | Fort | **S** | ✅ livré | verrouille une intégrité parfaite mais nue — et fournit la mesure fiable que les comptages jetables ratent |
 | 2 | **C3** `_raw/` hors production | Correction | Fort | **XS** | ✅ livré | −9,2 Mo sur chaque déploiement, 1 ligne de CI |
 | 3 | **C4** chiffres de `CLAUDE.md` | Correction | Moyen | **XS** | ✅ livré | évite de planifier sur un inventaire faux d'un facteur 5 |
-| 4 | **A1** ESLint (non bloquant → bloquant) | Amélioration | Fort | **S** | ouvert | fenêtre idéale : le socle est propre |
-| 5 | **P1** passe d'archivage des plans | Process | Moyen | **S** | ouvert | rend la roadmap lisible avant le cycle suivant |
+| 4 | **A1** ESLint | Amélioration | Fort | **S** | ✅ livré | 0 erreur d'emblée → bloquant en CI sans toucher au code de jeu |
+| 5 | **P1** passe d'archivage des plans | Process | Moyen | **S** | 🟨 partiel | 59 → 47 plans actifs (13 catalogues de prompts sortis, 3 plans clos archivés) ; l'audit complet reste à faire |
 | 6 | **E1** verbes de quête (`deliver`/`discover`/`choice`) | Enrichissement | **Fort** | M | ouvert | seul axe qui change la texture du jeu ; briques déjà là |
 | 7 | **E3** WebP + arbitrage du précache | Enrichissement | Fort | M | ouvert | cible « −40 % `img/` » du plan perf, non jouée |
 | 8 | **E2** rééquilibrage élémentaire (foudre/glace) | Enrichissement | Moyen | M | ouvert | rend le système resist/weak réellement jouable early |
@@ -455,11 +455,11 @@ l'exécution du lot 1.
 | 12 | **C5** CSS morte · **A6** poids du dépôt | Nettoyage | Faible | S | ouvert | hygiène, sans urgence |
 | — | ~~C1 · C2 icônes de sorts~~ | — | — | — | ❌ retiré | constats erronés — la couverture d'icônes est complète (§1) |
 
-**Séquence recommandée** — le **lot 1 (1 · 2 · 3) est livré**
-(`lot1-quick-wins-2026-07-28.md`). Suite : **4 · 5** pour solidifier l'outillage
-et la lisibilité de la roadmap, puis arbitrage utilisateur sur les
-enrichissements **6 → 9**, qui sont les seuls à engager du design et méritent
-d'être tranchés un par un.
+**Séquence recommandée** — **lot 1 (1 · 2 · 3) livré** (`lot1-quick-wins-2026-07-28.md`,
+PR #739 mergée) et **lot 2 (4 · 5) livré** (`lot2-lint-et-rangement-2026-07-28.md`).
+Suite : arbitrage utilisateur sur les enrichissements **6 → 9**, qui sont les
+seuls à engager du design et méritent d'être tranchés un par un — **E1** en
+tête, c'est le premier axe à réel impact joueur.
 
 > **Note d'honnêteté sur la valeur du lot 1** : après retrait de C1/C2, il
 > n'apporte **aucun gain visible au joueur**. Son apport est de production
@@ -478,6 +478,8 @@ d'être tranchés un par un.
 - [x] **Correction (2026-07-28)** : C1 & C2 retirés — constats erronés issus
       d'un comptage `grep` défaillant sur des noms quotés (§1). La couverture
       d'icônes est complète (82/82 sorts, 218/218 items).
-- [x] **Lot 1 livré** — A2 · C3 · C4 (cf. `lot1-quick-wins-2026-07-28.md`)
-- [ ] Arbitrage utilisateur sur la suite du §5 (A1 · P1, puis E1 → E4)
+- [x] **Lot 1 livré** — A2 · C3 · C4 (cf. `lot1-quick-wins-2026-07-28.md`, PR #739 mergée)
+- [x] **Lot 2 livré** — A1 (ESLint, 0 erreur, bloquant en CI) · P1 partiel
+      (59 → 47 plans actifs) — cf. `lot2-lint-et-rangement-2026-07-28.md`
+- [ ] Arbitrage utilisateur sur les enrichissements E1 → E4 (§5 rangs 6-9)
 - [ ] Conversion des axes retenus en plans dédiés

@@ -91,7 +91,7 @@ ajoute une boucle légère répétable :
 ## Nouveaux assets (4 icônes d'items)
 
 Icônes painterly à générer (prompts dans
-`.claude/plans/nano-banana-prompts-loop-reward-items.md`). Pipeline d'intégration
+`.claude/prompts/nano-banana-prompts-loop-reward-items.md`). Pipeline d'intégration
 par item : générer PNG 512² transparent → `tools/dechecker_png.py` si fond damier
 → mipmaps 64/48/32/24/16 (`img/icons_new/<id>_<size>.png`) → entrée
 `ITEM_ICON_NEW_REGISTRY` (item-icons.js) → bump cache.

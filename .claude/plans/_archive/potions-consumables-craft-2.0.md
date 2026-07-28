@@ -8,20 +8,20 @@
 >
 > **Plan vivant** (cf. `.claude/guidelines.md` §5). Ce document **étend** et ne
 > duplique pas les designs déjà livrés :
-> - socle craft archivé : [`_archive/farming-potion-system.md`](./_archive/farming-potion-system.md)
+> - socle craft archivé : [`_archive/farming-potion-system.md`](./farming-potion-system.md)
 > - enrichissement P0→P6 : [`potions-enrichment.md`](./potions-enrichment.md) (réf. permanente)
-> - pilier jumeau (modèle de structure) : [`artifacts-reliquary-system.md`](./_archive/artifacts-reliquary-system.md)
+> - pilier jumeau (modèle de structure) : [`artifacts-reliquary-system.md`](./artifacts-reliquary-system.md)
 > - sorts/corruption : [`spells-magic-system.md`](./spells-magic-system.md)
 >
 > **Canon de référence** : chapitres
-> [07 Maisons](../../docs/histoire/07-les-maisons.md),
-> [08 Quêtes](../../docs/histoire/08-quetes-et-sous-intrigues.md),
-> [09 Bestiaire](../../docs/histoire/09-bestiaire-et-lore.md),
-> [10 Lieux](../../docs/histoire/10-lieux-et-geographie.md),
-> [11 Mondes Parallèles / Boucle](../../docs/histoire/11-mondes-paralleles.md),
-> [12 Codex](../../docs/histoire/12-glossaire-et-codex.md),
-> [13 Équilibre](../../docs/histoire/13-equilibre-difficulte-progression.md),
-> [14 Fins](../../docs/histoire/14-scenarios-de-fin.md).
+> [07 Maisons](../../../docs/histoire/07-les-maisons.md),
+> [08 Quêtes](../../../docs/histoire/08-quetes-et-sous-intrigues.md),
+> [09 Bestiaire](../../../docs/histoire/09-bestiaire-et-lore.md),
+> [10 Lieux](../../../docs/histoire/10-lieux-et-geographie.md),
+> [11 Mondes Parallèles / Boucle](../../../docs/histoire/11-mondes-paralleles.md),
+> [12 Codex](../../../docs/histoire/12-glossaire-et-codex.md),
+> [13 Équilibre](../../../docs/histoire/13-equilibre-difficulte-progression.md),
+> [14 Fins](../../../docs/histoire/14-scenarios-de-fin.md).
 
 ---
 

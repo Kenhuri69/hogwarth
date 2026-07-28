@@ -222,14 +222,14 @@ narration↔gameplay, tests verts, doc fidèle au code.
 > démo jouable) :
 > - **Art PNG des 4 boss-gardiens** des Chambres des Fondateurs (code complet,
 >   fallback SVG par catégorie en place — cf. Phase 3). **Prompts Nano Banana
->   prêts** : [`.claude/plans/nano-banana-prompts-boss-gardiens.md`](../.claude/plans/nano-banana-prompts-boss-gardiens.md)
+>   prêts** : [`.claude/prompts/nano-banana-prompts-boss-gardiens.md`](../.claude/prompts/nano-banana-prompts-boss-gardiens.md)
 >   (4 prompts 512² + checklist de câblage `imgSrc`/cache-bump post-génération).
 > - **Pass d'assets de fin** : ✅ **illustrations de victoire**
 >   (`img/scenes/ending_victory.jpg`) **+ Briser le Cycle**
 >   (`img/scenes/ending_break_cycle.jpg`) **livrées (2026-06-20)** — film-still
 >   cinématiques (aube sur la Grande Salle ruinée, sceau brisé / Éclats déposés
 >   sur la faille de l'Avant-Monde), affichées dans les modales de fin (`src`
->   déjà câblés). Prompts : [`.claude/plans/nano-banana-prompts-end-assets.md`](../.claude/plans/nano-banana-prompts-end-assets.md).
+>   déjà câblés). Prompts : [`.claude/prompts/nano-banana-prompts-end-assets.md`](../.claude/prompts/nano-banana-prompts-end-assets.md).
 >   ✅ **Fonds parchemin Codex** par acte déjà présents
 >   (`img/codex/parchment_{a,b,c,d}.png`). ✅ **SFX « froid surnaturel »**
 >   **déjà livré** (vérifié 2026-06-20) : `AudioSystem.playColdBreath`

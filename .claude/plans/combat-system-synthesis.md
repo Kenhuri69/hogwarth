@@ -4,7 +4,7 @@
 > **Vocation** : faire la **synthèse** du cœur tactique du jeu en y branchant
 > proprement les deux chantiers récemment enrichis — **Artefacts & Reliquaires
 > 2.0** (`artifacts-reliquary-system.md`, P0→P3 livrés) et **Sorts & Magie
-> Avancée 2.0** (`spells-magic-system.md`, P0→P1 livrés) — et en cadrant les
+> Avancée 2.0** (`_archive/spells-magic-system.md`, P0→P1 livrés) — et en cadrant les
 > **manques** (initiative/vitesse fluide, jauge de Corruption, positionnement
 > Duo, interaction environnementale en combat) comme des **ajouts additifs**,
 > jamais comme une refonte.
