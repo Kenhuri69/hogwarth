@@ -378,29 +378,56 @@ pour **1** quête `escape`).
 **`choice` reste ouvert** : UI de choix, conséquences persistées, dialogues par
 branche — une décision de design qui revient à l'auteur du jeu.
 
-### 3.3 🟡 E2 · Catalogue élémentaire déséquilibré — **encore ouvert**
+### ✅ E2 · Catalogue élémentaire — **le constat était mal posé (mesuré, corrigé)**
 
-| Élément | Sorts |
-|---|---|
-| ténèbres | **15** |
-| lumière | **10** |
-| feu | 7 |
-| physique | 6 |
-| glace | 6 |
-| foudre | **5** |
+> ⚠️ Cette section disait : « ténèbres 15 / lumière 10 vs foudre 5 → le choix
+> élémentaire est mince early/mid, la foudre est le parent pauvre ». La mesure
+> dément le raisonnement, même si les comptes bruts étaient exacts.
 
-Le système `resist`/`weak` demande au joueur de **changer d'élément** face aux
-résistances, mais l'offre est concentrée sur ténèbres/lumière — deux éléments
-qui arrivent **tard** (endgame, Maisons). Early/mid, le choix élémentaire
-réel est mince, et la foudre reste le parent pauvre de bout en bout.
+**Ce qui était faux.** Le choix élémentaire early n'est pas mince : chaque héros
+démarre avec 1 ou 2 éléments offensifs, et chaque élément a un livre d'entrée.
+Premier accès en boutique : physique ét. 2, glace ét. 3, feu et foudre ét. 5,
+lumière ét. 6, ténèbres ét. 9. La foudre n'est pas un parent pauvre — elle a une
+progression complète (Stupefix au départ → Fulgari ét. 5 → Fulgur Catena ét. 7
+→ Fulgur Imperium). Compter les sorts par élément mesurait la **queue late
+game**, pas le jeu praticable.
 
-- **Enrichissement** : viser ~8 sorts par élément offensif, en priorité
-  **foudre** et **glace** aux paliers early/mid, adossés aux livres de sorts
-  (vecteur d'apprentissage existant, cf. `livre_glacius` / `livre_fulgari`).
-- **Vérifier** : ≥ 2 sorts par élément accessibles avant l'étage 5 ; sim
-  d'équilibrage inchangée (`check_difficulty.js`).
+**Le vrai problème, lui, est net** — il fallait croiser l'offre de sorts avec ce
+que le bestiaire *récompense* :
 
-### 3.4 ⚠️ E3 · Perf & poids d'assets — **prémisse largement fausse (mesuré)**
+| Élément | Sorts offensifs | Monstres **faibles** | Monstres **résistants** | Ratio sorts/faiblesses |
+|---|---|---|---|---|
+| **ténèbres** | **14** | **1** | **41** | **14,00** |
+| **lumière** | **8** | **38** | 2 | **0,21** |
+| feu | 7 | 22 | 11 | 0,32 |
+| physique | 6 | 8 | 21 | 0,75 |
+| glace | 6 | 9 | 8 | 0,67 |
+| foudre | 5 | 8 | 5 | 0,63 |
+
+**Le jeu investit son plus gros catalogue de sorts dans l'élément auquel
+41 créatures résistent et dont 1 seule est faible ; et son élément le plus
+récompensé — 38 créatures faibles à la lumière — n'a que 8 sorts, dont le
+premier achetable arrivait à l'étage 6.** 67× d'écart entre les deux ratios.
+
+La pression démarre à l'**étage 4** : 10 des 21 créatures de la tranche 4-6 sont
+faibles à la lumière, et 86 % de cette tranche porte une résistance. Le système
+résistance/faiblesse réclamait donc un élément que le joueur ne pouvait pas
+encore se procurer.
+
+**Correctif appliqué** (data-only, minimal) : `livre_patronum` passe de
+l'étage 6 à l'**étage 4**, pour que la lumière soit disponible quand le
+bestiaire commence à la réclamer. `node tools/check_difficulty.js` reste vert
+(aucun étage ne dérive de plus de 10 pts).
+
+**Ce qui reste ouvert, et relève du design** : le déséquilibre ténèbres est
+peut-être *intentionnel* — les sorts de ténèbres sont majoritairement des
+lifesteal et des malédictions, valorisés pour leur effet plus que pour leurs
+dégâts bruts, et il est cohérent en lore que les créatures sombres résistent à
+la magie noire. Rééquilibrer les résistances toucherait à cette cohérence :
+c'est un arbitrage d'auteur, pas une correction technique. La mesure est
+posée ; la décision revient à l'auteur du jeu.
+
+### 3.4 ❌ E3 · Perf & poids d'assets — **ABANDONNÉ** (prémisse fausse, mesuré)
 
 `perf-optimization.md` a 15 cases non cochées, dont « `img/` réduit d'au moins
 40 % ». Cette section recommandait WebP en avançant « WebP coupe habituellement
@@ -439,6 +466,12 @@ que **3 images** : `title.jpg` (345 Ko, déjà du JPEG), et les 2 icônes PWA
 chargés **à la demande** (stale-while-revalidate) : les convertir agit sur la
 bande passante *en cours de partie*, pas sur le LCP.
 
+> **DÉCISION (utilisateur, 2026-07-28) : axe abandonné.** Le premier
+> chargement va bien, le sans-perte ne rapporte que 16 % pour 1 131 fichiers
+> touchés, et le q90 dégraderait des illustrations peintes à la main pour
+> ~5,4 Mo de bande passante par partie. Le jeu n'a pas de problème de poids au
+> chargement ; l'axe est clos.
+>
 > **Conclusion révisée.** E3 n'est pas un axe de premier chargement — le
 > premier chargement va bien (1,30 Mo transférés, dont 74 % de JS déjà
 > compressé à 0,68 Mo). Ce qui reste réel : ~5,4 Mo d'économie de bande
@@ -524,8 +557,8 @@ l'exécution du lot 1.
 | 4 | **A1** ESLint | Amélioration | Fort | **S** | ✅ livré | 0 erreur d'emblée → bloquant en CI sans toucher au code de jeu |
 | 5 | **P1** passe d'archivage des plans | Process | Moyen | **S** | 🟨 partiel | 59 → 47 plans actifs (13 catalogues de prompts sortis, 3 plans clos archivés) ; l'audit complet reste à faire |
 | 6 | **E1** verbes de quête (`deliver`/`discover`/`choice`) | Enrichissement | **Fort** | M | ouvert | seul axe qui change la texture du jeu ; briques déjà là |
-| 7 | **E3** WebP | ~~Enrichissement~~ | **Faible** | M | ⚠️ déclassé | prémisse démentie par la mesure (§3.4) : gain réel 16 % sans perte, et le précache transfère 1,30 Mo (brotli), pas 3,38. Devient un arbitrage qualité/poids, pas une optimisation évidente |
-| 8 | **E2** rééquilibrage élémentaire (foudre/glace) | Enrichissement | Moyen | M | ouvert | rend le système resist/weak réellement jouable early |
+| — | ~~**E3** WebP~~ | — | — | — | ❌ **abandonné** | prémisse démentie par la mesure (§3.4) : gain réel 16 % sans perte, et le précache transfère 1,30 Mo (brotli), pas 3,38. Devient un arbitrage qualité/poids, pas une optimisation évidente |
+| 8 | **E2** catalogue élémentaire | Enrichissement | Moyen | S | ✅ **traité** | constat re-posé (§3.x) : le problème n'était pas « foudre pauvre » mais 14 sorts ténèbres pour 41 monstres résistants vs 8 sorts lumière pour 38 faibles. Lumière avancée à l'étage 4 |
 | 9 | **E4** slots `wand`/armure | Enrichissement | Moyen | M | ouvert | condition de loot pour un build physique viable |
 | 10 | **P2** parallélisation de la suite smoke | Process | Moyen | M | ouvert | protège le respect de la règle §7 |
 | 11 | **A3**/**A4** helpers `activeParty` / REST MP | Amélioration | Faible | S | ouvert | opportuniste, au fil des passages |
