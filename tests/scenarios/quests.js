@@ -1932,4 +1932,145 @@ async function scenarioDumbledoreRelais() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioChainedQuest, scenarioHeadlessHunt, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioFarmingQuests, scenarioDelayedSearch, scenarioCleVoute, scenarioQuestFanfare, scenarioLoopNpcQuests, scenarioLoopNpcQuests2, scenarioLoopNpcQuests3, scenarioSignatureQuestBadge, scenarioDeliveryQuestLetter, scenarioMainQuestDescente, scenarioDumbledoreRelais] };
+// ── Lot 3 (revue 2026-07-28 · E1) — verbes non combattants ─────
+// Le catalogue penchait à 58 % d'objectifs `kill`. Ces scénarios
+// couvrent les deux verbes AJOUTÉS au moteur (`discover`, `talk`) et
+// la LIVRAISON inter-PNJ (mécanique préexistante, désormais utilisée).
+async function scenarioDiscoverObjective() {
+  console.log('\n── Scénario : objectif « discover » (atteindre un lieu) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 — forme de l'étape + le hook ne compte QUE la bonne cellule.
+  const t1 = await page.evaluate(() => {
+    acceptQuest('sources_pomfresh');
+    const q = activeQuests.find(x => x.id === 'sources_pomfresh');
+    const st = q.objectives[0];
+    checkDiscoverQuests(CELL.ALTAR, 1, 1);        // mauvais type → ignoré
+    const afterWrong = st.progress;
+    checkDiscoverQuests(CELL.FOUNTAIN, 2, 2);     // bon type → +1
+    return { type: st.type, cell: st.cell, amount: st.amount, afterWrong, afterRight: st.progress };
+  });
+  console.log('  T1 étape :', t1);
+  assert(t1.type === 'discover',   'étape 0 doit être de type discover');
+  assert(t1.cell === 'FOUNTAIN',   'étape doit viser une FOUNTAIN');
+  assert(t1.amount === 3,          'objectif attendu à 3 fontaines');
+  assert(t1.afterWrong === 0,      'un ALTAR ne doit pas faire progresser une étape FOUNTAIN');
+  assert(t1.afterRight === 1,      'une FOUNTAIN doit faire progresser l\'étape');
+
+  // T2 — anti-farm : repasser sur LA MÊME case ne recompte pas.
+  const t2 = await page.evaluate(() => {
+    const st = activeQuests.find(x => x.id === 'sources_pomfresh').objectives[0];
+    checkDiscoverQuests(CELL.FOUNTAIN, 2, 2);     // même case
+    checkDiscoverQuests(CELL.FOUNTAIN, 2, 2);
+    const afterSame = st.progress;
+    checkDiscoverQuests(CELL.FOUNTAIN, 5, 5);     // case neuve
+    checkDiscoverQuests(CELL.FOUNTAIN, 9, 3);     // 3e case → complet
+    return { afterSame, progress: st.progress, completed: st.completed,
+             auto: completedQuests.has('sources_pomfresh') };
+  });
+  console.log('  T2 anti-farm :', t2);
+  assert(t2.afterSame === 1,  'repasser sur la même fontaine ne doit pas recompter');
+  assert(t2.progress === 3,   'trois fontaines distinctes attendues');
+  assert(t2.completed,        'étape doit être complétée au seuil');
+  assert(!t2.auto,            'la quête ne doit PAS se remettre toute seule (retour au donneur)');
+
+  if (errors.length) { errors.forEach(e => console.log('  ⚠️ ', e)); throw new Error('erreurs JS pendant discover'); }
+  console.log('  ✅ objectif « discover » OK (typage, anti-farm, pas d\'auto-remise)');
+  await browser.close();
+}
+
+async function scenarioTalkObjective() {
+  console.log('\n── Scénario : objectif « talk » (consulter des PNJ) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  const t1 = await page.evaluate(() => {
+    acceptQuest('conseil_mcgonagall');
+    const st = activeQuests.find(x => x.id === 'conseil_mcgonagall').objectives[0];
+    checkTalkQuests('hagrid');        // hors liste → ignoré
+    const offList = st.progress;
+    checkTalkQuests('rogue');
+    checkTalkQuests('rogue');         // doublon → ignoré
+    const afterDup = st.progress;
+    checkTalkQuests('sprout');
+    checkTalkQuests('flitwick');      // 3e → complet
+    return { type: st.type, ids: st.npcIds, offList, afterDup,
+             progress: st.progress, completed: st.completed,
+             auto: completedQuests.has('conseil_mcgonagall') };
+  });
+  console.log('  T1 talk :', t1);
+  assert(t1.type === 'talk',        'étape 0 doit être de type talk');
+  assert(t1.ids.length === 3,       'trois PNJ attendus dans npcIds');
+  assert(t1.offList === 0,          'un PNJ hors liste ne doit pas compter');
+  assert(t1.afterDup === 1,         'reparler au même PNJ ne doit pas recompter');
+  assert(t1.progress === 3,         'trois PNJ distincts attendus');
+  assert(t1.completed,              'étape doit être complétée au seuil');
+  assert(!t1.auto,                  'la quête ne doit PAS se remettre toute seule');
+
+  // T2 — le hook est bien branché sur l'ouverture de dialogue réelle.
+  const t2 = await page.evaluate(() => {
+    acceptQuest('enquete_mimi');
+    const st = activeQuests.find(x => x.id === 'enquete_mimi').objectives[0];
+    openNpcDialog('chevalier_godric');
+    if (typeof closeNpcDialog === 'function') closeNpcDialog();
+    return { progress: st.progress, seen: (st._seen || []).slice() };
+  });
+  console.log('  T2 via dialogue :', t2);
+  assert(t2.progress === 1,                          'openNpcDialog doit faire progresser l\'étape talk');
+  assert(t2.seen.indexOf('chevalier_godric') !== -1, 'le PNJ consulté doit être mémorisé');
+
+  if (errors.length) { errors.forEach(e => console.log('  ⚠️ ', e)); throw new Error('erreurs JS pendant talk'); }
+  console.log('  ✅ objectif « talk » OK (liste, doublons, hook dialogue)');
+  await browser.close();
+}
+
+async function scenarioDeliveryQuestsWired() {
+  console.log('\n── Scénario : livraisons inter-PNJ (donneur ≠ destinataire) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  const r = await page.evaluate(() => {
+    const CASES = [
+      { id: 'tue_loup_lupin', giver: 'pomfresh',   to: 'lupin',   item: 'potion_tue_loup' },
+      { id: 'braise_hagrid',  giver: 'slughorn',   to: 'hagrid',  item: 'essence_chaleur' },
+      { id: 'givre_guipure',  giver: 'ollivander', to: 'guipure', item: 'cristal_givre' },
+    ];
+    return CASES.map((c) => {
+      const g = getNpcById(c.giver), t = getNpcById(c.to);
+      const tpl = getQuestTemplate(c.id);
+      return {
+        id: c.id,
+        tpl:          !!tpl,
+        grants:       tpl && tpl.grantOnAccept === c.item,
+        givenByGiver: !!g && (g.questsGiven || []).indexOf(c.id) !== -1,
+        // le cœur de la livraison : le donneur ne clôt PAS, le destinataire oui
+        notClosedByGiver: !!g && (g.questsTurnedIn || []).indexOf(c.id) === -1,
+        closedByTarget:   !!t && (t.questsTurnedIn || []).indexOf(c.id) !== -1,
+      };
+    });
+  });
+  r.forEach((c) => console.log('  ', c));
+  for (const c of r) {
+    assert(c.tpl,              `template ${c.id} absent`);
+    assert(c.grants,           `${c.id} doit remettre son objet à l'acceptation`);
+    assert(c.givenByGiver,     `${c.id} doit figurer dans questsGiven du donneur`);
+    assert(c.notClosedByGiver, `${c.id} ne doit PAS être clos par son donneur (sinon ce n'est pas une livraison)`);
+    assert(c.closedByTarget,   `${c.id} doit être clos par le destinataire`);
+  }
+
+  // Le donneur reste en 'active' tant que la remise se fait ailleurs.
+  const st = await page.evaluate(() => {
+    acceptQuest('tue_loup_lupin');
+    return { giver: getNpcQuestState(getNpcById('pomfresh')),
+             target: getNpcQuestState(getNpcById('lupin')) };
+  });
+  console.log('  états PNJ :', st);
+  assert(st.giver !== 'ready', 'le donneur ne doit jamais être « ready » pour une livraison');
+
+  if (errors.length) { errors.forEach(e => console.log('  ⚠️ ', e)); throw new Error('erreurs JS pendant livraisons'); }
+  console.log('  ✅ livraisons inter-PNJ câblées (3 quêtes)');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioDiscoverObjective, scenarioTalkObjective, scenarioDeliveryQuestsWired, scenarioChainedQuest, scenarioHeadlessHunt, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioFarmingQuests, scenarioDelayedSearch, scenarioCleVoute, scenarioQuestFanfare, scenarioLoopNpcQuests, scenarioLoopNpcQuests2, scenarioLoopNpcQuests3, scenarioSignatureQuestBadge, scenarioDeliveryQuestLetter, scenarioMainQuestDescente, scenarioDumbledoreRelais] };

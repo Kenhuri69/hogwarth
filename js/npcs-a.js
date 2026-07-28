@@ -187,8 +187,8 @@ NPCS.push(
     icon:  "🩺",
     portraitImg: "img/npc/pomfresh.png",
     placement: { floor: 2, anchor: "any" },
-    questsGiven:    ["mandragore_pomfresh", "fabrique_pomfresh", "givre_pomfresh", "derniere_recette_elara"],
-    questsTurnedIn: ["mandragore_pomfresh", "fabrique_pomfresh", "givre_pomfresh", "derniere_recette_elara"],
+    questsGiven:    ["mandragore_pomfresh", "fabrique_pomfresh", "givre_pomfresh", "derniere_recette_elara", "tue_loup_lupin", "sources_pomfresh"],
+    questsTurnedIn: ["mandragore_pomfresh", "fabrique_pomfresh", "givre_pomfresh", "derniere_recette_elara", "sources_pomfresh"],
     // Quêtes répétables en Boucle (étage 12) — gate minFloor:11.
     dialoguesByQuest: {
       // Lien Pomfresh × Élara (révision quêtes §6) — la fiche de soin reconnue.
@@ -244,8 +244,8 @@ NPCS.push(
     icon:  "👻",
     portraitImg: "img/npc/mimi.png",
     placement: { floor: 2, anchor: "any" },
-    questsGiven:    ["troll_toilettes", "mimi_esprits"],
-    questsTurnedIn: ["troll_toilettes", "mimi_esprits"],
+    questsGiven:    ["troll_toilettes", "mimi_esprits", "enquete_mimi"],
+    questsTurnedIn: ["troll_toilettes", "mimi_esprits", "enquete_mimi"],
     // Quête répétable en Boucle (étage 12) — apaiser les esprits hostiles.
     dialoguesByQuest: {
       mimi_esprits: {
@@ -338,7 +338,7 @@ NPCS.push(
       type:  "open_brewing",
       label: "<img class='ui-icon ui-icon-md' src='img/icons/items/potion_m.png' alt=''> Concocter une potion"
     },
-    questsGiven:    ["quest_potions_slughorn", "quest_potions_slughorn_2", "quest_potions_slughorn_3"],
+    questsGiven:    ["quest_potions_slughorn", "quest_potions_slughorn_2", "quest_potions_slughorn_3", "braise_hagrid"],
     questsTurnedIn: ["quest_potions_slughorn", "quest_potions_slughorn_2", "quest_potions_slughorn_3"],
     dialogues: {
       greeting:    [
@@ -455,7 +455,7 @@ NPCS.push(
     // lettre_jamais_envoyee : Lupin ne la DONNE pas (c'est Manon) mais il
     // la CLÔT — destinataire de la livraison (questsTurnedIn seulement).
     questsGiven:    ["lumiere_desespoir", "aconit_de_la_meute"],
-    questsTurnedIn: ["lumiere_desespoir", "aconit_de_la_meute", "lettre_jamais_envoyee"],
+    questsTurnedIn: ["lumiere_desespoir", "aconit_de_la_meute", "lettre_jamais_envoyee", "tue_loup_lupin"],
     dialogues: {
       greeting:    [
         "Bienvenue, jeune sorcier. Je peux t'enseigner un sort puissant — mais d'abord, tu dois affronter ta peur la plus sombre.",
@@ -709,7 +709,7 @@ NPCS.push(
     portraitImg: "img/npc/hagrid.png",
     placement: { floor: 4, anchor: "any" },
     questsGiven:    ["chouette_perdue", "defense_cabane"],
-    questsTurnedIn: ["chouette_perdue", "defense_cabane"],
+    questsTurnedIn: ["chouette_perdue", "defense_cabane", "braise_hagrid"],
     dialogues: {
       greeting:    [
         "Ah, te v'là ! Tu tombes bien — j'ai perdu une de mes chouettes ensorcelées dans la Forêt Interdite.",
@@ -767,8 +767,8 @@ NPCS.push(
     // La Quête Signature 🦁 « L'Étendard de Godric » est désormais confiée par le
     // donneur thématique dédié (Chevalier Fantôme `chevalier_godric`, ch.06 §6.8.5) ;
     // McGonagall garde la leçon, le set, le don et la remise cérémonielle de la relique.
-    questsGiven:    ["golem_passage", "quest_set_gryff", "quest_don_gryff"],
-    questsTurnedIn: ["golem_passage", "quest_set_gryff", "quest_don_gryff"],
+    questsGiven:    ["golem_passage", "quest_set_gryff", "quest_don_gryff", "conseil_mcgonagall"],
+    questsTurnedIn: ["golem_passage", "quest_set_gryff", "quest_don_gryff", "conseil_mcgonagall"],
     dialogues: {
       greeting:    [
         "Un Gardien du Portail s'est éveillé dans les passages secrets. Il bloque l'accès à des connaissances précieuses.",
@@ -941,8 +941,8 @@ NPCS.push(
       house: "Serdaigle",
       label: "<img class='ui-icon ui-icon-md' src='img/icons/gold.png' alt=''> Recevoir votre récompense"
     },
-    questsGiven:    ["quest_signature_raven", "quest_set_raven", "quest_don_raven"],
-    questsTurnedIn: ["quest_signature_raven", "quest_set_raven", "quest_don_raven"],
+    questsGiven:    ["quest_signature_raven", "quest_set_raven", "quest_don_raven", "steles_flitwick"],
+    questsTurnedIn: ["quest_signature_raven", "quest_set_raven", "quest_don_raven", "steles_flitwick"],
     dialogues: {
       greeting: [
         "Oh ! Un esprit aiguisé, n'est-ce pas ? L'aigle de Serdaigle se reconnaît au premier regard.",
@@ -1058,7 +1058,7 @@ NPCS.push(
       default: 0.50,
       byType:  { "wand": 0.75 }
     },
-    questsGiven:    ["bottines_ollivander", "bois_ollivander_boucle"],
+    questsGiven:    ["bottines_ollivander", "bois_ollivander_boucle", "givre_guipure"],
     questsTurnedIn: ["bottines_ollivander", "bois_ollivander_boucle"],
     // Quête de fouille répétable en Boucle (étage 13) — récompense une baguette
     // épique taillée dans un if des Profondeurs. Gate minFloor:11.
@@ -1106,7 +1106,7 @@ NPCS.push(
       bySlot:  { "body": 0.75, "head": 0.75, "cloak": 0.75 }
     },
     questsGiven:    ["fil_acromantule", "confection_guipure"],
-    questsTurnedIn: ["fil_acromantule", "confection_guipure"],
+    questsTurnedIn: ["fil_acromantule", "confection_guipure", "givre_guipure"],
     // Quête répétable en Boucle (étage 15) — confection d'une cape de soie.
     dialoguesByQuest: {
       confection_guipure: {

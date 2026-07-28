@@ -303,30 +303,37 @@ code neuf ne l'applique pas non plus.
 | **B1 · 0 item Fortune, 1 item Célérité** | stats dérivées non soutenues par le loot | ✅ **Livré** : **3** `bonusFortune`, **4** `bonusCelerite` |
 | Zone D · Gardiens des Fondateurs | données seules, art à faire | ✅ 4 gardiens epic (ét. 17) + PNG dédiés |
 
-### 3.2 🟠 E1 · Monoculture des objectifs de quête — **encore ouvert**
+### 3.2 ✅ E1 · Monoculture des objectifs de quête — **traité (lot 3)**
 
-Remesuré sur les 88 templates :
+> ⚠️ **Le « 66 % » que cette section annonçait était faux** : il divisait
+> 58 objectifs `kill` par 88 **quêtes** — deux grandeurs différentes. Même
+> vice de dénominateur que les erreurs de C1/C2 et du compte de scénarios.
+> Mesure exacte sur `master` avant le lot 3 : **58,0 %** des objectifs
+> (58/100), ou **61,8 %** des quêtes portant au moins un `kill` (55/89).
 
-| Type d'objectif | Nombre | Part |
+L'audit du moteur mené pour le lot 3 a aussi corrigé le **diagnostic** : sur
+les trois verbes proposés ici, **`deliver` existait déjà** (`questsTurnedIn` ≠
+`questsGiven` + `grantOnAccept`) et n'était utilisé qu'**une fois sur 89**. Le
+manque était du contenu, pas du moteur — l'« ajouter » aurait dupliqué une
+mécanique en place.
+
+**Livré** (cf. [`lot3-verbes-de-quete-2026-07-28.md`](./lot3-verbes-de-quete-2026-07-28.md)) :
+les deux verbes réellement absents — `discover` (atteindre un type de lieu) et
+`talk` (consulter des PNJ nommés) — plus 7 quêtes, dont 3 livraisons inter-PNJ
+qui portent l'usage de cette mécanique de 1 à 4.
+
+| | Avant | Après |
 |---|---|---|
-| `kill` | **58** | **66 %** |
-| `item` | 16 | 18 % |
-| `floor` | 9 | 10 % |
-| `search` / `herb` / `donate` | 4 / 4 / 4 | 4,5 % chacun |
-| `pages` / `riddle` / `escape` | 2 / 1 / 1 | ~1 % |
+| Objectifs `kill` | 58,0 % | **54,2 %** |
+| Quêtes avec ≥ 1 `kill` | 61,8 % | **57,3 %** |
 
-Le ratio est **inchangé** depuis la revue de juillet (67 % sur 85 templates
-→ 66 % sur 88) : les 3 templates ajoutés n'ont pas diversifié le verbe. Le jeu
-possède pourtant déjà les briques d'autres verbes — 12 devinettes dans
-`riddles.js` pour **1** seule quête `riddle`, les Poches du Sceau pour **1**
-quête `escape`, la concoction pour 4 `herb`.
+**Cible « sous 50 % » non atteinte** — il reste ~20 quêtes non combattantes à
+écrire : de la narration, pas du moteur. Le jeu a d'ailleurs encore des briques
+sous-exploitées (12 devinettes pour **1** quête `riddle`, les Poches du Sceau
+pour **1** quête `escape`).
 
-- **Enrichissement** : verbes `deliver` (escorter/porter d'un PNJ à un autre),
-  `discover` (atteindre un lieu / déverrouiller une entrée Codex), `choice`
-  (résolution à deux issues). L'infrastructure de `objective.type` est
-  data-driven : le coût est dans `checkQuestCompletion` + l'écriture.
-- **Vérifier** : part de `kill` sous **50 %** ; un scénario smoke par nouveau
-  verbe.
+**`choice` reste ouvert** : UI de choix, conséquences persistées, dialogues par
+branche — une décision de design qui revient à l'auteur du jeu.
 
 ### 3.3 🟡 E2 · Catalogue élémentaire déséquilibré — **encore ouvert**
 

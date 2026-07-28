@@ -585,6 +585,23 @@ function _renderActiveQuestCard(q) {
 }
 
 // HTML d'une étape d'objectif (✓ complétée, ▶ active avec barre, ◌ verrouillée).
+// Libellés lisibles des lieux visés par une étape "discover". La clé est
+// un nom de CELL ; un lieu absent de cette table reste affichable via un
+// repli générique (jamais d'étape muette dans le journal).
+const _DISCOVER_LABELS = {
+  FOUNTAIN:    'une fontaine',
+  ALTAR:       'un autel',
+  STELE:       "une stèle d'énigme",
+  FORGE:       'la Forge des Ténèbres',
+  LIBRARY:     'la Bibliothèque interdite',
+  GARDEN:      "un jardin d'herbes",
+  REFUGE:      'un refuge',
+  SHOP:        'une échoppe',
+  CHEST:       'un coffre',
+  RUNE:        'une dalle-rune',
+  REQUIREMENT: 'la Salle sur Demande',
+};
+
 function _renderQuestStep(o, isActive, ready, isFirst) {
   let label;
   if (o.type === 'kill') {
@@ -600,6 +617,17 @@ function _renderQuestStep(o, isActive, ready, isFirst) {
     label = `Résoudre les énigmes de Dumbledore`;
   } else if (o.type === 'discover_garden') {
     label = `Découvrir un jardin d'herbes caché`;
+  } else if (o.type === 'discover') {
+    const place = _DISCOVER_LABELS[o.cell] || 'lieu remarquable';
+    label = o.amount > 1
+      ? `Trouver ${o.amount} ${place}${place.endsWith('x') ? '' : 's'}`
+      : `Trouver ${place}`;
+  } else if (o.type === 'talk') {
+    const names = (o.npcIds || []).map((id) => {
+      const n = (typeof getNpcById === 'function') ? getNpcById(id) : null;
+      return (n && n.name) ? n.name : id;
+    });
+    label = names.length ? `Consulter ${names.join(', ')}` : `Consulter ${o.amount} personne(s)`;
   } else if (o.type === 'search') {
     label = `Fouiller ${o.amount} recoin${o.amount > 1 ? 's' : ''}`;
   } else if (o.type === 'escape') {
@@ -1029,6 +1057,67 @@ window.checkFloorQuests = function(floor) {
   // Remise auto (quêtes autoTurnIn) puis avancée de la quête principale.
   _autoTurnInReadyQuests();
   _ensureMainQuestProgress(floor);
+};
+
+// ── Appelée depuis handleCellEntry (movement.js) ──────────────────
+// Fait progresser les étapes "discover" : atteindre un TYPE de lieu.
+//   { type:'discover', cell:'FORGE', amount:1 }
+// `cell` est un nom de clé de CELL (FORGE, LIBRARY, FOUNTAIN, ALTAR,
+// STELE, GARDEN, REFUGE…) — pas une valeur numérique, pour que les
+// templates restent lisibles et survivent à une renumérotation de CELL.
+//
+// Chaque case n'est comptée QU'UNE FOIS par quête (`_seen`, sérialisé avec
+// l'objectif) : sans cela, faire trois pas d'avant en arrière sur la même
+// fontaine bouclerait l'objectif. C'est la différence avec les étapes
+// "search", où c'est l'ACTION qui compte, pas le lieu.
+//
+// Comme pour "kill" et "search", la complétion n'est jamais automatique :
+// l'objectif devient remettable, le joueur retourne voir le donneur.
+window.checkDiscoverQuests = function(cellType, x, y) {
+  if (typeof activeQuests === 'undefined' || typeof CELL === 'undefined') return;
+  const key = `${x},${y}`;
+  activeQuests.forEach((q) => {
+    const step = getActiveStep(q);
+    if (!step || step.type !== 'discover') return;
+    if (CELL[step.cell] !== cellType) return;
+    if (!Array.isArray(step._seen)) step._seen = [];
+    if (step._seen.indexOf(key) !== -1) return;
+    step._seen.push(key);
+    step.progress = step._seen.length;
+    if (step.progress >= step.amount) {
+      step.completed = true;
+      addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/quest.png" alt=""> Quête « ${q.title} » prête — retourne voir ${q.giver}.`, 'good');
+    } else {
+      addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/quest.png" alt=""> Quête « ${q.title} » : ${step.progress}/${step.amount} lieux trouvés.`, '');
+    }
+  });
+  if (typeof updateQuestTracker === 'function') updateQuestTracker();
+};
+
+// ── Appelée depuis openNpcDialog (npc-dialog.js) ──────────────────
+// Fait progresser les étapes "talk" : consulter des PNJ nommés.
+//   { type:'talk', npcIds:['hagrid','lupin'], amount:2 }
+// Chaque PNJ de la liste ne compte qu'une fois (`_seen`). Un PNJ hors
+// liste est ignoré — c'est ce qui distingue « va parler à Hagrid ET
+// Lupin » d'un simple compteur de dialogues.
+window.checkTalkQuests = function(npcId) {
+  if (typeof activeQuests === 'undefined' || !npcId) return;
+  activeQuests.forEach((q) => {
+    const step = getActiveStep(q);
+    if (!step || step.type !== 'talk') return;
+    if (!Array.isArray(step.npcIds) || step.npcIds.indexOf(npcId) === -1) return;
+    if (!Array.isArray(step._seen)) step._seen = [];
+    if (step._seen.indexOf(npcId) !== -1) return;
+    step._seen.push(npcId);
+    step.progress = step._seen.length;
+    if (step.progress >= step.amount) {
+      step.completed = true;
+      addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/quest.png" alt=""> Quête « ${q.title} » prête — retourne voir ${q.giver}.`, 'good');
+    } else {
+      addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/quest.png" alt=""> Quête « ${q.title} » : ${step.progress}/${step.amount} personnes consultées.`, '');
+    }
+  });
+  if (typeof updateQuestTracker === 'function') updateQuestTracker();
 };
 
 // ── Helpers besace d'herboriste (étapes "herb") ──────────────────

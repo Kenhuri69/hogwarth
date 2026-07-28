@@ -970,6 +970,11 @@ function openNpcDialog(npcId) {
   const npc = (typeof getNpcById === 'function') ? getNpcById(npcId) : null;
   if (!npc) return;
 
+  // Étapes de quête "talk" : consulter ce PNJ compte AVANT le calcul de
+  // l'état — sinon une quête dont ce PNJ est la dernière personne à voir
+  // resterait affichée « en cours » pendant le dialogue qui la complète.
+  if (typeof checkTalkQuests === 'function') checkTalkQuests(npcId);
+
   const state = getNpcQuestState(npc);
 
   // Portrait : raster (priorité 1) > SVG inline > emoji fallback
