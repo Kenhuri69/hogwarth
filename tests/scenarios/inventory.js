@@ -1530,16 +1530,25 @@ async function scenarioLightBookAvailability() {
         firstByElement[sp.element] = f;
       }
     }
-    // Le livre doit réellement être proposé à l'étage 4.
-    currentFloor = 4;
-    openShop();
-    const listed = !!document.body.innerHTML.includes('Patronum');
-    if (typeof closeModal === 'function') closeModal('shop-modal');
-    return { minFloor: entry && entry.minFloor, firstByElement, listed };
+    // ÉLIGIBILITÉ, pas présence dans un tirage : `_rollShopStock` tire un
+    // SOUS-ENSEMBLE ALÉATOIRE du catalogue éligible (SHOP_STOCK_SIZE).
+    // Asserter que le livre apparaît dans une boutique donnée serait un
+    // test à pile ou face — vert en local, rouge en CI (constaté).
+    // Le contrat réel est : il entre dans le pool à partir de l'étage 4,
+    // et pas avant.
+    const eligibleAt = (floor) =>
+      SHOP_CATALOG.filter((e) => e.minFloor <= floor).some((e) => e.id === 'livre_patronum');
+    return {
+      minFloor: entry && entry.minFloor,
+      firstByElement,
+      atFloor3: eligibleAt(3),
+      atFloor4: eligibleAt(4),
+    };
   });
   console.log('  accès par élément :', r.firstByElement);
   assert(r.minFloor === 4,  `livre_patronum doit être achetable dès l'étage 4 (got ${r.minFloor})`);
-  assert(r.listed,          'le livre de lumière doit apparaître en boutique à l\'étage 4');
+  assert(r.atFloor4,        'le livre de lumière doit être éligible à l\'étage 4');
+  assert(!r.atFloor3,       'le livre de lumière ne doit PAS être éligible avant l\'étage 4');
   // La lumière ne doit plus être le dernier élément accessible : elle arrive
   // au plus tard en même temps que le feu et la foudre (étage 5).
   const f = r.firstByElement;
