@@ -148,6 +148,31 @@ qu'en absolu.
 
 ---
 
+## Correction d'une affirmation du lot 1
+
+Le log CI de ce lot contient, dans le « Scénario 21 : Phase 4 — items » :
+
+```
+T1 couverture → { total: 218, mapped: 218, missing: [], allLoaded: true, failed: [] }
+```
+
+**La suite smoke vérifiait donc déjà la couverture d'icônes des items** — et
+même le chargement effectif des PNG, ce que `check_content_refs.js` ne fait
+pas. L'affirmation du lot 1 (« aucune de ces références n'était couverte par
+la suite smoke ») était trop large sur ce point précis.
+
+Ce qui reste exact, et qui fonde A2 : **les références croisées entre
+registres** — drops→items, quêtes→monstres/items/sorts/recettes, PNJ→quêtes,
+items→sorts, recettes→ingrédients — ne sont couvertes nulle part ailleurs.
+C'est là qu'un id renommé passerait toute la CI sans bruit.
+
+Conséquence pratique : l'avertissement « items sans icône » de
+`check_content_refs.js` fait doublon avec le scénario 21. Il est conservé (il
+coûte zéro et couvre aussi les **sorts**, que le scénario 21 ne teste pas),
+mais ce n'est pas lui qui justifie l'outil.
+
+---
+
 ## Vérification
 
 - [x] `npm run lint` — **0 erreur**, 13 avertissements
