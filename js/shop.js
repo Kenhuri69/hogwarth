@@ -118,6 +118,23 @@ const SHOP_CATALOG = [
   { id: "masque_rituel",        minFloor: 9 },
   { id: "gantelets_aurors",     minFloor: 10 },
   { id: "ceinture_aurors",      minFloor: 9 },   // Lot E2 — 1er epic du slot belt
+  // ── Lot 4 revue 2026-07 (axe E4) — armes & armures ──
+  // Comble les paliers morts des slots wand/body/hands/feet : le meilleur
+  // torse achetable restait `robe1` (étage 2) jusqu'à l'étage 9. Ordre =
+  // ordre d'entrée au catalogue. Cf. lot4-slots-equipement-2026-07-28.md.
+  { id: "mitaines_cuir",        minFloor: 2 },
+  { id: "cuirasse_cloutee",     minFloor: 3 },
+  { id: "bottes_cloutees",      minFloor: 3 },
+  { id: "baguette_aubepine",    minFloor: 5 },
+  { id: "gantelets_gardien",    minFloor: 5 },
+  { id: "haubert_mailles",      minFloor: 6 },
+  { id: "greves_acier",         minFloor: 6 },
+  { id: "fauchon_gobelin",      minFloor: 7 },
+  { id: "poings_ferres",        minFloor: 7 },
+  { id: "armure_gardien",       minFloor: 9 },
+  { id: "bottes_marche_forcee", minFloor: 9 },
+  { id: "epee_gobeline",        minFloor: 10 },
+  { id: "gantelets_dragonniers",minFloor: 10 },
   // Consommables endgame (post-victoire) — voir ENDGAME_PLAN.md §7.10
   { id: "potion_xl",           minFloor: 15 },
   { id: "potion_xl_sp",        minFloor: 15 },

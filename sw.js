@@ -16,7 +16,7 @@
 //     individuel suffit pour eux.
 // =======================================================================
 
-const CACHE_VERSION = 'hogwarth-v269';
+const CACHE_VERSION = 'hogwarth-v270';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Précache minimal (~1 Mo) : shell HTML/CSS/JS + premier visuel.
@@ -64,14 +64,14 @@ const PRECACHE_URLS = [
   './js/data.js?v=65',
   './js/data-characters.js?v=1',
   './js/data-spells.js?v=1',
-  './js/data-items.js?v=6',
+  './js/data-items.js?v=7',
   './js/data-world.js?v=1',
   './js/data-icon-recipes.js?v=1',
   './js/floor-themes.js?v=2',
   './js/floor-ambiance.js?v=20',
   './js/floor-events.js?v=2',
   './js/room-flavor.js?v=1',
-  './js/item-icons.js?v=51',
+  './js/item-icons.js?v=52',
   './js/state.js?v=49',
   './js/hero-barks.js?v=14',
   './js/ui.js?v=26',
@@ -113,7 +113,7 @@ const PRECACHE_URLS = [
   './js/npc-dialog.js?v=26',
   './js/karaoke.js?v=1',
   './js/intro.js?v=4',
-  './js/shop.js?v=21',
+  './js/shop.js?v=22',
   './js/save-slots.js?v=4',
   './js/save.js?v=53',
   './js/save-visit-snapshot.js?v=2',

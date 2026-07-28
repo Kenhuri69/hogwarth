@@ -63,6 +63,22 @@ const ITEM_ICON_REGISTRY = {
   masque_courage:       'img/icons/items/chapeau_pointu.png',
   masque_rituel:        'img/icons/items/chapeau_pointu.png',
   grimoire_flottant:    'img/icons/items/book_monsters.png',
+  // Lot 4 revue 2026-07 (axe E4) — armes & armures. Le painterly dédié vit
+  // dans ITEM_ICON_NEW_REGISTRY (priorité 1) ; ces entrées sont le repli de
+  // famille exigé par la couverture legacy (scénario smoke « Phase 4 — items »).
+  baguette_aubepine:    'img/icons/items/wand1.png',
+  fauchon_gobelin:      'img/icons/items/sword_gryff.png',
+  epee_gobeline:        'img/icons/items/sword_gryff.png',
+  cuirasse_cloutee:     'img/icons/items/robe1.png',
+  haubert_mailles:      'img/icons/items/robe1.png',
+  armure_gardien:       'img/icons/items/robe1.png',
+  mitaines_cuir:        'img/icons/items/gants_apprenti.png',
+  gantelets_gardien:    'img/icons/items/gants_apprenti.png',
+  poings_ferres:        'img/icons/items/gants_apprenti.png',
+  gantelets_dragonniers:'img/icons/items/gants_apprenti.png',
+  bottes_cloutees:      'img/icons/items/bottes_apprenti.png',
+  greves_acier:         'img/icons/items/bottes_dragon.png',
+  bottes_marche_forcee: 'img/icons/items/bottes_dragon.png',
   // Consommables
   potion_s:           'img/icons/items/potion_s.png',
   potion_m:           'img/icons/items/potion_m.png',
@@ -455,7 +471,22 @@ const ITEM_ICON_NEW_REGISTRY = {
   voyageur_cape:        'img/icons_new/voyageur_cape_64.png',
   voyageur_bottes:      'img/icons_new/voyageur_bottes_64.png',
   voyageur_anneau:      'img/icons_new/voyageur_anneau_64.png',
-  voyageur_amulette:    'img/icons_new/voyageur_amulette_64.png'
+  voyageur_amulette:    'img/icons_new/voyageur_amulette_64.png',
+  // Lot 4 revue 2026-07 (axe E4) — armes & armures des slots sous-fournis.
+  // Painterly multi-tailles via tools/icon_factory.py (recettes du même nom).
+  baguette_aubepine:    'img/icons_new/baguette_aubepine_64.png',
+  fauchon_gobelin:      'img/icons_new/fauchon_gobelin_64.png',
+  epee_gobeline:        'img/icons_new/epee_gobeline_64.png',
+  cuirasse_cloutee:     'img/icons_new/cuirasse_cloutee_64.png',
+  haubert_mailles:      'img/icons_new/haubert_mailles_64.png',
+  armure_gardien:       'img/icons_new/armure_gardien_64.png',
+  mitaines_cuir:        'img/icons_new/mitaines_cuir_64.png',
+  gantelets_gardien:    'img/icons_new/gantelets_gardien_64.png',
+  poings_ferres:        'img/icons_new/poings_ferres_64.png',
+  gantelets_dragonniers:'img/icons_new/gantelets_dragonniers_64.png',
+  bottes_cloutees:      'img/icons_new/bottes_cloutees_64.png',
+  greves_acier:         'img/icons_new/greves_acier_64.png',
+  bottes_marche_forcee: 'img/icons_new/bottes_marche_forcee_64.png'
 };
 
 // Status effects (battle.js consomme ce registre via STATUS_DEFS[id].iconSrc)

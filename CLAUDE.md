@@ -909,6 +909,8 @@ _baseStr, _baseInt, _baseAgi, _baseEnd   // stats secondaires (lazy-init au 1er 
   grantsSpell: "Reparo",                            // enseigne un sort à l'équipement
   regenHp:     3,                                   // PV régénérés par round (battle.js — applyEquipmentRegen)
   regenSp:     1,                                   // PM régénérés par round (idem)
+  bonusCounterChance: 4,                            // + % de riposte de Garde (battle.js — _tryGuardCounter,
+                                                    // base 30 %, plafond 40 % → +10 utiles au total)
   // bonusHpMax/SpMax : reportés hors-scope V1 (cf. plan §1.2)
 }
 ```
@@ -1036,17 +1038,24 @@ Idempotente, appliquée dans `_applyState` **avant** `recalculateStats` :
 
 ### Items équipables — vue par catégorie (data.js)
 
-> Liste non exhaustive — voir `js/data-items.js` pour le détail. **218 items**
-> au total (+ 39 recettes `brew_*`) dont **121 équipables**. Compteurs vérifiés
+> Liste non exhaustive — voir `js/data-items.js` pour le détail. **231 items**
+> au total (+ 39 recettes `brew_*`) dont **134 équipables**. Compteurs vérifiés
 > par `node tools/check_content_refs.js`.
+
+> **Répartition par slot** (lot 4 de la revue 2026-07, axe E4) : trinket 25 ·
+> amulet 20 · head 16 · **wand 12** · ring 12 · cloak 12 · **body 10** ·
+> **hands 10** · **feet 10** · belt 7. Les 4 slots en gras ont été portés à
+> ces valeurs par le lot 4 (13 items neufs, orientés `bonusStr` / `bonusEnd` /
+> `bonusCounterChance`) : `body` était figé sur `robe1` de l'étage 2 à
+> l'étage 8. Cf. `.claude/plans/lot4-slots-equipement-2026-07-28.md`.
 
 | Slot      | Items représentatifs                                                   |
 |-----------|-----------------------------------------------------------------------|
-| `wand`    | `wand1` (Saule, common), `wand2` (Sureau, rare), `sword_gryff` (legendary) |
+| `wand`    | `wand1` (Saule, common), `wand2` (Sureau, rare), `fauchon_gobelin` (rare, ATK+6 STR+3), `epee_gobeline` (epic), `sword_gryff` (legendary) |
 | `head`    | `chapeau_apprenti` (common), `chapeau_pointu` (rare), `circlet_serdaigle` (rare), `diademe_serdaigle` (legendary) |
-| `body`    | `robe1` (common), `coupe_poufsouffle` (legendary)                     |
-| `hands`   | `gants_apprenti` (common)                                              |
-| `feet`    | `bottes_apprenti` (common), `bottes_dragon` (rare)                    |
+| `body`    | `robe1` (common), `cuirasse_cloutee` (uncommon), `haubert_mailles` (rare, riposte +4 %), `armure_gardien` (epic), `coupe_poufsouffle` (legendary) |
+| `hands`   | `gants_apprenti` (common), `poings_ferres` (rare, ATK+4 STR+2), `gantelets_dragonniers` (epic) |
+| `feet`    | `bottes_apprenti` (common), `bottes_dragon` (rare), `greves_acier` (rare, DEF+4 END+2 AGI−1), `bottes_marche_forcee` (epic) |
 | `cloak`   | `cape_voyageur` (common), `cape_invis` (epic, AGI+5 LCK+5)            |
 | `amulet`  | `amulette_protection` (common), `amulette` (epic, `grantsSpell:"Reparo"`), `larmes_phenix` (epic, `regenHp:3`), `locket_slytherin` (legendary) |
 | `ring`    | `anneau_argent` (common), `anneau_runique` (rare, `tint:"#a060d0"`), `anneau_resurrection` (epic, `grantsSpell:"Reparo"`) |

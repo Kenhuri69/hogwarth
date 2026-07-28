@@ -1732,6 +1732,118 @@ RECIPES: Dict[str, Recipe] = {
     "serre_tete_etude": Recipe(
         id="serre_tete_etude", name="Serre-tête d'Étude", rarity="uncommon",
         silhouette={"kind": "svg", "file": "tiara.svg"}),
+
+    # ── Lot 4 revue 2026-07 (axe E4) — armes & armures ────────────────────
+    # Comble les slots wand/body/hands/feet. Armes sur sword/wizard-staff,
+    # mains sur glove, pieds sur boot ; les torses ont demandé un part neuf
+    # (cuirass.svg) — `hood.svg`, seul part torse existant, rend une capuche.
+    "baguette_aubepine": Recipe(
+        id="baguette_aubepine", name="Baguette d'Aubépine", rarity="uncommon", material="wood",
+        silhouette={"kind": "svg", "file": "wizard-staff.svg"},
+        fills={"shaft": (150, 106,  62), "grip": (104,  70,  38),
+               "pommel": (176, 132,  78), "orb": (192, 150,  92)},
+        accents=[{"kind": "emboss", "region": "shaft", "color": ( 92,  62,  32)}],
+    ),
+    "fauchon_gobelin": Recipe(
+        id="fauchon_gobelin", name="Fauchon Gobelin", rarity="rare", material="metal",
+        silhouette={"kind": "svg", "file": "sword.svg"},
+        fills={"blade": (128, 136, 146), "guard": ( 82,  88,  96),
+               "hilt":  ( 66,  48,  32), "pommel": (150, 158, 168)},
+        accents=[
+            {"kind": "emboss", "region": "blade", "color": ( 62,  68,  76)},
+            {"kind": "runes",  "region": "blade", "color": (196, 204, 214), "count": 3},
+        ],
+    ),
+    "epee_gobeline": Recipe(
+        id="epee_gobeline", name="Épée d'Acier Gobelin", rarity="epic", material="metal",
+        silhouette={"kind": "svg", "file": "sword.svg"},
+        fills={"blade": (192, 200, 212), "guard": (140, 120,  72),
+               "hilt":  ( 58,  50,  44), "pommel": (196, 168,  92)},
+        accents=[
+            {"kind": "gem_facet_shine", "region": "blade",  "color": (232, 240, 255)},
+            {"kind": "runes",           "region": "blade",  "color": (150, 164, 182), "count": 4},
+            {"kind": "emboss",          "region": "pommel", "color": (110,  92,  48)},
+        ],
+    ),
+    "cuirasse_cloutee": Recipe(
+        id="cuirasse_cloutee", name="Cuirasse Cloutée", rarity="uncommon", material="leather",
+        silhouette={"kind": "svg", "file": "cuirass.svg"},
+        fills={"plate": (166, 118,  70), "trim": (196, 148,  92), "strap": (108,  74,  42)},
+        accents=[{"kind": "emboss", "region": "plate", "color": (120,  82,  46)}],
+    ),
+    "haubert_mailles": Recipe(
+        id="haubert_mailles", name="Haubert de Mailles", rarity="rare", material="metal",
+        silhouette={"kind": "svg", "file": "cuirass.svg"},
+        fills={"plate": (118, 126, 138), "trim": ( 78,  84,  94), "strap": ( 62,  50,  38)},
+        accents=[
+            {"kind": "emboss", "region": "plate", "color": ( 74,  80,  90)},
+            {"kind": "runes",  "region": "plate", "color": (182, 192, 206), "count": 6},
+        ],
+    ),
+    "armure_gardien": Recipe(
+        id="armure_gardien", name="Armure du Gardien", rarity="epic", material="metal",
+        silhouette={"kind": "svg", "file": "cuirass.svg"},
+        fills={"plate": (186, 152,  70), "trim": (232, 200, 118), "strap": ( 88,  66,  30)},
+        accents=[
+            {"kind": "emboss", "region": "plate", "color": (126,  98,  38)},
+            {"kind": "symbol", "region": "plate", "shape": "badger",
+             "color": (252, 236, 184), "size": 96},
+        ],
+    ),
+    "mitaines_cuir": Recipe(
+        id="mitaines_cuir", name="Mitaines de Cuir", rarity="common", material="leather",
+        silhouette={"kind": "svg", "file": "glove.svg"},
+        fills={"cuff": ( 92,  64,  38), "palm": (132,  94,  56),
+               "fingers": (120,  84,  48), "stitch": (196, 172, 128)},
+    ),
+    "gantelets_gardien": Recipe(
+        id="gantelets_gardien", name="Gantelets du Gardien", rarity="rare", material="metal",
+        silhouette={"kind": "svg", "file": "glove.svg"},
+        fills={"cuff": (118, 100,  52), "palm": (162, 138,  74),
+               "fingers": (146, 124,  66), "stitch": (232, 212, 156)},
+        accents=[{"kind": "emboss", "region": "cuff", "color": ( 84,  70,  34)}],
+    ),
+    "poings_ferres": Recipe(
+        id="poings_ferres", name="Poings Ferrés", rarity="rare", material="metal",
+        silhouette={"kind": "svg", "file": "glove.svg"},
+        fills={"cuff": ( 74,  62,  56), "palm": (128, 116, 108),
+               "fingers": (112, 100,  92), "stitch": (176, 168, 160)},
+        accents=[{"kind": "emboss", "region": "fingers", "color": ( 58,  50,  44)}],
+    ),
+    "gantelets_dragonniers": Recipe(
+        id="gantelets_dragonniers", name="Gantelets des Dragonniers", rarity="epic", material="leather",
+        silhouette={"kind": "svg", "file": "glove.svg"},
+        fills={"cuff": ( 88,  40,  26), "palm": (150,  72,  40),
+               "fingers": (132,  62,  34), "stitch": (232, 176,  96)},
+        accents=[
+            {"kind": "emboss", "region": "palm",   "color": ( 62,  28,  16)},
+            {"kind": "runes",  "region": "cuff",   "color": (240, 168,  84), "count": 3},
+        ],
+    ),
+    "bottes_cloutees": Recipe(
+        id="bottes_cloutees", name="Bottes Cloutées", rarity="common", material="leather",
+        silhouette={"kind": "svg", "file": "boot.svg"},
+        fills={"shaft": (112,  78,  46), "foot": ( 96,  66,  38),
+               "sole":  ( 48,  40,  36), "lace": (196, 176, 132)},
+        accents=[{"kind": "runes", "region": "sole", "color": (180, 176, 170), "count": 4}],
+    ),
+    "greves_acier": Recipe(
+        id="greves_acier", name="Grèves d'Acier", rarity="rare", material="leather",
+        silhouette={"kind": "svg", "file": "boot.svg"},
+        fills={"shaft": (108, 118, 132), "foot": ( 80,  90, 104),
+               "sole":  ( 40,  44,  50), "lace": (176, 186, 200)},
+        accents=[{"kind": "emboss", "region": "shaft", "color": ( 82,  88,  96)}],
+    ),
+    "bottes_marche_forcee": Recipe(
+        id="bottes_marche_forcee", name="Bottes de Marche Forcée", rarity="epic", material="leather",
+        silhouette={"kind": "svg", "file": "boot.svg"},
+        fills={"shaft": ( 76,  62,  48), "foot": ( 62,  50,  38),
+               "sole":  ( 36,  32,  28), "lace": (204, 168,  96)},
+        accents=[
+            {"kind": "emboss", "region": "shaft", "color": ( 44,  36,  28)},
+            {"kind": "runes",  "region": "shaft", "color": (222, 186, 112), "count": 3},
+        ],
+    ),
 }
 
 
