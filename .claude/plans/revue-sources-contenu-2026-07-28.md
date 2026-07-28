@@ -38,7 +38,7 @@
 | Quêtes | **88** templates, dont **30** répétables |
 | Codex | **61** entrées · Devinettes : **12** |
 | Assets suivis | `img/` **15,1 Mo** (1 140 fichiers) · `audio/` **18,1 Mo** (405) |
-| Tests | `units.js` **1 117 assertions** ✅ · `smoke.js` **297 scénarios** enregistrés |
+| Tests | `units.js` **1 117 assertions** ✅ · `smoke.js` **281 scénarios** (total annoncé par le runner) |
 | Dépôt suivi | **111 Mo** (dont `.claude/` 40 Mo, `tools/` 18 Mo, `uploads/` 6,4 Mo) |
 
 ### 0.2 Verdict
@@ -77,7 +77,7 @@ que sur la foi des docs :
 
 - `tests/smoke.js` n'a pas pu être exécuté **en entier** dans cet
   environnement : le runner est séquentiel (1 Chromium par scénario) et le
-  sandbox tourne à ~20 s/scénario, soit ~90 min pour 297. **47 scénarios
+  sandbox tourne à ~20 s/scénario, soit ~90 min pour 281. **47 scénarios
   exécutés, 47 verts, 0 échec** au moment de la rédaction ; `units.js` est
   passé en entier (1 117 assertions). La CI de `master` est verte, ce qui
   couvre le reste. Ce document ne touchant aucun JS/CSS, la règle du bump de
@@ -154,7 +154,7 @@ aucun garde-fou ne couvre les **chiffres** cités en prose, qui ont tous dériv�
 | `CLAUDE.md` annonce | Réel mesuré | Écart |
 |---|---|---|
 | « 85 modules » (l.20) | **98** | +13 |
-| « les 159 scénarios » (l.2144) | **297** | +138 |
+| « les 159 scénarios » (l.2144) | **281** | +122 |
 | « **78** monstres au total » (l.1641) | **83** | +5 |
 | « **43** items au total dont **29** équipables » (l.1039) | **218** items / **121** équipables | ×5 / ×4 |
 | « ~**55** globals attendus » (MANIFEST loader, l.313) | **365** entrées | ×6,6 |
@@ -420,7 +420,7 @@ savoir d'un coup d'œil si le travail est en cours.
 
 ### 🟢 P2 · Durée de la suite smoke
 
-297 scénarios séquentiels, un Chromium par scénario. La CI tient
+281 scénarios séquentiels, un Chromium par scénario. La CI tient
 (~4,5 min total, `timeout-minutes: 25`), mais la marge se réduit à chaque
 scénario ajouté, et **en local le coût est prohibitif** (~90 min dans ce
 sandbox) — ce qui pousse au contournement de la règle §7.
@@ -472,7 +472,7 @@ d'être tranchés un par un.
 
 - [x] Audit exécuté et mesuré (§0.1) — 2026-07-28
 - [x] `node tests/units.js` — 1 117 assertions ✅
-- [~] `node tests/smoke.js` — 47/297 exécutés, 0 échec (runner séquentiel trop
+- [~] `node tests/smoke.js` — 47/281 exécutés, 0 échec (runner séquentiel trop
       lent dans cet environnement ; CI `master` verte, cf. §0.3)
 - [x] Aucun JS/CSS modifié → bump de cache PWA (§8) non applicable
 - [x] **Correction (2026-07-28)** : C1 & C2 retirés — constats erronés issus

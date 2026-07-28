@@ -2143,7 +2143,7 @@ plein combat = no-go).
   **Architecture modulaire** : `smoke.js` est un **runner mince** qui assemble
   et exécute les scénarios ; les helpers partagés vivent dans
   `tests/lib/harness.js` (`launchGame`, `startNewGame`, `startDummyFight`,
-  `assert`, `isIgnorableError`, `INDEX_URL`) et les 297 scénarios sont
+  `assert`, `isIgnorableError`, `INDEX_URL`) et les 281 scénarios sont
   répartis par domaine dans `tests/scenarios/<domaine>.js` (combat, dungeon,
   multiplayer, houses, potions, quests, spells, save, inventory, visuals,
   npc, controls, audio, fx, misc). Chaque scénario relance son propre

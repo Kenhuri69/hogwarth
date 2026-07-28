@@ -86,7 +86,7 @@ sécurité inoffensif. Toucher les ~28 call-sites de `getSpellIconHtml` pour
 4. [x] **C3 — `deploy.yml`** : suppression de `_raw/` après la copie d'`audio/`.
        **verify** : l'étape « Contenu publié » liste `audio/` sans `_raw`.
 5. [x] **C4 — `CLAUDE.md`** : 6 chiffres recalés — modules 85→**98**,
-       scénarios 159→**297**, monstres 78→**83**, items 43→**218**
+       scénarios 159→**281**, monstres 78→**83**, items 43→**218**
        (+39 recettes), équipables 29→**121**, MANIFEST « ~55 »→**365**.
        **verify** : `node tools/check_doc_modules.js` vert ; chiffres = mesure.
 6. [x] **Revue corrigée** : §1 C1/C2 réécrits, tableau de priorisation et
@@ -115,6 +115,13 @@ sécurité inoffensif. Toucher les ~28 call-sites de `getSpellIconHtml` pour
   garde-fou conserve malgré tout ses avertissements de couverture — non pas
   parce qu'il manque quelque chose aujourd'hui, mais pour signaler le jour où
   un contenu neuf arrivera sans son visuel.
+- **Un 4ᵉ artefact de comptage, attrapé par la CI** : le chiffre « 297 scénarios
+  smoke » de C4 était lui aussi faux. La regex `/scenario[A-Za-z0-9_]+/`
+  utilisée pour compter les exports capturait aussi le mot-clé `scenarios:` du
+  littéral `module.exports = { scenarios: [...] }` — soit **+1 par fichier**,
+  16 fichiers, 297 au lieu de **281**. Corrigé partout ; le total annoncé par
+  le runner lui-même (`✅ 281 scénario(s) passé(s) — suite complète`) est
+  désormais la référence citée, plutôt qu'un comptage statique refait à la main.
 - **Angle mort assumé du garde-fou** : les ids sont validés sur le motif
   `[a-z0-9_]+`. Un id contenant une majuscule ne serait pas *capturé*, donc pas
   *vérifié* — silencieux plutôt que faux. Aucun id du jeu n'est dans ce cas ;
