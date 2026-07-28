@@ -70,7 +70,7 @@ Le sprite est rendu par `_getMonsterImg(enemy.imgSrc)`
 (`renderer-entities.js`). Deux options :
 
 - **PNG (recommandé pour les monstres majeurs)** : générer l'image (ex. Nano
-  Banana, prompts cadrés dans `.claude/plans/nano-banana-prompts-*.md` et
+  Banana, prompts cadrés dans `.claude/prompts/nano-banana-prompts-*.md` et
   `IMG_STYLE.md`), puis la traiter :
   ```bash
   # Prérequis À LA DEMANDE : rembg + son modèle (LOURD, plusieurs centaines de

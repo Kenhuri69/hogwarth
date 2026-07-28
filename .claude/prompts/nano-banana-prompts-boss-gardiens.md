@@ -8,7 +8,7 @@
 >
 > Style ancré dans [`IMG_STYLE.md`](../../IMG_STYLE.md) (Règle A — sprites 512²
 > painterly, fond transparent). Format identique au sprint étages 8-10 :
-> [`nano-banana-prompts-floor-8-10.md`](./nano-banana-prompts-floor-8-10.md).
+> [`nano-banana-prompts-floor-8-10.md`](../plans/_archive/nano-banana-prompts-floor-8-10.md).
 
 ---
 

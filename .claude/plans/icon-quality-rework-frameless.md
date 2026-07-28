@@ -61,7 +61,7 @@ fournisse le bon halo et qu'un futur `--all` ne réécrase pas l'art dédié
    `cor_chasse` : recette painterly → stub. → vérifier : `python3
    tools/icon_factory.py --list` affiche les 11 avec la bonne rareté.
 2. **Prompt planche** rédigé dans
-   `.claude/plans/nano-banana-prompts-frameless-rework.md` (1 prompt, grille
+   `.claude/prompts/nano-banana-prompts-frameless-rework.md` (1 prompt, grille
    4×3, fond plat, sujets propres sans cadre/halo). → fourni à l'utilisateur.
 3. **(externe)** L'utilisateur génère la planche → `planche.png`.
 4. **Découpe** : `python3 tools/sheet_extract.py planche.png --cols 4 --rows 3

@@ -63,6 +63,14 @@ jobs:
       - name: Installer les dépendances de test
         run: npm install
 
+      # Analyse statique du JS de jeu. Sans modules ES, un identifiant
+      # mal orthographié ou une fonction supprimée ne se voit ni au
+      # chargement ni dans la suite smoke : `no-undef` est le seul filet.
+      # Bloquant sur les erreurs (0 aujourd'hui) ; les `no-unused-vars`
+      # préexistants restent en avertissement, non bloquants.
+      - name: Lint (ESLint — no-undef & erreurs franches)
+        run: npm run lint
+
       - name: Installer Chromium (Playwright)
         run: npx playwright install --with-deps chromium
 

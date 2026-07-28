@@ -7,7 +7,7 @@
 > But : figures **isolées plein corps, fond transparent, style 3D painterly**
 > (pas un buste-portrait). On suit la **Règle A** d'[`IMG_STYLE.md`](../../IMG_STYLE.md)
 > (§1-§10 — sprites 512×512 RGBA) + le cadrage forcé head-to-toe de
-> [`nano-banana-prompts-floor-8-10.md`](./_archive/nano-banana-prompts-floor-8-10.md).
+> [`nano-banana-prompts-floor-8-10.md`](./nano-banana-prompts-floor-8-10.md).
 >
 > ⚠️ Ce ne sont PAS les portraits de dialogue (Règle B, 256² photoréaliste).
 > Ce sont des silhouettes héroïques entières, lumineuses, regard vers le viewer.

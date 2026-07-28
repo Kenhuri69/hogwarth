@@ -1,7 +1,7 @@
 # Prompts Nano Banana — Artefacts Lot E (icônes d'items)
 
 > 6 prompts pour les artefacts neufs livrés par le plan de remédiation
-> ([`artifact-remediation.md`](./_archive/artifact-remediation.md), Lots E1 + E2 — PR #568/#570).
+> ([`artifact-remediation.md`](../plans/_archive/artifact-remediation.md), Lots E1 + E2 — PR #568/#570).
 > Objectif : remplacer (optionnellement) les icônes du pipeline `icon_factory.py`
 > par de l'art raster dédié, plus riche, généré par LLM image (Nano Banana / Gemini).
 >

@@ -7,9 +7,12 @@
     "test": "node tests/smoke.js",
     "test:units": "node tests/units.js",
     "test:select": "node tests/select.js",
-    "test:pwa": "node tests/pwa-smoke.js"
+    "test:pwa": "node tests/pwa-smoke.js",
+    "lint": "eslint js/ sw.js tools/ tests/ eslint.config.js"
   },
   "devDependencies": {
+    "eslint": "^9.39.5",
+    "globals": "^17.8.0",
     "playwright": "1.56.1"
   }
 }

@@ -293,5 +293,5 @@ no text, no watermark, no signature, no border frame
 
 ### 12.6 Précédents
 
-- [`nano-banana-prompt-sir-patrick.md`](./.claude/plans/nano-banana-prompt-sir-patrick.md) — fantôme photoréaliste (livré).
-- [`nano-banana-prompt-marchand-ombre.md`](./.claude/plans/nano-banana-prompt-marchand-ombre.md) — alchimiste itinérant.
+- [`nano-banana-prompt-sir-patrick.md`](./.claude/plans/_archive/nano-banana-prompt-sir-patrick.md) — fantôme photoréaliste (livré).
+- [`nano-banana-prompt-marchand-ombre.md`](./.claude/plans/_archive/nano-banana-prompt-marchand-ombre.md) — alchimiste itinérant.
