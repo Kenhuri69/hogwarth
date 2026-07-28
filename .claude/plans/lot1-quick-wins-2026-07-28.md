@@ -122,7 +122,12 @@ sécurité inoffensif. Toucher les ~28 call-sites de `getSpellIconHtml` pour
   16 fichiers, 297 au lieu de **281**. Corrigé partout ; le total annoncé par
   le runner lui-même (`✅ 281 scénario(s) passé(s) — suite complète`) est
   désormais la référence citée, plutôt qu'un comptage statique refait à la main.
-- **Angle mort assumé du garde-fou** : les ids sont validés sur le motif
-  `[a-z0-9_]+`. Un id contenant une majuscule ne serait pas *capturé*, donc pas
-  *vérifié* — silencieux plutôt que faux. Aucun id du jeu n'est dans ce cas ;
-  la convention snake_case minuscule est de fait la précondition du contrôle.
+- ~~**Angle mort assumé du garde-fou**~~ — ❌ **ce point était FAUX, corrigé le
+  2026-07-28.** J'écrivais que le motif `[a-z0-9_]+` laissait un angle mort
+  purement théorique, « aucun id du jeu n'étant dans ce cas ». Un l'était :
+  **`niffleurs_trésor`** (quête, accent). Il n'était donc ni déclaré ni
+  vérifié — et une référence cassée vers lui passait la CI en silence (prouvé :
+  exit 0). Motif élargi à `\p{L}` + flag `u` ; le garde-fou attrape désormais
+  les deux cas et voit 2 références de plus. La leçon se répète : **une
+  hypothèse sur les données doit être testée contre les données**, pas
+  supposée depuis une convention.

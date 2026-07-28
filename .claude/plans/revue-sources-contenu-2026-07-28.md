@@ -22,6 +22,49 @@
 
 ---
 
+## ⚙️ Re-vérification intégrale des comptages (2026-07-28, après coup)
+
+> Après quatre constats démentis en cours d'implémentation (C1, C2, le total
+> de scénarios, E1), **tous** les chiffres de cette revue ont été re-mesurés
+> sur l'arbre où elle a été écrite (`d3d9ad2`), par **chargement runtime des
+> registres dans un VM Node** plutôt que par extraction de texte : c'est le
+> jeu lui-même qui répond, plus une regex qui devine.
+
+**Résultat : 51 chiffres sur 55 confirmés, 4 écarts.**
+
+| Chiffre | Annoncé | Réel | Cause |
+|---|---|---|---|
+| Quêtes (templates) | 88 | **89** | id accentué `niffleurs_trésor` hors du motif `[a-z0-9_]+` |
+| Quêtes répétables | 30 | **28** | 2 des 30 occurrences de `everyLevels` sont en commentaire |
+| `state.js` — globals `let` | 159 | **164** | lignes `let a, b, c;` comptées pour 1 au lieu de 3 |
+| Plans actifs | 59 | **58** | le comptage incluait la revue elle-même, tout juste créée |
+
+Les trois premiers relèvent encore du même vice — un motif trop étroit ou une
+unité de comptage mal choisie. Le quatrième est une erreur d'observateur :
+mesurer un répertoire dans lequel on vient d'écrire.
+
+**Ce qui est confirmé exactement**, et donc utilisable sans réserve : les
+volumes de code (52 638 lignes JS / 98 modules / 8 690 lignes CSS), tous les
+registres de contenu (83 monstres et leurs 83 sprites, 218 items, 121
+équipables, 82 sorts, 40 PNJ, 61 entrées de Codex, 12 devinettes, 39
+recettes), l'hygiène (0 `var`, 0 collision de global, 45 globals combat-scoped
+non sérialisés), **et les trois axes d'enrichissement restants** — E2
+(15 ténèbres / 10 lumière / 7 feu / 6 physique / 6 glace / 5 foudre), E3
+(1 131 PNG, 0 WebP, 0 AVIF, précache 3,38 Mo sur 109 entrées), E4 (les
+10 répartitions de slots), ainsi que C5 (807 classes CSS, 59 non citées),
+A3 (70 `party.slice`), A5 (442 `getElementById` / 56 `safeEl`) et A6
+(`.claude/` 40,2 Mo · `tools/` 18,2 Mo · `uploads/` 6,4 Mo).
+
+> ⚠️ **Un défaut RÉEL du garde-fou est sorti de cette passe.** Le motif
+> `[a-z0-9_]+` n'était pas seulement faux pour compter : `check_content_refs.js`
+> l'utilisait aussi pour **valider les références**. `niffleurs_trésor` y était
+> donc *invisible* — ni déclaré, ni vérifié. Prouvé en cassant volontairement
+> la référence chez son donneur : **exit 0**, la CI ne voyait rien. Corrigé
+> (`\p{L}` + flag `u`) ; le garde-fou attrape désormais les deux cas, ASCII et
+> accentué, et voit 2 références de plus.
+
+---
+
 ## 0 — Cadre de la revue
 
 ### 0.1 Le projet en chiffres (mesurés ce jour)
@@ -35,7 +78,7 @@
 | Items | **218** items + **39** recettes `brew_*` (257 entrées `data-items.js`), dont **121** équipables |
 | Sortilèges | **82** |
 | PNJ | **40** déterministes (+ ambiants seedés) |
-| Quêtes | **88** templates, dont **30** répétables |
+| Quêtes | **89** templates, dont **28** répétables |
 | Codex | **61** entrées · Devinettes : **12** |
 | Assets suivis | `img/` **15,1 Mo** (1 140 fichiers) · `audio/` **18,1 Mo** (405) |
 | Tests | `units.js` **1 117 assertions** ✅ · `smoke.js` **281 scénarios** (total annoncé par le runner) |
@@ -55,7 +98,7 @@ que sur la foi des docs :
 - **Hygiène du langage : propre.** 0 `var`, 0 collision d'identifiant
   `const`/`let` au scope global (le risque n°1 d'une architecture sans
   modules ES), les 98 fichiers passent `node --check`, 1 seul TODO résiduel.
-- **Discipline de sérialisation : vérifiée.** Sur 159 globals `let` de
+- **Discipline de sérialisation : vérifiée.** Sur 164 globals `let` de
   `state.js`, les 45 absents de `save.js` sont **tous** légitimement
   combat-scoped ou session-scoped (`enemyGroup`, `celeriteGauge`,
   `weaponOil`, `envModifiers`…). Aucun oubli de sauvegarde.
@@ -400,12 +443,12 @@ soutenir un build physique.
 
 ## 4 — Hygiène de process
 
-### 🟡 P1 · 59 plans actifs pour 261 archivés  *(→ 47 après le lot 2)*
+### 🟡 P1 · 58 plans actifs pour 261 archivés  *(→ 45 après le lot 2)*
 
-`.claude/plans/` contient **59** `.md` actifs. Le workflow d'archivage existe
+`.claude/plans/` contient **58** `.md` actifs. Le workflow d'archivage existe
 (`plans-archiving-workflow.md`, périmètre validé 2026-06-12) et a bien tourné
 une fois — mais il constatait **37** plans actifs à l'époque : le stock a
-**augmenté de 59 %** depuis, ce qui indique un rangement one-shot plutôt qu'une
+**augmenté de 57 %** depuis, ce qui indique un rangement one-shot plutôt qu'une
 routine.
 
 Deux familles gonflent le compte sans être des plans de travail :
@@ -416,7 +459,7 @@ Deux familles gonflent le compte sans être des plans de travail :
   (`_archive/potions-consumables-craft-2.0.md` : « 🏁 P7→P13 LIVRÉS … CLOS » ;
   `voix-manon-elara.md` : « faite et câblée ») et qui restent en actif.
 
-Sur les 59, **28 n'ont aucune ligne de statut détectable** — impossible de
+Sur les 58, **28 n'ont aucune ligne de statut détectable** — impossible de
 savoir d'un coup d'œil si le travail est en cours.
 
 - **Amélioration** : (1) rejouer la passe d'archivage ; (2) sortir les
