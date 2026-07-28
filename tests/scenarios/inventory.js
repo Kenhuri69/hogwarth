@@ -1507,4 +1507,59 @@ async function scenarioEquipCompareTooltip() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioPartyEquipRow, scenarioRichTooltipCoverage, scenarioInventoryFilterSort, scenarioEquipCompareTooltip, scenarioTryAddItem, scenarioConsumableStacking, scenarioEquipmentAndStatusIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioEquipmentPhase3bQuests, scenarioCritDodgeFromEquip, scenarioDeathlyHallows, scenarioVoiceRelics, scenarioShopLimits, scenarioRefusalFeedback, scenarioForgeDissolve, scenarioForgeEnchant] };
+// ── E2 (revue 2026-07-28) — la lumière disponible quand le bestiaire
+// la réclame. 38 monstres sont faibles à la lumière contre 2 qui y
+// résistent, et la pression démarre à l'étage 4 : le livre ne devait
+// plus arriver à l'étage 6, après le feu et la foudre.
+async function scenarioLightBookAvailability() {
+  console.log('\n── Scénario : accès à la lumière (E2) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  const r = await page.evaluate(() => {
+    const entry  = SHOP_CATALOG.find((e) => e.id === 'livre_patronum');
+    // Premier étage d'accès en boutique, par élément offensif.
+    const firstByElement = {};
+    for (const e of SHOP_CATALOG) {
+      const it = ITEMS.find((i) => i.id === e.id);
+      if (!it || !it.spell) continue;
+      const sp = SPELLS.find((x) => x.name === it.spell);
+      if (!sp || !sp.element || !(sp.power > 0)) continue;
+      const f = e.minFloor || 1;
+      if (firstByElement[sp.element] == null || f < firstByElement[sp.element]) {
+        firstByElement[sp.element] = f;
+      }
+    }
+    // ÉLIGIBILITÉ, pas présence dans un tirage : `_rollShopStock` tire un
+    // SOUS-ENSEMBLE ALÉATOIRE du catalogue éligible (SHOP_STOCK_SIZE).
+    // Asserter que le livre apparaît dans une boutique donnée serait un
+    // test à pile ou face — vert en local, rouge en CI (constaté).
+    // Le contrat réel est : il entre dans le pool à partir de l'étage 4,
+    // et pas avant.
+    const eligibleAt = (floor) =>
+      SHOP_CATALOG.filter((e) => e.minFloor <= floor).some((e) => e.id === 'livre_patronum');
+    return {
+      minFloor: entry && entry.minFloor,
+      firstByElement,
+      atFloor3: eligibleAt(3),
+      atFloor4: eligibleAt(4),
+    };
+  });
+  console.log('  accès par élément :', r.firstByElement);
+  assert(r.minFloor === 4,  `livre_patronum doit être achetable dès l'étage 4 (got ${r.minFloor})`);
+  assert(r.atFloor4,        'le livre de lumière doit être éligible à l\'étage 4');
+  assert(!r.atFloor3,       'le livre de lumière ne doit PAS être éligible avant l\'étage 4');
+  // La lumière ne doit plus être le dernier élément accessible : elle arrive
+  // au plus tard en même temps que le feu et la foudre (étage 5).
+  const f = r.firstByElement;
+  assert(f['lumière'] <= 5,
+         `la lumière doit être accessible au plus tard à l'étage 5 (got ${f['lumière']})`);
+  assert(f['lumière'] <= (f['feu'] || 99) + 1,
+         'la lumière ne doit plus arriver nettement après le feu');
+
+  if (errors.length) { errors.forEach((e) => console.log('  ⚠️ ', e)); throw new Error('erreurs JS pendant E2'); }
+  console.log('  ✅ accès à la lumière conforme (étage 4)');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioLightBookAvailability, scenarioPartyEquipRow, scenarioRichTooltipCoverage, scenarioInventoryFilterSort, scenarioEquipCompareTooltip, scenarioTryAddItem, scenarioConsumableStacking, scenarioEquipmentAndStatusIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioEquipmentPhase3bQuests, scenarioCritDodgeFromEquip, scenarioDeathlyHallows, scenarioVoiceRelics, scenarioShopLimits, scenarioRefusalFeedback, scenarioForgeDissolve, scenarioForgeEnchant] };

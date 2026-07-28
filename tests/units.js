@@ -3062,6 +3062,56 @@ function loadNpcs() {
 })();
 
 // ============================================================
+// §18 — Le garde-fou d'intégrité voit-il TOUS les ids ?
+// ------------------------------------------------------------
+// `check_content_refs.js` capture les identifiants par expression
+// régulière. Un id qui n'entre pas dans le motif n'est pas signalé
+// comme invalide : il devient INVISIBLE — ni déclaré, ni vérifié — et
+// une référence cassée vers lui passe la CI en silence.
+//
+// C'est arrivé : le motif d'origine `[a-z0-9_]+` ne couvrait pas
+// `niffleurs_trésor` (accent). Ce test empêche la récidive pour
+// n'importe quel id exotique futur, sans rien présumer de la
+// convention de nommage.
+// ============================================================
+(function () {
+  const fs   = require('fs');
+  const path = require('path');
+  const ROOT = path.resolve(__dirname, '..');
+
+  // Le motif réellement utilisé par le garde-fou, lu dans sa source :
+  // le test suit l'outil au lieu d'en dupliquer une copie qui dériverait.
+  const guard = fs.readFileSync(path.join(ROOT, 'tools/check_content_refs.js'), 'utf8');
+  const m = guard.match(/const ID = '([^']+)';/);
+  check('garde-fou: motif ID trouvé dans la source', !!m);
+  if (!m) return;
+  const idRe = new RegExp('^' + m[1].replace(/\\\\/g, '\\') + '$', 'u');
+
+  // Tous les ids déclarés, extraits sans présumer du jeu de caractères.
+  const files = {
+    monstres: ['js/monsters-low.js', 'js/monsters-mid.js', 'js/monsters-high.js'],
+    items:    ['js/data-items.js'],
+    quêtes:   ['js/quests-templates.js'],
+    pnj:      ['js/npcs-a.js', 'js/npcs-b.js'],
+  };
+  for (const [label, list] of Object.entries(files)) {
+    const src = list.map((f) => fs.readFileSync(path.join(ROOT, f), 'utf8')).join('\n');
+    const ids = [...src.matchAll(/^\s*\{? *id: *(['"])(.+?)\1/gm)].map((x) => x[2]);
+    check(label + ': ids trouvés', ids.length > 0);
+    const invisible = ids.filter((id) => !idRe.test(id));
+    check(label + ': aucun id invisible au garde-fou' +
+          (invisible.length ? ' (' + invisible.join(', ') + ')' : ''),
+          invisible.length === 0);
+  }
+
+  // Contre-épreuve : le motif doit accepter l'accent ET rejeter du bruit.
+  check('motif: accepte un id accentué',  idRe.test('niffleurs_trésor'));
+  check('motif: accepte snake_case',      idRe.test('potion_tue_loup'));
+  check('motif: rejette un espace',       !idRe.test('deux mots'));
+  check('motif: rejette une chaîne vide', !idRe.test(''));
+})();
+
+// ============================================================
 // Rapport
 // ============================================================
 if (failures.length) {

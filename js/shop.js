@@ -55,7 +55,13 @@ const SHOP_CATALOG = [
   { id: "livre_bombarda",      minFloor: 5 },
   { id: "potion_l",            minFloor: 5 },
   { id: "potion_l_sp",         minFloor: 5 },
-  { id: "livre_patronum",      minFloor: 6 },
+  // Lumière disponible dès l'étage 4 (était 6) — mesure du bestiaire :
+  // 38 monstres sont FAIBLES à la lumière (contre 2 qui y résistent), et la
+  // pression démarre à l'étage 4 (10 des 21 créatures de la tranche 4-6).
+  // Or c'était le dernier élément achetable, après le feu et la foudre.
+  // Le système résistance/faiblesse demandait un élément que le joueur ne
+  // pouvait pas encore se procurer.
+  { id: "livre_patronum",      minFloor: 4 },
   { id: "livre_glacius",       minFloor: 3 },
   { id: "livre_fulgari",       minFloor: 5 },
   // Grimoires de zone (AoE) — débloqués quand les groupes s'étoffent

@@ -53,6 +53,15 @@ const warn = (msg) => warnings.push(msg);
 // fichiers : toutes les regex acceptent les deux.
 const Q = '[\'"]';
 
+// PIÈGE N°2 — le motif d'identifiant. `[a-z0-9_]+` paraît décrire la
+// convention snake_case du projet… mais un id RÉEL y échappe :
+// `niffleurs_trésor` (quête). Un id non capturé n'est pas « invalide » :
+// il est INVISIBLE — ni déclaré, ni vérifié. Le garde-fou laissait donc
+// passer une référence cassée vers cette quête, en silence. Vérifié en
+// cassant volontairement la référence : exit 0.
+// D'où `\p{L}` (toute lettre Unicode) et le flag `u`.
+const ID = '[\\p{L}\\p{N}_-]+';
+
 // PIÈGE À ÉVITER — une valeur quotée ne se capture PAS avec `["']([^"']+)["']` :
 // tout nom contenant l'autre quote (`"Morsure d'Émeraude"`) est tronqué au
 // premier caractère quote rencontré, et le nom tronqué ne correspond alors à
@@ -88,11 +97,11 @@ const questSrc = read('js/quests-templates.js');
 const npcSrc = readAll(['js/npcs-a.js', 'js/npcs-b.js']);
 const iconSrc = read('js/item-icons.js');
 
-const monsterIds = ids(monsterSrc, new RegExp(`^\\s*id: *${Q}([a-z0-9_]+)${Q}`, 'gm'));
-const itemIds = ids(itemSrc, new RegExp(`^\\s*\\{ *id: *${Q}([a-z0-9_]+)${Q}`, 'gm'));
+const monsterIds = ids(monsterSrc, new RegExp(`^\\s*id: *${Q}(${ID})${Q}`, 'gmu'));
+const itemIds = ids(itemSrc, new RegExp(`^\\s*\\{ *id: *${Q}(${ID})${Q}`, 'gmu'));
 const spellNames = new Set(qrefs(spellSrc, String.raw`^\s*\{ *name: *` + QSTR, 'gm'));
-const questIds = ids(questSrc, new RegExp(`^\\s*id: *${Q}([a-z0-9_]+)${Q}`, 'gm'));
-const recipeIds = ids(itemSrc, new RegExp(`^\\s*\\{ *id: *${Q}(brew_[a-z0-9_]+)${Q}`, 'gm'));
+const questIds = ids(questSrc, new RegExp(`^\\s*id: *${Q}(${ID})${Q}`, 'gmu'));
+const recipeIds = ids(itemSrc, new RegExp(`^\\s*\\{ *id: *${Q}(brew_${ID})${Q}`, 'gmu'));
 
 // Les recettes vivent dans POTION_RECIPES, pas dans ITEMS : on les
 // retire du référentiel d'items pour ne pas masquer une vraie erreur.
@@ -116,20 +125,20 @@ function checkRefs(label, list, known, hint) {
 let checked = 0;
 
 // drops de monstres → ITEMS
-checked += checkRefs('Drops de monstres', refs(monsterSrc, new RegExp(`itemId: *${Q}([a-z0-9_]+)${Q}`, 'g')), itemIds, 'itemId');
+checked += checkRefs('Drops de monstres', refs(monsterSrc, new RegExp(`itemId: *${Q}(${ID})${Q}`, 'gu')), itemIds, 'itemId');
 
 // quêtes → MONSTERS / ITEMS / SPELLS / RECIPES
-checked += checkRefs('Quêtes (objectif)', refs(questSrc, new RegExp(`monsterId: *${Q}([a-z0-9_]+)${Q}`, 'g')), monsterIds, 'monsterId');
-checked += checkRefs('Quêtes (objectif/récompense)', refs(questSrc, new RegExp(`itemId: *${Q}([a-z0-9_]+)${Q}`, 'g')), itemIds, 'itemId');
-checked += checkRefs('Quêtes (récompense item)', refs(questSrc, new RegExp(`\\bitem: *${Q}([a-z0-9_]+)${Q}`, 'g')), itemIds, 'item');
-checked += checkRefs('Quêtes (set de Maison)', refs(questSrc, new RegExp(`houseSetReward: *${Q}([a-z0-9_]+)${Q}`, 'g')), itemIds, 'item');
+checked += checkRefs('Quêtes (objectif)', refs(questSrc, new RegExp(`monsterId: *${Q}(${ID})${Q}`, 'gu')), monsterIds, 'monsterId');
+checked += checkRefs('Quêtes (objectif/récompense)', refs(questSrc, new RegExp(`itemId: *${Q}(${ID})${Q}`, 'gu')), itemIds, 'itemId');
+checked += checkRefs('Quêtes (récompense item)', refs(questSrc, new RegExp(`\\bitem: *${Q}(${ID})${Q}`, 'gu')), itemIds, 'item');
+checked += checkRefs('Quêtes (set de Maison)', refs(questSrc, new RegExp(`houseSetReward: *${Q}(${ID})${Q}`, 'gu')), itemIds, 'item');
 checked += checkRefs('Quêtes (récompense sort)', qrefs(questSrc, String.raw`\bspell: *` + QSTR), spellNames, 'sort');
-checked += checkRefs('Quêtes (récompense recette)', refs(questSrc, new RegExp(`recipes: *\\[([^\\]]*)\\]`, 'g')).flatMap((b) => refs(b, new RegExp(`${Q}(brew_[a-z0-9_]+)${Q}`, 'g'))), recipeIds, 'recette');
+checked += checkRefs('Quêtes (récompense recette)', refs(questSrc, new RegExp(`recipes: *\\[([^\\]]*)\\]`, 'g')).flatMap((b) => refs(b, new RegExp(`${Q}(brew_${ID})${Q}`, 'gu'))), recipeIds, 'recette');
 
 // PNJ → quêtes
 for (const field of ['questsGiven', 'questsTurnedIn']) {
   const list = refs(npcSrc, new RegExp(`${field}: *\\[([^\\]]*)\\]`, 'g'))
-    .flatMap((b) => refs(b, new RegExp(`${Q}([a-z0-9_]+)${Q}`, 'g')));
+    .flatMap((b) => refs(b, new RegExp(`${Q}(${ID})${Q}`, 'gu')));
   checked += checkRefs(`PNJ (${field})`, list, questIds, 'questId');
 }
 
@@ -139,10 +148,10 @@ checked += checkRefs('Livres de sorts', qrefs(itemSrc, String.raw`^\s*\{ *id:[^\
 
 // recettes → items (résultat + ingrédients)
 const recipeBlock = itemSrc.slice(itemSrc.indexOf('const POTION_RECIPES'));
-checked += checkRefs('Recettes (resultItemId)', refs(recipeBlock, new RegExp(`resultItemId: *${Q}([a-z0-9_]+)${Q}`, 'g')), itemIds, 'itemId');
+checked += checkRefs('Recettes (resultItemId)', refs(recipeBlock, new RegExp(`resultItemId: *${Q}(${ID})${Q}`, 'gu')), itemIds, 'itemId');
 checked += checkRefs(
   'Recettes (ingrédients)',
-  refs(recipeBlock, /ingredients: *\{([^}]*)\}/g).flatMap((b) => refs(b, /([a-z0-9_]+) *:/g)),
+  refs(recipeBlock, /ingredients: *\{([^}]*)\}/g).flatMap((b) => refs(b, new RegExp(`(${ID}) *:`, 'gu'))),
   itemIds,
   'itemId'
 );

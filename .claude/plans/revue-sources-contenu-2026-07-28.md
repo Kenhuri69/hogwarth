@@ -22,6 +22,49 @@
 
 ---
 
+## ⚙️ Re-vérification intégrale des comptages (2026-07-28, après coup)
+
+> Après quatre constats démentis en cours d'implémentation (C1, C2, le total
+> de scénarios, E1), **tous** les chiffres de cette revue ont été re-mesurés
+> sur l'arbre où elle a été écrite (`d3d9ad2`), par **chargement runtime des
+> registres dans un VM Node** plutôt que par extraction de texte : c'est le
+> jeu lui-même qui répond, plus une regex qui devine.
+
+**Résultat : 51 chiffres sur 55 confirmés, 4 écarts.**
+
+| Chiffre | Annoncé | Réel | Cause |
+|---|---|---|---|
+| Quêtes (templates) | 88 | **89** | id accentué `niffleurs_trésor` hors du motif `[a-z0-9_]+` |
+| Quêtes répétables | 30 | **28** | 2 des 30 occurrences de `everyLevels` sont en commentaire |
+| `state.js` — globals `let` | 159 | **164** | lignes `let a, b, c;` comptées pour 1 au lieu de 3 |
+| Plans actifs | 59 | **58** | le comptage incluait la revue elle-même, tout juste créée |
+
+Les trois premiers relèvent encore du même vice — un motif trop étroit ou une
+unité de comptage mal choisie. Le quatrième est une erreur d'observateur :
+mesurer un répertoire dans lequel on vient d'écrire.
+
+**Ce qui est confirmé exactement**, et donc utilisable sans réserve : les
+volumes de code (52 638 lignes JS / 98 modules / 8 690 lignes CSS), tous les
+registres de contenu (83 monstres et leurs 83 sprites, 218 items, 121
+équipables, 82 sorts, 40 PNJ, 61 entrées de Codex, 12 devinettes, 39
+recettes), l'hygiène (0 `var`, 0 collision de global, 45 globals combat-scoped
+non sérialisés), **et les trois axes d'enrichissement restants** — E2
+(15 ténèbres / 10 lumière / 7 feu / 6 physique / 6 glace / 5 foudre), E3
+(1 131 PNG, 0 WebP, 0 AVIF, précache 3,38 Mo sur 109 entrées), E4 (les
+10 répartitions de slots), ainsi que C5 (807 classes CSS, 59 non citées),
+A3 (70 `party.slice`), A5 (442 `getElementById` / 56 `safeEl`) et A6
+(`.claude/` 40,2 Mo · `tools/` 18,2 Mo · `uploads/` 6,4 Mo).
+
+> ⚠️ **Un défaut RÉEL du garde-fou est sorti de cette passe.** Le motif
+> `[a-z0-9_]+` n'était pas seulement faux pour compter : `check_content_refs.js`
+> l'utilisait aussi pour **valider les références**. `niffleurs_trésor` y était
+> donc *invisible* — ni déclaré, ni vérifié. Prouvé en cassant volontairement
+> la référence chez son donneur : **exit 0**, la CI ne voyait rien. Corrigé
+> (`\p{L}` + flag `u`) ; le garde-fou attrape désormais les deux cas, ASCII et
+> accentué, et voit 2 références de plus.
+
+---
+
 ## 0 — Cadre de la revue
 
 ### 0.1 Le projet en chiffres (mesurés ce jour)
@@ -35,7 +78,7 @@
 | Items | **218** items + **39** recettes `brew_*` (257 entrées `data-items.js`), dont **121** équipables |
 | Sortilèges | **82** |
 | PNJ | **40** déterministes (+ ambiants seedés) |
-| Quêtes | **88** templates, dont **30** répétables |
+| Quêtes | **89** templates, dont **28** répétables |
 | Codex | **61** entrées · Devinettes : **12** |
 | Assets suivis | `img/` **15,1 Mo** (1 140 fichiers) · `audio/` **18,1 Mo** (405) |
 | Tests | `units.js` **1 117 assertions** ✅ · `smoke.js` **281 scénarios** (total annoncé par le runner) |
@@ -55,7 +98,7 @@ que sur la foi des docs :
 - **Hygiène du langage : propre.** 0 `var`, 0 collision d'identifiant
   `const`/`let` au scope global (le risque n°1 d'une architecture sans
   modules ES), les 98 fichiers passent `node --check`, 1 seul TODO résiduel.
-- **Discipline de sérialisation : vérifiée.** Sur 159 globals `let` de
+- **Discipline de sérialisation : vérifiée.** Sur 164 globals `let` de
   `state.js`, les 45 absents de `save.js` sont **tous** légitimement
   combat-scoped ou session-scoped (`enemyGroup`, `celeriteGauge`,
   `weaponOil`, `envModifiers`…). Aucun oubli de sauvegarde.
@@ -335,47 +378,107 @@ pour **1** quête `escape`).
 **`choice` reste ouvert** : UI de choix, conséquences persistées, dialogues par
 branche — une décision de design qui revient à l'auteur du jeu.
 
-### 3.3 🟡 E2 · Catalogue élémentaire déséquilibré — **encore ouvert**
+### ✅ E2 · Catalogue élémentaire — **le constat était mal posé (mesuré, corrigé)**
 
-| Élément | Sorts |
-|---|---|
-| ténèbres | **15** |
-| lumière | **10** |
-| feu | 7 |
-| physique | 6 |
-| glace | 6 |
-| foudre | **5** |
+> ⚠️ Cette section disait : « ténèbres 15 / lumière 10 vs foudre 5 → le choix
+> élémentaire est mince early/mid, la foudre est le parent pauvre ». La mesure
+> dément le raisonnement, même si les comptes bruts étaient exacts.
 
-Le système `resist`/`weak` demande au joueur de **changer d'élément** face aux
-résistances, mais l'offre est concentrée sur ténèbres/lumière — deux éléments
-qui arrivent **tard** (endgame, Maisons). Early/mid, le choix élémentaire
-réel est mince, et la foudre reste le parent pauvre de bout en bout.
+**Ce qui était faux.** Le choix élémentaire early n'est pas mince : chaque héros
+démarre avec 1 ou 2 éléments offensifs, et chaque élément a un livre d'entrée.
+Premier accès en boutique : physique ét. 2, glace ét. 3, feu et foudre ét. 5,
+lumière ét. 6, ténèbres ét. 9. La foudre n'est pas un parent pauvre — elle a une
+progression complète (Stupefix au départ → Fulgari ét. 5 → Fulgur Catena ét. 7
+→ Fulgur Imperium). Compter les sorts par élément mesurait la **queue late
+game**, pas le jeu praticable.
 
-- **Enrichissement** : viser ~8 sorts par élément offensif, en priorité
-  **foudre** et **glace** aux paliers early/mid, adossés aux livres de sorts
-  (vecteur d'apprentissage existant, cf. `livre_glacius` / `livre_fulgari`).
-- **Vérifier** : ≥ 2 sorts par élément accessibles avant l'étage 5 ; sim
-  d'équilibrage inchangée (`check_difficulty.js`).
+**Le vrai problème, lui, est net** — il fallait croiser l'offre de sorts avec ce
+que le bestiaire *récompense* :
 
-### 3.4 🟡 E3 · Perf & poids d'assets — plan ouvert, deux leviers non joués
+| Élément | Sorts offensifs | Monstres **faibles** | Monstres **résistants** | Ratio sorts/faiblesses |
+|---|---|---|---|---|
+| **ténèbres** | **14** | **1** | **41** | **14,00** |
+| **lumière** | **8** | **38** | 2 | **0,21** |
+| feu | 7 | 22 | 11 | 0,32 |
+| physique | 6 | 8 | 21 | 0,75 |
+| glace | 6 | 9 | 8 | 0,67 |
+| foudre | 5 | 8 | 5 | 0,63 |
 
-`perf-optimization.md` a **15 cases non cochées**, dont la cible
-« `img/` réduit d'au moins 40 % ». Deux constats factuels :
+**Le jeu investit son plus gros catalogue de sorts dans l'élément auquel
+41 créatures résistent et dont 1 seule est faible ; et son élément le plus
+récompensé — 38 créatures faibles à la lumière — n'a que 8 sorts, dont le
+premier achetable arrivait à l'étage 6.** 67× d'écart entre les deux ratios.
 
-1. **Zéro format moderne** : **1 131 PNG + 7 JPG, 0 WebP, 0 AVIF**. Sur des
-   sprites painterly 512² (jusqu'à 221 Ko pièce : `antecesseur.png`,
-   `souffle_du_dormeur.png`, `larve_fondations.png`), WebP coupe
-   habituellement 50-70 % à qualité perçue égale.
-2. **Précache de 3,38 Mo** au premier chargement (109 entrées) — c'est le
-   chiffre qui pilote le LCP mobile, et la cible « < 5-6 s » du plan n'est pas
-   mesurée.
+La pression démarre à l'**étage 4** : 10 des 21 créatures de la tranche 4-6 sont
+faibles à la lumière, et 86 % de cette tranche porte une résistance. Le système
+résistance/faiblesse réclamait donc un élément que le joueur ne pouvait pas
+encore se procurer.
 
-- **Enrichissement** : conversion WebP avec `<picture>`/fallback PNG (les
-  résolveurs d'icônes sont centralisés dans `item-icons.js` /
-  `renderer-entities.js`, donc peu de call-sites) + arbitrage sur ce qui doit
-  vraiment être précaché. À combiner avec C3 (−9,2 Mo côté audio).
-- **Vérifier** : Lighthouse mobile avant/après ; `pwa-smoke` (offline) vert ;
-  aucun sprite manquant (`check_content_refs.js` de A2 couvre la régression).
+**Correctif appliqué** (data-only, minimal) : `livre_patronum` passe de
+l'étage 6 à l'**étage 4**, pour que la lumière soit disponible quand le
+bestiaire commence à la réclamer. `node tools/check_difficulty.js` reste vert
+(aucun étage ne dérive de plus de 10 pts).
+
+**Ce qui reste ouvert, et relève du design** : le déséquilibre ténèbres est
+peut-être *intentionnel* — les sorts de ténèbres sont majoritairement des
+lifesteal et des malédictions, valorisés pour leur effet plus que pour leurs
+dégâts bruts, et il est cohérent en lore que les créatures sombres résistent à
+la magie noire. Rééquilibrer les résistances toucherait à cette cohérence :
+c'est un arbitrage d'auteur, pas une correction technique. La mesure est
+posée ; la décision revient à l'auteur du jeu.
+
+### 3.4 ❌ E3 · Perf & poids d'assets — **ABANDONNÉ** (prémisse fausse, mesuré)
+
+`perf-optimization.md` a 15 cases non cochées, dont « `img/` réduit d'au moins
+40 % ». Cette section recommandait WebP en avançant « WebP coupe habituellement
+50-70 % ». **Mesuré sur le corpus réel, c'est faux**, et le raisonnement sur le
+premier chargement l'est aussi.
+
+**1. Le gain WebP réel** (conversion des 1 131 PNG, Pillow, méthode 4) :
+
+| | Poids | Gain |
+|---|---|---|
+| PNG actuels | 13,10 Mo | — |
+| WebP **sans perte** | 11,01 Mo | **16 %** |
+| WebP **q90** (avec perte) | 7,69 Mo | **41 %** |
+
+Les 50-70 % annoncés ne sont atteints par aucun des deux modes. La cible
+« −40 % » n'est atteignable qu'**en acceptant une compression avec perte sur
+des illustrations peintes à la main**, toutes en alpha (1 083/1 083).
+
+**2. Le précache ne pèse pas 3,38 Mo pour le joueur.** GitHub Pages sert
+gzip/brotli automatiquement :
+
+| | brut | gzip | brotli |
+|---|---|---|---|
+| **js** (74 % du précache) | 2,51 Mo | 0,77 Mo | **0,68 Mo** |
+| img | 0,55 Mo | 0,54 Mo | 0,54 Mo |
+| css | 0,25 Mo | 0,06 Mo | **0,05 Mo** |
+| shell | 0,09 Mo | 0,02 Mo | 0,02 Mo |
+| **TOTAL** | **3,39 Mo** | 1,39 Mo | **1,30 Mo** |
+
+Le premier chargement transfère donc **1,30 Mo, pas 3,38** — 62 % de moins que
+le chiffre sur lequel la section s'alarmait.
+
+**3. WebP ne toucherait pas le premier chargement.** Le précache ne contient
+que **3 images** : `title.jpg` (345 Ko, déjà du JPEG), et les 2 icônes PWA
+(214 Ko, qui doivent rester PNG pour le manifeste). Les 1 131 PNG du jeu sont
+chargés **à la demande** (stale-while-revalidate) : les convertir agit sur la
+bande passante *en cours de partie*, pas sur le LCP.
+
+> **DÉCISION (utilisateur, 2026-07-28) : axe abandonné.** Le premier
+> chargement va bien, le sans-perte ne rapporte que 16 % pour 1 131 fichiers
+> touchés, et le q90 dégraderait des illustrations peintes à la main pour
+> ~5,4 Mo de bande passante par partie. Le jeu n'a pas de problème de poids au
+> chargement ; l'axe est clos.
+>
+> **Conclusion révisée.** E3 n'est pas un axe de premier chargement — le
+> premier chargement va bien (1,30 Mo transférés, dont 74 % de JS déjà
+> compressé à 0,68 Mo). Ce qui reste réel : ~5,4 Mo d'économie de bande
+> passante par partie complète, **au prix d'une compression avec perte sur
+> l'art du jeu**. Ce n'est plus une optimisation technique évidente mais un
+> **arbitrage qualité/poids qui revient à l'auteur** — et le mode sans perte,
+> lui, ne rapporte que 16 % pour la conversion de 1 131 fichiers.
 
 ### 3.5 🟢 E4 · Répartition des slots d'équipement
 
@@ -400,12 +503,12 @@ soutenir un build physique.
 
 ## 4 — Hygiène de process
 
-### 🟡 P1 · 59 plans actifs pour 261 archivés  *(→ 47 après le lot 2)*
+### 🟡 P1 · 58 plans actifs pour 261 archivés  *(→ 45 après le lot 2)*
 
-`.claude/plans/` contient **59** `.md` actifs. Le workflow d'archivage existe
+`.claude/plans/` contient **58** `.md` actifs. Le workflow d'archivage existe
 (`plans-archiving-workflow.md`, périmètre validé 2026-06-12) et a bien tourné
 une fois — mais il constatait **37** plans actifs à l'époque : le stock a
-**augmenté de 59 %** depuis, ce qui indique un rangement one-shot plutôt qu'une
+**augmenté de 57 %** depuis, ce qui indique un rangement one-shot plutôt qu'une
 routine.
 
 Deux familles gonflent le compte sans être des plans de travail :
@@ -416,7 +519,7 @@ Deux familles gonflent le compte sans être des plans de travail :
   (`_archive/potions-consumables-craft-2.0.md` : « 🏁 P7→P13 LIVRÉS … CLOS » ;
   `voix-manon-elara.md` : « faite et câblée ») et qui restent en actif.
 
-Sur les 59, **28 n'ont aucune ligne de statut détectable** — impossible de
+Sur les 58, **28 n'ont aucune ligne de statut détectable** — impossible de
 savoir d'un coup d'œil si le travail est en cours.
 
 - **Amélioration** : (1) rejouer la passe d'archivage ; (2) sortir les
@@ -454,8 +557,8 @@ l'exécution du lot 1.
 | 4 | **A1** ESLint | Amélioration | Fort | **S** | ✅ livré | 0 erreur d'emblée → bloquant en CI sans toucher au code de jeu |
 | 5 | **P1** passe d'archivage des plans | Process | Moyen | **S** | 🟨 partiel | 59 → 47 plans actifs (13 catalogues de prompts sortis, 3 plans clos archivés) ; l'audit complet reste à faire |
 | 6 | **E1** verbes de quête (`deliver`/`discover`/`choice`) | Enrichissement | **Fort** | M | ouvert | seul axe qui change la texture du jeu ; briques déjà là |
-| 7 | **E3** WebP + arbitrage du précache | Enrichissement | Fort | M | ouvert | cible « −40 % `img/` » du plan perf, non jouée |
-| 8 | **E2** rééquilibrage élémentaire (foudre/glace) | Enrichissement | Moyen | M | ouvert | rend le système resist/weak réellement jouable early |
+| — | ~~**E3** WebP~~ | — | — | — | ❌ **abandonné** | prémisse démentie par la mesure (§3.4) : gain réel 16 % sans perte, et le précache transfère 1,30 Mo (brotli), pas 3,38. Devient un arbitrage qualité/poids, pas une optimisation évidente |
+| 8 | **E2** catalogue élémentaire | Enrichissement | Moyen | S | ✅ **traité** | constat re-posé (§3.x) : le problème n'était pas « foudre pauvre » mais 14 sorts ténèbres pour 41 monstres résistants vs 8 sorts lumière pour 38 faibles. Lumière avancée à l'étage 4 |
 | 9 | **E4** slots `wand`/armure | Enrichissement | Moyen | M | ouvert | condition de loot pour un build physique viable |
 | 10 | **P2** parallélisation de la suite smoke | Process | Moyen | M | ouvert | protège le respect de la règle §7 |
 | 11 | **A3**/**A4** helpers `activeParty` / REST MP | Amélioration | Faible | S | ouvert | opportuniste, au fil des passages |
