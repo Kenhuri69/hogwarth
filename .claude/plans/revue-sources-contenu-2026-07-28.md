@@ -400,25 +400,52 @@ réel est mince, et la foudre reste le parent pauvre de bout en bout.
 - **Vérifier** : ≥ 2 sorts par élément accessibles avant l'étage 5 ; sim
   d'équilibrage inchangée (`check_difficulty.js`).
 
-### 3.4 🟡 E3 · Perf & poids d'assets — plan ouvert, deux leviers non joués
+### 3.4 ⚠️ E3 · Perf & poids d'assets — **prémisse largement fausse (mesuré)**
 
-`perf-optimization.md` a **15 cases non cochées**, dont la cible
-« `img/` réduit d'au moins 40 % ». Deux constats factuels :
+`perf-optimization.md` a 15 cases non cochées, dont « `img/` réduit d'au moins
+40 % ». Cette section recommandait WebP en avançant « WebP coupe habituellement
+50-70 % ». **Mesuré sur le corpus réel, c'est faux**, et le raisonnement sur le
+premier chargement l'est aussi.
 
-1. **Zéro format moderne** : **1 131 PNG + 7 JPG, 0 WebP, 0 AVIF**. Sur des
-   sprites painterly 512² (jusqu'à 221 Ko pièce : `antecesseur.png`,
-   `souffle_du_dormeur.png`, `larve_fondations.png`), WebP coupe
-   habituellement 50-70 % à qualité perçue égale.
-2. **Précache de 3,38 Mo** au premier chargement (109 entrées) — c'est le
-   chiffre qui pilote le LCP mobile, et la cible « < 5-6 s » du plan n'est pas
-   mesurée.
+**1. Le gain WebP réel** (conversion des 1 131 PNG, Pillow, méthode 4) :
 
-- **Enrichissement** : conversion WebP avec `<picture>`/fallback PNG (les
-  résolveurs d'icônes sont centralisés dans `item-icons.js` /
-  `renderer-entities.js`, donc peu de call-sites) + arbitrage sur ce qui doit
-  vraiment être précaché. À combiner avec C3 (−9,2 Mo côté audio).
-- **Vérifier** : Lighthouse mobile avant/après ; `pwa-smoke` (offline) vert ;
-  aucun sprite manquant (`check_content_refs.js` de A2 couvre la régression).
+| | Poids | Gain |
+|---|---|---|
+| PNG actuels | 13,10 Mo | — |
+| WebP **sans perte** | 11,01 Mo | **16 %** |
+| WebP **q90** (avec perte) | 7,69 Mo | **41 %** |
+
+Les 50-70 % annoncés ne sont atteints par aucun des deux modes. La cible
+« −40 % » n'est atteignable qu'**en acceptant une compression avec perte sur
+des illustrations peintes à la main**, toutes en alpha (1 083/1 083).
+
+**2. Le précache ne pèse pas 3,38 Mo pour le joueur.** GitHub Pages sert
+gzip/brotli automatiquement :
+
+| | brut | gzip | brotli |
+|---|---|---|---|
+| **js** (74 % du précache) | 2,51 Mo | 0,77 Mo | **0,68 Mo** |
+| img | 0,55 Mo | 0,54 Mo | 0,54 Mo |
+| css | 0,25 Mo | 0,06 Mo | **0,05 Mo** |
+| shell | 0,09 Mo | 0,02 Mo | 0,02 Mo |
+| **TOTAL** | **3,39 Mo** | 1,39 Mo | **1,30 Mo** |
+
+Le premier chargement transfère donc **1,30 Mo, pas 3,38** — 62 % de moins que
+le chiffre sur lequel la section s'alarmait.
+
+**3. WebP ne toucherait pas le premier chargement.** Le précache ne contient
+que **3 images** : `title.jpg` (345 Ko, déjà du JPEG), et les 2 icônes PWA
+(214 Ko, qui doivent rester PNG pour le manifeste). Les 1 131 PNG du jeu sont
+chargés **à la demande** (stale-while-revalidate) : les convertir agit sur la
+bande passante *en cours de partie*, pas sur le LCP.
+
+> **Conclusion révisée.** E3 n'est pas un axe de premier chargement — le
+> premier chargement va bien (1,30 Mo transférés, dont 74 % de JS déjà
+> compressé à 0,68 Mo). Ce qui reste réel : ~5,4 Mo d'économie de bande
+> passante par partie complète, **au prix d'une compression avec perte sur
+> l'art du jeu**. Ce n'est plus une optimisation technique évidente mais un
+> **arbitrage qualité/poids qui revient à l'auteur** — et le mode sans perte,
+> lui, ne rapporte que 16 % pour la conversion de 1 131 fichiers.
 
 ### 3.5 🟢 E4 · Répartition des slots d'équipement
 
@@ -497,7 +524,7 @@ l'exécution du lot 1.
 | 4 | **A1** ESLint | Amélioration | Fort | **S** | ✅ livré | 0 erreur d'emblée → bloquant en CI sans toucher au code de jeu |
 | 5 | **P1** passe d'archivage des plans | Process | Moyen | **S** | 🟨 partiel | 59 → 47 plans actifs (13 catalogues de prompts sortis, 3 plans clos archivés) ; l'audit complet reste à faire |
 | 6 | **E1** verbes de quête (`deliver`/`discover`/`choice`) | Enrichissement | **Fort** | M | ouvert | seul axe qui change la texture du jeu ; briques déjà là |
-| 7 | **E3** WebP + arbitrage du précache | Enrichissement | Fort | M | ouvert | cible « −40 % `img/` » du plan perf, non jouée |
+| 7 | **E3** WebP | ~~Enrichissement~~ | **Faible** | M | ⚠️ déclassé | prémisse démentie par la mesure (§3.4) : gain réel 16 % sans perte, et le précache transfère 1,30 Mo (brotli), pas 3,38. Devient un arbitrage qualité/poids, pas une optimisation évidente |
 | 8 | **E2** rééquilibrage élémentaire (foudre/glace) | Enrichissement | Moyen | M | ouvert | rend le système resist/weak réellement jouable early |
 | 9 | **E4** slots `wand`/armure | Enrichissement | Moyen | M | ouvert | condition de loot pour un build physique viable |
 | 10 | **P2** parallélisation de la suite smoke | Process | Moyen | M | ouvert | protège le respect de la règle §7 |
