@@ -498,6 +498,39 @@ const ITEMS = [
   { id:"sablier_fele",         name:"Sablier Fêlé",           icon:"⏳", desc:"AGI+3 · Célérité +4 · 🏺 Appel du Temps (1×/combat : charge la jauge de Célérité du groupe)", type:"acc", slot:"trinket", formType:"orbe", rarity:"epic", bonusAgi:3, bonusCelerite:4, power:3, price:1250, tint:"#c9a84c", activeEffect:{ id:"appel_temps", label:"Appel du Temps", charges:1, target:"allyAll", resolve:"hasteGroup", power:0.5 } },
   { id:"poincon_gobelin",      name:"Poinçon Gobelin",        icon:"🗡️", desc:"ATK+3 STR+2 · 🏺 Entaille d'armure (1×/combat : DEF d'un ennemi −25 % pour le combat)", type:"acc", slot:"belt", formType:"gantelets", rarity:"epic", bonusAtk:3, bonusStr:2, power:3, price:1150, tint:"#8a6840", activeEffect:{ id:"entaille_armure", label:"Entaille d'armure", charges:1, target:"enemy", resolve:"sapDefense", power:0.25 } },
   { id:"flasque_source",       name:"Flasque de la Source",   icon:"⛲", desc:"DEF+2 · Régen +1 PM/tour · 🏺 Eau de la Source (1×/combat : rend 12 % PV/PM au groupe)", type:"acc", slot:"amulet", formType:"talisman", rarity:"epic", bonusDef:2, regenSp:1, power:2, price:1250, tint:"#4fb6e8", activeEffect:{ id:"eau_source", label:"Eau de la Source", charges:1, target:"allyAll", resolve:"succorGroup", power:0.12 } },
+  // ── Lot 4 revue 2026-07 — répartition des slots (axe E4) ─────
+  // Constat : `wand` (9), `body` (7), `hands` (6) et `feet` (7) étaient 3 à 4×
+  // moins fournis que les slots « bijou » (trinket 25, amulet 20), au point que
+  // le meilleur torse ACHETABLE restait `robe1` (DEF+3, 150 G) de l'étage 2 à
+  // l'étage 8. Ces 13 entrées comblent les paliers morts, orientées STR
+  // (pénétration de DEF — D4), END (DEF + PV max — D2/D2bis) et RIPOSTE.
+  //
+  // `bonusCounterChance` : premier loot à alimenter la riposte de Garde
+  // (`_tryGuardCounter`, battle.js — base 30 %, plafond 40 %). Le champ était
+  // implémenté et sommé par recalculateStats mais AUCUN item ne le déclarait.
+  // Budget : 5+4+3+3 = 15 réparti sur 4 pièces → 2 à 3 suffisent à plafonner.
+  //
+  // Règle anti-power-creep : chaque epic reste SOUS la somme de bonus du
+  // meilleur item existant de son slot au même étage (le simulateur choisit son
+  // best-in-slot sur cette somme brute) — il gagne sa place par son profil,
+  // pas par son total. Cf. .claude/plans/lot4-slots-equipement-2026-07-28.md.
+  // Armes — la voie physique (ATK brut + pénétration STR) face aux bâtons de caster.
+  { id:"baguette_aubepine",    name:"Baguette d'Aubépine",    icon:"🪄", desc:"ATK+3 STR+2 — bois d'aubépine, capricieux mais mordant", type:"wand", slot:"wand",  family:"wand_hawthorn",  rarity:"uncommon", bonusAtk:3, bonusStr:2, power:3, price:280,  tint:"#a06a3a" },
+  { id:"fauchon_gobelin",      name:"Fauchon Gobelin",        icon:"🗡️", desc:"ATK+6 STR+3 — forgé pour fendre l'armure, pas pour lancer des sorts", type:"wand", slot:"wand", family:"falchion_goblin", rarity:"rare", bonusAtk:6, bonusStr:3, power:6, price:700,  tint:"#8a8f96" },
+  { id:"epee_gobeline",        name:"Épée d'Acier Gobelin",   icon:"⚔️", desc:"ATK+8 STR+3 — l'acier gobelin n'absorbe que ce qui le rend plus fort", type:"wand", slot:"wand", family:"sword_goblin", rarity:"epic",    bonusAtk:8, bonusStr:3, power:8, price:1400, tint:"#c0c8d0" },
+  // Torse — le slot le plus figé du jeu : rien entre robe1 (ét. 2) et robe_combat (ét. 9).
+  { id:"cuirasse_cloutee",     name:"Cuirasse Cloutée",       icon:"🦺", desc:"DEF+3 END+1 — cuir bouilli et rivets de fer",           type:"armor", slot:"body", family:"cuirass_studded", rarity:"uncommon", bonusDef:3, bonusEnd:1, power:3, price:240 },
+  { id:"haubert_mailles",      name:"Haubert de Mailles",     icon:"🛡️", desc:"DEF+4 END+2 · Riposte +4 % — les mailles renvoient le coup", type:"armor", slot:"body", family:"hauberk_mail", rarity:"rare",  bonusDef:4, bonusEnd:2, bonusCounterChance:4, power:4, price:620 },
+  { id:"armure_gardien",       name:"Armure du Gardien",      icon:"🛡️", desc:"DEF+5 END+2 · Riposte +5 % — portée par ceux qui tiennent la porte", type:"armor", slot:"body", family:"armor_warden", rarity:"epic", bonusDef:5, bonusEnd:2, bonusCounterChance:5, power:5, price:1150, houseAffinity:"Poufsouffle" },
+  // Mains — deux voies : la frappe (ATK/STR) et la garde qui riposte.
+  { id:"mitaines_cuir",        name:"Mitaines de Cuir",       icon:"🧤", desc:"ATK+1 END+1 — les doigts libres, la paume protégée",     type:"acc",   slot:"hands", family:"mittens_leather", rarity:"common", bonusAtk:1, bonusEnd:1, power:1, price:90 },
+  { id:"gantelets_gardien",    name:"Gantelets du Gardien",   icon:"🥊", desc:"DEF+2 END+2 · Riposte +3 % — parer, puis rendre",        type:"acc",   slot:"hands", family:"gauntlets_warden", rarity:"rare", bonusDef:2, bonusEnd:2, bonusCounterChance:3, power:2, price:330, houseAffinity:"Poufsouffle" },
+  { id:"poings_ferres",        name:"Poings Ferrés",          icon:"👊", desc:"ATK+4 STR+2 — quand la baguette ne suffit plus",         type:"acc",   slot:"hands", family:"fists_iron",      rarity:"rare", bonusAtk:4, bonusStr:2, power:4, price:520, houseAffinity:"Gryffondor" },
+  { id:"gantelets_dragonniers",name:"Gantelets des Dragonniers",icon:"🐉", desc:"ATK+4 STR+4 END+2 — cuir d'un Magyar, cousu par la réserve", type:"acc", slot:"hands", family:"gauntlets_dragon", rarity:"epic", bonusAtk:4, bonusStr:4, bonusEnd:2, power:4, price:1050, tint:"#8a3a1f" },
+  // Pieds — pendant lourd des bottes agiles existantes (dragon / silence / lièvre).
+  { id:"bottes_cloutees",      name:"Bottes Cloutées",        icon:"🥾", desc:"DEF+2 END+1 — semelles ferrées pour les longues descentes", type:"acc", slot:"feet", family:"boots_studded", rarity:"common", bonusDef:2, bonusEnd:1, power:2, price:160 },
+  { id:"greves_acier",         name:"Grèves d'Acier",         icon:"🦿", desc:"DEF+4 END+2 mais AGI−1 — l'acier protège, l'acier pèse",  type:"acc",   slot:"feet",  family:"greaves_steel",   rarity:"rare", bonusDef:4, bonusEnd:2, bonusAgi:-1, power:4, price:560 },
+  { id:"bottes_marche_forcee", name:"Bottes de Marche Forcée",icon:"🥾", desc:"DEF+4 END+3 · Riposte +3 % — on tient debout, c'est déjà gagner", type:"acc", slot:"feet", family:"boots_forced_march", rarity:"epic", bonusDef:4, bonusEnd:3, bonusCounterChance:3, power:4, price:880 },
   // ── Artefacts & Reliquaires 2.0 — P2 variantes Premium (plan §1.5) ──
   // Variantes recoloriées par Maison d'un artefact de base, stats PRÉ-CUITES
   // (base × PREMIUM_MULT[rarity], arrondi par premiumStat — décision §2.1 n°2 :

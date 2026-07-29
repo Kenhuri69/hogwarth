@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Cuirasse / plastron — silhouette de torse pour le slot `body`.
+       `hood.svg` (seul part torse existant) rend une capuche : il convient
+       aux capes, pas aux armures. 3 régions : plate (le corps de l'armure),
+       trim (col + spallières), strap (ceinturon bas). -->
+  <g fill="#000000">
+
+    <path data-region="plate" d="
+      M 128 168
+      C 156 138 194 118 230 108
+      C 240 144 248 174 256 202
+      C 264 174 272 144 282 108
+      C 318 118 356 138 384 168
+      C 396 226 396 292 386 346
+      C 378 392 368 420 348 446
+      L 164 446
+      C 144 420 134 392 126 346
+      C 116 292 116 226 128 168 Z"></path>
+
+    <path data-region="trim" d="
+      M 126 172
+      C 154 140 192 120 228 110
+      L 236 144
+      C 202 154 168 174 144 200 Z
+      M 386 172
+      C 358 140 320 120 284 110
+      L 276 144
+      C 310 154 344 174 368 200 Z"></path>
+
+    <path data-region="strap" d="
+      M 140 384
+      L 372 384
+      L 362 440
+      L 150 440 Z"></path>
+
+  </g>
+</svg>
