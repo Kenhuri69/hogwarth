@@ -158,7 +158,15 @@ Chromium et rejoue l'intro complète. Ce lot rend la règle §7 **applicable**
 > lançais d'autres tests en parallèle pendant la mesure. Chiffre jeté, mesure
 > refaite machine au repos. Un banc qu'on pollue soi-même ne mesure rien.
 
-### 6.3 Garde-fous
+### 6.3 CI
+
+Job « Smoke + PWA » **vert** sur le head de la PR #744 : **3 min 17 s** de bout
+en bout (05:04:49 → 05:08:06), contre ~4,5 min relevés par la revue avant ce
+lot. Le chiffre couvre tout le job (checkout, npm install, installation de
+Chromium, garde-fous, units, smoke, pwa-smoke) — le gain porte sur la seule
+étape smoke, il est donc dilué ici. Aucun changement de workflow.
+
+### 6.4 Garde-fous
 
 `units.js` (1 130 assertions) · `pwa-smoke.js` · `check_doc_modules.js` ·
 ESLint (0 erreur ; 2 avertissements `no-unused-vars` préexistants, hors lot).
