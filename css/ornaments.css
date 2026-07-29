@@ -152,18 +152,11 @@
   z-index: 1;
 }
 
-/* ── DEATH : sceau pentacle rouge derrière ── */
-.death-seal {
-  position: absolute;
-  left: 50%; top: 50%;
-  transform: translate(-50%, -50%);
-  width: 280px; height: 280px;
-  opacity: 0.18;
-  pointer-events: none;
-  z-index: 0;
-  color: #6a1010;
-}
-#death-screen > *:not(.death-seal) {
+/* ── DEATH : empilement des enfants de l'écran de mort ──
+   Le sceau `.death-seal` prévu ici n'a jamais été posé par le JS (0 site) :
+   sa règle est retirée, l'exception `:not()` avec — la règle de z-index,
+   elle, s'applique bien aux enfants et reste. */
+#death-screen > * {
   position: relative;
   z-index: 1;
 }

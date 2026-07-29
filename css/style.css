@@ -474,16 +474,6 @@ body {
   text-align: center;
   font-style: italic;
 }
-.char-portrait {
-  width: 60px; height: 60px;
-  margin: 0 auto;
-  border: 2px solid var(--gold-dark);
-  border-radius: 4px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 36px;
-  background: #0a0705;
-}
-
 .stat-bar-row {
   display: flex; flex-direction: column; gap: 2px;
 }
@@ -567,16 +557,6 @@ body {
   padding: 20px;
   z-index: 10;
 }
-.enemy-display {
-  display: flex; flex-direction: column; align-items: center;
-  gap: 8px;
-}
-.enemy-art {
-  font-size: 72px;
-  filter: drop-shadow(0 0 20px rgba(200,50,50,0.6));
-  animation: float 2s ease-in-out infinite alternate;
-}
-@keyframes float { from{transform:translateY(-5px)} to{transform:translateY(5px)} }
 .enemy-name {
   font-family: 'Cinzel', serif;
   font-size: 18px;
@@ -833,7 +813,6 @@ body {
 .map-player-dir-s { transform: rotate(180deg); }
 .map-player-dir-w { transform: rotate(270deg); }
 .map-visited { background: #2a1a08; }
-.map-door { background: #6b4c1a; border: 1px solid #8b6c2a; }
 .map-stairs { background: #4a3a6a; }
 .map-enemy { background: #6a1010; }
 .map-shop { background: #1a4a2a; }
@@ -2160,32 +2139,6 @@ body {
 .inv-slot.rarity-rare      { border-color: #4a8ad0; box-shadow: inset 0 0 0 1px rgba(74,138,208,0.25); }
 .inv-slot.rarity-epic      { border-color: #a060d0; box-shadow: inset 0 0 0 1px rgba(160,96,208,0.30); }
 .inv-slot.rarity-legendary { border-color: var(--gold); box-shadow: inset 0 0 0 1px rgba(201,168,76,0.35); }
-
-/* Grille des 11 slots d'équipement (fiche perso) — voir §2.4. */
-.equip-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4px 10px;
-  font-size: 11px;
-}
-.equip-grid .equip-row {
-  display: grid;
-  grid-template-columns: 18px 60px 1fr;
-  align-items: center;
-  gap: 6px;
-  padding: 2px 4px;
-  border-radius: 3px;
-}
-.equip-grid .equip-row.filled { background: rgba(40,28,12,0.45); }
-.equip-grid .equip-icon  { display: inline-flex; justify-content: center; opacity: 0.85; }
-.equip-grid .equip-label { color: var(--label-muted); font-family: 'Cinzel',serif; letter-spacing: 0.5px; font-size: 10px; }
-.equip-grid .equip-name  { color: var(--parchment-dark); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.equip-grid .equip-name.empty { color: #4a3a20; font-style: italic; }
-
-/* Repli en une seule colonne sur les fiches étroites (≤ 360 px). */
-@media (max-width: 360px) {
-  .equip-grid { grid-template-columns: 1fr; }
-}
 
 /* ============================================================
    Personnage — layout 3 colonnes (paper doll central + slots)
@@ -3864,7 +3817,6 @@ button.shop-tab.active {
   box-shadow: 0 0 18px color-mix(in srgb, var(--ha, #c9a84c) 40%, transparent);
   transform: translateY(-2px);
 }
-.house-btn-icon { font-size: 36px; line-height: 1; }
 .house-btn-name { font-size: 14px; font-weight: 600; color: var(--ha, var(--gold-light)); letter-spacing: 1px; }
 .house-btn-desc { font-size: 11px; color: var(--label-muted); font-family: 'Crimson Text', serif; text-align: center; line-height: 1.4; }
 .select-icon { font-size: 36px; line-height: 1; }
@@ -4016,10 +3968,6 @@ button.shop-tab.active {
   color: var(--gold) !important;
   box-shadow: 0 0 8px rgba(201,168,76,0.4), inset 0 0 8px rgba(201,168,76,0.15);
 }
-.cmd-btn.muted-toggle {
-  opacity: 0.55;
-}
-
 /* ── ICÔNES MONSTRES SVG ── */
 .monster-icon {
   display: flex;
