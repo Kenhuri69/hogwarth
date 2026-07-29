@@ -212,7 +212,14 @@ planifier de l'enrichissement là où il y a déjà de la matière.
 - **Vérifier** : chiffres recalés ; option — étendre `check_doc_modules.js`
   à un contrôle des compteurs de registres.
 
-### 🟡 C5 · ~59 classes CSS mortes
+### ✅ C5 · ~59 classes CSS mortes — **traité (lot 7)**
+
+> **Livré** (`lot7-css-morte-poids-depot-2026-07-29.md`) : **9 classes**
+> confirmées mortes et supprimées (−66 lignes CSS), chacune validée par deux
+> preuves indépendantes (0 référence littérale **et** relecture du code qui
+> compose les classes de ce préfixe). Les 93 autres candidates sont des faux
+> positifs de composition dynamique et sont **conservées** : sans preuve, on ne
+> supprime pas du CSS — aucun test n'échoue quand une règle utile disparaît.
 
 807 classes déclarées dans `css/`, **59 jamais citées** dans `js/` ni
 `index.html`. Une partie est du faux positif (composition dynamique :
@@ -321,7 +328,18 @@ code neuf ne l'applique pas non plus.
   fonctions qui touchent ≥ 5 IDs en cascade quand on y passe, comme prescrit —
   et recaler le chiffre dans `CLAUDE.md` (voir C4).
 
-### 🟢 A6 · Poids du dépôt : 111 Mo suivis, dont ~65 Mo non runtime
+### ⚠️ A6 · Poids du dépôt — **constat erroné, requalifié (lot 7)**
+
+> **La prémisse de cet axe est fausse.** « Le problème est le clone » et « les
+> fichiers restent dans l'historique » sont incompatibles : `git clone`
+> transfère l'historique complet (pack de **138,7 Mo**, 4 491 objets), que les
+> fichiers soient encore suivis ou non. Dépister `uploads/` du suivi ne
+> retirerait pas un octet du clone — seulement du répertoire de travail. Le
+> gain annoncé n'existe pas sans réécriture d'historique, hors de question ici.
+> S'ajoute que les deux candidats ont une raison documentée d'exister
+> (`tools/_shots/` = preuves visuelles citées par `final-polish-2026-07.md` ;
+> `uploads/` = « ne rien supprimer sans validation », `code-review-improvements.md`).
+> **Aucune suppression faite.** Cf. §2 du plan du lot 7.
 
 `deploy.yml` est **correct** — il n'expédie que `index.html`, `robot.html`,
 `manifest.json`, `sw.js`, `css/`, `js/`, `img/`, `audio/`. Le problème est le
@@ -580,7 +598,7 @@ l'exécution du lot 1.
 | 9 | **E4** slots `wand`/armure | Enrichissement | Moyen | M | ouvert | condition de loot pour un build physique viable |
 | 10 | **P2** parallélisation de la suite smoke | Process | Moyen | M | ✅ livré | protège le respect de la règle §7 — 90 min → 22 min (lot 5) |
 | 11 | **A3**/**A4** helpers `activeParty` / REST MP | Amélioration | Faible | S | ✅ livré | 78 sites migrés + 9 recopies REST supprimées (lot 6) |
-| 12 | **C5** CSS morte · **A6** poids du dépôt | Nettoyage | Faible | S | ouvert | hygiène, sans urgence |
+| 12 | **C5** CSS morte · **A6** poids du dépôt | Nettoyage | Faible | S | ✅ / ⚠️ | C5 livré (9 classes) ; **A6 requalifié** — prémisse fausse, aucun gain sans réécriture d'historique (lot 7) |
 | — | ~~C1 · C2 icônes de sorts~~ | — | — | — | ❌ retiré | constats erronés — la couverture d'icônes est complète (§1) |
 
 **Séquence recommandée** — **lot 1 (1 · 2 · 3) livré** (`lot1-quick-wins-2026-07-28.md`,

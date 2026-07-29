@@ -77,8 +77,6 @@
 .tt-good { color: #7fd87f; }
 .tt-mag  { color: #b070e0; }
 
-/* éléments hoverables — pointeur d'aide subtil */
-.has-tooltip { cursor: help; }
 .spell-item, .inv-slot, .stat-item, .shop-item { cursor: pointer; }
 
 /* ── 2. JOURNAL DE COMBAT SCROLLABLE ───────────────────────── */
