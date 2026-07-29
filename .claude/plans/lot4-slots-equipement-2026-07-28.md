@@ -1,7 +1,7 @@
 # Lot 4 — E4 : répartition des slots d'équipement (armes & armures)
 
 **Branche :** `claude/premier-plan-finaliser-ocbn0z`
-**Statut :** 🟦 livré — PR #743 (draft), en attente de CI
+**Statut :** ✅ clos — **PR #743 mergée** (CI « Smoke + PWA » verte)
 **Source :** `revue-sources-contenu-2026-07-28.md` §3.5 (axe **E4**, rang 9 de la
 priorisation §5). Suite des lots 1 (A2·C3·C4), 2 (A1·P1 partiel) et 3 (E1).
 **Arbitrage utilisateur (2026-07-28) :** E4 retenu comme lot 4.
@@ -135,7 +135,7 @@ build lisible, pas une stat à empiler indéfiniment.
 10. [x] Cache-bump (`data-items.js`, `shop.js`, `item-icons.js`) + `CACHE_VERSION`
     → `node tools/check_cache_versions.js --base origin/master` + `pwa-smoke`
     (cache `hogwarth-v270`, 109 entrées, chargement offline OK).
-11. [x] Commit → push → **PR draft #743** (aucune PR pré-existante sur la branche, vérifié avant push — §6).
+11. [x] Commit → push → **PR #743**, CI verte, **mergée** (aucune PR pré-existante sur la branche, vérifié avant push — §6).
 
 ## 5. Garde-fous
 

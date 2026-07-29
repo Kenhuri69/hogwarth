@@ -2,7 +2,7 @@
 
 **Branche :** `claude/premier-plan-finaliser-ocbn0z` (repartie de `master` après
 le merge de la PR #744)
-**Statut :** 🟩 en cours
+**Statut :** ✅ clos — **PR #745 mergée** (CI verte, job en 4 min 23 s)
 **Source :** `revue-sources-contenu-2026-07-28.md` §2 A3 et A4 (rang 11).
 Lot 6 après les lots 1 (A2·C3·C4), 2 (A1·P1), 3 (E1), 4 (E4) et 5 (P2).
 
@@ -66,10 +66,13 @@ de force : mieux vaut deux sites hors helper qu'un helper à cinq options.
 4. [x] `_mpSelectRows` / `_mpWrite` dans `multiplayer.js` + migration des sites
    qui entrent exactement → **vérifier** : les scénarios `multiplayer` (stubs
    REST offline) restent verts.
-5. [ ] Suite smoke **complète** → **vérifier** : 285/285, aucun écart.
-6. [ ] Doc : `CLAUDE.md` (helpers) + revue §2 A3/A4 marquée traitée.
-7. [ ] Cache-bump (JS servis modifiés) + `check_cache_versions.js`.
-8. [ ] Commit → push → PR draft (nouvelle PR : #744 mergée, §6).
+5. [x] Suite smoke **complète** → **285/285 verts en 22 min 16 s**. Réserve de
+   méthode : le CSS du lot 7 a été édité pendant cette exécution, donc les
+   derniers scénarios ont chargé un `index.html` déjà modifié. Elle ne remplace
+   pas la CI de la PR, qui a tourné sur un arbre figé.
+6. [x] Doc : `CLAUDE.md` (helpers) + revue §2 A3/A4 marquée traitée.
+7. [x] Cache-bump : 23 assets JS + `CACHE_VERSION` v271, `check_cache_versions.js` ✅.
+8. [x] Commit → push → **PR #745**, CI verte, **mergée** (nouvelle PR : la #744 était mergée, §6).
 
 ## 4. Garde-fous
 
