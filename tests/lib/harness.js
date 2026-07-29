@@ -70,7 +70,16 @@ async function launchGame() {
 }
 
 // Bypass des écrans titre / sélection en appelant directement les fonctions globales
-async function startNewGame(page, { partySize = 1, heroes = ['harry'], house = 'Gryffondor', skipIntro = true } = {}) {
+//
+// `combatTutorial` (défaut false) : le premier `startBattle` d'une partie arme
+// `maybeShowCombatTutorial` à +350 ms (js/battle.js). Son overlay écoute
+// `keydown` en CAPTURE et appelle `stopPropagation` — il avale donc TOUS les
+// raccourcis de jeu. Un scénario qui démarre un combat puis envoie des touches
+// court contre ce timer : il passe sur une machine rapide, il échoue dès que la
+// machine est chargée. Le harnais le désarme donc par défaut (même intention
+// que l'opt-out du tour guidé ci-dessus, qui ne couvrait pas ce cas) ;
+// `combatTutorial: true` le réarme pour le scénario qui teste le tuto.
+async function startNewGame(page, { partySize = 1, heroes = ['harry'], house = 'Gryffondor', skipIntro = true, combatTutorial = false } = {}) {
   await page.evaluate((opts) => {
     selectedPartySize = opts.partySize;
     selectedHeroes    = opts.heroes;
@@ -104,6 +113,10 @@ async function startNewGame(page, { partySize = 1, heroes = ['harry'], house = '
     && typeof playerX === 'number' && typeof playerY === 'number',
     { timeout: TIMEOUTS.gameReady }
   );
+
+  if (!combatTutorial) {
+    await page.evaluate(() => { try { combatTutorialSeen = true; } catch (e) { /* noop */ } });
+  }
 }
 
 // Lance un combat contre un mannequin neutre (pas de resist/weak)

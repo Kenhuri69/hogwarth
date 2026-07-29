@@ -88,6 +88,22 @@ des tests n'est nécessaire — seul le runner change.
   échantillon suffisant pour l'accélération, mais ce n'est pas 11 comme espéré.
 - `--jobs=1` n'est pas qu'un mode debug théorique : il a servi à **prouver** que
   le nouveau runner reproduit l'ancien à l'octet près (diff vide).
+- **La CI a trouvé une course que la machine locale cachait.** `scenarioCombatKeyboard`
+  a échoué en CI (« la cible 1 doit subir des dégâts (avant 40, après 40) ») alors
+  qu'il passe 3/3 en local. Cause réelle, trouvée en lisant le code plutôt qu'en
+  relançant : `startBattle` arme `maybeShowCombatTutorial` à **+350 ms**
+  (`js/battle.js`), dont l'overlay écoute `keydown` en **capture** et appelle
+  `stopPropagation` (`js/help-tour.js:328`) — il avale donc tous les raccourcis
+  de jeu. Le scénario envoie ses touches dans cette fenêtre : il gagne la course
+  sur une machine au repos, il la perd dès que la machine est chargée.
+  **Ce n'est pas une régression de la parallélisation** : c'est une course
+  préexistante que n'importe quelle machine lente déclenche — la CI l'a
+  simplement rendue visible. Le harnais opt-out déjà le tour guidé
+  (`hh_help_tour_optout`) mais ce chemin-là n'était pas couvert.
+  Correctif : `startNewGame` désarme le tuto de combat par défaut
+  (`combatTutorialSeen = true`), option `combatTutorial: true` pour le seul
+  scénario qui le teste (`scenarioOnboarding`). **2 fichiers de test touchés,
+  aucun assert affaibli, aucun timeout gonflé.**
 - **La calibration par échantillon a échoué, et c'est instructif.** Sur 6
   scénarios, `--jobs=6` et `--jobs=8` ont la même concurrence effective (tout
   part en même temps) — ils auraient dû donner le même temps. Mesure : 26,1 s

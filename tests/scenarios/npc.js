@@ -1487,7 +1487,9 @@ async function scenarioOnboarding() {
   // D2 — tuto contextuel du premier combat (une fois par partie).
   {
     const { browser, page, errors } = await launchGame();
-    await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+    // Seul scénario à VOULOIR le tuto de combat : le harnais le désarme par
+    // défaut (son overlay avale les touches des autres scénarios).
+    await startNewGame(page, { partySize: 1, heroes: ['harry'], combatTutorial: true });
     // Fermer le tour guidé auto : le tuto combat ne s'y superpose jamais.
     await page.evaluate(() => { if (window.helpTourEnd) helpTourEnd(); });
     const seenBefore = await page.evaluate(() => combatTutorialSeen);
