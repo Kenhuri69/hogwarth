@@ -399,6 +399,14 @@ NPCS.push(
       "Ici-bas, dans la Boucle, mes marchandises ne viennent plus de cadavres frais. Elles viennent de moi — celui que j'étais, les fois d'avant. C'est devenu... circulaire.",
       "Tu reviens, je reviens, le stock revient. Achète quand même : dans un château qui se répète, un casque qui tient reste un casque qui tient."
     ],
+    // ── Ligne « après » post-victoire (ch.14 §14.3.2, extension P2-ext) ────
+    // Registre mercantile : la guerre finie, le receleur continue son négoce ;
+    // le héros redescendu est juste « un client qui revient ». Fenêtre de
+    // surface (ét. 8–17) ; en Boucle profonde (≥ 18) darkLoopLines reprend.
+    postVictoryLines: [
+      "Tu as gagné, paraît-il. Tant mieux pour toi. Mais un receleur vit de ce que les autres laissent tomber — et crois-moi, même après la victoire, on laisse encore tomber des choses ici-bas. La guerre s'achève ; le commerce, jamais.",
+      "L'Ombre est tombée et te revoilà à fouiller mes fonds de sac. Je ne juge pas : un héros qui redescend, c'est un client comme un autre. Mieux, même — un client qui a enfin de quoi payer."
+    ],
     dialogues: {
       greeting: [
         "Pssst. Ferme derrière toi. Je n'ai rien à vendre que des choses... récupérées. Sur le terrain.",
@@ -527,6 +535,13 @@ NPCS.push(
       "Dans la Boucle, l'Essence des Ténèbres se cueille à même les murs — le château entier est devenu l'organe. Mes prix montent ; ma marchandise aussi est plus... mûre.",
       "Tu reviens toujours, et c'est tant mieux pour mes affaires. Un client qui ne peut pas mourir vraiment, voilà un client fidèle."
     ],
+    // ── Ligne « après » post-victoire (ch.14 §14.3.2, extension P2-ext) ────
+    // L'apothicaire des élixirs interdits : la victoire ne tarit pas la peur de
+    // redescendre, donc le négoce continue. Fenêtre de surface (ét. 9–17).
+    postVictoryLines: [
+      "On dit l'Ombre vaincue. Curieux — mes élixirs interdits se vendent toujours aussi bien. La victoire ne guérit pas la peur de redescendre, on dirait. Sers-toi : mes fioles ne connaissent ni paix ni guerre. Juste des clients.",
+      "Tu as gagné, et pourtant te voilà devant mon étal, à acheter de quoi survivre plus bas. Que cherches-tu encore, vainqueur ? Quoi que ce soit, j'ai sûrement une potion pour ça. Interdite, évidemment."
+    ],
     dialogues: {
       greeting: [
         "Bienvenue. Ne touche à rien sans demander — certaines choses ici mordent en retour.",
@@ -641,6 +656,13 @@ NPCS.push(
     darkLoopLines: [
       "Dans la Boucle, je forge les mêmes pièces, encore et encore, pour le même client qui revient. Mon enclume ne refroidit jamais. Le marteau frappe en cadence avec la spirale.",
       "Mes prix sont scandaleux, et le resteront à chaque tour. Au moins, sorcier, mon acier ne se répète pas, lui : il tient. C'est tout ce qui tient, ici."
+    ],
+    // ── Ligne « après » post-victoire (ch.14 §14.3.2, extension P2-ext) ────
+    // L'armurier : la guerre gagnée, le héros redescend encore donc a encore
+    // besoin d'acier — l'arrangement perdure. Fenêtre de surface (ét. 10–17).
+    postVictoryLines: [
+      "La guerre est finie, m'a-t-on dit. Alors pourquoi mon enclume chauffe-t-elle encore pour toi ? Tu redescends, donc tu as toujours besoin d'acier. Tant que tu redescends, je forge. C'est notre arrangement, désormais — vainqueur.",
+      "Tu as abattu l'Ombre, et te revoilà à marchander mon pectoral. Les héros sont mes meilleurs clients : ils ne savent pas s'arrêter. Paie le prix plein — l'acier ne fait pas de ristourne aux légendes."
     ],
     dialogues: {
       greeting: [
@@ -808,6 +830,15 @@ NPCS.push(
       2: "Tant d'Éclats… Tu descends plus loin que la plupart des revenants. La Boucle te reconnaît, désormais.",
       3: "Tu portes la mémoire de cycles entiers. Ceux qui en portent autant finissent par voir la faille — et par devoir choisir quoi en faire."
     },
+    // ── Ligne « après » post-victoire (ch.14 §14.3.2, extension P2-ext) ────
+    // Le greeting parle de la Boucle GÉNÉRIQUE ; cette variante ajoute un beat
+    // VICTOIRE-spécifique (le gardien réagit au triomphe réel sur l'Ombre).
+    // Le Gardien étant toujours post-victoire (escalier ét. 11 scellé sans
+    // victoire) et à un étage < 18, le suffixe s'appose systématiquement — voulu.
+    postVictoryLines: [
+      "Tu as brisé l'Ombre, là-haut — je l'ai senti, la Boucle a frémi tout entière. Et pourtant te voici, dans ma récurrence. Vainqueur d'un monde, et marcheur d'un cycle. Bienvenue parmi ceux qui reviennent malgré la fin.",
+      "On t'a couronné là-haut, n'est-ce pas ? Ici-bas, les couronnes ne pèsent rien : seul compte le nombre de fois où tu redescends. Tu as gagné ta guerre. Moi, je compte les boucles — et la tienne ne fait que commencer."
+    ],
     dialogues: {
       greeting: [
         "Tu reviens. Tous reviennent — c'est le sens de la Boucle. Je veille ici depuis la première récurrence.",
