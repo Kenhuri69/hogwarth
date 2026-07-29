@@ -211,7 +211,10 @@ js/
   battle-spells.js →  castSpellInBattle(), tryEnemyAbility()
   battle-ui.js     →  renderEnemyGroup(), showTargetSelection(), updateBattleCharIndicator()
   inventory-core.js → tryAddItem(), _countMaterial/_consumeMaterial,
-                      recalculateStats() (stats effectives). Chargé AVANT
+                      recalculateStats() (stats effectives), activeParty() /
+                      livingParty() (membres actifs / actifs debout — source de
+                      vérité de `party.slice(0, partySize)`, 70 call-sites ;
+                      verrou anti-retour dans units.js). Chargé AVANT
                       inventory.js ; recalculateStats() consommé par ~13 modules
   inventory.js     →  UI sac/onglets, équipement (showEquipMenu, equipItem,
                       unequipFromSlot), usage d'objets (useItem, consommables,

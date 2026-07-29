@@ -43,7 +43,7 @@ function _maybeBossPhaseBeat(enemy, appendLog) {
   if (typeof appendLog === 'function') appendLog(`⚡ ${msg} `);
   UX_safe.logCombat(`⚡ ${msg}`, 'bad');
   if (typeof heroBarkScripted === 'function' && typeof party !== 'undefined') {
-    const speaker = party.slice(0, partySize).find(c => c && c.hp > 0 && c.heroKey);
+    const speaker = activeParty().find(c => c && c.hp > 0 && c.heroKey);
     if (speaker) heroBarkScripted(speaker.heroKey, 'bossPhase',
       { channel: 'combat', once: 'bossphase:' + (enemy.id || enemy.name) });
   }
@@ -302,7 +302,7 @@ function tryEnemyAbility(enemy, target, charIdx, appendLog) {
       const turns = ability.turns || 3;
       const def   = (typeof STATUS_DEFS !== 'undefined') ? STATUS_DEFS[sid] : null;
       const lbl   = def ? def.label : sid;
-      party.slice(0, partySize).forEach(c => {
+      activeParty().forEach(c => {
         if (c.hp <= 0) return;
         if (sid === 'weaken') {
           const lost    = Math.min(ability.power, c.def || 0);
@@ -543,7 +543,7 @@ function comboDamageMult(target, element) {
 function _houseLionMult() {
   if (typeof lionHeartActive === 'undefined' || !lionHeartActive) return 1;
   if (typeof party === 'undefined' || typeof partySize !== 'number') return 1.2;
-  const anyKO = party.slice(0, partySize).some(c => c && c.hp <= 0);
+  const anyKO = activeParty().some(c => c && c.hp <= 0);
   return anyKO ? 1 : 1.2;
 }
 
@@ -820,7 +820,7 @@ function _spellSupportRegen(spell, char, _enemy, _enemyIdx, targetAllyIdx) {
 // regen_ferula_max (PV + PM par tour, 3 tours) sur TOUS les alliés vivants.
 // Pas de sélection de cible — l'effet touche le groupe entier.
 function _spellSupportRegenAoe(spell, char) {
-  const allies = party.slice(0, partySize).filter(c => c.hp > 0);
+  const allies = livingParty();
   // Scaling atténué : plus doux que Ferula simple (INT/8 + END/8) car
   // l'effet touche tout le groupe sur 3 tours.
   const regenPower = spell.power
@@ -851,7 +851,7 @@ function _spellPatronusMaxima(spell, char) {
   // l'affaiblissement (weaken). Riders lus défensivement sur la forme résolue.
   const dur = 2 + (spell.shieldTurnsBonus || 0);
   const cleanseIds = spell.dispelWeaken ? ['stun', 'fear', 'weaken'] : ['stun', 'fear'];
-  party.slice(0, partySize).forEach((c, idx) => {
+  activeParty().forEach((c, idx) => {
     if (c.hp <= 0) return;
     shieldTurns[idx] = Math.max(shieldTurns[idx] || 0, dur);
     if (c.statusEffects) {
@@ -940,7 +940,7 @@ function _spellReveal(spell, char, enemy, targetIdx) {
 function _spellRecolte(spell, char) {
   // Synergie Talisman de Helga (P1) : purge aussi les afflictions DoT du groupe.
   const dotIds = ['burn', 'poison', 'bleed', 'gel'];
-  party.slice(0, partySize).forEach(c => {
+  activeParty().forEach(c => {
     if (c.hp <= 0) return;
     c.hp = c.hpMax;
     c.sp = c.spMax;
@@ -1067,7 +1067,7 @@ function _spellAoeCleave(spell, char, enemy, targetIdx) {
 function _spellHealAoe(spell, char) {
   const amount = healAmount(spell, char);
   let msg = `💗 ${char.name} : ${spell.name} —`;
-  party.slice(0, partySize).forEach(c => {
+  activeParty().forEach(c => {
     if (c.hp <= 0) return;
     const burst = Math.min(c.hpMax - c.hp, amount);
     c.hp += burst;
@@ -1106,7 +1106,7 @@ function _spellEclatBolt(spell, char, enemy, targetIdx) {
 // peur (immunité 1 tour). Réutilise shieldTurns et le nettoyage de statuts de
 // Patronus Maxima. Gate 3 Éclats assurée par requiresEclats (castSpellInBattle).
 function _spellSealShield(spell, char) {
-  party.slice(0, partySize).forEach((c, idx) => {
+  activeParty().forEach((c, idx) => {
     if (c.hp <= 0) return;
     shieldTurns[idx] = Math.max(shieldTurns[idx] || 0, 2);
     if (Array.isArray(c.statusEffects)) {
@@ -1149,7 +1149,7 @@ function _spellSummonAlly(spell, char, enemy, targetIdx) {
 function _spellPatronusCorporel(spell, char) {
   const form = (typeof HERO_PATRONUS !== 'undefined' && char && char.heroKey && HERO_PATRONUS[char.heroKey])
     ? HERO_PATRONUS[char.heroKey] : 'Patronus';
-  party.slice(0, partySize).forEach((c, idx) => {
+  activeParty().forEach((c, idx) => {
     if (c.hp <= 0) return;
     guardTurns[idx] = Math.min(3, Math.max(guardTurns[idx] || 0, 2));
     if (Array.isArray(c.statusEffects)) {
@@ -1224,7 +1224,7 @@ function _spellVenom(spell, char, enemy, targetIdx) {
 // chaque membre vivant tend vers la PV moyenne (les forts donnent aux faibles),
 // + un petit soin de base. Solo : soin simple. Réutilise hpMax comme plafond.
 function _spellShareBurden(spell, char) {
-  const allies = party.slice(0, partySize).filter(c => c.hp > 0);
+  const allies = livingParty();
   if (allies.length <= 1) {
     const burst = Math.min(char.hpMax - char.hp, 10 + Math.floor((char.mag || 0) / 3));
     char.hp += Math.max(0, burst);
@@ -1264,7 +1264,7 @@ function _spellTimeRewind(spell, char) {
     const m = `🕰️ ${char.name} : ${spell.name} — le fil du temps n'offre aucun ancrage.`;
     addMsg(m, 'bad'); return m;
   }
-  party.slice(0, partySize).forEach((c, i) => {
+  activeParty().forEach((c, i) => {
     const snap = _timeSnapshot[i];
     if (!snap || c.hp <= 0) return;
     c.hp = Math.min(c.hpMax, Math.max(c.hp, snap.hp));
@@ -1304,7 +1304,7 @@ function _spellEchoSelf(spell, char, enemy, targetIdx) {
 // qu'aucun allié à terre, _houseLionMult) + dissipe la peur sur tout le groupe.
 function _spellLionHeart(spell, char) {
   if (typeof lionHeartActive !== 'undefined') lionHeartActive = true;
-  party.slice(0, partySize).forEach(c => {
+  activeParty().forEach(c => {
     if (c.hp <= 0 || !Array.isArray(c.statusEffects)) return;
     c.statusEffects = c.statusEffects.filter(s => s.id !== 'fear');
   });
@@ -1331,7 +1331,7 @@ function _spellSerpentPact(spell, char) {
 // frappe TOUS les ennemis (dégâts fonction de la MAG de chaque allié). Plus fort
 // en duo (équilibrage assumé §1.9). Pas de crit (chœur), pas de DoT.
 function _spellRowenaVerb(spell, char) {
-  const allies = party.slice(0, partySize).filter(c => c.hp > 0);
+  const allies = livingParty();
   let msg = `🦅 ${char.name} : ${spell.name} —`;
   allies.forEach(a => {
     const base = spell.power + Math.floor((a.mag || 0) / 2);
@@ -1349,7 +1349,7 @@ function _spellRowenaVerb(spell, char) {
 // Serment du Blaireau (légendaire Poufsouffle) — relève un allié KO à 30 % PV
 // (1×/combat — garde dans castSpellInBattle). Solo : petit soin du lanceur.
 function _spellBadgerOath(spell, char) {
-  const ko = party.slice(0, partySize).find(c => c.hp <= 0);
+  const ko = activeParty().find(c => c.hp <= 0);
   if (ko) {
     ko.hp = Math.max(1, Math.floor(ko.hpMax * 0.30));
     if (Array.isArray(ko.statusEffects)) ko.statusEffects = [];
@@ -1566,7 +1566,7 @@ function castSpellInBattle(spellName, targetIdx, targetAllyIdx) {
 
   // Sorts à cible alliée (Ferula…) : en duo, demander la cible si non fournie.
   if (ALLY_TARGET_EFFECTS.has(spell.effect) && typeof targetAllyIdx !== 'number') {
-    const alive = party.slice(0, partySize).map((c, i) => ({ c, i })).filter(o => o.c.hp > 0);
+    const alive = activeParty().map((c, i) => ({ c, i })).filter(o => o.c.hp > 0);
     if (partySize === 1 || alive.length <= 1) {
       // Solo (ou un seul allié vivant) : auto-cible le caster.
       targetAllyIdx = currentBattleChar;

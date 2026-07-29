@@ -261,7 +261,7 @@ function endBattle(won) {
     if (typeof heroBark === 'function') {
       const darkBoss = enemyGroup.find(e => e && e.epic && e.variant === 'darkness');
       if (darkBoss) {
-        const speaker = party.slice(0, partySize).find(c => c.hp > 0);
+        const speaker = activeParty().find(c => c.hp > 0);
         if (speaker && speaker.heroKey) {
           heroBark(speaker.heroKey, 'darkBossDown',
                    { channel: 'combat', once: 'darkbossdown:' + darkBoss.id });
@@ -292,7 +292,7 @@ function checkLevelUp() {
   player.xp     -= player.xpNext;
   player.xpNext  = Math.floor(player.xpNext * LEVEL_UP_XP_MULTIPLIER);
 
-  party.slice(0, partySize).forEach(c => {
+  activeParty().forEach(c => {
     _grantLevelHpSp(c);
     _grantLevelStats(c);
     _grantLevelStatPoints(c);
@@ -300,7 +300,7 @@ function checkLevelUp() {
   // Recalculer atk/def/mag/lck + hpMax/spMax = base + bonus équipement
   recalculateStats();
   // Full heal au passage de niveau (après recalc → inclut bonusHpMax/SpMax).
-  party.slice(0, partySize).forEach(c => { c.hp = c.hpMax; c.sp = c.spMax; });
+  activeParty().forEach(c => { c.hp = c.hpMax; c.sp = c.spMax; });
 
   AudioSystem.playLevelUp();
   HAPTICS_safe.levelUp(); // haptique mobile (D1)
@@ -316,7 +316,7 @@ function checkLevelUp() {
   // combat) ou Harry (hors combat) commente. Cf. js/hero-barks.js.
   if (typeof heroBark === 'function') {
     const idx = (typeof inBattle !== 'undefined' && inBattle && typeof currentBattleChar === 'number') ? currentBattleChar : 0;
-    const speaker = (party[idx] && party[idx].hp > 0) ? party[idx] : party.slice(0, partySize).find(c => c.hp > 0);
+    const speaker = (party[idx] && party[idx].hp > 0) ? party[idx] : activeParty().find(c => c.hp > 0);
     if (speaker && speaker.heroKey) heroBark(speaker.heroKey, 'levelUp', { channel: inBattle ? 'combat' : 'explore' });
   }
 

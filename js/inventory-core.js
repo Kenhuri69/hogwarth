@@ -605,8 +605,7 @@ function _hallowsOwnedCount() {
 function checkHallowsUnion() {
   if (typeof maitreDeLaMort === 'undefined' || maitreDeLaMort) return;
   if (typeof party === 'undefined' || !Array.isArray(party)) return;
-  const n = (typeof partySize === 'number') ? partySize : party.length;
-  const bearer = party.slice(0, n).find(c => c && c.hp > 0 && _hallowsEquippedOn(c));
+  const bearer = livingParty().find(c => _hallowsEquippedOn(c));
   if (!bearer) return;
   maitreDeLaMort = true;
   if (typeof addMsg === 'function')
@@ -644,6 +643,25 @@ function _celeriteCurve(x) {
   return m * (xx * xx) / (xx * xx + h * h);
 }
 
+// Membres ACTIFS du groupe (les `partySize` premiers). Source de vérité de
+// l'idiome `party.slice(0, partySize)`, qui était réécrit 70 fois dans 23
+// modules (revue 2026-07-28 §2 A3). Retourne un NOUVEAU tableau, comme le
+// `slice` qu'il remplace — la substitution est sémantiquement neutre.
+// Repli défensif : sans `partySize`, `slice(0, undefined)` renvoyait déjà le
+// tableau entier, `party.length` reproduit donc l'existant.
+function activeParty() {
+  if (typeof party === 'undefined' || !Array.isArray(party)) return [];
+  const n = (typeof partySize === 'number') ? partySize : party.length;
+  return party.slice(0, n);
+}
+
+// Membres actifs ENCORE DEBOUT. Deuxième idiome le plus fréquent
+// (`activeParty().filter(c => c.hp > 0)`), notamment pour choisir une cible
+// alliée ou compter les survivants.
+function livingParty() {
+  return activeParty().filter(c => c && c.hp > 0);
+}
+
 // Fortune effective du groupe — le membre le plus chanceux fait bénéficier
 // tout le groupe (modèle inventaire/or partagés). Le buff Félix
 // (felixFortuneSteps > 0) ajoute FELIX_POINTS à x AVANT la courbe, pour
@@ -653,9 +671,8 @@ function partyFortune() {
   if (typeof party === 'undefined' || !Array.isArray(party)) return 0;
   const felixActive = (typeof felixFortuneSteps !== 'undefined' && felixFortuneSteps > 0);
   const felixPts = felixActive ? ((typeof FELIX_POINTS === 'number') ? FELIX_POINTS : 40) : 0;
-  const n = (typeof partySize === 'number') ? partySize : party.length;
   let best = 0;
-  for (const c of party.slice(0, n)) {
+  for (const c of activeParty()) {
     if (!c || c.hp <= 0) continue;
     const baseX = (c._fortuneX != null) ? c._fortuneX : (c.lck || 0);
     const f = _fortuneCurve(baseX + felixPts);

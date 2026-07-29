@@ -399,7 +399,7 @@ function searchRoom() {
 function _triggerSearchTrap() {
   const variant = Math.floor(Math.random() * 3);
   if (variant === 0) {
-    party.slice(0, partySize).forEach(c => {
+    activeParty().forEach(c => {
       if (c.hp <= 0) return;
       const dmg = Math.max(1, Math.floor(c.hpMax * 0.12));
       c.hp = Math.max(1, c.hp - dmg);
@@ -407,7 +407,7 @@ function _triggerSearchTrap() {
     setNarrative("Un déclic sec — des lames jaillissent des murs ! Le groupe est lacéré.");
     addMsg("Piège ! Le groupe subit des dégâts.", 'bad');
   } else if (variant === 1) {
-    const alive = party.slice(0, partySize).filter(c => c.hp > 0);
+    const alive = livingParty();
     if (alive.length) {
       const victim = alive[Math.floor(Math.random() * alive.length)];
       const dmg = Math.max(1, Math.floor(victim.hpMax * 0.20));
@@ -416,7 +416,7 @@ function _triggerSearchTrap() {
       addMsg(`Piège ! ${victim.name} subit ${dmg} dégâts.`, 'bad');
     }
   } else {
-    party.slice(0, partySize).forEach(c => {
+    activeParty().forEach(c => {
       if (c.hp <= 0) return;
       const dmg = Math.max(1, Math.floor(c.hpMax * 0.08));
       c.hp = Math.max(1, c.hp - dmg);
@@ -559,7 +559,7 @@ function answerSteleRiddle(choiceIdx) {
     // un par stèle résolue. Réutilise _teachSpellToParty (aucun nouveau vecteur).
     if ((currentFloor || 1) >= 21 && typeof _teachSpellToParty === 'function') {
       const RUINES_SPELLS = ['Le Mot du Dormeur', 'Tempus Echo', 'Reliquae Temporis', 'Écho Fantôme'];
-      const next = RUINES_SPELLS.find(n => !party.slice(0, partySize).every(c => c.spells.includes(n)));
+      const next = RUINES_SPELLS.find(n => !activeParty().every(c => c.spells.includes(n)));
       if (next && _teachSpellToParty(next) && typeof addMsg === 'function') {
         addMsg(`🗿 La stèle des Ruines grave en toi un savoir oublié : <em>${next}</em> !`, 'magic');
       }
@@ -619,7 +619,7 @@ function useAltar(choice) {
       updateUI();
       if (typeof checkLevelUp === 'function') checkLevelUp();
     } else {
-      party.slice(0, partySize).forEach(c => {
+      activeParty().forEach(c => {
         if (c.hp <= 0) return;
         const dmg = Math.max(1, Math.floor(c.hpMax * 0.22));
         c.hp = Math.max(1, c.hp - dmg);
@@ -744,7 +744,7 @@ function _revealRequirementRoom(floor) {
 function _pickRequirementTheme(floor) {
   if (typeof requirementTheme === 'undefined') return 'refuge';
   if (requirementTheme.has(floor)) return requirementTheme.get(floor);
-  const living = party.slice(0, partySize).filter(c => c.hp > 0);
+  const living = livingParty();
   let theme;
   if (!living.length) {
     theme = 'refuge';
@@ -848,13 +848,13 @@ function useRequirementRoom() {
       // Salle d'entraînement : XP (peut faire monter de niveau) + focus PM plein.
       const xpGain = 50 * f;
       player.xp += xpGain;
-      party.slice(0, partySize).forEach(c => { if (c.hp > 0) c.sp = c.spMax; });
+      activeParty().forEach(c => { if (c.hp > 0) c.sp = c.spMax; });
       setNarrative("La Salle s'est faite salle d'entraînement : mannequins, grimoires d'exercice et cibles enchantées. Le groupe s'aguerrit et fait le plein de magie.");
       addMsg(`Salle sur Demande : entraînement (+${xpGain} XP, magie restaurée).`, 'good');
       if (typeof AudioSystem !== 'undefined' && AudioSystem.playLevelUp) AudioSystem.playLevelUp();
     } else {
       // Refuge (défaut V1) — repos sûr + buff de Confort.
-      party.slice(0, partySize).forEach(c => {
+      activeParty().forEach(c => {
         if (c.hp <= 0) return;
         c.hp = Math.min(c.hpMax, c.hp + Math.ceil(c.hpMax * REQUIREMENT_REST_FRAC));
         c.sp = Math.min(c.spMax, c.sp + Math.ceil(c.spMax * REQUIREMENT_REST_FRAC));

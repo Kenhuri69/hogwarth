@@ -74,11 +74,8 @@ async function _mpPollMessages() {
       + `&floor=eq.${currentFloor}`
       + `&mode=eq.${encodeURIComponent(mpMode)}`
       + '&order=created_at.desc&limit=80';
-    const res = await fetch(url, { headers: _mpHeaders() });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const rows = await res.json();
-    _mpNoteSuccess();
-    if (Array.isArray(rows)) _mpProjectMessages(rows);
+    const rows = await _mpSelectRows(url);
+    if (rows) _mpProjectMessages(rows);
   } catch (e) {
     _mpNoteFailure(e);
   }
@@ -401,20 +398,10 @@ function _mpGiftSelectItem(idx) {
 async function _mpInsertGift(payload) {
   if (!_mpConfigured()) return true;             // file:// / tests : pas d'appel
   try {
-    const res = await fetch(
+    const ok = await _mpWrite(
       `${MP_CONFIG.supabaseUrl}/rest/v1/${MP_CONFIG.giftsTable}`,
-      {
-        method: 'POST',
-        headers: _mpHeaders({
-          'Content-Type': 'application/json',
-          'Prefer':       'return=minimal',
-        }),
-        body: JSON.stringify(payload),
-      }
-    );
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    _mpNoteSuccess();
-    return true;
+      'POST', payload, { representation: false });
+    return !!ok;
   } catch (e) {
     _mpNoteFailure(e);
     return false;
@@ -490,10 +477,8 @@ async function claimPendingGifts() {
       + `&recipient_id=eq.${encodeURIComponent(myId)}`
       + '&claimed_at=is.null'
       + '&order=created_at.asc&limit=50';
-    const res = await fetch(url, { headers: _mpHeaders() });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    rows = await res.json();
-    _mpNoteSuccess();
+    rows = await _mpSelectRows(url);
+    if (!rows) return { ok: false };
   } catch (e) {
     _mpNoteFailure(e);
     return { ok: false };

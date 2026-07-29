@@ -517,8 +517,7 @@ function exitEscapePocket(success) {
     }
     // (b) Réchauffement (soin partiel 30 %) — conservé du Lot 1.
     if (typeof party !== 'undefined') {
-      const n = (typeof partySize === 'number') ? partySize : party.length;
-      party.slice(0, n).forEach(c => {
+      activeParty().forEach(c => {
         if (!c || c.hp <= 0) return;
         c.hp = Math.min(c.hpMax, c.hp + Math.floor(c.hpMax * 0.30));
         c.sp = Math.min(c.spMax, c.sp + Math.floor(c.spMax * 0.30));

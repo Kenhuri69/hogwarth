@@ -295,7 +295,7 @@ function openLibrary() {
   if (tabsEl) {
     if ((partySize || 1) > 1) {
       tabsEl.style.display = 'flex';
-      tabsEl.innerHTML = party.slice(0, partySize).map((c, i) => `
+      tabsEl.innerHTML = activeParty().map((c, i) => `
         <button class="library-tab${i === _libraryCharIdx ? ' active' : ''}"
                 onclick="selectLibraryChar(${i})">
           ${c.icon || ''} ${c.name.split(' ')[0]}

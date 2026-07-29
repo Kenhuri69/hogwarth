@@ -446,7 +446,7 @@ function openCharacter(charIdx = 0) {
   const detail = document.getElementById('char-detail');
 
   // Onglets : un seul perso visible en solo, deux en duo.
-  const tabs = party.slice(0, partySize).map((p, i) =>
+  const tabs = activeParty().map((p, i) =>
     `<button class="cmd-btn" style="font-size:10px;${i === charIdx ? 'border-color:var(--gold)' : ''}" onclick="openCharacter(${i})">${p.icon} ${p.name.split(' ')[0]}</button>`
   ).join('');
 

@@ -354,7 +354,7 @@ function showEquipMenu(item, idx) {
 
   // Duo : un bouton par personnage. Pour les anneaux, deux boutons par
   // personnage (anneau gauche / droit) précédés d'un en-tête perso.
-  const charButtons = party.slice(0, partySize).map((c, ci) => {
+  const charButtons = activeParty().map((c, ci) => {
     if (isRing) {
       return `
         <div style="margin-bottom:8px;font-size:10px;color:var(--gold-dark)">${c.icon} ${c.name.split(' ')[0]}</div>
@@ -487,7 +487,7 @@ function _teachSpellToParty(spellName) {
   // Ne pas enseigner un sort encore verrouillé (ex : Avada... avant niv. 9)
   if (!spellDef || spellDef.locked) return false;
   let learned = false;
-  party.slice(0, partySize).forEach(c => {
+  activeParty().forEach(c => {
     if (!c.spells.includes(spellName)) {
       c.spells.push(spellName);
       learned = true;
@@ -643,7 +643,7 @@ function _applyConsumableEffect(item, target) {
       spellCorruption = Math.max(0, spellCorruption - amt);
     }
     if (Array.isArray(item.cureGroup)) {
-      for (const c of party.slice(0, partySize)) {
+      for (const c of activeParty()) {
         if (c && Array.isArray(c.statusEffects)) {
           c.statusEffects = c.statusEffects.filter(s => !item.cureGroup.includes(s.id));
         }
@@ -741,7 +741,7 @@ function showLearnMenu(item, idx) {
   if (partySize === 1) { learnSpellbook(idx, 0); return; }
 
   const grid = document.getElementById('inv-grid');
-  const charButtons = party.slice(0, partySize).map((c, ci) => {
+  const charButtons = activeParty().map((c, ci) => {
     const knows = c.spells.includes(item.spell);
     return `<button class="cmd-btn" style="width:100%;margin-bottom:6px"
               ${knows ? 'disabled' : ''}
@@ -773,7 +773,7 @@ function showLearnMenu(item, idx) {
 function _openPermaTargetMenu(item, idx) {
   if (partySize === 1) { _applyPermaToChar(idx, 0); return; }
   const grid = document.getElementById('inv-grid');
-  const charButtons = party.slice(0, partySize).map((c, ci) =>
+  const charButtons = activeParty().map((c, ci) =>
     `<button class="cmd-btn" style="width:100%;margin-bottom:6px"
        onclick="_applyPermaToChar(${idx},${ci})">
        ${c.icon} ${c.name.split(' ')[0]}
@@ -820,7 +820,7 @@ function _openPierreAmeMenu(idx) {
   const item = player.inventory[idx];
   if (!item) return;
   const grid = document.getElementById('inv-grid');
-  const charButtons = party.slice(0, partySize).map((c, ci) =>
+  const charButtons = activeParty().map((c, ci) =>
     `<button class="cmd-btn" style="width:100%;margin-bottom:6px"
        onclick="_openPierreAmeStatMenu(${idx},${ci})">
        ${c.icon} ${c.name.split(' ')[0]}

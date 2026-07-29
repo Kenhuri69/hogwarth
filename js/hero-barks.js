@@ -427,8 +427,7 @@ function heroBark(heroKey, event, opts) {
 function _heroInPartyAlive(heroKey) {
   try {
     if (typeof party === 'undefined' || !Array.isArray(party)) return false;
-    const n = (typeof partySize === 'number') ? partySize : party.length;
-    return party.slice(0, n).some(c => c && c.heroKey === heroKey && c.hp > 0);
+    return activeParty().some(c => c && c.heroKey === heroKey && c.hp > 0);
   } catch (_) { return false; }
 }
 

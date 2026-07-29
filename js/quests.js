@@ -867,7 +867,7 @@ function _resolveQuestReward(q, tpl) {
 
 // Applique XP / or / item / sort / stats permanents. Item refusé si
 // inventaire plein. Sort et bonus de stats sont distribués à tout le
-// groupe actif (`party.slice(0, partySize)`).
+// groupe actif (`activeParty()`).
 function _grantQuestReward(reward) {
   if (reward.xp)   player.xp   += reward.xp;
   if (reward.gold) player.gold += reward.gold;
@@ -907,7 +907,7 @@ function _grantQuestReward(reward) {
 // caller (completeQuest) après _grantQuestReward.
 function _applyStatsReward(stats) {
   const labels = [];
-  for (const c of party.slice(0, partySize)) {
+  for (const c of activeParty()) {
     if (stats.atk) c._baseAtk = (c._baseAtk || 0) + stats.atk;
     if (stats.def) c._baseDef = (c._baseDef || 0) + stats.def;
     if (stats.mag) c._baseMag = (c._baseMag || 0) + stats.mag;

@@ -913,8 +913,7 @@ Object.assign(AudioSystem, {
   // partySize, gardée par typeof. Pur — n'altère aucun état.
   _partyInCriticalDanger() {
     if (typeof party === 'undefined' || !Array.isArray(party)) return false;
-    const n = (typeof partySize === 'number') ? partySize : party.length;
-    return party.slice(0, n).some(c =>
+    return activeParty().some(c =>
       c && c.hp > 0 && c.hpMax > 0 && c.hp / c.hpMax < 0.25);
   },
 
