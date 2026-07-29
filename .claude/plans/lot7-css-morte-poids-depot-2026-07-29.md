@@ -2,7 +2,7 @@
 
 **Branche :** `claude/premier-plan-finaliser-ocbn0z` (repartie de `master` après
 le merge de la PR #745)
-**Statut :** 🟩 en cours
+**Statut :** ✅ clos — **PR #746 mergée** (CI verte, job en 5 min 36 s)
 **Source :** `revue-sources-contenu-2026-07-28.md` §1 C5 et §2 A6 (rang 12,
 dernier de la priorisation). Lot 7 après les lots 1 à 6.
 
@@ -86,7 +86,7 @@ en place (`.gitignore` couvre `tools/_smoke/`, `tools/_shot_*.js`).
    suppression**.
 6. [x] Doc : revue §1 C5 traité / §2 A6 requalifié.
 7. [x] Cache-bump (3 CSS servis) + `check_cache_versions.js`.
-8. [ ] Commit → push → PR draft (nouvelle PR : #745 mergée, §6).
+8. [x] Commit → push → **PR #746**, CI verte, **mergée** (nouvelle PR : la #745 était mergée, §6).
 
 ## 4. Garde-fous
 
@@ -126,7 +126,8 @@ en place (`.gitignore` couvre `tools/_smoke/`, `tools/_shot_*.js`).
 Le détecteur ne les voit plus ; les 93 autres candidates sont inchangées.
 
 Vérification : 11 scénarios smoke ciblés (visuels, fiche perso, écran de mort,
-mobile, équipement) verts + suite complète.
+mobile, équipement) verts, puis suite **complète sur arbre stable** :
+**285/285 en 22 min 5 s**.
 
 ### 6.2 A6 — ce que pèse vraiment le dépôt
 

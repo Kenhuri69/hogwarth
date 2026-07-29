@@ -2,7 +2,7 @@
 
 **Branche :** `claude/premier-plan-finaliser-ocbn0z` (repartie de `master` après
 le merge de la PR #743 — le lot 4 est livré)
-**Statut :** 🟦 livré — PR #744 (draft)
+**Statut :** ✅ clos — **PR #744 mergée** (CI verte, job en 3 min 17 s)
 **Source :** `revue-sources-contenu-2026-07-28.md` §4 P2 (rang 10). Lot 5 après
 les lots 1 (A2·C3·C4), 2 (A1·P1), 3 (E1) et 4 (E4).
 
@@ -69,7 +69,7 @@ des tests n'est nécessaire — seul le runner change.
 7. [x] Doc : `CLAUDE.md` (section tests) + revue §4 P2 marquée traitée.
 8. [x] Garde-fous : `units.js`, `pwa-smoke.js`, `check_doc_modules.js`.
    Pas de bump PWA (`tests/**` n'est pas servi au navigateur — §8 N/A).
-9. [x] Commit → push → **PR #744** (draft) — la #743 étant mergée, branche repartie de `master` (§6).
+9. [x] Commit → push → **PR #744**, CI verte, **mergée** — la #743 étant mergée, branche repartie de `master` (§6).
 
 ## 4. Garde-fous
 
