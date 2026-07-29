@@ -2,7 +2,7 @@
 
 **Branche :** `claude/premier-plan-finaliser-ocbn0z` (repartie de `master` après
 le merge de la PR #743 — le lot 4 est livré)
-**Statut :** 🟩 en cours
+**Statut :** 🟦 livré — PR #744 (draft)
 **Source :** `revue-sources-contenu-2026-07-28.md` §4 P2 (rang 10). Lot 5 après
 les lots 1 (A2·C3·C4), 2 (A1·P1), 3 (E1) et 4 (E4).
 
@@ -60,14 +60,16 @@ des tests n'est nécessaire — seul le runner change.
    **vérifier** : choisir le défaut sur la mesure, pas sur l'intuition.
    *(Résultat : l'échantillon de 6 est trop petit pour calibrer au-delà de 4 —
    voir §5. Défaut retenu = parallélisme disponible, borné à 8.)*
-5. [ ] Suite **complète** en parallèle → **vérifier** : 281/281 verts et temps
-   total mesuré (cible §4 de la revue : < 5 min ; à confirmer sur 4 cœurs).
-6. [ ] CI (`.github/workflows/test.yml`) : expliciter le nombre de jobs si la
-   mesure le justifie.
-7. [ ] Doc : `CLAUDE.md` (section tests) + revue §4 P2 marquée traitée.
-8. [ ] Garde-fous : `units.js`, `pwa-smoke.js`, `check_doc_modules.js`.
+5. [x] Suite **complète** en parallèle → **285/285 verts en 22 min 23 s**
+   (le runner en compte 285, pas 281 comme l'annonçait la revue). Cible
+   « < 5 min » **non atteinte** et hors de portée de ce levier — cf. §6.2.
+6. [x] CI (`.github/workflows/test.yml`) : **aucun changement** — `ubuntu-latest`
+   a 4 cœurs, le défaut s'y applique tel quel. Figer un nombre en dur dans le
+   workflow le désynchroniserait du runner le jour où la machine change.
+7. [x] Doc : `CLAUDE.md` (section tests) + revue §4 P2 marquée traitée.
+8. [x] Garde-fous : `units.js`, `pwa-smoke.js`, `check_doc_modules.js`.
    Pas de bump PWA (`tests/**` n'est pas servi au navigateur — §8 N/A).
-9. [ ] Commit → push → PR draft (nouvelle PR : la #743 est mergée, §6).
+9. [x] Commit → push → **PR #744** (draft) — la #743 étant mergée, branche repartie de `master` (§6).
 
 ## 4. Garde-fous
 
@@ -133,3 +135,30 @@ machine, pas un gain : les deux exécutent la même boucle séquentielle.
 **La sortie est vérifiée identique par `diff`, pas supposée.** C'est la
 propriété qui rend la parallélisation acceptable : un log qui change d'un run
 à l'autre ferait perdre en lisibilité ce qu'on gagne en temps.
+
+### 6.2 Suite complète (285 scénarios, 4 cœurs, machine au repos)
+
+| | temps | résultat |
+|---|---|---|
+| avant (séquentiel, mesuré par la revue) | ~90 min | — |
+| après (défaut = 4 jobs) | **22 min 23 s** | **285/285 verts** |
+
+Soit **×4,0**, cohérent avec le nombre de cœurs.
+
+**La cible de la revue (« < 5 min en local ») n'est pas atteinte, et ne peut pas
+l'être par ce levier seul.** Sur 4 cœurs, ×4 est le plafond : 22 min est le
+résultat attendu, pas une contre-performance. Descendre sous 5 min demanderait
+soit ~16 workers (machine plus grosse — le gain suivrait, les scénarios passant
+l'essentiel de leur temps à attendre le navigateur), soit de réduire le coût
+unitaire d'un scénario (~19 s), ce qui est un autre chantier : chacun relance un
+Chromium et rejoue l'intro complète. Ce lot rend la règle §7 **applicable**
+(22 min, on peut lancer la suite avant un commit) sans la rendre confortable.
+
+> Note de mesure : une première tentative a donné 109 scénarios en ~19 min — je
+> lançais d'autres tests en parallèle pendant la mesure. Chiffre jeté, mesure
+> refaite machine au repos. Un banc qu'on pollue soi-même ne mesure rien.
+
+### 6.3 Garde-fous
+
+`units.js` (1 130 assertions) · `pwa-smoke.js` · `check_doc_modules.js` ·
+ESLint (0 erreur ; 2 avertissements `no-unused-vars` préexistants, hors lot).

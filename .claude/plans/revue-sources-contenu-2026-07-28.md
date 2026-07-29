@@ -528,7 +528,13 @@ savoir d'un coup d'œil si le travail est en cours.
   contrôle qui échoue si un plan actif n'a pas de ligne `**Statut**`.
 - **Vérifier** : plans actifs ≤ ~15, tous avec un statut lisible.
 
-### 🟢 P2 · Durée de la suite smoke
+### ✅ P2 · Durée de la suite smoke — **traité (lot 5)**
+
+> **Livré** (`lot5-smoke-parallele-2026-07-29.md`) : runner parallèle
+> (`--jobs`, défaut = parallélisme disponible), sortie déterministe via
+> `AsyncLocalStorage`, aucun scénario modifié. **90 min → 22 min 23 s**
+> (285/285 verts, 4 cœurs). La cible « < 5 min » n'est pas atteinte : sur
+> 4 cœurs, ×4 est le plafond de ce levier — voir §6.2 du plan.
 
 281 scénarios séquentiels, un Chromium par scénario. La CI tient
 (~4,5 min total, `timeout-minutes: 25`), mais la marge se réduit à chaque
@@ -560,7 +566,7 @@ l'exécution du lot 1.
 | — | ~~**E3** WebP~~ | — | — | — | ❌ **abandonné** | prémisse démentie par la mesure (§3.4) : gain réel 16 % sans perte, et le précache transfère 1,30 Mo (brotli), pas 3,38. Devient un arbitrage qualité/poids, pas une optimisation évidente |
 | 8 | **E2** catalogue élémentaire | Enrichissement | Moyen | S | ✅ **traité** | constat re-posé (§3.x) : le problème n'était pas « foudre pauvre » mais 14 sorts ténèbres pour 41 monstres résistants vs 8 sorts lumière pour 38 faibles. Lumière avancée à l'étage 4 |
 | 9 | **E4** slots `wand`/armure | Enrichissement | Moyen | M | ouvert | condition de loot pour un build physique viable |
-| 10 | **P2** parallélisation de la suite smoke | Process | Moyen | M | ouvert | protège le respect de la règle §7 |
+| 10 | **P2** parallélisation de la suite smoke | Process | Moyen | M | ✅ livré | protège le respect de la règle §7 — 90 min → 22 min (lot 5) |
 | 11 | **A3**/**A4** helpers `activeParty` / REST MP | Amélioration | Faible | S | ouvert | opportuniste, au fil des passages |
 | 12 | **C5** CSS morte · **A6** poids du dépôt | Nettoyage | Faible | S | ouvert | hygiène, sans urgence |
 | — | ~~C1 · C2 icônes de sorts~~ | — | — | — | ❌ retiré | constats erronés — la couverture d'icônes est complète (§1) |
