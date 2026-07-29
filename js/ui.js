@@ -102,7 +102,7 @@ function updateUI() {
   // ── Vignette de danger bas-PV (D2) ───────────────────────────
   // Pulsation rouge en bord d'écran si un membre vivant du groupe est
   // sous le seuil de PV. Purement cosmétique (pointer-events:none, pur CSS).
-  const inDanger = party.slice(0, partySize)
+  const inDanger = activeParty()
     .some(c => c.hp > 0 && c.hpMax > 0 && c.hp / c.hpMax < LOW_HP_RATIO);
   const wasDanger = document.body.classList.contains('cfx-danger');
   document.body.classList.toggle('cfx-danger', inDanger);
@@ -123,7 +123,7 @@ function updateUI() {
   // ── Badge "points à allouer" sur le bouton Fiche ──────────────
   const badge = document.getElementById('char-alloc-badge');
   if (badge) {
-    const total = party.slice(0, partySize)
+    const total = activeParty()
       .reduce((s, c) => s + (c.unallocatedStatPoints || 0), 0);
     if (total > 0) {
       badge.textContent = total < 10 ? total : '▲';

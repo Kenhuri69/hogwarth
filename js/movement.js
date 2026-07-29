@@ -109,8 +109,8 @@ function _step(dir, faceDir) {
   if (typeof _lastStepUndo !== 'undefined') {
     _lastStepUndo = {
       floor: currentFloor, x: playerX, y: playerY, dir: playerDir,
-      hp: party.slice(0, partySize).map(c => c.hp),
-      sp: party.slice(0, partySize).map(c => c.sp),
+      hp: activeParty().map(c => c.hp),
+      sp: activeParty().map(c => c.sp),
     };
   }
   playerX += dx; playerY += dy;
@@ -159,7 +159,7 @@ function _step(dir, faceDir) {
   // Apothéose Poufsouffle (palier 18 — Souffle du Blaireau) : régénération
   // hors combat, +2 PV / +2 PM par membre vivant du groupe à chaque pas.
   if (typeof houseApotheosePassive === 'function' && houseApotheosePassive() === 'Poufsouffle') {
-    party.slice(0, partySize).forEach(c => {
+    activeParty().forEach(c => {
       if (c.hp > 0) {
         c.hp = Math.min(c.hpMax, c.hp + 2);
         c.sp = Math.min(c.spMax, c.sp + 2);
@@ -171,7 +171,7 @@ function _step(dir, faceDir) {
   // d'exploration (plafonné spMax). Confort lumineux, non gated, distinct
   // du Souffle du Blaireau (PM seul, +1). Cf. manon-grimoire-easter-egg.md §7.
   if (typeof hiverClair !== 'undefined' && hiverClair) {
-    party.slice(0, partySize).forEach(c => {
+    activeParty().forEach(c => {
       if (c.hp > 0) c.sp = Math.min(c.spMax, c.sp + 1);
     });
   }
@@ -180,7 +180,7 @@ function _step(dir, faceDir) {
   // hors combat (+1 PV / +1 PM par membre vivant), décomptée par pas.
   if (typeof requirementBuffSteps === 'number' && requirementBuffSteps > 0) {
     requirementBuffSteps--;
-    party.slice(0, partySize).forEach(c => {
+    activeParty().forEach(c => {
       if (c.hp > 0) {
         c.hp = Math.min(c.hpMax, c.hp + 1);
         c.sp = Math.min(c.spMax, c.sp + 1);
@@ -837,8 +837,7 @@ function handleCellEntry(cell) {
             // présent réagit à l'affleurement du passé — évoque « le Dormeur »
             // (10 §10.3) sans le nommer. Cosmétique, one-shot par écho.
             if (typeof heroBark === 'function' && typeof party !== 'undefined') {
-              const n = (typeof partySize === 'number') ? partySize : party.length;
-              const speaker = party.slice(0, n).find(c => c && c.hp > 0) || party[0];
+              const speaker = livingParty()[0] || party[0];
               if (speaker && speaker.heroKey) {
                 heroBark(speaker.heroKey, 'loopEcho', { channel: 'explore', once: 'loopecho:' + echo.id });
               }

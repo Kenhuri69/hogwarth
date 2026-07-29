@@ -364,6 +364,93 @@ function loadNpcs() {
 })();
 
 // ============================================================
+// 3ter. inventory-core.js — activeParty / livingParty (revue §2 A3)
+// ------------------------------------------------------------
+// Ces deux helpers remplacent 70 réécritures de `party.slice(0, partySize)`.
+// Ce qui doit être verrouillé, c'est leur NEUTRALITÉ : ils doivent rendre
+// exactement ce que rendait le slice, y compris dans les cas dégradés — sinon
+// la migration change du comportement de jeu au lieu de le factoriser.
+// ============================================================
+(function testActivePartyHelpers() {
+  const mk = (name, hp) => ({ name, hp });
+  const load = (globals) =>
+    loadModule('js/inventory-core.js', ['activeParty', 'livingParty'], globals);
+
+  // Cas nominal : duo, les deux debout.
+  {
+    const party = [mk('harry', 35), mk('hermione', 28), mk('reserve', 30)];
+    const { activeParty, livingParty } = load({ party, partySize: 2 });
+    check('activeParty duo → 2 membres', activeParty().length === 2);
+    check('activeParty respecte l\'ordre', activeParty()[0].name === 'harry');
+    check('activeParty exclut la réserve',
+      activeParty().every(c => c.name !== 'reserve'));
+    check('livingParty duo tous debout → 2', livingParty().length === 2);
+    // Nouveau tableau à chaque appel (comme `slice`) : un appelant qui trie ou
+    // dépile son résultat ne doit pas corrompre `party`.
+    check('activeParty renvoie une copie', activeParty() !== activeParty());
+    activeParty().pop();
+    check('activeParty : pop sans effet sur party', party.length === 3);
+  }
+
+  // Solo : le 2ᵉ héros existe dans `party` mais n'est pas actif.
+  {
+    const { activeParty } = load({ party: [mk('a', 10), mk('b', 10)], partySize: 1 });
+    check('activeParty solo → 1 membre', activeParty().length === 1);
+  }
+
+  // KO : livingParty filtre, activeParty non.
+  {
+    const { activeParty, livingParty } = load({
+      party: [mk('vivant', 12), mk('ko', 0)], partySize: 2 });
+    check('activeParty inclut les KO', activeParty().length === 2);
+    check('livingParty exclut les KO', livingParty().length === 1);
+    check('livingParty garde le vivant', livingParty()[0].name === 'vivant');
+  }
+  {
+    const { livingParty } = load({ party: [mk('mort', -3)], partySize: 1 });
+    check('livingParty : hp négatif exclu', livingParty().length === 0);
+  }
+
+  // Cas dégradés — la raison d'être du repli défensif : `slice(0, undefined)`
+  // renvoyait DÉJÀ le tableau entier, le helper doit faire pareil.
+  {
+    const { activeParty } = load({ party: [mk('a', 1), mk('b', 1)] });  // partySize absent
+    check('activeParty sans partySize → groupe entier', activeParty().length === 2);
+  }
+  {
+    const { activeParty, livingParty } = load({});   // party absent
+    check('activeParty sans party → []', activeParty().length === 0);
+    check('livingParty sans party → []', livingParty().length === 0);
+  }
+  {
+    const { activeParty } = load({ party: null, partySize: 2 });
+    check('activeParty party null → []', activeParty().length === 0);
+  }
+  // Membre `null` dans le groupe : livingParty ne doit pas lever.
+  {
+    const { livingParty } = load({ party: [null, mk('ok', 5)], partySize: 2 });
+    let threw = false;
+    let n = 0;
+    try { n = livingParty().length; } catch (e) { threw = true; }
+    check('livingParty tolère un membre null', !threw && n === 1);
+  }
+
+  // Verrou anti-régression : plus aucun site ne réécrit l'idiome à la main
+  // (hors commentaire du socle). C'est ce qui empêche les deux idiomes de
+  // recohabiter au prochain ajout de code.
+  {
+    const files = fs.readdirSync(path.join(ROOT, 'js')).filter(f => f.endsWith('.js'));
+    const offenders = files.filter((f) => {
+      const src = fs.readFileSync(path.join(ROOT, 'js', f), 'utf8');
+      return src.split('\n').some(line =>
+        line.includes('party.slice(0, partySize)') && !line.trim().startsWith('//'));
+    });
+    check('aucun `party.slice(0, partySize)` résiduel dans js/' +
+      (offenders.length ? ` (${offenders.join(', ')})` : ''), offenders.length === 0);
+  }
+})();
+
+// ============================================================
 // 3bis. potions.js — potionEvolveMult (calibration P13, bornes évolutives)
 // ------------------------------------------------------------
 // Helper PUR lisant party/partySize/spellCorruption/currentFloor (globals).

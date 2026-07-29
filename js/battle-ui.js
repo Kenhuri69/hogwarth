@@ -84,7 +84,7 @@ function showTargetSelection(actionType) {
 function showAllyTargetSelection(spellName) {
   pendingSpell = spellName;
   const entries = [];
-  party.slice(0, partySize).forEach((c, i) => {
+  activeParty().forEach((c, i) => {
     if (c.hp <= 0) return;
     entries.push({ label: `${c.icon || ''} ${c.name} (${c.hp}/${c.hpMax} PV)`, idx: i });
   });

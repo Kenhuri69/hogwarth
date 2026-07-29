@@ -395,7 +395,7 @@ window.checkHouseLevelUp = function checkHouseLevelUp() {
     AudioSystem.playLevelUp();
     // Voix des héros — palier de Maison franchi (cosmétique, défensif).
     if (typeof heroBark === 'function') {
-      const speaker = party.slice(0, partySize).find(c => c.hp > 0) || party[0];
+      const speaker = activeParty().find(c => c.hp > 0) || party[0];
       if (speaker && speaker.heroKey) heroBark(speaker.heroKey, 'houseTier', { channel: (typeof inBattle !== 'undefined' && inBattle) ? 'combat' : 'explore', once: 'tier:' + tierNum });
     }
 

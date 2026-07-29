@@ -271,7 +271,14 @@ transformer en outil versionné est quasi gratuit.
 - **Vérifier** : l'outil sort 0 sur `master` ; il sort 1 sur une référence
   cassée introduite volontairement.
 
-### 🟡 A3 · Duplication : 70 occurrences de `party.slice(0, partySize)`
+### ✅ A3 · Duplication : 70 occurrences de `party.slice(0, partySize)` — **traité (lot 6)**
+
+> **Livré** (`lot6-helpers-a3-a4-2026-07-29.md`) : `activeParty()` /
+> `livingParty()` dans `inventory-core.js`, **78 sites migrés** (70 littéraux +
+> 8 variantes défensives), 0 résiduel, verrou anti-retour dans `units.js`.
+> La recommandation « migration opportuniste » a été écartée : elle supposait
+> qu'on ne pouvait pas vérifier: le lot 5 (suite en 22 min) a levé cette
+> contrainte.
 
 Le même idiome « membres actifs du groupe » est réécrit **70 fois** dans **15
 modules** (`battle.js` 17, `battle-spells.js` 15, `movement-interactions.js` 8,
@@ -285,7 +292,12 @@ modules** (`battle.js` 17, `battle-spells.js` 15, `movement-interactions.js` 8,
   sites dépasse le bénéfice).
 - **Vérifier** : helper testé dans `units.js` ; smoke verte après chaque lot.
 
-### 🟡 A4 · Duplication du transport REST multiplayer
+### ✅ A4 · Duplication du transport REST multiplayer — **traité (lot 6)**
+
+> **Livré** : `_mpSelectRows` / `_mpWrite` dans `multiplayer.js`, 9 recopies
+> remplacées, −49 lignes nettes, 25 scénarios MP verts. Trois écritures
+> laissées hors helper à dessein (upserts `merge-duplicates`, PATCH à politique
+> d'erreur silencieuse) — cf. §5 du plan.
 
 La détection de clones remonte le même bloc « fetch → `!res.ok` → `json()` →
 `_mpNoteSuccess` → `rows[0]` → `catch _mpNoteFailure` » **4 fois**, et
@@ -567,7 +579,7 @@ l'exécution du lot 1.
 | 8 | **E2** catalogue élémentaire | Enrichissement | Moyen | S | ✅ **traité** | constat re-posé (§3.x) : le problème n'était pas « foudre pauvre » mais 14 sorts ténèbres pour 41 monstres résistants vs 8 sorts lumière pour 38 faibles. Lumière avancée à l'étage 4 |
 | 9 | **E4** slots `wand`/armure | Enrichissement | Moyen | M | ouvert | condition de loot pour un build physique viable |
 | 10 | **P2** parallélisation de la suite smoke | Process | Moyen | M | ✅ livré | protège le respect de la règle §7 — 90 min → 22 min (lot 5) |
-| 11 | **A3**/**A4** helpers `activeParty` / REST MP | Amélioration | Faible | S | ouvert | opportuniste, au fil des passages |
+| 11 | **A3**/**A4** helpers `activeParty` / REST MP | Amélioration | Faible | S | ✅ livré | 78 sites migrés + 9 recopies REST supprimées (lot 6) |
 | 12 | **C5** CSS morte · **A6** poids du dépôt | Nettoyage | Faible | S | ouvert | hygiène, sans urgence |
 | — | ~~C1 · C2 icônes de sorts~~ | — | — | — | ❌ retiré | constats erronés — la couverture d'icônes est complète (§1) |
 

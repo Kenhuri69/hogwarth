@@ -359,7 +359,7 @@ function _rollPortusArrivalEvent() {
     // Positif — soin HP only.
     const heal = 3 + (currentFloor || 1) * 5;
     let healed = 0;
-    party.slice(0, partySize).forEach(c => {
+    activeParty().forEach(c => {
       if (c.hp <= 0) return;
       const before = c.hp;
       c.hp = Math.min(c.hpMax, c.hp + heal);
@@ -381,7 +381,7 @@ function _rollPortusArrivalEvent() {
 }
 
 function _portusTriggerTrap() {
-  const alive = party.slice(0, partySize).filter(c => c.hp > 0);
+  const alive = livingParty();
   if (alive.length === 0) return;
   const target = alive[Math.floor(Math.random() * alive.length)];
   const dmg = 4 + Math.ceil((currentFloor || 1) * 1.5);
@@ -390,7 +390,7 @@ function _portusTriggerTrap() {
   if (typeof setNarrative === 'function') {
     setNarrative(`Un piège jaillit à l'arrivée — ${target.name} encaisse le choc.`);
   }
-  if (party.slice(0, partySize).every(c => c.hp <= 0) && typeof triggerDeath === 'function') {
+  if (activeParty().every(c => c.hp <= 0) && typeof triggerDeath === 'function') {
     triggerDeath('Le vortex de Portus a précipité le groupe dans un piège mortel...');
   }
 }

@@ -44,14 +44,11 @@ async function mpListAvailableHosts() {
       + `&last_seen=gt.${encodeURIComponent(sinceIso)}`
       + '&order=last_seen.desc'
       + '&limit=20';
-    const res = await fetch(url, { headers: _mpHeaders() });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const rows = await res.json();
-    _mpNoteSuccess();
-    return Array.isArray(rows) ? rows : [];
+    // null = erreur réseau (≠ tableau vide = personne de disponible).
+    return await _mpSelectRows(url);
   } catch (e) {
     _mpNoteFailure(e);
-    return null;     // null = erreur réseau (≠ tableau vide = personne)
+    return null;
   }
 }
 
@@ -68,22 +65,10 @@ async function mpPostVisitRequest(host) {
     status:        'pending'
   };
   try {
-    const res = await fetch(
-      `${MP_CONFIG.supabaseUrl}/rest/v1/${MP_VISITS_TABLE}`,
-      {
-        method:  'POST',
-        headers: _mpHeaders({
-          'Content-Type': 'application/json',
-          'Prefer':       'return=representation'
-        }),
-        body: JSON.stringify(row)
-      }
-    );
-    if (res.status === 404) { _mpVisitTableMissing = true; return null; }
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const rows = await res.json();
-    _mpNoteSuccess();
-    return Array.isArray(rows) && rows[0] ? rows[0] : null;
+    const rows = await _mpWrite(
+      `${MP_CONFIG.supabaseUrl}/rest/v1/${MP_VISITS_TABLE}`, 'POST', row,
+      { onMissing: () => { _mpVisitTableMissing = true; } });
+    return (rows && rows[0]) ? rows[0] : null;
   } catch (e) {
     _mpNoteFailure(e);
     return null;
@@ -98,12 +83,8 @@ async function mpPollOutgoingVisitStatus(reqId) {
   try {
     const url = `${MP_CONFIG.supabaseUrl}/rest/v1/${MP_VISITS_TABLE}`
       + `?id=eq.${encodeURIComponent(reqId)}&select=id,status,responded_at,host_id,channel_id`;
-    const res = await fetch(url, { headers: _mpHeaders() });
-    if (res.status === 404) { _mpVisitTableMissing = true; return null; }
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const rows = await res.json();
-    _mpNoteSuccess();
-    return Array.isArray(rows) && rows[0] ? rows[0] : null;
+    const rows = await _mpSelectRows(url, () => { _mpVisitTableMissing = true; });
+    return (rows && rows[0]) ? rows[0] : null;
   } catch (e) {
     _mpNoteFailure(e);
     return null;
@@ -128,12 +109,8 @@ async function _mpPollIncomingVisitRequests() {
       + `&created_at=gt.${encodeURIComponent(sinceIso)}`
       + '&order=created_at.desc'
       + '&limit=1';
-    const res = await fetch(url, { headers: _mpHeaders() });
-    if (res.status === 404) { _mpVisitTableMissing = true; return; }
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const rows = await res.json();
-    _mpNoteSuccess();
-    if (Array.isArray(rows) && rows[0]
+    const rows = await _mpSelectRows(url, () => { _mpVisitTableMissing = true; });
+    if (rows && rows[0]
         && (typeof inBattle === 'undefined' || !inBattle)) {
       // Phase F — auto-refus silencieux si le host a fermé son accueil.
       // La requête est marquée 'refused' pour que le visiteur cesse de
@@ -165,17 +142,9 @@ async function mpRespondVisitRequest(reqId, status, channelId) {
       + `?id=eq.${encodeURIComponent(reqId)}`;
     const body = { status, responded_at: new Date().toISOString() };
     if (status === 'accepted' && channelId) body.channel_id = channelId;
-    const res = await fetch(url, {
-      method:  'PATCH',
-      headers: _mpHeaders({
-        'Content-Type': 'application/json',
-        'Prefer':       'return=minimal'
-      }),
-      body: JSON.stringify(body)
-    });
-    if (res.status === 404) { _mpVisitTableMissing = true; return null; }
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    _mpNoteSuccess();
+    const ok = await _mpWrite(url, 'PATCH', body, {
+      onMissing: () => { _mpVisitTableMissing = true; }, representation: false });
+    if (!ok) return null;
     return { id: reqId, status, channel_id: channelId || null };
   } catch (e) {
     _mpNoteFailure(e);
@@ -231,22 +200,10 @@ async function mpPostVisitMessage(channelId, sender, type, payload) {
     payload: (payload === undefined) ? null : payload
   };
   try {
-    const res = await fetch(
-      `${MP_CONFIG.supabaseUrl}/rest/v1/${MP_VISIT_MESSAGES_TABLE}`,
-      {
-        method:  'POST',
-        headers: _mpHeaders({
-          'Content-Type': 'application/json',
-          'Prefer':       'return=representation'
-        }),
-        body: JSON.stringify(row)
-      }
-    );
-    if (res.status === 404) { _mpVisitMsgTableMissing = true; return null; }
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const rows = await res.json();
-    _mpNoteSuccess();
-    return Array.isArray(rows) && rows[0] ? rows[0] : null;
+    const rows = await _mpWrite(
+      `${MP_CONFIG.supabaseUrl}/rest/v1/${MP_VISIT_MESSAGES_TABLE}`, 'POST', row,
+      { onMissing: () => { _mpVisitMsgTableMissing = true; } });
+    return (rows && rows[0]) ? rows[0] : null;
   } catch (e) {
     _mpNoteFailure(e);
     return null;
@@ -272,12 +229,7 @@ async function mpPollVisitMessages(channelId, sinceIso, excludeSender) {
     if (excludeSender === 'host' || excludeSender === 'visitor') {
       url += `&sender=neq.${excludeSender}`;
     }
-    const res = await fetch(url, { headers: _mpHeaders() });
-    if (res.status === 404) { _mpVisitMsgTableMissing = true; return null; }
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const rows = await res.json();
-    _mpNoteSuccess();
-    return Array.isArray(rows) ? rows : [];
+    return await _mpSelectRows(url, () => { _mpVisitMsgTableMissing = true; });
   } catch (e) {
     _mpNoteFailure(e);
     return null;
@@ -309,22 +261,10 @@ async function mpPostBloodSeal(row) {
   if (!_mpConfigured() || _mpThreatsTableMissing) return null;
   if (!row) return null;
   try {
-    const res = await fetch(
-      `${MP_CONFIG.supabaseUrl}/rest/v1/${MP_THREATS_TABLE}`,
-      {
-        method:  'POST',
-        headers: _mpHeaders({
-          'Content-Type': 'application/json',
-          'Prefer':       'return=representation'
-        }),
-        body: JSON.stringify(row)
-      }
-    );
-    if (res.status === 404) { _mpThreatsTableMissing = true; return null; }
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const rows = await res.json();
-    _mpNoteSuccess();
-    return Array.isArray(rows) && rows[0] ? rows[0] : null;
+    const rows = await _mpWrite(
+      `${MP_CONFIG.supabaseUrl}/rest/v1/${MP_THREATS_TABLE}`, 'POST', row,
+      { onMissing: () => { _mpThreatsTableMissing = true; } });
+    return (rows && rows[0]) ? rows[0] : null;
   } catch (e) {
     _mpNoteFailure(e);
     return null;
@@ -343,12 +283,7 @@ async function mpListHostSealsForFloor(hostId, floor) {
       + '&select=id,visitor_id,visitor_name,floor,x,y,monster_id,posted_at'
       + '&order=posted_at.asc'
       + '&limit=50';
-    const res = await fetch(url, { headers: _mpHeaders() });
-    if (res.status === 404) { _mpThreatsTableMissing = true; return []; }
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const rows = await res.json();
-    _mpNoteSuccess();
-    return Array.isArray(rows) ? rows : [];
+    return (await _mpSelectRows(url, () => { _mpThreatsTableMissing = true; })) || [];
   } catch (e) {
     _mpNoteFailure(e);
     return [];
@@ -361,21 +296,11 @@ async function mpUpdateSealStatus(sealId, status) {
   if (!_mpConfigured() || _mpThreatsTableMissing) return null;
   if (!sealId || (status !== 'resolved' && status !== 'fled')) return null;
   try {
-    const res = await fetch(
+    const rows = await _mpWrite(
       `${MP_CONFIG.supabaseUrl}/rest/v1/${MP_THREATS_TABLE}?id=eq.${encodeURIComponent(sealId)}`,
-      {
-        method:  'PATCH',
-        headers: _mpHeaders({
-          'Content-Type': 'application/json',
-          'Prefer':       'return=representation'
-        }),
-        body: JSON.stringify({ status, resolved_at: new Date().toISOString() })
-      }
-    );
-    if (res.status === 404) { _mpThreatsTableMissing = true; return null; }
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    _mpNoteSuccess();
-    return true;
+      'PATCH', { status, resolved_at: new Date().toISOString() },
+      { onMissing: () => { _mpThreatsTableMissing = true; } });
+    return rows ? true : null;
   } catch (e) {
     _mpNoteFailure(e);
     return null;
@@ -394,12 +319,7 @@ async function mpListVisitorResolvedSeals(visitorId) {
       + '&select=id,host_id,floor,x,y,monster_id,status,resolved_at,visitor_name'
       + '&order=resolved_at.asc'
       + '&limit=20';
-    const res = await fetch(url, { headers: _mpHeaders() });
-    if (res.status === 404) { _mpThreatsTableMissing = true; return []; }
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const rows = await res.json();
-    _mpNoteSuccess();
-    return Array.isArray(rows) ? rows : [];
+    return (await _mpSelectRows(url, () => { _mpThreatsTableMissing = true; })) || [];
   } catch (e) {
     _mpNoteFailure(e);
     return [];
@@ -411,18 +331,13 @@ async function mpClaimSeal(sealId) {
   if (!_mpConfigured() || _mpThreatsTableMissing) return null;
   if (!sealId) return null;
   try {
-    const res = await fetch(
+    // Seul site à n'envoyer aucun en-tête `Prefer` : le helper en pose un
+    // (`return=minimal`), qui est précisément le défaut de PostgREST pour un
+    // PATCH — la requête émise reste la même.
+    return await _mpWrite(
       `${MP_CONFIG.supabaseUrl}/rest/v1/${MP_THREATS_TABLE}?id=eq.${encodeURIComponent(sealId)}`,
-      {
-        method:  'PATCH',
-        headers: _mpHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ claimed_at: new Date().toISOString() })
-      }
-    );
-    if (res.status === 404) { _mpThreatsTableMissing = true; return null; }
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    _mpNoteSuccess();
-    return true;
+      'PATCH', { claimed_at: new Date().toISOString() },
+      { onMissing: () => { _mpThreatsTableMissing = true; }, representation: false });
   } catch (e) {
     _mpNoteFailure(e);
     return null;

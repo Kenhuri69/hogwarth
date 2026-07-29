@@ -214,14 +214,14 @@ function _maybePlayTierTransition(prevFloor, nextFloor) {
     // du meneur présent — chaque héros jouable a sa raison de descendre (05 §5.4.2).
     scriptedSpoke = !!heroBarkScripted('cedric', 'leaveSchool', { channel: 'explore', once: 'leave-school' });
     if (!scriptedSpoke) {
-      const lead = party.slice(0, partySize).find(c => c && c.hp > 0 && c.heroKey);
+      const lead = activeParty().find(c => c && c.hp > 0 && c.heroKey);
       if (lead) scriptedSpoke = !!heroBarkScripted(lead.heroKey, 'descentStake', { channel: 'explore', once: 'descent-stake' });
     }
   }
   // Voix des héros — franchissement d'une frontière de tranche (cosmétique,
   // défensif, exploration). Cf. js/hero-barks.js.
   if (!scriptedSpoke && typeof heroBark === 'function') {
-    const speaker = party.slice(0, partySize).find(c => c.hp > 0) || party[0];
+    const speaker = activeParty().find(c => c.hp > 0) || party[0];
     if (speaker && speaker.heroKey) heroBark(speaker.heroKey, 'tierTransition', { channel: 'explore', once: 'tier-trans:' + next.label });
   }
 }
@@ -281,8 +281,7 @@ function _maybeAdvanceDarkLoop(prevFloor, nextFloor) {
   // et défensif : la tension `houseTension` (Maison canon ≠ chosenHouse) colore
   // automatiquement la réplique. One-shot par niveau de Boucle.
   if (typeof heroBark === 'function' && typeof party !== 'undefined') {
-    const n = (typeof partySize === 'number') ? partySize : party.length;
-    const speaker = party.slice(0, n).find(c => c && c.hp > 0) || party[0];
+    const speaker = livingParty()[0] || party[0];
     if (speaker && speaker.heroKey) {
       heroBark(speaker.heroKey, 'darkLoop', { channel: 'explore', once: 'darkloop:' + ln });
     }

@@ -86,7 +86,7 @@ function openSpells(charIdx = 0) {
   const list = document.getElementById('spell-list');
 
   // Onglets Harry / Hermione (Hermione masquée en solo).
-  const tabs = party.slice(0, partySize).map((p, i) =>
+  const tabs = activeParty().map((p, i) =>
     `<div onclick="openSpells(${i})" style="cursor:pointer;padding:4px 8px;border-radius:2px;font-family:'Cinzel',serif;font-size:10px;letter-spacing:1px;
      background:${i === charIdx ? '#2a1a08' : '#0a0705'};border:1px solid ${i === charIdx ? 'var(--gold-dark)' : '#2a1a08'};color:${i === charIdx ? 'var(--gold-light)' : '#6a5030'}">
       ${p.icon} ${p.name.split(' ')[0]}
@@ -206,7 +206,7 @@ const HEAL_OOC_CD_STEPS = 3;
 // personne n'est blessé (tous au max ou tous KO). Le caster est inclus.
 function _pickMostWoundedAlly() {
   let best = null, bestRatio = 1.0;
-  for (const c of party.slice(0, partySize)) {
+  for (const c of activeParty()) {
     if (!c || c.hp <= 0) continue;
     if (c.hp >= c.hpMax) continue;
     const ratio = c.hp / c.hpMax;

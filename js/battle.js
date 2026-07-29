@@ -9,7 +9,7 @@
 function getActiveChar()       { return party[currentBattleChar]; }
 function getFirstLivingEnemy() { return enemyGroup.findIndex(e => e.currentHp > 0); }
 function livingEnemies()       { return enemyGroup.filter(e => e.currentHp > 0); }
-function allPartyKO()          { return party.slice(0, partySize).every(c => c.hp <= 0); }
+function allPartyKO()          { return activeParty().every(c => c.hp <= 0); }
 
 // Dégât atténué par la DEF avec plancher (cf. DIFFICULTY_STUDY.md §4 levier B).
 // Conserve la soustraction `rawAtk − def` tant qu'elle dépasse 25 % de l'ATK
@@ -182,7 +182,7 @@ function isFeared(actor) {
 // tout le groupe ; n'affecte jamais les ennemis (cf. rollFearSkip).
 function _partyFearWardActive() {
   if (typeof party === 'undefined') return false;
-  for (const c of party.slice(0, partySize)) {
+  for (const c of activeParty()) {
     if (!c || c.hp <= 0 || !c.equipped) continue;
     for (const it of Object.values(c.equipped)) {
       if (it && it.fearImmune) return true;
@@ -196,7 +196,7 @@ function _partyFearWardActive() {
 // de Godric immunise les héros (pas les ennemis).
 function rollFearSkip(actor) {
   if (!isFeared(actor)) return false;
-  if (typeof party !== 'undefined' && party.slice(0, partySize).includes(actor)
+  if (typeof party !== 'undefined' && activeParty().includes(actor)
       && _partyFearWardActive()) return false;
   return Math.random() < 0.5;
 }
@@ -247,7 +247,7 @@ function _applySignatureVoldemortLever() {
     } else if (chosenHouse === 'Poufsouffle' && typeof poufSignatureDone !== 'undefined' && poufSignatureDone) {
       // 🦡 « Espoir partagé » : filet de sécurité (+PV max transient), pas une arme.
       let any = false;
-      for (const c of party.slice(0, partySize)) {
+      for (const c of activeParty()) {
         if (!c || c.hp <= 0) continue;
         c.hpMax += 15; c.hp += 15; any = true;
       }
@@ -451,7 +451,7 @@ function clearAllStatuses() {
 function _tryAutoReviveKOChars() {
   if (typeof player === 'undefined' || !player.inventory) return '';
   let log = '';
-  for (const c of party.slice(0, partySize)) {
+  for (const c of activeParty()) {
     if (c.hp > 0) continue;
     const idx = player.inventory.findIndex(it => it && it.id === 'larme_phenix_pure');
     if (idx < 0) break; // plus de larmes disponibles
@@ -475,7 +475,7 @@ function _tryAutoReviveKOChars() {
 // Voir .claude/plans/game-economy-gold-audit.md §5.6 Piste A.
 function _equipmentGoldMultiplier() {
   let bonus = 0;
-  party.slice(0, partySize).forEach(c => {
+  activeParty().forEach(c => {
     if (!c || !c.equipped) return;
     Object.values(c.equipped).forEach(item => {
       if (item && typeof item.bonusGoldMult === 'number') bonus += item.bonusGoldMult;
@@ -486,7 +486,7 @@ function _equipmentGoldMultiplier() {
 
 function applyEquipmentRegen() {
   let log = '';
-  party.slice(0, partySize).forEach(c => {
+  activeParty().forEach(c => {
     if (c.hp <= 0 || !c.equipped) return;
     let hpRegen = 0, spRegen = 0;
     Object.values(c.equipped).forEach(item => {
@@ -747,7 +747,7 @@ function startBattle(baseEnemyData, opts) {
   // Voix des héros — apparition d'un boss epic (cosmétique, défensif). Le
   // héros actif (vivant) prend la parole. Cf. js/hero-barks.js.
   if (enemyGroup[0] && enemyGroup[0].epic && typeof heroBark === 'function') {
-    const speaker = party.slice(0, partySize).find(c => c.hp > 0);
+    const speaker = activeParty().find(c => c.hp > 0);
     if (speaker && speaker.heroKey) {
       // Boss revenu en variante Ténébreuse (Boucle, post-victoire) → bark
       // one-shot dédié « Tu m'as déjà tué une fois » ; sinon apparition standard.
@@ -998,7 +998,7 @@ function useActiveArtifact(charIdx, targetIdx) {
   } else if (art.resolve === 'purgeStatus') {
     // Dissipe les statuts négatifs (DoT/weaken…) du groupe.
     let cleared = 0;
-    party.slice(0, partySize).forEach(c => {
+    activeParty().forEach(c => {
       if (c.hp <= 0 || !Array.isArray(c.statusEffects)) return;
       cleared += c.statusEffects.length;
       c.statusEffects = [];
@@ -1010,7 +1010,7 @@ function useActiveArtifact(charIdx, targetIdx) {
   } else if (art.resolve === 'shieldGroup') {
     // Bouclier de groupe (Protego collectif) — `power` tours (défaut 1).
     const turns = Math.max(1, art.power || 1);
-    party.slice(0, partySize).forEach((c, i) => {
+    activeParty().forEach((c, i) => {
       if (c.hp <= 0) return;
       shieldTurns[i] = Math.max(shieldTurns[i] || 0, turns);
     });
@@ -1022,7 +1022,7 @@ function useActiveArtifact(charIdx, targetIdx) {
     // Lot 2 — Appel du Temps : charge la jauge de Célérité des héros vivants
     // (`power` par héros, défaut 0.5) — actions supplémentaires accélérées.
     const gain = (typeof art.power === 'number') ? art.power : 0.5;
-    party.slice(0, partySize).forEach((c, i) => {
+    activeParty().forEach((c, i) => {
       if (c.hp <= 0) return;
       celeriteGauge[i] = (celeriteGauge[i] || 0) + gain;
     });
@@ -1047,7 +1047,7 @@ function useActiveArtifact(charIdx, targetIdx) {
     // Lot 2 — Eau de la Source : rend `power` (fraction, défaut 0.12) des
     // PV/PM max aux héros vivants.
     const frac = (typeof art.power === 'number') ? art.power : 0.12;
-    party.slice(0, partySize).forEach(c => {
+    activeParty().forEach(c => {
       if (c.hp <= 0) return;
       c.hp = Math.min(c.hpMax, c.hp + Math.ceil(c.hpMax * frac));
       c.sp = Math.min(c.spMax, c.sp + Math.ceil(c.spMax * frac));
@@ -1473,16 +1473,16 @@ function enemyTurn() {
   // Lot P4 — Reliquae Temporis : snapshot PV/PM du groupe AVANT que les ennemis
   // ne frappent (= « début du round précédent » vu du prochain tour du joueur).
   if (typeof party !== 'undefined' && typeof partySize === 'number') {
-    _timeSnapshot = party.slice(0, partySize).map(c => ({ hp: c.hp, sp: c.sp }));
+    _timeSnapshot = activeParty().map(c => ({ hp: c.hp, sp: c.sp }));
   }
   // Télégraphe (G3) : bref wind-up sur les cartes des ennemis qui s'apprêtent
   // à agir, pour que leurs actions semblent intentionnelles. Posé en tête du
   // tour, avant tout re-render (renderEnemyGroup vide le conteneur). Purement
   // visuel via CFX_safe ; n'altère ni le timing ni la résolution du tour.
   livingEnemies().forEach(e => CFX_safe.telegraph(enemyGroup.indexOf(e)));
-  const alive = party.slice(0, partySize).filter(c => c.hp > 0);
+  const alive = livingParty();
   // Voix des héros — snapshot des vivants pour détecter un KO ce round.
-  const _aliveBefore = party.slice(0, partySize).map(c => c.hp > 0);
+  const _aliveBefore = activeParty().map(c => c.hp > 0);
   let log = '';
 
   // Statuts persistants : tick sur les ennemis vivants en début de tour
@@ -1545,7 +1545,7 @@ function enemyTurn() {
   if (partySize === 2 && typeof heroBark === 'function') {
     const fellIdx = _aliveBefore.findIndex((wasAlive, i) => wasAlive && party[i] && party[i].hp <= 0);
     if (fellIdx !== -1) {
-      const survivor = party.slice(0, partySize).find((c, i) => i !== fellIdx && c.hp > 0);
+      const survivor = activeParty().find((c, i) => i !== fellIdx && c.hp > 0);
       if (survivor && survivor.heroKey) heroBark(survivor.heroKey, 'allyDown');
     }
   }
@@ -1557,7 +1557,7 @@ function enemyTurn() {
   if (livingEnemies().length === 0) { setBattleLog(log || '...'); renderEnemyGroup(); endBattle(true); return; }
 
   // Statuts persistants : tick sur les alliés vivants en fin de round
-  party.slice(0, partySize).forEach(c => {
+  activeParty().forEach(c => {
     if (c.hp > 0) log += tickStatuses(c, false);
   });
 

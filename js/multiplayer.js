@@ -126,6 +126,60 @@ function _mpNoteFailure(e) {
   }
 }
 
+// ── Transport REST partagé (revue 2026-07-28 §2 A4) ─────────
+// Le bloc « fetch → 404 → !res.ok → json() → _mpNoteSuccess → catch
+// _mpNoteFailure » était recopié 10 fois (SELECT) et 9 fois (POST/PATCH) sur
+// les trois modules MP. Ces deux helpers le portent une fois.
+//
+// Convention de retour : `null` = ÉCHEC, quelle qu'en soit la cause (table
+// absente ou réseau). C'est légitime ici parce que tous les appelants
+// retournaient déjà la MÊME valeur dans les deux cas — vérifié site par site
+// avant d'écrire le helper. Chaque appelant mappe donc `null` vers sa propre
+// valeur d'échec (`[]` pour les Verrous, `null` ailleurs).
+//
+// `onMissing` est appelé sur 404 : c'est là que l'appelant lève son
+// disjoncteur de table (`_mpVisitTableMissing` & co.), qui lui est propre.
+
+// SELECT → tableau de lignes (possiblement vide), ou null si échec.
+async function _mpSelectRows(url, onMissing) {
+  try {
+    const res = await fetch(url, { headers: _mpHeaders() });
+    if (res.status === 404) { if (onMissing) onMissing(); return null; }
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const rows = await res.json();
+    _mpNoteSuccess();
+    return Array.isArray(rows) ? rows : [];
+  } catch (e) {
+    _mpNoteFailure(e);
+    return null;
+  }
+}
+
+// POST / PATCH. `representation` (défaut true) demande les lignes en retour :
+//   true  → renvoie le tableau de lignes insérées, ou null si échec ;
+//   false → renvoie true si l'écriture a abouti, null si échec (PATCH minimal).
+async function _mpWrite(url, method, body, { onMissing, representation = true } = {}) {
+  try {
+    const res = await fetch(url, {
+      method,
+      headers: _mpHeaders({
+        'Content-Type': 'application/json',
+        'Prefer':       representation ? 'return=representation' : 'return=minimal'
+      }),
+      body: JSON.stringify(body)
+    });
+    if (res.status === 404) { if (onMissing) onMissing(); return null; }
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    if (!representation) { _mpNoteSuccess(); return true; }
+    const rows = await res.json();
+    _mpNoteSuccess();
+    return Array.isArray(rows) ? rows : [];
+  } catch (e) {
+    _mpNoteFailure(e);
+    return null;
+  }
+}
+
 // ── Cycle de session ────────────────────────────────────────
 // Démarre (ou redémarre) la session de présence. Idempotent : purge les
 // timers existants. Appelé à l'entrée en jeu (startGame / loadSlotAndStart).
@@ -236,11 +290,8 @@ async function _mpPollGhosts() {
       + `&mode=eq.${encodeURIComponent(mpMode)}`
       + `&player_id=neq.${encodeURIComponent(getMpPlayerId())}`
       + `&last_seen=gt.${encodeURIComponent(sinceIso)}`;
-    const res = await fetch(url, { headers: _mpHeaders() });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const rows = await res.json();
-    _mpNoteSuccess();
-    if (Array.isArray(rows)) _mpProjectGhosts(rows);
+    const rows = await _mpSelectRows(url);
+    if (rows) _mpProjectGhosts(rows);
   } catch (e) {
     _mpNoteFailure(e);
   }
