@@ -2161,6 +2161,15 @@ plein combat = no-go).
   `module.exports.scenarios`. Le filtre CLI (`node tests/smoke.js crit visit`)
   est inchangé (matching insensible à la casse sur le nom de fonction),
   consommé par `tests/select.js`.
+  **Parallélisme** (lot 5, axe P2 de la revue 2026-07-28) : le runner exécute
+  par défaut plusieurs scénarios de front (`parallélisme disponible − 1`, borné
+  à 8) — `--jobs=N` ou `SMOKE_JOBS=N` pour forcer, `--jobs=1` pour revenir au
+  séquentiel strict (debug). Les scénarios n'ont **pas** été modifiés : ils
+  étaient déjà indépendants. La sortie reste **déterministe** — chaque scénario
+  écrit dans un tampon porté par un `AsyncLocalStorage`, et les tampons sont
+  vidés dans l'ordre de la liste, pas dans l'ordre d'achèvement ; le log d'un
+  run parallèle est identique à celui d'un run séquentiel. À la première erreur,
+  le pool cesse d'ordonnancer, laisse finir les scénarios en vol et sort en 1.
 - `node tests/units.js` : tests unitaires **Node pur** (sans navigateur) des
   helpers purs — `getFloorTheme`, `effectiveFloor`/`endgameTierIndex`/
   `weightedPick`, courbes `_fortuneCurve`/`_celeriteCurve`, et verrou
