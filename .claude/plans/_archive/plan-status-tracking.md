@@ -1,7 +1,7 @@
 # Plan — Tri des plans : ouverts vs finis (archivage)
 
 **Branche :** `claude/plan-status-tracking-3ihv1h`
-**Statut :** 🟩 en cours
+**Statut :** ✅ clos — les 30 déplacements sont dans `_archive/` ; archivé le 2026-08-24.
 **Périmètre (utilisateur, 2026-06-22) :** « trier ouverts vs finis » — auditer
 les plans de `.claude/plans/`, **archiver** dans `_archive/` ceux dont **toutes
 les étapes sont cochées** (`open=0, done>0`), **laisser actifs** ceux qui ont

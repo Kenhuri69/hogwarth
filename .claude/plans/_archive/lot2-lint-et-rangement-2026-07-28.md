@@ -1,7 +1,7 @@
 # Lot 2 — ESLint (A1) & rangement des plans (P1)
 
 > **Plan vivant** (guidelines §5). Suite du §5 de
-> [`revue-sources-contenu-2026-07-28.md`](./revue-sources-contenu-2026-07-28.md),
+> [`revue-sources-contenu-2026-07-28.md`](../revue-sources-contenu-2026-07-28.md),
 > rangs 4 et 5, après le lot 1 (mergé — PR #739).
 >
 > **Statut** : 🏁 livré (2026-07-28).

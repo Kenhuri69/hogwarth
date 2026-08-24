@@ -101,7 +101,7 @@ flag false + rapport, ligne roadmap laissée ouverte.
       identique 4 Maisons, spread coffres-puzzle 3/60 ; Serdaigle 23 stèles/5 runes)
 - [x] Étape 6 — gate : check_difficulty 0 dérive · sim-economy invariant ·
       DIFFICULTY_REPORT.md §8
-- [ ] Étape 7 — cache-bump + tests verts
+- [x] Étape 7 — cache-bump + tests verts
 - [x] Étape 8 — doc 10 §10.6 + roadmap (Phase 3 + §1.5)
 
 ## Résultat

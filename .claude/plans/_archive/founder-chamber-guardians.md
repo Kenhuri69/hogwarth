@@ -51,7 +51,7 @@
 6. [x] Roadmap Phase 3 : ligne boss-gardiens → 🟧 « Lot 1/3 fait » + découpage.
 7. [x] cache-bump `monsters.js` + CACHE_VERSION.
 8. [x] check_cache_versions + pwa-smoke + smoke (bestiary/combat) + check_doc_modules.
-9. [ ] Commit → push → PR → CI verte → squash-merge.
+9. [x] Commit → push → PR → CI verte → squash-merge.
 
 ## Garde-fous
 
@@ -80,6 +80,6 @@ du héros l'**accueille** (pas de combat) ; les **3 autres** sont gardées.
 5. [x] cache-bump : dungeon-spawning v2, movement-floors v17, dungeon v18,
    save v40, loader v49, CACHE_VERSION v156.
 6. [x] Doc : 11 §11.9.2 (Lots 1-2) + roadmap Phase 3.
-7. [ ] Commit → push → PR → CI verte → squash-merge.
+7. [x] Commit → push → PR → CI verte → squash-merge.
 
 Reste : **Lot 3** (art PNG dédié + promo beat + Codex à la défaite).

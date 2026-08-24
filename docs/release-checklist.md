@@ -2,7 +2,7 @@
 
 > P10 du plan [`final-polish-2026-07.md`](../.claude/plans/final-polish-2026-07.md)
 > (§4.2). Consolide en UNE checklist les protocoles existants :
-> [`qa-parcours-complet.md`](../.claude/plans/qa-parcours-complet.md),
+> [`qa-parcours-complet.md`](../.claude/plans/_archive/qa-parcours-complet.md),
 > [`playtest-3-boucles.md`](./playtest-3-boucles.md),
 > [`perf-optimization.md`](../.claude/plans/perf-optimization.md) (§Checklist),
 > [`perf-lighthouse.md`](./perf-lighthouse.md).
@@ -31,7 +31,7 @@ Tout doit être vert sur la branche release :
 
 ## 1. Parcours complet — étages 1→10 + victoire (humain, ~2-3 h)
 
-Protocole : re-run de [`qa-parcours-complet.md`](../.claude/plans/qa-parcours-complet.md)
+Protocole : re-run de [`qa-parcours-complet.md`](../.claude/plans/_archive/qa-parcours-complet.md)
 sur la build candidate (la couverture automatisée existe — `scenarioFullJourneyDuo`
 et les scénarios morcelés — ce volet vérifie le **ressenti** réel).
 

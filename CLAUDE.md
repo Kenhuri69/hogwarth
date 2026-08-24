@@ -2204,7 +2204,7 @@ groupe dans une **Poche du Sceau** — un étage caché temporaire (écho figé 
 scellement des Fondateurs) d'où l'on ne ressort qu'en franchissant la « faille du
 Sceau » (`CELL.SEAL_RIFT = 19`) après avoir résolu l'épreuve. Tout le système vit
 dans `js/escape-pocket.js` (défensif, call-sites gardés). Plan complet :
-[`.claude/plans/escape-game-traps.md`](./.claude/plans/escape-game-traps.md).
+[`.claude/plans/escape-game-traps.md`](./.claude/plans/_archive/escape-game-traps.md).
 
 ### Cycle de vie (Lot 1)
 - **Entrée** : `maybeTriggerEscapePocket()` (hook dans `_triggerDungeonTrap`,

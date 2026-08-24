@@ -1,8 +1,8 @@
 # Plan — P3.2 : génération de `audio/ending_break.ogg`
 
 > Débloque l'unique gap musical du backlog RC
-> ([`rc-polish-remaining.md`](./_archive/rc-polish-remaining.md) §P3.2). La spec figée
-> [`docs/audio-ending-break-spec.md`](../../docs/audio-ending-break-spec.md)
+> ([`rc-polish-remaining.md`](./rc-polish-remaining.md) §P3.2). La spec figée
+> [`docs/audio-ending-break-spec.md`](../../../docs/audio-ending-break-spec.md)
 > supposait l'environnement incapable d'encoder de l'OGG. **Réévalué le
 > 2026-06-21** : `pip install soundfile` fournit libsndfile 1.2.2 avec support
 > **OGG/Vorbis** → la cible est désormais productible *in situ* par synthèse

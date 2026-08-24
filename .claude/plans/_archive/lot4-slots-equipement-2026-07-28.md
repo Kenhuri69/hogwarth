@@ -1,7 +1,7 @@
 # Lot 4 — E4 : répartition des slots d'équipement (armes & armures)
 
 **Branche :** `claude/premier-plan-finaliser-ocbn0z`
-**Statut :** 🟦 livré — PR #743 (draft), en attente de CI
+**Statut :** ✅ clos — PR #743 mergée (CI verte) ; archivé le 2026-08-24.
 **Source :** `revue-sources-contenu-2026-07-28.md` §3.5 (axe **E4**, rang 9 de la
 priorisation §5). Suite des lots 1 (A2·C3·C4), 2 (A1·P1 partiel) et 3 (E1).
 **Arbitrage utilisateur (2026-07-28) :** E4 retenu comme lot 4.
