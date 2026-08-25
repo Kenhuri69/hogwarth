@@ -2,7 +2,7 @@
 
 **Branche :** `claude/premier-plan-finaliser-ocbn0z` (repartie de `master` après
 le merge de la PR #745)
-**Statut :** 🟩 en cours
+**Statut :** ✅ clos — livré & mergé (PR #746, 2026-07-29) ; archivé le 2026-08-24.
 **Source :** `revue-sources-contenu-2026-07-28.md` §1 C5 et §2 A6 (rang 12,
 dernier de la priorisation). Lot 7 après les lots 1 à 6.
 
@@ -86,7 +86,7 @@ en place (`.gitignore` couvre `tools/_smoke/`, `tools/_shot_*.js`).
    suppression**.
 6. [x] Doc : revue §1 C5 traité / §2 A6 requalifié.
 7. [x] Cache-bump (3 CSS servis) + `check_cache_versions.js`.
-8. [ ] Commit → push → PR draft (nouvelle PR : #745 mergée, §6).
+8. [x] Commit → push → PR draft (nouvelle PR : #745 mergée, §6).
 
 ## 4. Garde-fous
 

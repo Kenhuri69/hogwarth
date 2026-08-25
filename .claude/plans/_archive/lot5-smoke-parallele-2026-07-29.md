@@ -2,7 +2,7 @@
 
 **Branche :** `claude/premier-plan-finaliser-ocbn0z` (repartie de `master` après
 le merge de la PR #743 — le lot 4 est livré)
-**Statut :** 🟦 livré — PR #744 (draft)
+**Statut :** ✅ clos — PR #744 mergée ; archivé le 2026-08-24.
 **Source :** `revue-sources-contenu-2026-07-28.md` §4 P2 (rang 10). Lot 5 après
 les lots 1 (A2·C3·C4), 2 (A1·P1), 3 (E1) et 4 (E4).
 

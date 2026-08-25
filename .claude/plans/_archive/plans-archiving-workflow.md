@@ -1,7 +1,7 @@
 # Plan — Rangement & archivage des plans terminés
 
 **Branche :** `claude/plans-archiving-workflow-vxproq`
-**Statut :** 🟩 en cours
+**Statut :** ✅ clos — convention appliquée et rangement effectué ; archivé le 2026-08-24.
 **Périmètre validé (utilisateur, 2026-06-12) :** **rangement seul** — archiver les
 plans livrés & mergés (déplacement vers `.claude/plans/_archive/`), mettre à jour
 les statuts stale, laisser actifs les vrais backlogs/roadmaps en cours. **Aucune
@@ -53,7 +53,7 @@ scripted-floor-beats (#427) · session-launch-prompts
 5. [x] Réparer les liens markdown cassés par le déplacement (purs docs, sans coût cache) :
        CLAUDE.md ×1, docs/histoire ×4, SKILL.md ×1, reliquats-backlog ×4. → liens valides.
 6. [x] Non-régression doc : `node tests/units.js` → ✅ 442 assertions.
-7. [ ] Commit + push branche désignée. → vérif : §6 état branche.
+7. [x] Commit + push branche désignée. → vérif : §6 état branche.
 
 ### Références NON modifiées (choix assumé)
 ~21 commentaires `// Cf. .claude/plans/<plan>.md` dans `js/` pointent encore vers

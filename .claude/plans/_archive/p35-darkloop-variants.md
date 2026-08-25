@@ -1,7 +1,7 @@
 # Plan — P3.5 (amorce sûre) : enrichir les variantes de beat `darkLoop`
 
-> Suite de [`rc-polish-remaining.md`](./_archive/rc-polish-remaining.md) §P3.5 et du
-> protocole [`docs/playtest-3-boucles.md`](../../docs/playtest-3-boucles.md).
+> Suite de [`rc-polish-remaining.md`](./rc-polish-remaining.md) §P3.5 et du
+> protocole [`docs/playtest-3-boucles.md`](../../../docs/playtest-3-boucles.md).
 > Le playtest humain reste à mener, mais son §5 nomme **le levier le moins
 > risqué et préféré** : *« enrichir les variantes (plus de répliques par beat,
 > tirage anti-répétition déjà en place) plutôt que changer la fréquence »*.

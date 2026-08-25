@@ -57,9 +57,9 @@
    simulation in-game** (💡, opt-in debug), boucle itérative
    Simulation→Playtest→Ajustement, priorisation, playtest communautaire.
 5. [x] Bandeau de statut du chapitre inchangé (reste 🟩/à valider).
-6. [ ] Pas de smoke test requis (markdown pur, aucun JS/CSS servi → pas de
+6. [x] Pas de smoke test requis (markdown pur, aucun JS/CSS servi → pas de
    cache-bump §8). Le mentionner au commit.
-7. [ ] Commit + push sur `claude/hogwarth-ch13-balance-ha452g` (vérifier état PR avant push).
+7. [x] Commit + push sur `claude/hogwarth-ch13-balance-ha452g` (vérifier état PR avant push).
 
 ## Écarts constatés
 - §13.5 réécrit en 6 simulations (au lieu de 4) ; les anciens scénarios « cas

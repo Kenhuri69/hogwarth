@@ -27,8 +27,8 @@ acter #1 (les 5 axes adoptés).
 4. [x] smoke : `scenarioEndingAssets` (solo Harry/Gryff) assert beat rendu + pas de wink.
 5. [x] docs : §14.2.2(b) 💡→✅, note barks corrigée, table maîtresse alignée,
    intro statut, Points à trancher #1 (tranché).
-6. [ ] Cache-bump (endgame.js, css/style.css) + CACHE_VERSION.
-7. [ ] Commit + push + PR + merge.
+6. [x] Cache-bump (endgame.js, css/style.css) + CACHE_VERSION.
+7. [x] Commit + push + PR + merge.
 
 ## Suivi / écarts
 - Choix d'implémenter (b) dans `_victorySpeechVariants` (centralisé, pur, testable)

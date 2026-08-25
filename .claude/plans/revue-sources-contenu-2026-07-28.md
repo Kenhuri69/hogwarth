@@ -390,7 +390,7 @@ les trois verbes proposés ici, **`deliver` existait déjà** (`questsTurnedIn` 
 manque était du contenu, pas du moteur — l'« ajouter » aurait dupliqué une
 mécanique en place.
 
-**Livré** (cf. [`lot3-verbes-de-quete-2026-07-28.md`](./lot3-verbes-de-quete-2026-07-28.md)) :
+**Livré** (cf. [`lot3-verbes-de-quete-2026-07-28.md`](./_archive/lot3-verbes-de-quete-2026-07-28.md)) :
 les deux verbes réellement absents — `discover` (atteindre un type de lieu) et
 `talk` (consulter des PNJ nommés) — plus 7 quêtes, dont 3 livraisons inter-PNJ
 qui portent l'usage de cette mécanique de 1 à 4.

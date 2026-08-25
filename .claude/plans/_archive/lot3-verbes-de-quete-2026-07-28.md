@@ -1,7 +1,7 @@
 # Lot 3 — Diversifier les verbes de quête (E1)
 
 > **Plan vivant** (guidelines §5). Rang 6 du §5 de
-> [`revue-sources-contenu-2026-07-28.md`](./revue-sources-contenu-2026-07-28.md) —
+> [`revue-sources-contenu-2026-07-28.md`](../revue-sources-contenu-2026-07-28.md) —
 > le premier axe à **réel impact joueur** après les lots 1 et 2 (outillage).
 >
 > **Statut** : 🏁 livré (2026-07-28).

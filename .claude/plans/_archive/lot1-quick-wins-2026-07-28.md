@@ -1,7 +1,7 @@
 # Lot 1 — Quick wins de la revue du 2026-07-28
 
 > **Plan vivant** (guidelines §5). Exécute le premier lot priorisé au §5 de
-> [`revue-sources-contenu-2026-07-28.md`](./revue-sources-contenu-2026-07-28.md).
+> [`revue-sources-contenu-2026-07-28.md`](../revue-sources-contenu-2026-07-28.md).
 > Périmètre demandé : **C1 · C3 · A2 · C4** — **livré : A2 · C3 · C4**, C1
 > ayant été annulé en cours d'exécution (constat erroné, voir ci-dessous).
 >

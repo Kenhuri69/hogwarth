@@ -18,7 +18,7 @@ afin que l'image + le titre tiennent dans le viewport desktop.
 2. [x] Screenshot headless desktop (1440×900) → image 384×576 centrée, plus de chevauchement titre/image
 3. [x] Bump cache PWA (v61→v62, CACHE_VERSION v249→v250) → `check_cache_versions.js` OK
 4. [x] Tests → `pwa-smoke.js` OK + smoke hub/start OK (changement CSS-only, pas de logique)
-5. [ ] Commit + push branche
+5. [x] Commit + push branche
 
 ## Note (hors scope)
 Chevauchement **préexistant** en bas de l'écran titre : le texte d'aide

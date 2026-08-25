@@ -35,6 +35,6 @@ couverture.
    Cycle (3 jalons → choix → cinématique → `cycleBroken` + Codex) → persistance
    save/load (cycleBroken + partySize duo). Vert (`node tests/smoke.js FullJourneyDuo`).
 2. [x] Aucune assertion de compte figée (le « 227 » est `scenarios.length` dynamique).
-3. [ ] Doc : matrice de couverture + ligne roadmap item 4 close (2026-06-19).
-4. [ ] Garde-fous : full smoke + units + pwa-smoke + check_doc_modules verts.
+3. [x] Doc : matrice de couverture + ligne roadmap item 4 close (2026-06-19).
+4. [x] Garde-fous : full smoke + units + pwa-smoke + check_doc_modules verts.
    tests/ uniquement → **pas de cache-bump** (§8 non applicable).
