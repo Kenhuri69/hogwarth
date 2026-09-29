@@ -1581,6 +1581,39 @@ async function scenarioHeadOfHouseVoice() {
   assert(t6.keyMismatch.length === 0,
     `_voiceKeyForPage idle décalé : ${t6.keyMismatch.join(', ')}`);
 
+  // T7 : greeting de Rogue selon la Maison (revue 2026-09, Lot 0.6) — le
+  // défaut (voixé) ne dit « de ma maison » qu'en Serpentard ; ailleurs la
+  // 1re page est réécrite ET muette, la 2e (identique) garde sa voix.
+  const t7 = await page.evaluate(() => {
+    const saved = chosenHouse;
+    const out = {};
+    for (const h of ['Serpentard', 'Gryffondor', 'Serdaigle', 'Poufsouffle']) {
+      chosenHouse = h;
+      seenNpcs.delete('rogue');
+      const npc = getNpcById('rogue');
+      const src = _resolveDialogSource(npc, getNpcQuestState(npc));
+      out[h] = {
+        source: src.source,
+        page0: [].concat(src.raw)[0],
+        key0: _voiceKeyForPage('rogue', 'none', null, 0, 'greeting'),
+        key1: _voiceKeyForPage('rogue', 'none', null, 1, 'greeting'),
+      };
+    }
+    chosenHouse = saved;
+    return out;
+  });
+  console.log('  T7 greeting Rogue par Maison:', JSON.stringify(t7));
+  assert(t7.Serpentard.source === 'greeting' && /de ma maison/.test(t7.Serpentard.page0),
+    'Serpentard : greeting par défaut attendu');
+  assert(t7.Serpentard.key0 === 'rogue_greeting_1' && t7.Serpentard.key1 === 'rogue_greeting_2',
+    'Serpentard : voix de greeting conservée');
+  for (const h of ['Gryffondor', 'Serdaigle', 'Poufsouffle']) {
+    assert(!/de ma maison/.test(t7[h].page0), `${h} : Rogue ne doit pas dire « de ma maison »`);
+    assert(t7[h].page0.includes(h), `${h} : la 1re page doit nommer la Maison`);
+    assert(t7[h].key0 === null, `${h} : page réécrite → voix muette (got ${t7[h].key0})`);
+    assert(t7[h].key1 === 'rogue_greeting_2', `${h} : page identique → voix conservée`);
+  }
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS pendant voix Chefs de Maison`);

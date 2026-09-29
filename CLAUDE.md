@@ -787,8 +787,11 @@ Hermione : sorts de soin/support + forte magie — commence avec : Episkey, Prot
 
 ### Ajouter un nouveau personnage jouable
 
-Pour ajouter un héros sélectionnable (modèle des 6 entrées actuelles :
-Harry, Hermione, Céleste, Iris, Maxence, Anastasia) :
+Pour ajouter un héros sélectionnable (modèle des 16 entrées actuelles,
+réparties en 3 groupes à l'écran de sélection : Héros du Film — Harry,
+Hermione, Drago, Cho, Cedric ; Cercle des Astres — Céleste, Iris, Maxence,
+Anastasia, Louis, Jeanne, Margaux ; Garde de l'Aube — Agathe, Olivier de
+Clairval, Nathalie, Olivier de Châtillon) :
 
 > ⚠️ **DEUX images distinctes, deux sources différentes** (ne pas confondre —
 > un cadrage VISAGE ≠ un cadrage PLEIN CORPS) : le **portrait-médaillon**
@@ -846,8 +849,10 @@ Harry, Hermione, Céleste, Iris, Maxence, Anastasia) :
    (hp/sp/str/int/agi/end/lck/mag/atk/def), `wand`, `armor`, `acc`,
    `spells:[…]`, `tagline`. `_hydrateCharacter()` lit ces champs.
 3. **Carte de sélection** — ajouter un `<button class="hero-card"
-   data-key="<key>" onclick="toggleHero('<key>')">…</button>` dans
-   `#hero-grid` de `index.html`, en numérotant `hero-badge` à la suite.
+   data-key="<key>" onclick="toggleHero('<key>')">…</button>` dans la
+   `.hero-grid` du groupe adéquat (`.hero-section[data-group="film|astres|aube"]`)
+   de `index.html`, en numérotant `hero-badge` à la suite, et mettre à jour le
+   compteur du sous-titre de la tuile de groupe (`.psel-tile-note`).
 4. **Barks (optionnel mais recommandé)** — donner une voix au héros :
    ajouter une entrée `HERO_BARKS[<key>]` dans `js/hero-barks.js`
    (4-6 événements : `bossAppear`/`crit`/`allyDown`/`levelUp` + éventuels

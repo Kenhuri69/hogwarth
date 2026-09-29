@@ -753,7 +753,11 @@ NPCS.push(
       { id: "orbe_runique_premium_gryff"       },
       { id: "masque_rituel_premium_slyth"      },
       { id: "baton_ancestral_premium_serd"     },
-      { id: "talisman_fondateurs_premium_pouf" }
+      { id: "talisman_fondateurs_premium_pouf" },
+      // Sinks endgame prévus par l'audit économie (§5.6) mais vendus nulle
+      // part jusqu'ici (revue 2026-09, Lot 0.1).
+      { id: "grimoire_interdit"  },
+      { id: "reliquaire_lunaire" }
     ],
     buyback: { default: 0.30 },
     dialogues: {

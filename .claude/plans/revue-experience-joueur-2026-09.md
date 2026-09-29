@@ -1,9 +1,9 @@
 # Revue complète de l'expérience joueur & plan d'approfondissement — 2026-09-29
 
 **Branche :** `ccr-4b80ea69-2nys9o`
-**Statut :** 📝 proposition — **aucun code de jeu touché**. En attente
-d'arbitrage utilisateur sur les lots à ouvrir (chaque lot retenu → plan dédié
-avant code, puis `commit-guard`).
+**Statut :** 📝 proposition — Lot 0 lancé (voir « Arbitrages reçus ») ;
+autres lots en attente (chaque lot retenu → plan dédié avant code, puis
+`commit-guard`).
 **Demande (utilisateur) :** « Lance une revue complète du jeu et propose un plan
 d'amélioration, d'enrichissement et d'approfondissement de l'expérience du
 joueur. Propose tout axe donnant de la profondeur ou des axes d'histoire
@@ -357,8 +357,25 @@ pour le moins de code. Le lot C ouvre la porte à tous les dilemmes.
   de paire) doivent-ils être doublés (samples OGG), ou rester écrits, avec la
   synthèse vocale en repli ?
 
+## Arbitrages reçus (2026-09-29)
+
+- **Q1** — « Go correction » : **Lot 0 lancé** →
+  [`lot0-corrections-revue-2026-09.md`](./lot0-corrections-revue-2026-09.md).
+- **Q2** — Murmures de Voldemort : ✅ **acceptés** (« pourquoi pas avoir des
+  répliques ») — à intégrer au Lot B (axe 3b).
+- **Q3** — Factions laissées à mon choix : **deux factions conservées**
+  telles qu'en jeu (Cercle des Astres ×7, Garde de l'Aube ×4) ; la bible
+  s'aligne (Lot 0.3). H6 porte donc sur la **Garde de l'Aube (4 héros)** ;
+  un arc symétrique du Cercle des Astres pourra s'appuyer sur H2 (Prophétie :
+  « ceux qui ont lu les signes »).
+- **Q4** — ✅ **arbre « Éveil du Sorcier »** retenu (Lot 4 de
+  `revue-design-progression-2026-07.md`) → les traits légers de l'axe 7 sont
+  **abandonnés**.
+- **Q5, Q6** — sans réponse à ce stade.
+
 ## Journal
 
 - **2026-09-29** — Revue créée à partir de 3 audits parallèles (plans
   existants, bible comparée au code, audit quantitatif). Constats 0.1 et 0.2
   re-vérifiés à la main. Aucun code touché. En attente d'arbitrage (Q1 à Q6).
+- **2026-09-29** — Arbitrages Q1-Q4 reçus ; Lot 0 implémenté (plan dédié).

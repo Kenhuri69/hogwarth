@@ -2,9 +2,9 @@
 
 **Statut :** 🟩 proposition de référence — à valider / amender
 
-> 📊 **Statut réel (code)** : ✅ **16 héros jouables** (5 canon + 11 Garde de
-> l'Aube) + beats `descentStake` (couverture : les 6 héros historiques —
-> ⚠️ les 10 plus récents n'ont pas encore leur beat, cf. §5.4.2) —
+> 📊 **Statut réel (code)** : ✅ **16 héros jouables** (5 canon + 11 originaux :
+> 7 du Cercle des Astres + 4 de la Garde de l'Aube) + beats `descentStake`
+> (couverture : les 16 héros, cf. §5.4.2) —
 > modules : `js/data-characters.js` (`CHARACTERS`), `js/main.js`
 > (`_hydrateCharacter`), `js/hero-barks.js`.
 > Cf. [index doc ↔ module](../README.md#index-doc--module--statut-réel).
@@ -236,18 +236,28 @@
 
 ---
 
-## 5.2 Héros originaux — la **Garde de l'Aube**
+## 5.2 Héros originaux — le **Cercle des Astres** & la **Garde de l'Aube**
 
-> 💡 **Cadre commun proposé** : les 8 héros originaux forment la **Garde de
-> l'Aube**, une promo discrète d'élèves que le portrait de Dumbledore a
-> pressentis pour la descente — pas une élite décrétée, mais des volontaires
-> que le château a « choisis » en se réveillant. Ils ne se connaissent pas tous,
-> mais partagent un même serment muet : *remonter la lumière depuis le fond*.
-> Ce liant donne aux originaux une raison d'exister ensemble sans contredire le
-> canon (voir la faction « Garde de l'Aube » en [06 §6.3](06-pnj-et-factions.md)).
+> ✅ **Cadre commun (tranché 2026-09-29, revue Lot 0.3)** : les **11 héros
+> originaux** sont des élèves que le portrait de Dumbledore a pressentis pour la
+> descente — pas une élite décrétée, mais des volontaires que le château a
+> « choisis » en se réveillant. Ils se répartissent en **deux cercles**, **nommés
+> à l'écran** (écran de sélection, blasons `crest_astres` / `crest_aube`) :
 >
-> ❓ À arbitrer : la Garde de l'Aube est-elle **nommée à l'écran** (intro, dialogues
-> de PNJ) ou reste-t-elle un **liant de coulisse** pour la cohérence de la spec ?
+> - **Le Cercle des Astres** (7) — Céleste, Iris, Maxence, Anastasia, Louis,
+>   Jeanne, Margaux. Ceux qui ont **lu les signes** de la fêlure avant qu'elle
+>   s'ouvre : astres, lune, couleurs qui pâlissent, sang qui s'agite, feu qui
+>   tremble. Le Cercle *sait* avant les autres ; son risque est de croire
+>   que savoir suffit.
+> - **La Garde de l'Aube** (4) — Agathe, Olivier de Clairval, Nathalie,
+>   Olivier de Châtillon. Ceux qui **tenaient les couloirs** quand les escaliers
+>   ont basculé : protéger, abriter, faire pousser, frapper juste. Leur serment
+>   muet : *remonter la lumière depuis le fond*.
+>
+> Les deux cercles ne se connaissent pas tous et n'ont ni hiérarchie ni QG ;
+> ils répondent au même appel. Ce liant donne aux originaux une raison
+> d'exister ensemble sans contredire le canon (voir les factions en
+> [06 §6.4](06-pnj-et-factions.md)).
 
 ### Céleste Luneclair
 
@@ -382,12 +392,12 @@
 ### Jeanne d'Argenciel
 
 - **Maison / rôle :** Gryffondor / Charmeuse de Sortilèges.
-- **Année scolaire 💡 :** 3ᵉ année (la plus jeune de la Garde de l'Aube).
+- **Année scolaire 💡 :** 3ᵉ année (la cadette du Cercle des Astres, après Margaux).
 - **Apparence 💡 :** petite taille, yeux écarquillés de curiosité, un **Grimoire de
   Sortilèges** trop grand pour elle serré contre la poitrine ; robe de Gryffondor,
   **Baguette d'Étoile**.
 - **Personnalité (3 traits) 💡 :** espiègle, curieuse, courageuse sans le savoir.
-- **Motivation 💡 :** la plus jeune de la Garde de l'Aube ; elle descend par
+- **Motivation 💡 :** l'une des benjamines du Cercle des Astres ; elle descend par
   curiosité émerveillée autant que par bravoure — le château est un grand secret
   qu'elle veut percer.
 - **Voix 💡 :** vive, enthousiaste, ses incantations « chantent comme des étoiles ».
@@ -607,7 +617,7 @@ Intro Dumbledore (Clé de Voûte)  →  Choix de Maison (chosenHouse)
 > 💡 **Recommandation de portée** : un **jeu de barks léger et optionnel** (quelques
 > lignes par héros, déclenchées sur événements **rares** : apparition de boss, crit
 > décisif, KO d'un allié, level-up, palier de Maison). Suffit à incarner les voix
-> de [§5.1](#51-figures-canon)/[§5.2](#52-héros-originaux--la-garde-de-laube) sans
+> de [§5.1](#51-figures-canon)/[§5.2](#52-héros-originaux--le-cercle-des-astres--la-garde-de-laube) sans
 > alourdir le combat ni multiplier les samples audio. À brancher sur la couche voix
 > existante (`speakSpell`, samples OGG) **si** on veut la version parlée.
 
@@ -635,10 +645,10 @@ Intro Dumbledore (Clé de Voûte)  →  Choix de Maison (chosenHouse)
   chacun des **6 héros historiques** (Harry, Hermione, Céleste, Iris, Maxence,
   Anastasia) porte sa raison *personnelle* de descendre (`descentStake`, jouée
   par le 1ᵉʳ membre vivant du groupe ; `movement-floors.js`).
-  ⚠️ **Lacune de couverture** : les **10 héros plus récents** (Drago, Cho,
+  ✅ **Couverture complète** : les **10 héros plus récents** (Drago, Cho,
   Cedric, Louis, Jeanne, Margaux, Agathe, Olivier de Clairval, Nathalie,
-  Châtillon) n'ont **pas** d'entrée `descentStake` — silencieux à ce beat
-  (défensif, pas de bug). À combler lors d'un lot de contenu barks.
+  Châtillon) ont reçu leur `descentStake` (`quick-wins-2026-07`) — les 16
+  héros sont couverts.
   - *Harry* : « Encore lui, encore en bas. Personne d'autre ne devrait avoir à
     descendre ici — alors ce sera moi. Comme toujours. »
   - *Hermione* : « On me dit « une terreur ». Moi, je vois un problème. Et un
@@ -724,7 +734,7 @@ Un candidat n'est validé que s'il coche **tout** :
 2. ✅ **Pas de Mary Sue** : forces **et** faiblesses explicites ; une fêlure réelle
    (deuil, soif, orgueil, naïveté…). Un héros sans faiblesse est refusé.
 3. ✅ **Cohérence canon** : un personnage canon HP garde sa caractérisation ; un
-   original s'inscrit dans la **Garde de l'Aube** ([§5.2](#52-héros-originaux--la-garde-de-laube))
+   original s'inscrit dans le **Cercle des Astres** ou la **Garde de l'Aube** ([§5.2](#52-héros-originaux--le-cercle-des-astres--la-garde-de-laube))
    et ne marche pas sur les plates-bandes d'un héros existant.
 4. ✅ **Rejouabilité** : le héros doit **donner envie d'un run dédié** (une voix, un
    build, une interaction Signature propre) — c'est le critère de valeur ajoutée.
@@ -777,10 +787,12 @@ Un candidat n'est validé que s'il coche **tout** :
 
 ## Récapitulatif express (pour briefer Gemini)
 > 16 héros jouables (solo ou duo, défaut Harry + Hermione) : **5 figures canon**
-> (Harry, Hermione, Drago, Cho, Cedric) ancrent le familier ; **11 originaux**
-> forment la **Garde de l'Aube** (Céleste, Iris, Maxence, Anastasia, Louis,
-> Jeanne, Agathe, Olivier, Nathalie, Olivier de Châtillon, Margaux), volontaires pressentis par le portrait de Dumbledore
-> pour « remonter la lumière depuis le fond ». Chaque héros porte un trait dominant
+> (Harry, Hermione, Drago, Cho, Cedric) ancrent le familier ; **11 originaux**,
+> volontaires pressentis par le portrait de Dumbledore, forment deux cercles : le
+> **Cercle des Astres** (Céleste, Iris, Maxence, Anastasia, Louis, Jeanne,
+> Margaux — ceux qui ont lu les signes) et la **Garde de l'Aube** (Agathe,
+> Olivier de Clairval, Nathalie, Olivier de Châtillon — ceux qui tenaient les
+> couloirs), unis pour « remonter la lumière depuis le fond ». Chaque héros porte un trait dominant
 > qui sert un thème de la trame (peur/sceau, choix/don, mythe/revers), une **apparence**,
 > des **forces/faiblesses** lisibles dans ses stats, un **rôle de combat** et une
 > **interaction Signature** propres. **Taglines, stats et sorts de départ = ✅** ;

@@ -852,6 +852,29 @@ NPCS.push(
     // Rogue garde le set, le don et la remise cérémonielle de la relique.
     questsGiven:    ["quest_set_slyth", "quest_don_slyth"],
     questsTurnedIn: ["quest_set_slyth", "quest_don_slyth"],
+    // Le greeting par défaut (voixé) suppose un Serpentard : les trois autres
+    // Maisons ont leur 1re page propre (texte seul — _voiceKeyForPage coupe
+    // l'OGG d'une page dont le texte diffère du défaut). Revue 2026-09, Lot 0.6.
+    dialoguesByHouse: {
+      Gryffondor: {
+        greeting: [
+          "Un Gryffondor. Évidemment. Il fallait bien que quelqu'un confonde le courage et l'imprudence jusqu'ici.",
+          "L'ambition n'est rien sans la maîtrise. Voyons si vous méritez ce qui vous attend."
+        ]
+      },
+      Serdaigle: {
+        greeting: [
+          "Un Serdaigle. Vous avez sans doute lu tout ce qu'on a écrit sur ces cachots. Les livres, eux, n'y sont jamais descendus.",
+          "L'ambition n'est rien sans la maîtrise. Voyons si vous méritez ce qui vous attend."
+        ]
+      },
+      Poufsouffle: {
+        greeting: [
+          "Un Poufsouffle, si bas... La loyauté ne vous protégera pas d'un Basilic. Elle vous empêchera peut-être de fuir. C'est déjà quelque chose.",
+          "L'ambition n'est rien sans la maîtrise. Voyons si vous méritez ce qui vous attend."
+        ]
+      }
+    },
     dialogues: {
       greeting: [
         "Tiens, tiens... un élève de ma maison qui ose s'aventurer ici.",

@@ -3,11 +3,24 @@
 // (extrait de data.js — Lot A P3.3, pur couper-coller)
 // ============================================================
 
+// Nom de lieu par étage (index = étage − 1 ; le dernier vaut pour 21+).
+// Source : fiches d'étage de docs/histoire/10-lieux-et-geographie.md §10.2,
+// cohérentes avec les tranches de floor-themes.js. L'ancienne liste de lieux
+// canon ne suivait pas les tranches (« Chambre des Secrets » sur toute la
+// Boucle, « Tour de Gryffondor » en pleins Cachots) — revue 2026-09, Lot 0.2.
 const LOCATIONS = [
-  "Les Couloirs de Poudlard", "Le Cachot de Potions", "La Grande Salle",
-  "La Bibliothèque Interdite", "La Tour de Gryffondor", "Le Donjon de Serpentard",
-  "Les Toilettes Hantées", "La Forêt Interdite", "La Salle sur Demande",
-  "Les Égouts de Poudlard", "La Chambre des Secrets"
+  // Zone A — Couloirs de Poudlard
+  "Le Seuil familier", "La Première Source", "Le Dernier Couloir chaud",
+  // Zone B — Cachots de Poudlard
+  "Sous le niveau habité", "Le Ventre de pierre", "Le Seuil de l'abîme",
+  // Zone C — Profondeurs Oubliées
+  "La Roche-mère", "Le Seuil du Veilleur", "Le Nid et la Toile", "La Source",
+  "Le Premier Palier de la Boucle", "La Roche qui se souvient",
+  "Le Dernier Palier du château",
+  // Zone D — Ruines Anciennes
+  "Le Seuil mégalithique", "Le Seuil mégalithique", "Le Seuil mégalithique",
+  "Le Cœur runique", "Le Cœur runique", "Le Cœur runique", "Le Cœur runique",
+  "L'Avant-Monde"
 ];
 
 const NARRATIVES = {

@@ -186,7 +186,7 @@ La ligne de force narrative : *la surface recule, les profondeurs montent*.
   │  Les 4 Maisons (chefs)    │   miroir     │  Forces de la Corruption    │
   │  Les Professeurs          │◄────────────►│   ├─ Mangemorts (fidèles)   │
   │  L'Ordre du Phénix         │   le mal      │   ├─ Sans-repos (morts-viv.) │
-  │  La Garde de l'Aube (héros)│   scellé est  │   └─ Familier corrompu       │
+  │  Astres & Aube (héros)    │   scellé est  │   └─ Familier corrompu       │
   │  Les Esprits des Fondateurs│   une PART    │  Voldemort (pointe émergée) │
   └──────────────────────────┘   de nous     └────────────────────────────┘
             ▲                                              ▲
@@ -213,15 +213,20 @@ La ligne de force narrative : *la surface recule, les profondeurs montent*.
 
 ---
 
-## 6.4 Faction alliée — la **Garde de l'Aube**
+## 6.4 Factions alliées — le **Cercle des Astres** & la **Garde de l'Aube**
 
-> 💡 (proposition, sur base `data.js` + design)
+> ✅ (tranché 2026-09-29 — revue Lot 0.3 ; nommées à l'écran de sélection)
 
-La **Garde de l'Aube** regroupe les **héros jouables originaux**
-([05 §5.2](05-personnages-jouables.md)) : des volontaires que le portrait de
-Dumbledore a pressentis pour la descente. Elle n'a ni hiérarchie ni QG — c'est
-une **fraternité de circonstance** unie par un serment muet : *remonter la lumière
-depuis le fond*.
+Les **héros jouables originaux** ([05 §5.2](05-personnages-jouables.md)) sont des
+volontaires que le portrait de Dumbledore a pressentis pour la descente. Ils
+forment **deux cercles**, sans hiérarchie ni QG — des **fraternités de
+circonstance** :
+
+- **Le Cercle des Astres** (Céleste, Iris, Maxence, Anastasia, Louis, Jeanne,
+  Margaux) : ceux qui ont **lu les signes** de la fêlure avant qu'elle s'ouvre.
+- **La Garde de l'Aube** (Agathe, Olivier de Clairval, Nathalie, Olivier de
+  Châtillon) : ceux qui **tenaient les couloirs** quand les escaliers ont
+  basculé ; serment muet : *remonter la lumière depuis le fond*.
 
 - **Alliés naturels :** les professeurs (chefs de Maison, Lupin, Hagrid, Slughorn),
   l'Ordre du Phénix (Kingsley, Bill, Sirius), Fumseck.
@@ -466,7 +471,8 @@ Forge & Bibliothèque.
 - **Hooks / quêtes :** *L'Étendard de Godric* ([08 §8.5](08-quetes-et-sous-intrigues.md)),
   flag `gryffSignatureDone` → neutralise la phase terreur de Voldemort. Révélation
   lore : frère d'armes d'un Fondateur.
-- **❓ Statut dev :** **non encore implémenté** comme PNJ. Aucun allié ne combat
+- **✅ Statut dev :** implémenté — PNJ `chevalier_godric` (`js/npcs-a.js`), réservé à
+  Gryffondor ; flag `gryffSignatureDone` (`js/state.js`). Aucun allié ne combat
   ([03 §3.5](03-trame-principale.md)) → reste **donneur/mémoire**.
 
 ### 6.8.6 L'**Écho de Salazar** — *le Fondateur-miroir* 🟢 original (🐍)
@@ -486,8 +492,9 @@ Forge & Bibliothèque.
   boss. Voir [08 §8.8.2](08-quetes-et-sous-intrigues.md).
 - **Variantes Maison/héros :** **`chosenHouse = Serpentard`** ; un Maxence
   (Mage de Sang) dans le duo résonne fort avec la tentation.
-- **❓ Statut dev :** **non implémenté** ; raccourcis = transitions alternatives à
-  concevoir (movement/dungeon) ; `slythPactChoice` = flag sérialisé neuf.
+- **✅ Statut dev :** implémenté — PNJ `echo_salazar` (`js/npcs-a.js`), réservé à
+  Serpentard ; choix `slythPactChoice` sérialisé (`js/state.js`). 💡 Reste non
+  livré : les **raccourcis** (transitions alternatives, movement/dungeon).
 
 ### 6.8.7 Filius Flitwick & les **stèles de Rowena** — *le savoir comme legs* 🔴/🟢 (🦅)
 
@@ -849,7 +856,7 @@ Avant d'ajouter un PNJ, vérifier les **5 critères de cohérence** :
 |---------|------------------|-------------------|---------------------|------------|
 | Les 4 Maisons | chefs (McGonagall/Rogue/Flitwick/Chourave) | 4 façons de vivre la descente | les quatre voix | la Corruption |
 | Professeurs / Ordre | Lupin, Hagrid, Kingsley, Bill, Sirius, Fumseck | mentors → sentinelles | (relais) | la Corruption |
-| Garde de l'Aube | héros originaux ([05]) | fraternité de circonstance | (porteurs) | la Corruption |
+| Cercle des Astres & Garde de l'Aube | héros originaux ([05]) | fraternités de circonstance | (porteurs) | la Corruption |
 | Esprits des Fondateurs | stèle, écho de Salazar, Codex, portrait | la mémoire qui remonte | **les quatre** | l'oubli, le déni |
 | Forces de la Corruption | Mangemorts (F4), sans-repos (F3/F5), créatures (F1) | vecteurs du mal scellé | — | la lumière |
 | Voldemort | `voldemort_affaibli/_revenu` | pointe émergée | — | le héros |
@@ -880,8 +887,8 @@ Avant d'ajouter un PNJ, vérifier les **5 critères de cohérence** :
 > **Clé de Voûte des Quatre** fêlée en cours ; la corruption scellée est **double**
 > (pré-Poudlard **+** Voldemort, pointe émergée). **PNJ** structurés en **surface**
 > (école, 1-6), **profondeurs** (Ordre isolé, 7-10) et **Boucle** (recyclés +
-> Gardien). **Cinq factions** : 4 Maisons, Professeurs/Ordre, **Garde de l'Aube**
-> (héros originaux), **Esprits des Fondateurs** (stèle/écho/Codex/portrait), et les
+> Gardien). **Cinq factions** : 4 Maisons, Professeurs/Ordre, **Cercle des Astres
+> & Garde de l'Aube** (héros originaux), **Esprits des Fondateurs** (stèle/écho/Codex/portrait), et les
 > **Forces de la Corruption** (Mangemorts F4 → sans-repos F3/F5 → créatures F1 →
 > Voldemort). L'influence évolue en **chiasme** : l'école recule, la mémoire des
 > Fondateurs monte, convergence en Acte III. **PNJ des signatures** : Chevalier

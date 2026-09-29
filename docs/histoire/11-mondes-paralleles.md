@@ -504,7 +504,7 @@ La Maison **colore la Boucle entière** — c'est la récompense de l'identité 
 
 > 💡 (cosmétique, sur base ✅ du système de barks)
 
-Le **héros** (parmi les 13 jouables, [05](05-personnages-jouables.md)) colore la
+Le **héros** (parmi les 16 jouables, [05](05-personnages-jouables.md)) colore la
 Boucle par sa **voix** : le système `HERO_BARKS` (✅, cosmétique et défensif)
 porte déjà des variantes `houseTension[<Maison>]` et des beats scénarisés. En
 Boucle, un héros dont la **Maison canon diffère de `chosenHouse`** vit une

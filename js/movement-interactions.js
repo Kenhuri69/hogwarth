@@ -86,6 +86,10 @@ function openChest() {
     // livre_lux_aeterna : exclu du butin de coffre — exclusif à la quête
     // dumbledore_lumiere (cf. .claude/plans/dumbledore-lux-aeterna.md).
     if (i.id === 'livre_nox_vorax')       return currentFloor >= 9;
+    // Grimoires ténébreux « Rare » — butin de coffre seulement, calés sur
+    // livre_prince (Sectumsempra, ét. ≥ 6). Revue 2026-09, Lot 0.1.
+    if (i.id === 'livre_crucio')          return currentFloor >= 7;
+    if (i.id === 'livre_morsmordre')      return currentFloor >= 8;
     return false;
   });
 
