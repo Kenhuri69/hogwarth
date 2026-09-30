@@ -1131,3 +1131,68 @@ function maybeProphecyFragment(floor) {
   }
   return prophecyFragments;
 }
+
+// ============================================================
+// Lot E (revue 2026-09, arc H9) — Les Rêves du Dormeur
+// ------------------------------------------------------------
+// En Boucle, un repos réussi peut ouvrir un rêve partagé : le Dormeur des
+// Fondations ne parle pas, il rêve, et le groupe rêve avec lui. 10 rêves, joués
+// dans l'ordre, au plus un par étage. Aucun état neuf : sentinelles
+// `dream:<n>` et `dreamfloor:<étage>` dans seenScriptedBeat (déjà sérialisé).
+// Le dernier rêve change le texte du jalon IV de Briser le Cycle (break-cycle.js).
+// Codex `reves_dormeur` (condition `dream`).
+const DORMEUR_DREAMS = [
+  "Tu rêves d'un monde sans mots. Pas de noms, pas de runes : seulement de la chaleur, et un battement lent sous une roche qui n'est pas encore de la roche.",
+  "Tu rêves de quatre silhouettes penchées au-dessus de toi. Elles chantent sans savoir que tu les entends. Ce n'est pas une incantation : c'est une berceuse.",
+  "Tu rêves d'une école qui pousse sur ta poitrine comme une forêt sur une colline. Chaque tour est une racine. Chaque escalier, un pouls qui s'est un peu déplacé.",
+  "Tu rêves d'élèves qui courent au-dessus de toi, des milliers, génération après génération. Tu ne les distingues pas. Leur agitation te berce, comme la pluie berce un dormeur.",
+  "Tu rêves d'une voix froide qui descend vers toi en cherchant une serrure. Elle ne sait pas ce qu'elle ouvre. Elle croit être le fond. Elle n'est qu'un cadenas de plus.",
+  "Tu rêves que la clé se fend. Un filet d'air entre. Pour la première fois depuis mille ans, tu te retournes dans ton sommeil — et en haut, les escaliers basculent.",
+  "Tu rêves de toi-même, descendant. Tu es minuscule, une étincelle dans un couloir. Le rêve ne te craint pas et ne te veut aucun mal. Il te regarde avec curiosité, comme on regarde une luciole.",
+  "Tu rêves que tu dors aussi. Et dans ton sommeil, quelque chose rêve de toi. Tu ne sais plus lequel des deux rêves a commencé le premier.",
+  "Tu rêves de toutes les fois où tu es déjà descendu. Elles se superposent comme des feuilles de papier calque. Le Dormeur ne compte pas les boucles : pour lui, c'est une seule nuit.",
+  "Tu rêves du fond, enfin. Il n'y a pas de porte. Il y a un visage qui n'en est pas un, tourné vers le haut, qui rêve qu'un jour quelqu'un descendra non pour le réveiller, mais pour s'asseoir à côté de lui — et le laisser dormir.",
+];
+const DORMEUR_DREAM_CHANCE = 0.4;
+
+// PUR — nombre de rêves déjà faits (sentinelles `dream:<n>`).
+function dormeurDreamCount(seen) {
+  if (!seen || typeof seen.has !== 'function') return 0;
+  let n = 0;
+  while (n < DORMEUR_DREAMS.length && seen.has('dream:' + (n + 1))) n++;
+  return n;
+}
+
+// PUR — un rêve peut-il survenir ? ctx = { victory, floor, seen, roll }.
+// Boucle uniquement, un rêve par étage, dans l'ordre, tant qu'il en reste.
+function dormeurDreamWanted(ctx) {
+  ctx = ctx || {};
+  if (!ctx.victory || typeof ctx.floor !== 'number' || ctx.floor < 11) return false;
+  if (!ctx.seen || typeof ctx.seen.has !== 'function') return false;
+  if (ctx.seen.has('dreamfloor:' + ctx.floor)) return false;
+  if (dormeurDreamCount(ctx.seen) >= DORMEUR_DREAMS.length) return false;
+  const roll = (typeof ctx.roll === 'number') ? ctx.roll : Math.random();
+  return roll < DORMEUR_DREAM_CHANCE;
+}
+
+// Hook de rest() (repos réussi). Retourne le rang du rêve joué (1..10) ou 0.
+function maybeDormeurDream() {
+  if (typeof seenScriptedBeat === 'undefined') return 0;
+  const ok = dormeurDreamWanted({
+    victory: (typeof victoryAchieved !== 'undefined') && victoryAchieved,
+    floor:   (typeof currentFloor === 'number') ? currentFloor : 1,
+    seen:    seenScriptedBeat,
+  });
+  if (!ok) return 0;
+  const n = dormeurDreamCount(seenScriptedBeat) + 1;
+  seenScriptedBeat.add('dream:' + n);
+  seenScriptedBeat.add('dreamfloor:' + currentFloor);
+  const text = DORMEUR_DREAMS[n - 1];
+  if (typeof setNarrative === 'function') setNarrative('💤 ' + text);
+  if (typeof addMsg === 'function') {
+    addMsg('💤 Le groupe s\'assoupit, et le battement sous la pierre se glisse dans son sommeil. Rêve du Dormeur (' + n + '/' + DORMEUR_DREAMS.length + ').', 'magic');
+    addMsg('« ' + text + ' »', 'narrative');
+  }
+  if (typeof checkCodexUnlocks === 'function') checkCodexUnlocks('dream');
+  return n;
+}

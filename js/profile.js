@@ -120,6 +120,43 @@ function _profileWrite(obj) {
   }
 }
 
+// Lot E (revue 2026-09, arc H10) — « Ceux qui se souviennent ».
+// PUR & testable : lignes de l'Archiviste des boucles, dérivées du profil
+// persistant en LECTURE SEULE (aucun effet mécanique, aucun héritage).
+// ctx = { floor, ngPlus }. Retourne 1 à 4 lignes, les plus marquantes d'abord.
+function archivistMemoryLines(profile, ctx) {
+  const p = profile || {};
+  const c = ctx || {};
+  const v = p.victories | 0;
+  const out = [];
+  if ((p.cyclesBroken | 0) >= 1) {
+    const n = p.cyclesBroken | 0;
+    out.push(n > 1
+      ? "Tu as déjà brisé le Cycle " + n + " fois. Et pourtant te revoilà, au même escalier. Le Cycle ne t'en veut pas : il ne sait pas compter."
+      : "Tu as déjà brisé le Cycle, une fois. Je l'ai écrit en lettres plus grandes que les autres. Et pourtant te revoilà.");
+  }
+  if (v >= 2) {
+    out.push("Tu as vaincu l'Ombre " + v + " fois. Chaque fois, tu es redescendu. Mes registres commencent à ressembler à une spirale.");
+  } else {
+    out.push("Ta première victoire. Mon registre n'avait pas encore ton nom. Il l'a, maintenant, et je ne l'effacerai pas.");
+  }
+  if ((p.pactVictories | 0) >= 1) {
+    out.push("Une fois au moins, tu as scellé le Pacte des Cachots. J'ai noté la date. Le serpent, lui aussi, s'en souvient.");
+  }
+  const deep = p.deepestFloor | 0;
+  const here = (typeof c.floor === 'number') ? c.floor : 0;
+  if (deep > here && deep >= 12) {
+    out.push("Tu es déjà descendu plus bas que cela : jusqu'à l'étage " + deep + ". Tu ne t'en souviens pas ? Moi si.");
+  }
+  if ((p.sealedDeaths | 0) >= 1) {
+    out.push("L'un de tes reflets est resté scellé dans une Poche du Sceau. Je garde son nom à part, pour qu'il ne se perde pas.");
+  }
+  if ((c.ngPlus | 0) >= 1) {
+    out.push("Le château te reconnaît, et il s'est durci pour toi. Ce n'est pas de la rancune : c'est du respect.");
+  }
+  return out.slice(0, 4);
+}
+
 // Lecture publique (rendu du Codex de profil + opt-in).
 function getPlayerProfile() {
   return _profileRead();

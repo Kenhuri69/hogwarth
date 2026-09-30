@@ -390,3 +390,7 @@ pour le moins de code. Le lot C ouvre la porte à tous les dilemmes.
   Greyback seul ét. 8, simulés), H8.
 - **2026-09-30** — Lot B livré (PR #752, fusionnée). Lot C implémenté
   (plan `lotC-choix-carnet-prophetie-2026-09.md`) : verbe `choice`, H3, H2.
+- **2026-09-30** — Lot D livré en PR #754 (brouillon, non fusionnée). Lot E
+  implémenté sur la même branche (plan `lotE-endgame-narratif-2026-09.md`) :
+  H9 (Rêves du Dormeur), H10 (Archiviste des boucles), H6 (Chronique de la
+  Garde de l'Aube → Reliquaire Lunaire).

@@ -464,6 +464,35 @@ const QUEST_TEMPLATES = [
     reward: { xp: 300, gold: 150 },
     location: "Étages 3 et 6 — un refuge"
   },
+  // Lot E (revue 2026-09, arc H6) — La Chronique de la Garde de l'Aube.
+  // Fumseck (ét. 7) laisse tomber la première page ; les 4 feuillets se
+  // trouvent en fouillant les étages 7 à 10 (un par étage). `progressHeroLines`
+  // : une ligne propre si le héros de la Garde lié à la page est présent.
+  {
+    id: "chronique_aube",
+    title: "La Chronique de la Garde de l'Aube",
+    giver: "Fumseck",
+    autoTurnIn: true,
+    desc: "Fumseck a laissé tomber à tes pieds une page roussie, marquée d'un soleil levant : « Chronique de la Garde de l'Aube, feuillet premier ». Les autres feuillets sont dispersés plus bas. Fouille les recoins des étages 7 à 10 pour les retrouver.",
+    objectives: [
+      { type: "search", floors: [7, 8, 9, 10], amount: 4, progress: 0, completed: false }
+    ],
+    progressLines: [
+      "Feuillet I : « La Garde n'a pas de fondateur. À chaque génération, quelques élèves entendent la pierre gémir quand les escaliers changent de place. Ils se reconnaissent sans se chercher. Ils se taisent, et ils veillent jusqu'à l'aube. »",
+      "Feuillet II : « La fêlure n'est pas neuve. Nos aînés l'entendaient déjà s'élargir, d'un souffle par siècle. Nous ne savons pas la fermer. Nous savons seulement que tant que quelqu'un veille, elle ne s'ouvre pas. »",
+      "Feuillet III : « Nous n'avons rien dit aux maîtres. Pas par orgueil : parce qu'un secret qu'on nomme trop fort se met à écouter. Dumbledore l'apprendra un jour. Nous espérons qu'il nous pardonnera d'avoir su avant lui. »",
+      "Feuillet IV : « Au dernier gardien de cette génération, nous confions le Reliquaire Lunaire. Il ne protège de rien. Il rappelle seulement que la nuit a une fin, et que quelqu'un l'a toujours attendue debout. »"
+    ],
+    progressHeroLines: [
+      { hero: "agathe",    line: "Agathe effleure la page du bout des doigts. « Ils ont semé quelque chose, eux aussi. On ne le voit pas encore, mais ça pousse. »" },
+      { hero: "olivier",   line: "Olivier de Clairval relit le feuillet deux fois, carnet ouvert. « Ils ne cherchaient pas à gagner. Ils tenaient. » Il referme le carnet sans rien noter." },
+      { hero: "nathalie",  line: "Nathalie reconnaît dans la marge un tournesol dessiné à l'encre. Elle touche celui qu'elle porte au revers et ne dit rien pendant un long moment." },
+      { hero: "chatillon", line: "Olivier de Châtillon lit à voix basse, pour une fois sans ironie. « Veiller sans qu'on le sache. C'est la seule noblesse que j'aie jamais comprise. »" }
+    ],
+    doneLine: "Les quatre feuillets réunis, un cinquième se dessine en filigrane sur le dernier : la liste des gardiens de chaque génération. Au bas, une ligne vierge. Au creux de la reliure, un petit reliquaire d'argent en forme de croissant de lune t'attendait.",
+    reward: { xp: 450, gold: 120, item: "reliquaire_lunaire" },
+    location: "Étages 7 à 10 — des recoins à fouiller"
+  },
   {
     id: "chasse_greyback",
     title: "Chasse au loup-garou",

@@ -651,6 +651,15 @@ Zone D 14+  Ruines Anciennes — antérieures à la fondation : la roche-mère m
 > (glossaire — `js/codex.js`, robinet 3-temps victory → étage 21 → étage 28) +
 > 2 lignes d'ambiance **nommées** au palier `before` (21+) de la zone D
 > (`js/floor-ambiance.js`). Conforme au garde-fou « pas de boss combat ».
+>
+> ✅ **Lot E (revue 2026-09, arcs H9 et H10)** — **« Les Rêves du Dormeur »** :
+> en Boucle, un repos peut ouvrir un rêve partagé (10 au total, un par étage).
+> Le Dormeur n'y parle toujours pas : il rêve une berceuse, une école, une voix
+> froide qui se croyait le fond, et enfin quelqu'un qui descendrait pour le
+> laisser dormir. Le dernier rêve change le texte du choix « Briser le Cycle ».
+> Codex `reves_dormeur`. **« Ceux qui se souviennent »** : l'Archiviste des
+> boucles (étages 11 et 21) relit le profil persistant du joueur (victoires,
+> Pacte, Cycles brisés, étage le plus profond), sans aucun avantage hérité.
 
 ---
 

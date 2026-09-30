@@ -1063,6 +1063,8 @@ function rest() {
   restCooldown = 5;
   setNarrative("Le groupe se repose quelques instants. Les forces se restaurent partiellement.");
   addMsg(`Repos : HP et PM restaurés (repos disponible dans 5 pas)`, 'good');
+  // Lot E (arc H9) : en Boucle, le repos peut ouvrir un rêve du Dormeur.
+  if (typeof maybeDormeurDream === 'function') maybeDormeurDream();
   updateUI();
 }
 

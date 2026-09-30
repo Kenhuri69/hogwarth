@@ -16,8 +16,16 @@ NPCS.push(
       type:  "heal_and_revive",
       label: "<img class='ui-icon ui-icon-md' src='img/icons/items/larmes_phenix.png' alt=''> Recevoir les larmes du phénix"
     },
-    questsGiven:    ["bouclier_phenix"],
-    questsTurnedIn: ["bouclier_phenix"],
+    // Lot E (arc H6) : Fumseck confie aussi la Chronique de la Garde de l'Aube
+    // (proposée en parallèle du Bouclier ; autoTurnIn — rien à lui rapporter).
+    questsGiven:    ["bouclier_phenix", "chronique_aube"],
+    questsTurnedIn: ["bouclier_phenix", "chronique_aube"],
+    dialoguesByQuest: {
+      chronique_aube: {
+        questOffer:  "(Fumseck lâche à tes pieds une page roussie, marquée d'un soleil levant. Puis il te fixe, sans ciller, comme s'il attendait que tu comprennes ce qu'il vient de te confier.)",
+        questActive: "(Fumseck incline la tête vers l'escalier qui descend. Les autres feuillets sont plus bas.)"
+      }
+    },
     dialogues: {
       greeting: [
         "(Un chant cristallin s'élève. Un phénix écarlate te regarde sans crainte, perché sur un socle de bronze.)",
@@ -817,6 +825,27 @@ NPCS.push(
         "Le Sceau ? Un verrou, oui. Mais un verrou, ça a deux côtés, gamin. Demande-toi qui a la clef de l'autre.",
         "Je passe partout — chemins fixes exceptés. Or il est un seuil que je ne franchis jamais : ces poches figées où le temps sent le givre. Ce qui s'y souvient de moi n'est pas… à vendre."
       ]
+    }
+  },
+
+  // ── Lot E (revue 2026-09, arc H10) — « Ceux qui se souviennent » ──
+  // L'Archiviste des boucles : placé à l'étage 11, donc présent aux étages 11
+  // et 21 (recyclage effectiveFloor). `profileMemory` → pages-suffixes tirées
+  // du profil persistant, en lecture seule (archivistMemoryLines, profile.js).
+  {
+    id:    "archiviste_boucles",
+    name:  "L'Archiviste",
+    title: "Greffier des boucles",
+    sprite: "mage",
+    icon:  "📜",
+    placement: { floor: 11, anchor: "any" },
+    profileMemory: true,
+    dialogues: {
+      greeting: [
+        "(Un vieil homme voûté, assis entre deux piles de registres, trempe une plume dans un encrier vide. L'encre coule quand même.) Ah. Te revoilà. Non, ne dis rien : je sais qui tu es. C'est mon seul talent.",
+        "Je ne combats pas, je ne vends rien, je n'enseigne rien. Je consigne. Chaque descente, chaque retour, chaque fin. Laisse-moi relire ce que j'ai sur toi."
+      ],
+      idle: "(L'Archiviste tourne une page, puis une autre. Il ne lève pas les yeux.) Je t'écoute. Je t'écris, plutôt."
     }
   },
 

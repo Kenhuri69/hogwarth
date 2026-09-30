@@ -31,6 +31,19 @@ const BREAK_CYCLE_PAGES = [
   "« On ne ferme pas la peur en la fuyant vers le haut. On la ferme en osant la regarder jusqu'au fond. » Le Cycle est brisé — mais la Boucle reste ouverte à qui voudra redescendre, sachant, désormais.",
 ];
 
+// Lot E (arc H9) : après le 10ᵉ rêve du Dormeur, le jalon IV se lit autrement.
+const BREAK_CYCLE_DREAM_NOTE =
+  "Tu sais désormais ce que le Dormeur rêve : quelqu'un qui descendrait jusqu'à lui, " +
+  "non pour le réveiller, mais pour le laisser dormir. Briser le Cycle, c'est peut-être cela.";
+const BREAK_CYCLE_LAST_PAGE_DREAMER =
+  "Sous tes pieds, le battement reprend, plus lent, apaisé. Tu as l'impression absurde que quelque chose, tout au fond, s'est retourné dans son sommeil pour te faire de la place. Le Cycle est brisé, et la Boucle reste ouverte à qui voudra redescendre. Mais le Dormeur, cette nuit, a fait le rêve qu'il attendait.";
+
+function _breakCycleDreamsComplete() {
+  return typeof dormeurDreamCount === 'function' && typeof seenScriptedBeat !== 'undefined'
+    && typeof DORMEUR_DREAMS !== 'undefined'
+    && dormeurDreamCount(seenScriptedBeat) >= DORMEUR_DREAMS.length;
+}
+
 // ── Résolveur PUR des jalons ─────────────────────────────────
 // ctx plat : { sceneSeen:bool, eclats:int, bossKills:int, seuil?:int }.
 function briserCycleJalons(ctx) {
@@ -95,7 +108,8 @@ function openBreakCycleModal() {
     "et <b>affronté</b> ta propre ombre de légende. Au sommet de l'Avant-Monde, un choix t'appartient, " +
     "que nul manuel n'osa écrire :<br><br>" +
     "🕊️ <b>Briser le Cycle</b> — resceller par le bas, en y laissant une part de toi.<br>" +
-    "🌑 <b>Perpétuer</b> — choisir le mythe, descendre sans fin.");
+    "🌑 <b>Perpétuer</b> — choisir le mythe, descendre sans fin." +
+    (_breakCycleDreamsComplete() ? "<br><br><i>💤 " + BREAK_CYCLE_DREAM_NOTE + "</i>" : ""));
   set('break-cycle-actions',
     '<button class="cmd-btn" onclick="confirmBreakCycle()">🕊️ Briser le Cycle</button>' +
     '<button class="cmd-btn" onclick="declineBreakCycle()">🌑 Perpétuer</button>');
@@ -158,7 +172,8 @@ function _renderBreakCyclePage() {
   const last = _breakCyclePage >= BREAK_CYCLE_PAGES.length - 1;
   set('break-cycle-icon', '🕊️');
   set('break-cycle-title', 'Briser le Cycle — ' + (_breakCyclePage + 1) + '/' + BREAK_CYCLE_PAGES.length);
-  set('break-cycle-text', BREAK_CYCLE_PAGES[_breakCyclePage]);
+  set('break-cycle-text', (last && _breakCycleDreamsComplete())
+    ? BREAK_CYCLE_LAST_PAGE_DREAMER : BREAK_CYCLE_PAGES[_breakCyclePage]);
   set('break-cycle-actions', last
     ? '<button class="cmd-btn" onclick="finishBreakCycle()">🌑 Redescendre (la Boucle reste ouverte)</button>'
     : '<button class="cmd-btn" onclick="advanceBreakCycle()">Continuer</button>');

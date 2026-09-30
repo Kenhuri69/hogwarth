@@ -660,6 +660,46 @@ const CODEX_ENTRIES = [
       Poufsouffle: "« On ne laisse personne derrière. » Chourave l'a dit à ses premières années le soir même. Tobias l'a répété à toute la table de Poufsouffle.",
     } },
   },
+  // ── Lot E (revue 2026-09) — arcs H9, H6, H10 ──
+  {
+    id: 'reves_dormeur', category: 'glossaire', icon: '💤', act: 4,
+    title: 'Ce que le Dormeur rêve',
+    links: ['le_dormeur', 'prophetie_profondeurs'],
+    unlockConditions: [{ type: 'dream', value: 1 }],
+    revealedBy: [{ type: 'dream', value: 10 }],
+    textVersions: {
+      veiled: "En Boucle, quand le groupe se repose, le battement sous la pierre se glisse parfois dans son sommeil. Ces rêves ne sont pas les tiens. Ils viennent de plus bas, et ils se suivent, comme les pages d'un livre qu'on lit à l'envers.",
+      revealed: "Dix rêves, et le fil se referme. Le Dormeur ne veut rien, ne menace rien, ne sait même pas qu'il est un danger. Il a rêvé une berceuse, une école, une voix froide qui se croyait le fond, une clé fendue. Et au bout, il a rêvé de toi : pas d'un sauveur, pas d'un ennemi, seulement de quelqu'un qui descendrait jusqu'à lui pour le laisser dormir.",
+    },
+  },
+  {
+    id: 'chronique_aube', category: 'histoire', icon: '🌅', act: 3,
+    title: 'La Chronique de la Garde de l\'Aube',
+    links: ['le_dormeur'],
+    unlockConditions: [{ type: 'quest', value: 'chronique_aube' }],
+    revealedBy: [{ type: 'quest', value: 'chronique_aube' }],
+    textVersions: {
+      veiled: "Des pages roussies, marquées d'un soleil levant, dispersées dans les profondeurs.",
+      revealed: "La Garde de l'Aube n'a pas de fondateur. À chaque génération, quelques élèves entendent la pierre gémir quand les escaliers changent de place. Ils se reconnaissent, se taisent, et veillent jusqu'au matin. Leur chronique dit ce que Dumbledore n'a appris que tard : la fêlure ne date pas de cette année, elle s'élargit depuis des siècles, et ceux qui l'entendent la tiennent close par leur seule présence. Au dernier feuillet, un reliquaire en forme de lune, confié de garde en garde.",
+    },
+    variants: { hero: {
+      agathe: "Agathe a glissé une fleur séchée entre la première et la deuxième page. Elle dit que la Garde a toujours semé quelque chose derrière elle.",
+      olivier: "Olivier de Clairval a relu la chronique trois fois, carnet en main. Il n'y cherche plus une arme : il y a trouvé une raison.",
+      nathalie: "Nathalie a reconnu, dans la marge du troisième feuillet, le dessin d'un tournesol. Le même que celui qu'elle porte au revers.",
+      chatillon: "Olivier de Châtillon a lu le dernier feuillet à voix basse, puis l'a rendu sans un mot. On ne l'avait jamais vu sortir de l'ombre aussi franchement.",
+    } },
+  },
+  {
+    id: 'archiviste_boucles', category: 'personnages', icon: '📜', act: 4,
+    title: 'L\'Archiviste des boucles',
+    links: ['boucle_tenebreuse'],
+    unlockConditions: [{ type: 'floor', value: 11 }],
+    revealedBy: [{ type: 'floor', value: 21 }],
+    textVersions: {
+      veiled: "Une silhouette voûtée, assise entre deux piles de registres, à l'étage 11. On dit qu'il descend, lui aussi, mais plus lentement.",
+      revealed: "Personne ne sait depuis quand l'Archiviste consigne les descentes. Il ne combat pas, ne vend rien, n'enseigne rien. Il se souvient. Chaque boucle que tu as parcourue, chaque victoire, chaque cycle brisé est écrit quelque part dans ses registres. Il ne t'en donne rien, sinon la certitude étrange que ta descente a déjà eu lieu, et qu'elle a compté.",
+    },
+  },
   // ── Fiches des héros jouables (Lot A, revue 2026-09 — axe 1b) ──
   // Ouvertes quand le héros est dans le groupe actif (robinet `hero`),
   // révélées à la victoire : la version révélée DÉNOUE l'arc léger du héros
@@ -1159,6 +1199,8 @@ function _codexCondMet(cond, ctx) {
     }
     case 'prophecy':   // fragments de la Prophétie en éclats (Lot C, H2)
       return typeof ctx.prophecyFragments === 'number' && ctx.prophecyFragments >= cond.value;
+    case 'dream':      // rêves du Dormeur (Lot E, H9)
+      return typeof ctx.dormeurDreams === 'number' && ctx.dormeurDreams >= cond.value;
     case 'eclatLoop':
       return typeof ctx.accumulatedEclats === 'number' && ctx.accumulatedEclats >= cond.value;
     case 'cycleBroken':

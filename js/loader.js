@@ -136,6 +136,11 @@ window.UX_safe = new Proxy({}, {
     { name: 'maybeSurfaceLetter',      source: 'floor-ambiance.js', kind: 'fn' },
     { name: 'prophecyWantsStele',      source: 'floor-ambiance.js', kind: 'fn' },
     { name: 'maybeProphecyFragment',   source: 'floor-ambiance.js', kind: 'fn' },
+    // Lot E (revue 2026-09) — rêves du Dormeur (H9), Archiviste (H10).
+    { name: 'DORMEUR_DREAMS',          source: 'floor-ambiance.js', kind: 'obj' },
+    { name: 'dormeurDreamWanted',      source: 'floor-ambiance.js', kind: 'fn' },
+    { name: 'maybeDormeurDream',       source: 'floor-ambiance.js', kind: 'fn' },
+    { name: 'archivistMemoryLines',    source: 'profile.js',        kind: 'fn' },
     { name: 'FLOOR_EVENTS',       source: 'floor-events.js',  kind: 'obj' },
     { name: 'rollFloorEvent',     source: 'floor-events.js', kind: 'fn'  },
     { name: 'maybeRoomFlavor',    source: 'room-flavor.js',  kind: 'fn',  optional: true },

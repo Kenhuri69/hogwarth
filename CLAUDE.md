@@ -360,7 +360,7 @@ attendus se sont exécutés correctement et expose 2 helpers d'accès défensif.
 
 ### Manifeste
 
-Le `MANIFEST` dans `loader.js` énumère **390** entrées `{ name, source, kind,
+Le `MANIFEST` dans `loader.js` énumère **394** entrées `{ name, source, kind,
 optional? }` :
 - `kind: 'fn'` → `typeof name === 'function'`
 - `kind: 'obj'` → `typeof name !== 'undefined'` (couvre `let`/`const`/`var`)
@@ -1494,6 +1494,22 @@ window.checkKillQuests(monsterId) → incrémente q.progress, auto-complète (d�
   vaincu, XP intégrale, or ÷ 2, aucun drop.
 - **Échos de fin** : `VICTORY_CHOICE_ECHOES` (`endgame.js`), une phrase par
   dilemme tranché, plus les égarés mis à l'abri.
+
+#### Extensions du Lot E (arcs H9, H10, H6 — endgame narratif)
+
+- **Rêves du Dormeur** (`floor-ambiance.js`) : en Boucle, un repos réussi
+  (`rest()`) peut ouvrir un rêve (`DORMEUR_DREAMS`, 10, dans l'ordre, chance
+  `DORMEUR_DREAM_CHANCE`, un par étage). Sentinelles `dream:<n>` /
+  `dreamfloor:<étage>` dans `seenScriptedBeat` (aucun état neuf). Codex
+  `reves_dormeur` (condition `dream`) ; le 10ᵉ rêve change le texte du jalon IV
+  de Briser le Cycle (`break-cycle.js`).
+- **Archiviste des boucles** (`archiviste_boucles`, étage 11 → 11 et 21) :
+  `profileMemory` → pages-suffixes tirées de `archivistMemoryLines(profile,
+  ctx)` (`profile.js`, PUR, **lecture seule** du profil persistant).
+- **Chronique de la Garde de l'Aube** (`chronique_aube`, Fumseck) : `search`
+  aux étages 7-10, `progressHeroLines` (une réplique si le héros de la Garde
+  lié est présent), remise auto (`autoTurnIn` désormais honoré par les étapes
+  `search`) → **Reliquaire Lunaire**.
 
 > Pour ajouter des quêtes : pousser un objet dans `activeQuests` dans `state.js`.
 > Détail des objectifs et récompenses : voir le tableau dans `state.js`.

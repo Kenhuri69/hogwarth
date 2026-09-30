@@ -88,6 +88,9 @@ function _codexContext() {
     // Robinets du Lot C (revue 2026-09) : dilemmes de quête, prophétie.
     questChoices: (typeof questChoices !== 'undefined' && questChoices) ? questChoices : {},
     prophecyFragments: (typeof prophecyFragments === 'number') ? prophecyFragments : 0,
+    // Robinet `dream` (Lot E, arc H9) : rêves du Dormeur faits en Boucle.
+    dormeurDreams: (typeof dormeurDreamCount === 'function' && typeof seenScriptedBeat !== 'undefined')
+      ? dormeurDreamCount(seenScriptedBeat) : 0,
   };
 }
 

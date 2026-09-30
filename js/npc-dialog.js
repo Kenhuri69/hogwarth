@@ -595,6 +595,20 @@ function _prophecySuffixPages(npc) {
   return text ? _splitDialogPage(text, _DIALOG_PAGE_MAXLEN) : [];
 }
 
+// Archiviste des boucles (Lot E, arc H10) : `npc.profileMemory`, pages-suffixes
+// muettes tirées du profil persistant (lecture seule, archivistMemoryLines).
+function _archivistSuffixPages(npc) {
+  if (!npc || !npc.profileMemory) return [];
+  if (typeof archivistMemoryLines !== 'function' || typeof getPlayerProfile !== 'function') return [];
+  const lines = archivistMemoryLines(getPlayerProfile(), {
+    floor:  (typeof currentFloor === 'number') ? currentFloor : 0,
+    ngPlus: (typeof ngPlusLevel === 'number') ? ngPlusLevel : 0,
+  });
+  const out = [];
+  for (const text of lines) out.push(..._splitDialogPage(text, _DIALOG_PAGE_MAXLEN));
+  return out;
+}
+
 function _npcDialogActions(npc, state) {
   const out = [];
   // Actions contextuelles quête — énumère TOUTES les quêtes actionnables du
@@ -1153,7 +1167,7 @@ function openNpcDialog(npcId) {
   }
   // Suffixe réputation (§6.9.2) — appendu après les autres suffixes muets, pour
   // les PNJ à choix gris (écho de Salazar, Kingsley) selon la réputation dérivée.
-  const _repPages = _reputationSuffixPages(npc).concat(_choiceSuffixPages(npc), _prophecySuffixPages(npc));
+  const _repPages = _reputationSuffixPages(npc).concat(_choiceSuffixPages(npc), _prophecySuffixPages(npc), _archivistSuffixPages(npc));
   if (_repPages.length) {
     const lastSrc = _pageData.srcPages.length
       ? _pageData.srcPages[_pageData.srcPages.length - 1] : 0;

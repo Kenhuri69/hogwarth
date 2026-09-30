@@ -1238,14 +1238,25 @@ window.checkSearchQuests = function() {
     const _tpl = (typeof getQuestTemplate === 'function') ? getQuestTemplate(q.id) : null;
     const _line = _tpl && Array.isArray(_tpl.progressLines) && _tpl.progressLines[step.progress - 1];
     if (_line) addMsg('✉️ ' + _line, 'narrative');
+    // `progressHeroLines` (Lot E, H6) : réplique d'un héros précis s'il est
+    // présent dans le groupe actif, pour ce rang de progression.
+    const _hl = _tpl && Array.isArray(_tpl.progressHeroLines) && _tpl.progressHeroLines[step.progress - 1];
+    if (_hl && _hl.hero && _hl.line && typeof activeParty === 'function'
+        && activeParty().some(c => c && c.heroKey === _hl.hero)) {
+      addMsg('💬 ' + _hl.line, 'narrative');
+    }
     if (step.progress >= step.amount) {
       step.completed = true;
       // `turnInName` : destinataire d'une livraison inter-PNJ (Lot C).
-      addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/quest.png" alt=""> Quête « ${q.title} » prête — retourne voir ${(_tpl && _tpl.turnInName) || q.giver}.`, 'good');
+      // Quête `autoTurnIn` (Lot E) : remise immédiate, pas de retour.
+      if (!(_tpl && _tpl.autoTurnIn)) {
+        addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/quest.png" alt=""> Quête « ${q.title} » prête — retourne voir ${(_tpl && _tpl.turnInName) || q.giver}.`, 'good');
+      }
     } else {
       addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/quest.png" alt=""> Quête « ${q.title} » : ${step.progress}/${step.amount} recoins fouillés.`, '');
     }
   });
+  _autoTurnInReadyQuests();
   if (typeof updateQuestTracker === 'function') updateQuestTracker();
 };
 

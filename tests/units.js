@@ -3660,6 +3660,68 @@ function loadNpcs() {
 })();
 
 // ============================================================
+// 25. Lot E (revue 2026-09) — H9 (Rêves du Dormeur), H10 (Archiviste),
+//     H6 (Chronique de la Garde de l'Aube).
+// ============================================================
+(function testLotE() {
+  // H9 — rêves (purs, floor-ambiance.js).
+  const fa = loadModule('js/floor-ambiance.js', ['DORMEUR_DREAMS', 'dormeurDreamCount', 'dormeurDreamWanted', 'DORMEUR_DREAM_CHANCE']);
+  check('lotE H9: 10 rêves', fa.DORMEUR_DREAMS.length === 10 && fa.DORMEUR_DREAMS.every(t => typeof t === 'string' && t.length > 40));
+  check('lotE H9: compte vide = 0', fa.dormeurDreamCount(new Set()) === 0);
+  check('lotE H9: compte dans l\'ordre', fa.dormeurDreamCount(new Set(['dream:1', 'dream:2', 'dream:4'])) === 2);
+  const want = (o) => fa.dormeurDreamWanted(Object.assign({ victory: true, floor: 12, seen: new Set(), roll: 0 }, o));
+  check('lotE H9: Boucle + tirage bas → rêve', want({}));
+  check('lotE H9: pas avant la victoire', !want({ victory: false }));
+  check('lotE H9: pas avant l\'étage 11', !want({ floor: 10 }));
+  check('lotE H9: un seul rêve par étage', !want({ seen: new Set(['dreamfloor:12']) }));
+  check('lotE H9: tirage haut → rien', !want({ roll: fa.DORMEUR_DREAM_CHANCE }));
+  const all = new Set(fa.DORMEUR_DREAMS.map((_, i) => 'dream:' + (i + 1)));
+  check('lotE H9: plus rien après le 10e', fa.dormeurDreamCount(all) === 10 && !want({ seen: all }));
+  const cx = loadModule('js/codex.js', ['CODEX_ENTRIES', 'codexEntryState', 'codexVariantNote']);
+  const rd = cx.CODEX_ENTRIES.find(e => e.id === 'reves_dormeur');
+  check('lotE H9 codex: verrouillé → voilé → révélé', rd
+    && cx.codexEntryState(rd, { dormeurDreams: 0 }) === 'locked'
+    && cx.codexEntryState(rd, { dormeurDreams: 3 }) === 'veiled'
+    && cx.codexEntryState(rd, { dormeurDreams: 10 }) === 'revealed');
+
+  // H10 — Archiviste (pur, profile.js) : lecture seule du profil.
+  const pr = loadModule('js/profile.js', ['archivistMemoryLines']);
+  const l1 = pr.archivistMemoryLines({ victories: 1 }, { floor: 11 });
+  check('lotE H10: 1re victoire → une ligne', l1.length === 1 && l1[0].includes('première'));
+  const rich = { victories: 4, pactVictories: 1, cyclesBroken: 2, sealedDeaths: 1, deepestFloor: 27 };
+  const l2 = pr.archivistMemoryLines(rich, { floor: 11, ngPlus: 2 });
+  check('lotE H10: profil riche → 4 lignes max, cycles en tête', l2.length === 4 && l2[0].includes('2 fois'));
+  check('lotE H10: cite le nombre de victoires', l2.some(t => t.includes('4 fois')));
+  check('lotE H10: étage le plus profond cité s\'il est plus bas',
+    pr.archivistMemoryLines({ victories: 1, deepestFloor: 27 }, { floor: 11 }).some(t => t.includes('27'))
+    && !pr.archivistMemoryLines({ victories: 1, deepestFloor: 11 }, { floor: 11 }).some(t => t.includes('étage 11')));
+  const frozen = Object.freeze({ victories: 2 });
+  check('lotE H10: profil non muté', pr.archivistMemoryLines(frozen, {}).length >= 1 && frozen.victories === 2);
+  check('lotE H10: profil absent toléré', Array.isArray(pr.archivistMemoryLines(null, null)));
+  const npcs = loadNpcs().NPCS;
+  const byId = (id) => npcs.find(n => n.id === id);
+  check('lotE H10: Archiviste à l\'étage 11 (donc 21 en Boucle)', byId('archiviste_boucles')
+    && byId('archiviste_boucles').placement.floor === 11 && byId('archiviste_boucles').profileMemory === true);
+
+  // H6 — Chronique de la Garde de l'Aube.
+  const { QUEST_TEMPLATES } = loadModule('js/quests-templates.js', ['QUEST_TEMPLATES']);
+  const ch = QUEST_TEMPLATES.find(t => t.id === 'chronique_aube');
+  const st = ch && ch.objectives[0];
+  check('lotE H6: 4 feuillets aux étages 7-10', st && st.type === 'search' && st.floors.join() === '7,8,9,10'
+    && st.amount === 4 && ch.progressLines.length === 4);
+  check('lotE H6: une ligne par héros de la Garde', ch.progressHeroLines.map(h => h.hero).join() === 'agathe,olivier,nathalie,chatillon');
+  const { CHARACTERS } = loadModule('js/data-characters.js', ['CHARACTERS']);
+  check('lotE H6: héros existants', ch.progressHeroLines.every(h => !!CHARACTERS[h.hero]));
+  check('lotE H6: remise auto → Reliquaire Lunaire', ch.autoTurnIn === true && ch.reward.item === 'reliquaire_lunaire');
+  check('lotE H6: Fumseck donne (avec le Bouclier)', byId('fumseck').questsGiven.join() === 'bouclier_phenix,chronique_aube');
+  const ca = cx.CODEX_ENTRIES.find(e => e.id === 'chronique_aube');
+  check('lotE H6 codex: révélé à la remise', cx.codexEntryState(ca, { questsDone: new Set() }) === 'locked'
+    && cx.codexEntryState(ca, { questsDone: new Set(['chronique_aube']) }) === 'revealed');
+  check('lotE H6 codex: note par héros de la Garde',
+    ['agathe', 'olivier', 'nathalie', 'chatillon'].every(k => !!cx.codexVariantNote(ca, null, [k], {})));
+})();
+
+// ============================================================
 // Rapport
 // ============================================================
 if (failures.length) {

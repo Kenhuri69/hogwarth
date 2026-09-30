@@ -238,6 +238,16 @@ circonstance** :
   de tension (`houseTension[<Maison>]`) qui colorent les rencontres de PNJ et de
   signature (ex. un Maxence Serpentard-canon qui commente *L'Étendard de Godric*
   d'une partie Gryffondor). Pur flavor, zéro mécanique (§6.9.5).
+
+> ✅ **Lot E (revue 2026-09, arc H6)** — **« La Chronique de la Garde de
+> l'Aube »** (quête `chronique_aube`, confiée par Fumseck à l'étage 7) : quatre
+> feuillets à retrouver en fouillant les étages 7 à 10. Ils disent que la Garde
+> n'a pas de fondateur, qu'elle se reforme à chaque génération d'élèves qui
+> *entendent* la pierre, et qu'elle connaissait la fêlure avant Dumbledore
+> (elle se taisait : un secret qu'on nomme trop fort se met à écouter). Chaque
+> feuillet a une réplique propre si le héros de la Garde lié est présent
+> (Agathe, Olivier de Clairval, Nathalie, Olivier de Châtillon). Le dernier
+> mène au **Reliquaire Lunaire**. Plan `lotE-endgame-narratif-2026-09.md`.
 - **Opposition :** les Forces de la Corruption (§6.5) et tout ce que la Boucle
   ramène.
 

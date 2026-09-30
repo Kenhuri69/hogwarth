@@ -2383,4 +2383,110 @@ async function scenarioLotDArcs() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioLotDArcs, scenarioLieutenantAndProphecy, scenarioDiscoverObjective, scenarioTalkObjective, scenarioDeliveryQuestsWired, scenarioChainedQuest, scenarioHeadlessHunt, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioFarmingQuests, scenarioDelayedSearch, scenarioCleVoute, scenarioQuestFanfare, scenarioLoopNpcQuests, scenarioLoopNpcQuests2, scenarioLoopNpcQuests3, scenarioSignatureQuestBadge, scenarioDeliveryQuestLetter, scenarioMainQuestDescente, scenarioDumbledoreRelais] };
+async function scenarioLotEEndgame() {
+  console.log('\n── Scénario Lot E : Chronique de l\'Aube, Rêves du Dormeur, Archiviste ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['agathe'], house: 'Gryffondor' });
+
+  // T1 (H6) : Fumseck confie la Chronique (en parallèle de son Bouclier) ; 4 feuillets aux
+  // étages 7-10, ligne d'Agathe, remise automatique → Reliquaire Lunaire.
+  const t1 = await page.evaluate(() => {
+    const actions = _npcDialogActions(getNpcById('fumseck'), 'offer').map(a => a.onClick).join(' ');
+    const before = /bouclier_phenix/.test(actions);
+    const after = /chronique_aube/.test(actions);
+    acceptQuest('chronique_aube');
+    player.inventory = player.inventory.filter(it => it.id !== 'reliquaire_lunaire');
+    for (const f of [6, 7, 7, 8, 9]) { currentFloor = f; checkSearchQuests(); }
+    const q = activeQuests.find(x => x.id === 'chronique_aube');
+    const mid = q ? q.objectives[0].progress : -1;
+    currentFloor = 10; checkSearchQuests();
+    const log = document.getElementById('msg-log').textContent;
+    return {
+      before, after, mid,
+      done: completedQuests.has('chronique_aube'),
+      page1: /Feuillet I :/.test(log), agathe: /Ils ont semé quelque chose/.test(log),
+      noOtherHero: !/Olivier de Clairval relit/.test(log),
+      reliquaire: player.inventory.some(it => it.id === 'reliquaire_lunaire'),
+      codex: codexEntryState(getCodexEntry('chronique_aube'), _codexContext()),
+    };
+  });
+  console.log('  T1 chronique:', t1);
+  assert(t1.before && t1.after, 'Fumseck propose son Bouclier et la Chronique');
+  assert(t1.mid === 3 && t1.done, 'un feuillet par étage (7-10), remise automatique au 4e');
+  assert(t1.page1 && t1.agathe && t1.noOtherHero, 'feuillets lus ; seule la ligne du héros présent');
+  assert(t1.reliquaire && t1.codex === 'revealed', 'Reliquaire Lunaire obtenu ; Codex révélé');
+
+  // T2 (H9) : en Boucle, un repos réussi ouvre un rêve (un par étage) ; le 10e
+  // change le texte du jalon IV de Briser le Cycle.
+  const t2 = await page.evaluate(() => {
+    const realRandom = Math.random;
+    let queue = [];
+    Math.random = () => (queue.length ? queue.shift() : realRandom());
+    try {
+      victoryAchieved = true;
+      currentFloor = 12; restCooldown = 0;
+      queue = [0.99, 0.1];   // pas de rencontre, puis tirage du rêve
+      rest();
+      const n1 = dormeurDreamCount(seenScriptedBeat);
+      const narr1 = /💤/.test(document.getElementById('narrative-panel').textContent);
+      restCooldown = 0; queue = [0.99, 0.1];
+      rest();
+      const sameFloor = dormeurDreamCount(seenScriptedBeat);
+      currentFloor = 13; restCooldown = 0; queue = [0.99, 0.1];
+      rest();
+      const n2 = dormeurDreamCount(seenScriptedBeat);
+      const codexVeiled = codexEntryState(getCodexEntry('reves_dormeur'), _codexContext());
+      openBreakCycleModal();
+      const noteBefore = /Tu sais désormais ce que le Dormeur rêve/.test(document.getElementById('break-cycle-text').innerHTML);
+      closeBreakCycleModal();
+      for (let i = 1; i <= 10; i++) seenScriptedBeat.add('dream:' + i);
+      openBreakCycleModal();
+      const noteAfter = /Tu sais désormais ce que le Dormeur rêve/.test(document.getElementById('break-cycle-text').innerHTML);
+      closeBreakCycleModal();
+      return { n1, narr1, sameFloor, n2, codexVeiled, noteBefore, noteAfter,
+        codexRevealed: codexEntryState(getCodexEntry('reves_dormeur'), _codexContext()) };
+    } finally {
+      Math.random = realRandom;
+    }
+  });
+  console.log('  T2 rêves:', t2);
+  assert(t2.n1 === 1 && t2.narr1, 'un repos en Boucle ouvre le premier rêve');
+  assert(t2.sameFloor === 1 && t2.n2 === 2, 'un seul rêve par étage, dans l\'ordre');
+  assert(t2.codexVeiled === 'veiled' && t2.codexRevealed === 'revealed', 'Codex : voilé au 1er rêve, révélé au 10e');
+  assert(!t2.noteBefore && t2.noteAfter, 'le 10e rêve change le texte du jalon IV');
+
+  // T3 (H10) : l'Archiviste (étages 11 et 21) cite le profil persistant, en lecture seule.
+  const t3 = await page.evaluate(() => {
+    const prof = getPlayerProfile();
+    prof.victories = 3; prof.cyclesBroken = 1; prof.deepestFloor = 25;
+    localStorage.setItem('hogwarts_rpg_profile', JSON.stringify(prof));
+    const snap = localStorage.getItem('hogwarts_rpg_profile');
+    const has = (id) => Array.from(npcPlacements.values()).includes(id);
+    currentFloor = 11; generateDungeon(11);
+    const at11 = has('archiviste_boucles');
+    currentFloor = 21; generateDungeon(21);
+    const at21 = has('archiviste_boucles');
+    seenNpcs.add('archiviste_boucles');
+    openNpcDialog('archiviste_boucles');
+    const pages = _dialogState.pages.join(' ');
+    closeNpcDialog();
+    return { at11, at21,
+      victories: /vaincu l'Ombre 3 fois/.test(pages),
+      cycle: /déjà brisé le Cycle/.test(pages),
+      deep: /étage 25/.test(pages),
+      readOnly: localStorage.getItem('hogwarts_rpg_profile') === snap };
+  });
+  console.log('  T3 archiviste:', t3);
+  assert(t3.at11 && t3.at21, 'l\'Archiviste se tient aux étages 11 et 21');
+  assert(t3.victories && t3.cycle && t3.deep, 'il cite victoires, Cycle brisé et étage le plus profond');
+  assert(t3.readOnly, 'le profil n\'est pas modifié');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Lot E OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioLotEEndgame, scenarioLotDArcs, scenarioLieutenantAndProphecy, scenarioDiscoverObjective, scenarioTalkObjective, scenarioDeliveryQuestsWired, scenarioChainedQuest, scenarioHeadlessHunt, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioFarmingQuests, scenarioDelayedSearch, scenarioCleVoute, scenarioQuestFanfare, scenarioLoopNpcQuests, scenarioLoopNpcQuests2, scenarioLoopNpcQuests3, scenarioSignatureQuestBadge, scenarioDeliveryQuestLetter, scenarioMainQuestDescente, scenarioDumbledoreRelais] };
