@@ -1275,3 +1275,40 @@ function landmarkTrophyPlaques(ctx) {
   }
   return out.slice(0, 4);
 }
+
+// ── Archétypes de salles (6b, thème C2) ─────────────────────
+// Chaque salle en cul-de-sac tire un archétype (PUR, données). `center` :
+// cellule posée au centre ; `guard` : un ennemi garanti dans la salle ;
+// `calm` : aucun ennemi ; `reveal` : la 1ʳᵉ entrée dévoile le plan de l'étage.
+// `entry` : message à la 1ʳᵉ entrée (null = archétype silencieux).
+const ROOM_ARCHETYPES = [
+  { id: 'tresor',     weight: 40, center: 'CHEST', entry: null },
+  { id: 'embuscade',  weight: 25, center: 'CHEST', guard: true, minFloor: 2,
+    entry: "⚔️ Un coffre trop bien exposé, un silence trop parfait… Quelque chose monte la garde ici." },
+  { id: 'sanctuaire', weight: 20, center: 'ALTAR', calm: true,
+    entry: "🕯️ Un sanctuaire oublié. Aucune créature n'ose franchir le seuil ; l'air y est plus léger." },
+  { id: 'galerie',    weight: 15, center: null, reveal: true,
+    entry: "🖼️ Une galerie de portraits. Les visages peints se penchent et te chuchotent le plan de l'étage." },
+];
+
+function getRoomArchetype(id) {
+  return ROOM_ARCHETYPES.find(a => a.id === id) || null;
+}
+
+// Tirage pondéré de l'archétype d'une salle-branche à l'étage `floor`
+// (filtre minFloor). `rng` défaut Math.random. Retourne l'objet archétype.
+function pickRoomArchetype(floor, rng) {
+  const r = (typeof rng === 'function') ? rng : Math.random;
+  const f = (typeof floor === 'number' && isFinite(floor)) ? floor : 1;
+  const pool = ROOM_ARCHETYPES.filter(a => !a.minFloor || f >= a.minFloor);
+  const total = pool.reduce((s, a) => s + a.weight, 0);
+  let x = r() * total;
+  for (const a of pool) { x -= a.weight; if (x < 0) return a; }
+  return pool[pool.length - 1];
+}
+
+// Archétype non trivial de la salle contenant (x, y), ou null.
+function roomArchetypeAt(list, x, y) {
+  if (!Array.isArray(list)) return null;
+  return list.find(r => x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h) || null;
+}

@@ -4413,6 +4413,77 @@ async function scenarioEscapeRewards() {
   await browser.close();
 }
 
+// ── 6b (revue 2026-09) : archétypes de salles ────────────────
+// Chaque cul-de-sac tire un archétype : sanctuaire (autel, aucun ennemi),
+// embuscade (coffre gardé), galerie (révèle le plan à la 1ʳᵉ entrée).
+async function scenarioRoomArchetypes() {
+  console.log('\n── Scénario 6b : archétypes de salles ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : 60 générations — invariants par archétype.
+  const t1 = await page.evaluate(() => {
+    const inRoom = (r) => { let n = 0; for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) if (enemyMap[y][x]) n++; return n; };
+    const out = { branches: 0, typed: 0, count: {}, badSanct: 0, badAmbush: 0, ambushF1: 0, listed: 0, badListed: 0 };
+    for (let g = 0; g < 60; g++) {
+      const floor = (g % 2) ? 5 : 1;
+      generateDungeon(floor);
+      for (const r of lastDungeonRooms.filter(r => r.kind === 'branch')) {
+        out.branches++;
+        if (r.archetype) { out.typed++; out.count[r.archetype] = (out.count[r.archetype] || 0) + 1; }
+        if (floor === 1 && r.archetype === 'embuscade') out.ambushF1++;
+      }
+      for (const a of roomArchetypes) {
+        out.listed++;
+        const cx = Math.floor(a.x + a.w / 2), cy = Math.floor(a.y + a.h / 2);
+        if (a.type === 'tresor') out.badListed++;
+        if (a.type === 'sanctuaire' && (dungeon[cy][cx] !== CELL.ALTAR || inRoom(a) > 0)) out.badSanct++;
+        if (a.type === 'embuscade' && (dungeon[cy][cx] !== CELL.CHEST || inRoom(a) < 1)) out.badAmbush++;
+      }
+    }
+    return out;
+  });
+  console.log('  T1 générations :', t1);
+  assert(t1.typed === t1.branches, 'chaque cul-de-sac doit porter un archétype');
+  assert(Object.keys(t1.count).length === 4, 'les 4 archétypes doivent apparaître sur 60 générations');
+  assert(t1.ambushF1 === 0, 'pas d\'embuscade à l\'étage 1');
+  assert(t1.listed > 0 && t1.badListed === 0, 'roomArchetypes ne liste que les archétypes non triviaux');
+  assert(t1.badSanct === 0, 'sanctuaire : autel au centre et aucun ennemi');
+  assert(t1.badAmbush === 0, 'embuscade : coffre au centre et au moins un gardien');
+
+  // T2 : galerie — la 1ʳᵉ entrée révèle le plan, une seule fois ; cache et save.
+  const t2 = await page.evaluate(() => {
+    let g = null;
+    for (let i = 0; i < 80 && !g; i++) { generateDungeon(5); g = roomArchetypes.find(a => a.type === 'galerie'); }
+    if (!g) return { found: false };
+    visited = visited.map(row => row.map(() => false));
+    const stairs = lastDungeonRooms[lastDungeonRooms.length - 1];
+    playerX = Math.floor(g.x + g.w / 2); playerY = Math.floor(g.y + g.h / 2);
+    const log0 = document.getElementById('msg-log').textContent.length;
+    const type = maybeRoomArchetypeEntry();
+    const msg = document.getElementById('msg-log').textContent.slice(log0).includes('galerie de portraits');
+    const again = maybeRoomArchetypeEntry();
+    const saved = JSON.stringify(roomArchetypes);
+    _saveFloorToCache(5); roomArchetypes = []; _restoreFloorFromCache(5);
+    const cacheOk = JSON.stringify(roomArchetypes) === saved;
+    const serialOk = JSON.stringify(_serializeState().roomArchetypes) === saved;
+    return { found: true, type, msg, again, stairsSeen: visited[stairs.cy][stairs.cx], cacheOk, serialOk };
+  });
+  console.log('  T2 galerie :', t2);
+  assert(t2.found, 'aucune galerie en 80 générations de l\'étage 5');
+  assert(t2.type === 'galerie' && t2.msg, 'l\'entrée de la galerie doit être annoncée');
+  assert(t2.stairsSeen, 'la galerie doit révéler l\'escalier descendant');
+  assert(t2.again === null, 'l\'annonce ne doit se jouer qu\'une fois par visite');
+  assert(t2.cacheOk && t2.serialOk, 'roomArchetypes doit survivre au cache d\'étage et à la sauvegarde');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ archétypes de salles OK');
+  await browser.close();
+}
+
 async function scenarioLotFTexture() {
   console.log('\n── Scénario Lot F : salles uniques, énigmes filtrées, événements à kind ──');
   const { browser, page, errors } = await launchGame();
@@ -4505,4 +4576,4 @@ async function scenarioLotFTexture() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioLotFTexture, scenarioEscapePocket, scenarioEscapeRiddleSolve, scenarioEscapeMalus, scenarioEscapeMirror, scenarioEscapeWarden, scenarioEscapeIronman, scenarioEscapeRewards, scenarioCh13EndgamePivot, scenarioScriptedFloorBeats, scenarioVoixDesRuines, scenarioDungeonLife, scenarioFountain, scenarioRefuge, scenarioSoloSoftlock, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioRespawn20Percent, scenarioVictoryTrigger, scenarioStairsGated, scenarioFinalBossGuaranteed, scenarioActBossesAndWhispers, scenarioChamberGuardians, scenarioChamberGuardianPolish, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryRespec, scenarioForgeLibraryAudit, scenarioFloorTheming, scenarioZoneDEchoes, scenarioZoneDFx, scenarioFounderChamber, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioRoomOfRequirement, scenarioStairsReachable, scenarioHouseRoomBias] };
+module.exports = { scenarios: [scenarioRoomArchetypes, scenarioLotFTexture, scenarioEscapePocket, scenarioEscapeRiddleSolve, scenarioEscapeMalus, scenarioEscapeMirror, scenarioEscapeWarden, scenarioEscapeIronman, scenarioEscapeRewards, scenarioCh13EndgamePivot, scenarioScriptedFloorBeats, scenarioVoixDesRuines, scenarioDungeonLife, scenarioFountain, scenarioRefuge, scenarioSoloSoftlock, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioRespawn20Percent, scenarioVictoryTrigger, scenarioStairsGated, scenarioFinalBossGuaranteed, scenarioActBossesAndWhispers, scenarioChamberGuardians, scenarioChamberGuardianPolish, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryRespec, scenarioForgeLibraryAudit, scenarioFloorTheming, scenarioZoneDEchoes, scenarioZoneDFx, scenarioFounderChamber, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioRoomOfRequirement, scenarioStairsReachable, scenarioHouseRoomBias] };

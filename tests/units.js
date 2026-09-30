@@ -3862,6 +3862,30 @@ function loadNpcs() {
 })();
 
 // ============================================================
+// §28 — 6b (revue 2026-09) : archétypes de salles
+// ============================================================
+(function test6bArchetypes() {
+  const fa = loadModule('js/floor-ambiance.js', ['ROOM_ARCHETYPES', 'pickRoomArchetype', 'getRoomArchetype', 'roomArchetypeAt']);
+  const ids = fa.ROOM_ARCHETYPES.map(a => a.id);
+  check('6b: 4 archétypes (trésor, embuscade, sanctuaire, galerie)', ids.join() === 'tresor,embuscade,sanctuaire,galerie');
+  check('6b: seul le trésor est silencieux', fa.ROOM_ARCHETYPES.every(a => (a.id === 'tresor') === !a.entry));
+  const { CELL } = loadModule('js/data.js', ['CELL']);
+  check('6b: centres = cellules existantes', fa.ROOM_ARCHETYPES.every(a => a.center === null || typeof CELL[a.center] === 'number'));
+  const draw = (floor) => { const n = {}; let i = 0; const rng = () => ((i++ * 0.6180339887) % 1);
+    for (let k = 0; k < 4000; k++) { const a = fa.pickRoomArchetype(floor, rng).id; n[a] = (n[a] || 0) + 1; } return n; };
+  const f1 = draw(1), f5 = draw(5);
+  check('6b: pas d\'embuscade à l\'étage 1', !f1.embuscade && f1.tresor && f1.sanctuaire && f1.galerie);
+  check('6b: proportions ≈ poids (ét. 5)', Math.abs(f5.tresor / 4000 - 0.40) < 0.03 && Math.abs(f5.embuscade / 4000 - 0.25) < 0.03
+    && Math.abs(f5.sanctuaire / 4000 - 0.20) < 0.03 && Math.abs(f5.galerie / 4000 - 0.15) < 0.03);
+  // Densité d'ennemis neutre : +0,4 × P(embuscade) vs −0,6 × P(sanctuaire), par salle-branche.
+  const pE = fa.getRoomArchetype('embuscade').weight / 100, pS = fa.getRoomArchetype('sanctuaire').weight / 100;
+  check('6b: densité d\'ennemis quasi neutre', Math.abs(0.4 * pE - 0.6 * pS) <= 0.03);
+  const list = [{ x: 2, y: 2, w: 3, h: 3, type: 'galerie' }];
+  check('6b: roomArchetypeAt', fa.roomArchetypeAt(list, 4, 4).type === 'galerie' && fa.roomArchetypeAt(list, 5, 4) === null
+    && fa.roomArchetypeAt(null, 1, 1) === null);
+})();
+
+// ============================================================
 // Rapport
 // ============================================================
 if (failures.length) {

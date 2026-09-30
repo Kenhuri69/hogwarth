@@ -347,14 +347,18 @@ function generateDungeon(floor) {
       if (roll < chestP)             dungeon[r.cy][r.cx] = CELL.CHEST;
       else if (roll < chestP + 0.20) dungeon[r.cy][r.cx] = CELL.SHOP;
     } else if (r.kind === 'branch') {
-      // Cul-de-sac : autel (~25 %) ou coffre garanti — récompense du détour.
-      dungeon[r.cy][r.cx] = (Math.random() < 0.25) ? CELL.ALTAR : CELL.CHEST;
+      // Cul-de-sac : archétype de salle (6b) — trésor, embuscade, sanctuaire
+      // ou galerie. Repli historique (autel ~25 % / coffre) sans le registre.
+      r.archetype = (typeof pickRoomArchetype === 'function') ? pickRoomArchetype(floor) : null;
+      const c = r.archetype ? r.archetype.center : (Math.random() < 0.25 ? 'ALTAR' : 'CHEST');
+      if (c) dungeon[r.cy][r.cx] = CELL[c];
     }
   }
 
   // Instantané structurel pour les tests fumée.
   lastDungeonRooms = rooms.map(r => ({
-    x: r.x, y: r.y, w: r.w, h: r.h, cx: r.cx, cy: r.cy, kind: r.kind
+    x: r.x, y: r.y, w: r.w, h: r.h, cx: r.cx, cy: r.cy, kind: r.kind,
+    archetype: r.archetype ? r.archetype.id : null
   }));
 
   // ── Pièges cachés (Phase 2 §2.A) ──────────────────────────────
@@ -628,6 +632,7 @@ function generateDungeon(floor) {
   const enemyChance = (_evKind === 'hante' || _evKind === 'givre_ancien') ? 0.85
                     : _evKind === 'calme' ? 0.30 : 0.60;
   for(let r of rooms.slice(1)) {
+    if (r.archetype && r.archetype.calm) continue;   // 6b — sanctuaire : aucun ennemi
     if(Math.random()<enemyChance) {
       const ex = r.x+Math.floor(Math.random()*r.w);
       const ey = r.y+Math.floor(Math.random()*r.h);
@@ -639,6 +644,23 @@ function generateDungeon(floor) {
       if(dungeon[ey][ex]===CELL.FLOOR && !onSpawn) {
         enemyMap[ey][ex] = scaleMonster(weightedPick(pool), floor);
       }
+    }
+  }
+
+  // 6b — embuscade : un gardien garanti dans la salle (hors centre).
+  for (const r of rooms) {
+    if (!r.archetype || !r.archetype.guard) continue;
+    const cells = [];
+    let guarded = false;
+    for (let y = r.y; y < r.y + r.h; y++)
+      for (let x = r.x; x < r.x + r.w; x++) {
+        if (enemyMap[y][x]) guarded = true;
+        else if (dungeon[y][x] === CELL.FLOOR && !(x === r.cx && y === r.cy)
+                 && !(x === rooms[0].cx && y === rooms[0].cy)) cells.push([x, y]);
+      }
+    if (!guarded && cells.length) {
+      const [gx, gy] = cells[Math.floor(Math.random() * cells.length)];
+      enemyMap[gy][gx] = scaleMonster(weightedPick(pool), floor);
     }
   }
 
@@ -698,6 +720,26 @@ function generateDungeon(floor) {
   _ensurePagePlacement(floor);
   // Easter egg « Salle sur Demande » — pose le couple mur/tuile déterministe.
   _ensureRequirementWall(floor);
+
+  // 6b — archétypes retenus : une salle dont le centre a été écrasé depuis
+  // (salle unique, fontaine, refuge, atelier…) perd le sien. Le trésor,
+  // silencieux, n'est pas mémorisé.
+  roomArchetypes = rooms.filter(r => r.archetype && r.archetype.id !== 'tresor' && _archetypeCenterIntact(r))
+    .map(r => ({ x: r.x, y: r.y, w: r.w, h: r.h, type: r.archetype.id }));
+  announcedArchetypes = new Set();
+}
+
+// 6b — le centre d'une salle porte-t-il encore ce que son archétype y a posé ?
+// Un sanctuaire où un ennemi a quand même été posé (boss garanti, cible de
+// quête, salles fusionnées) redevient un simple autel.
+function _archetypeCenterIntact(r) {
+  if (r.archetype.calm) {
+    for (let y = r.y; y < r.y + r.h; y++)
+      for (let x = r.x; x < r.x + r.w; x++) if (enemyMap[y][x]) return false;
+  }
+  const cell = dungeon[r.cy][r.cx];
+  if (r.archetype.center) return cell === CELL[r.archetype.center];
+  return [CELL.FLOOR, CELL.NPC, CELL.GARDEN, CELL.RUNE, CELL.STELE].includes(cell);
 }
 
 // Easter egg « Salle sur Demande » (room-of-requirement-easter-egg.md) :

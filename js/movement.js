@@ -710,6 +710,9 @@ function handleCellEntry(cell) {
   const _roomNow     = _isRoomCell(playerX, playerY);
   const _enteredRoom = _roomNow && !_wasInRoomCell;
   _wasInRoomCell = _roomNow;
+  // 6b — archétype de salle : annonce (et révélation de la galerie) à la
+  // 1ʳᵉ entrée de la visite. Défensif ; ignoré en visite et en Poche du Sceau.
+  if (_enteredRoom && typeof maybeRoomArchetypeEntry === 'function') maybeRoomArchetypeEntry();
 
   // Escape Game (Lot 3) — dans une Poche du Sceau, certaines cases ont un
   // comportement dédié (Type B : fragment/autel ; Type C : brasier/abri).

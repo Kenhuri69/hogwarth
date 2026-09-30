@@ -153,6 +153,10 @@ window.UX_safe = new Proxy({}, {
     { name: 'DUO_TECHNIQUES',          source: 'battle-spells.js',  kind: 'obj' },
     { name: 'duoTechniqueAvailable',   source: 'battle-spells.js',  kind: 'fn' },
     { name: 'triggerDuoTechnique',     source: 'battle-spells.js',  kind: 'fn' },
+    // 6b (revue 2026-09) — archétypes de salles.
+    { name: 'ROOM_ARCHETYPES',         source: 'floor-ambiance.js', kind: 'obj' },
+    { name: 'pickRoomArchetype',       source: 'floor-ambiance.js', kind: 'fn' },
+    { name: 'maybeRoomArchetypeEntry', source: 'movement-interactions.js', kind: 'fn' },
     { name: 'FLOOR_EVENTS',       source: 'floor-events.js',  kind: 'obj' },
     { name: 'rollFloorEvent',     source: 'floor-events.js', kind: 'fn'  },
     { name: 'floorEventKind',     source: 'floor-events.js', kind: 'fn'  },
