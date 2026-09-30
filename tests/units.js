@@ -1545,7 +1545,8 @@ function loadNpcs() {
   const { BOSS_PROMO_BEATS } = pure;
   // Lot B (axe 3a) : + 7 boss canon.
   // Lot C (arc H3) : + le Lieutenant.
-  check('BOSS_PROMO_BEATS = 14 boss', Object.keys(BOSS_PROMO_BEATS).length === 14);
+  // Lot D (arc H7) : + le Magyar Ancestral (ligne selon le choix de l'œuf).
+  check('BOSS_PROMO_BEATS = 15 boss', Object.keys(BOSS_PROMO_BEATS).length === 15);
   const { MONSTERS: _promoMonsters } = loadMonsters();
   for (const id of Object.keys(BOSS_PROMO_BEATS)) {
     check(`promo ${id} : monstre existant`, _promoMonsters.some(m => m.id === id));
@@ -3546,6 +3547,234 @@ function loadNpcs() {
   const trel = npcs.find(n => n.id === 'trelawney');
   check('lotC H2: Trelawney réagit à 1, 2 et 3 fragments',
     [1, 2, 3].every(k => typeof trel.prophecyLines[k] === 'string'));
+})();
+
+// ============================================================
+// 24. Lot D (revue 2026-09) — arcs H7 (Œuf), H1 (Rogue), H5 (Chaussette),
+//     H4 (Égarés) + mécanismes génériques (search localisé, questGate,
+//     fight, promotion par choix, trêve du dragon, échos de fin)
+// ============================================================
+(function testLotD() {
+  const { QUEST_TEMPLATES } = loadModule('js/quests-templates.js', ['QUEST_TEMPLATES']);
+  const tplOf = (id) => QUEST_TEMPLATES.find(t => t.id === id);
+  const ids = ['oeuf_profondeurs', 'prix_de_rogue', 'la_chaussette', 'les_egares'];
+  check('lotD: 4 quêtes', ids.every(id => !!tplOf(id)));
+  // Recherches localisées : une ligne de récit par étage.
+  for (const id of ['oeuf_profondeurs', 'prix_de_rogue', 'la_chaussette']) {
+    const st = tplOf(id).objectives[0];
+    check('lotD ' + id + ': search localisé', st.type === 'search' && Array.isArray(st.floors)
+      && st.amount <= st.floors.length && tplOf(id).progressLines.length === st.amount);
+  }
+  check('lotD H1: réactifs aux étages 4, 7, 10', tplOf('prix_de_rogue').objectives[0].floors.join() === '4,7,10');
+  check('lotD H5: option combat = duel contre un monstre existant', (() => {
+    const c = tplOf('la_chaussette').choices.find(x => x.id === 'combattre');
+    return c && c.fight && loadMonsters().MONSTERS.some(m => m.id === c.fight);
+  })());
+  const eg = tplOf('les_egares');
+  check('lotD H4: remise auto + ligne de fin', eg.autoTurnIn === true && typeof eg.doneLine === 'string');
+  check('lotD H4: retrouver puis abriter', eg.objectives[0].type === 'talk'
+    && eg.objectives[1].type === 'discover' && eg.objectives[1].cell === 'REFUGE');
+
+  // PNJ : donneurs / remises / PNJ conditionnels existants.
+  const npcs = loadNpcs().NPCS;
+  const byId = (id) => npcs.find(n => n.id === id);
+  check('lotD H7: Hagrid donne, 4 PNJ peuvent clore', byId('hagrid').questsGiven.includes('oeuf_profondeurs')
+    && ['hagrid', 'hagrid_random', 'scamander', 'scamander_random'].every(id => byId(id).questsTurnedIn.includes('oeuf_profondeurs')));
+  check('lotD H1: Rogue donne, 4 portraits de Dumbledore closent',
+    byId('rogue').questsGiven.includes('prix_de_rogue') && !byId('rogue').questsTurnedIn.includes('prix_de_rogue')
+    && ['dumbledore', 'dumbledore_relais_4', 'dumbledore_relais_7', 'dumbledore_relais_10']
+      .every(id => byId(id).questsTurnedIn.includes('prix_de_rogue')));
+  check('lotD H4: Chourave donne', byId('sprout').questsGiven.includes('les_egares'));
+  check('lotD H4: égarés = PNJ de l\'étape talk',
+    eg.objectives[0].npcIds.every(id => byId(id) && byId(id).questGate && byId(id).questGate.untilTalked));
+  check('lotD H5: Tilly libre = aide elf_help', byId('tilly_libre').specialAction.type === 'elf_help'
+    && byId('tilly_libre').questGate.choice === 'la_chaussette:liberer');
+
+  // questGate (pur, via npcs-helpers.js).
+  const gateEnv = (over) => Object.assign({ NPCS: npcs, questChoices: {}, completedQuests: new Set(),
+    activeQuests: [], chosenHouse: 'Poufsouffle', effectiveFloor: (f) => f }, over);
+  const h0 = loadModule('js/npcs-helpers.js', ['_npcPassesQuestGate', 'getNpcsForFloor'], gateEnv({}));
+  check('lotD gate: égaré absent sans quête', !h0._npcPassesQuestGate(byId('egare_tobias')));
+  check('lotD gate: Tilly liée présente au départ', h0._npcPassesQuestGate(byId('tilly')));
+  check('lotD gate: Tilly libre absente sans choix', !h0._npcPassesQuestGate(byId('tilly_libre')));
+  check('lotD gate: PNJ sans gate inchangé', h0._npcPassesQuestGate(byId('hagrid')));
+  const act = JSON.parse(JSON.stringify(eg));
+  const h1 = loadModule('js/npcs-helpers.js', ['_npcPassesQuestGate', 'getNpcsForFloor'], gateEnv({ activeQuests: [act] }));
+  check('lotD gate: égaré présent, quête active', h1._npcPassesQuestGate(byId('egare_tobias'))
+    && h1.getNpcsForFloor(3).some(n => n.id === 'egare_tobias'));
+  act.objectives[0]._seen = ['egare_tobias'];
+  check('lotD gate: égaré retrouvé → retiré', !h1._npcPassesQuestGate(byId('egare_tobias'))
+    && h1._npcPassesQuestGate(byId('egare_lila')));
+  const h2 = loadModule('js/npcs-helpers.js', ['_npcPassesQuestGate', 'getNpcsForFloor'],
+    gateEnv({ completedQuests: new Set(['la_chaussette']), questChoices: { la_chaussette: 'liberer' } }));
+  check('lotD gate: Tilly liée partie, libre à l\'étage 10',
+    !h2._npcPassesQuestGate(byId('tilly')) && h2.getNpcsForFloor(10).some(n => n.id === 'tilly_libre'));
+
+  // Promotion par choix + trêve (purs, battle.js).
+  const b = loadModule('js/battle.js', ['BOSS_PROMO_BEATS', 'bossPromoLine', 'dragonTruceReady', 'DRAGON_TRUCE']);
+  const mb = b.BOSS_PROMO_BEATS.magyar_ancestral;
+  check('lotD H7: promo par défaut sans choix', b.bossPromoLine(mb, {}) === mb.line);
+  check('lotD H7: promo différente selon le choix',
+    b.bossPromoLine(mb, { oeuf_profondeurs: 'hagrid' }) !== b.bossPromoLine(mb, { oeuf_profondeurs: 'scamander' })
+    && b.bossPromoLine(mb, { oeuf_profondeurs: 'hagrid' }) !== mb.line);
+  const drag = (pct) => ({ id: 'magyar_ancestral', hp: 100, currentHp: pct });
+  const sc = { oeuf_profondeurs: 'scamander' };
+  check('lotD trêve: à 50 % avec l\'œuf rendu', b.dragonTruceReady(drag(50), sc, new Set()));
+  check('lotD trêve: pas au-dessus de 50 %', !b.dragonTruceReady(drag(51), sc, new Set()));
+  check('lotD trêve: pas si l\'œuf est chez Hagrid', !b.dragonTruceReady(drag(40), { oeuf_profondeurs: 'hagrid' }, new Set()));
+  check('lotD trêve: une seule fois', !b.dragonTruceReady(drag(40), sc, new Set(['magyar_truce'])));
+  check('lotD trêve: autre monstre → non', !b.dragonTruceReady({ id: 'troll', hp: 100, currentHp: 10 }, sc, new Set()));
+
+  // Codex : 4 fiches, notes de dilemme valides, note Drago ajoutée à celle du choix.
+  const cx = loadModule('js/codex.js', ['CODEX_ENTRIES', 'codexEntryState', 'codexVariantNote']);
+  const base = { questsDone: new Set(), questChoices: {}, prophecyFragments: 0, heroKeys: [] };
+  for (const [eid, qid] of [['prince_felure', 'prix_de_rogue'], ['oeuf_profondeurs', 'oeuf_profondeurs'],
+                            ['tilly_elfe', 'la_chaussette'], ['les_egares', 'les_egares']]) {
+    const e = cx.CODEX_ENTRIES.find(x => x.id === eid);
+    check('lotD codex ' + eid + ': verrouillé puis révélé', e && cx.codexEntryState(e, base) === 'locked'
+      && cx.codexEntryState(e, { ...base, questsDone: new Set([qid]) }) === 'revealed');
+  }
+  const pf = cx.CODEX_ENTRIES.find(x => x.id === 'prince_felure');
+  const nR = cx.codexVariantNote(pf, 'Gryffondor', [], { prix_de_rogue: 'rendre' });
+  const nRD = cx.codexVariantNote(pf, 'Gryffondor', ['draco'], { prix_de_rogue: 'rendre' });
+  check('lotD codex: note Drago ajoutée à la note du choix', nR && nRD && nRD.startsWith(nR) && nRD.length > nR.length);
+  const eh = cx.CODEX_ENTRIES.find(x => x.id === 'les_egares');
+  check('lotD codex: note Poufsouffle', !!cx.codexVariantNote(eh, 'Poufsouffle', [], {}));
+
+  // Traces : lettres de la surface et échos de fin.
+  const fa = loadModule('js/floor-ambiance.js', ['composeSurfaceLetter', 'GRANDE_SALLE_BEAT']);
+  check('lotD H4: lettres 7 et 10 changent si les égarés sont à l\'abri',
+    [7, 10].every(f => fa.composeSurfaceLetter(f, { egaresSaved: true }).text
+      !== fa.composeSurfaceLetter(f, { egaresSaved: false }).text));
+  check('lotD H4: ligne Grande Salle', typeof fa.GRANDE_SALLE_BEAT.egaresLine === 'string');
+  const eg2 = loadModule('js/endgame.js', ['_victorySpeechVariants', 'VICTORY_CHOICE_ECHOES'], { window: {} });
+  for (const key of Object.keys(eg2.VICTORY_CHOICE_ECHOES)) {
+    const [qid, cid] = key.split(':');
+    const t = tplOf(qid);
+    check('lotD écho ' + key + ': option existante', !!(t && t.choices && t.choices.some(c => c.id === cid)));
+  }
+  const plain = eg2._victorySpeechVariants({});
+  const withEchoes = eg2._victorySpeechVariants({ questChoices: { prix_de_rogue: 'rendre' }, egaresSaved: true });
+  check('lotD échos: présents dans le discours de fin', withEchoes.length > plain.length
+    && withEchoes.includes('Rogue') && withEchoes.includes('Tobias'));
+})();
+
+// ============================================================
+// 25. Lot E (revue 2026-09) — H9 (Rêves du Dormeur), H10 (Archiviste),
+//     H6 (Chronique de la Garde de l'Aube).
+// ============================================================
+(function testLotE() {
+  // H9 — rêves (purs, floor-ambiance.js).
+  const fa = loadModule('js/floor-ambiance.js', ['DORMEUR_DREAMS', 'dormeurDreamCount', 'dormeurDreamWanted', 'DORMEUR_DREAM_CHANCE']);
+  check('lotE H9: 10 rêves', fa.DORMEUR_DREAMS.length === 10 && fa.DORMEUR_DREAMS.every(t => typeof t === 'string' && t.length > 40));
+  check('lotE H9: compte vide = 0', fa.dormeurDreamCount(new Set()) === 0);
+  check('lotE H9: compte dans l\'ordre', fa.dormeurDreamCount(new Set(['dream:1', 'dream:2', 'dream:4'])) === 2);
+  const want = (o) => fa.dormeurDreamWanted(Object.assign({ victory: true, floor: 12, seen: new Set(), roll: 0 }, o));
+  check('lotE H9: Boucle + tirage bas → rêve', want({}));
+  check('lotE H9: pas avant la victoire', !want({ victory: false }));
+  check('lotE H9: pas avant l\'étage 11', !want({ floor: 10 }));
+  check('lotE H9: un seul rêve par étage', !want({ seen: new Set(['dreamfloor:12']) }));
+  check('lotE H9: tirage haut → rien', !want({ roll: fa.DORMEUR_DREAM_CHANCE }));
+  const all = new Set(fa.DORMEUR_DREAMS.map((_, i) => 'dream:' + (i + 1)));
+  check('lotE H9: plus rien après le 10e', fa.dormeurDreamCount(all) === 10 && !want({ seen: all }));
+  const cx = loadModule('js/codex.js', ['CODEX_ENTRIES', 'codexEntryState', 'codexVariantNote']);
+  const rd = cx.CODEX_ENTRIES.find(e => e.id === 'reves_dormeur');
+  check('lotE H9 codex: verrouillé → voilé → révélé', rd
+    && cx.codexEntryState(rd, { dormeurDreams: 0 }) === 'locked'
+    && cx.codexEntryState(rd, { dormeurDreams: 3 }) === 'veiled'
+    && cx.codexEntryState(rd, { dormeurDreams: 10 }) === 'revealed');
+
+  // H10 — Archiviste (pur, profile.js) : lecture seule du profil.
+  const pr = loadModule('js/profile.js', ['archivistMemoryLines']);
+  const l1 = pr.archivistMemoryLines({ victories: 1 }, { floor: 11 });
+  check('lotE H10: 1re victoire → une ligne', l1.length === 1 && l1[0].includes('première'));
+  const rich = { victories: 4, pactVictories: 1, cyclesBroken: 2, sealedDeaths: 1, deepestFloor: 27 };
+  const l2 = pr.archivistMemoryLines(rich, { floor: 11, ngPlus: 2 });
+  check('lotE H10: profil riche → 4 lignes max, cycles en tête', l2.length === 4 && l2[0].includes('2 fois'));
+  check('lotE H10: cite le nombre de victoires', l2.some(t => t.includes('4 fois')));
+  check('lotE H10: étage le plus profond cité s\'il est plus bas',
+    pr.archivistMemoryLines({ victories: 1, deepestFloor: 27 }, { floor: 11 }).some(t => t.includes('27'))
+    && !pr.archivistMemoryLines({ victories: 1, deepestFloor: 11 }, { floor: 11 }).some(t => t.includes('étage 11')));
+  const frozen = Object.freeze({ victories: 2 });
+  check('lotE H10: profil non muté', pr.archivistMemoryLines(frozen, {}).length >= 1 && frozen.victories === 2);
+  check('lotE H10: profil absent toléré', Array.isArray(pr.archivistMemoryLines(null, null)));
+  const npcs = loadNpcs().NPCS;
+  const byId = (id) => npcs.find(n => n.id === id);
+  check('lotE H10: Archiviste à l\'étage 11 (donc 21 en Boucle)', byId('archiviste_boucles')
+    && byId('archiviste_boucles').placement.floor === 11 && byId('archiviste_boucles').profileMemory === true);
+
+  // H6 — Chronique de la Garde de l'Aube.
+  const { QUEST_TEMPLATES } = loadModule('js/quests-templates.js', ['QUEST_TEMPLATES']);
+  const ch = QUEST_TEMPLATES.find(t => t.id === 'chronique_aube');
+  const st = ch && ch.objectives[0];
+  check('lotE H6: 4 feuillets aux étages 7-10', st && st.type === 'search' && st.floors.join() === '7,8,9,10'
+    && st.amount === 4 && ch.progressLines.length === 4);
+  check('lotE H6: une ligne par héros de la Garde', ch.progressHeroLines.map(h => h.hero).join() === 'agathe,olivier,nathalie,chatillon');
+  const { CHARACTERS } = loadModule('js/data-characters.js', ['CHARACTERS']);
+  check('lotE H6: héros existants', ch.progressHeroLines.every(h => !!CHARACTERS[h.hero]));
+  check('lotE H6: remise auto → Reliquaire Lunaire', ch.autoTurnIn === true && ch.reward.item === 'reliquaire_lunaire');
+  check('lotE H6: Fumseck donne (avec le Bouclier)', byId('fumseck').questsGiven.join() === 'bouclier_phenix,chronique_aube');
+  const ca = cx.CODEX_ENTRIES.find(e => e.id === 'chronique_aube');
+  check('lotE H6 codex: révélé à la remise', cx.codexEntryState(ca, { questsDone: new Set() }) === 'locked'
+    && cx.codexEntryState(ca, { questsDone: new Set(['chronique_aube']) }) === 'revealed');
+  check('lotE H6 codex: note par héros de la Garde',
+    ['agathe', 'olivier', 'nathalie', 'chatillon'].every(k => !!cx.codexVariantNote(ca, null, [k], {})));
+})();
+
+// ============================================================
+// 26. Lot F (revue 2026-09) — texture : ambiance, énigmes, événements,
+//     salles uniques des étages 1, 5, 7, 8.
+// ============================================================
+(function testLotF() {
+  // 6a — ambiance : 16 phrases par zone, sans doublon.
+  const w = {};
+  loadModule('js/room-flavor.js', [], { window: w });
+  const zones = ['intro', 'dungeon', 'depths', 'abyss'];
+  check('lotF 6a: 16 phrases distinctes par zone', zones.every(z => {
+    const seen = new Set(); for (let i = 0; i < 3000; i++) seen.add(w.RoomFlavor.pickFlavor(z));
+    return seen.size === 16;
+  }));
+
+  // 6a — énigmes : 30, valides, filtrées par étage et par héros.
+  const rd = loadModule('js/riddles.js', ['RIDDLES', 'pickRiddleFor']);
+  check('lotF 6a: 30 énigmes, ids uniques', rd.RIDDLES.length === 30 && new Set(rd.RIDDLES.map(r => r.id)).size === 30);
+  check('lotF 6a: réponses dans les choix', rd.RIDDLES.every(r => Number.isInteger(r.answer) && r.answer >= 0 && r.answer < r.choices.length));
+  const { CHARACTERS } = loadModule('js/data-characters.js', ['CHARACTERS']);
+  check('lotF 6a: énigmes de héros → héros existants', rd.RIDDLES.filter(r => r.hero).every(r => !!CHARACTERS[r.hero]));
+  const drawAll = (floor, heroes) => { const s = new Set(); let i = 0;
+    const rng = () => ((i++ * 0.6180339887) % 1);
+    for (let k = 0; k < 4000; k++) s.add(rd.pickRiddleFor(floor, heroes, rng).id); return s; };
+  const f1 = drawAll(1, ['harry']);
+  check('lotF 6a: Ruines absentes à l\'étage 1', !f1.has('r_dormeur') && !f1.has('r_quatre_unis') && !f1.has('r_voute_corruption'));
+  check('lotF 6a: énigme du héros présent seulement', f1.has('r_hero_harry') && !f1.has('r_hero_hermione'));
+  const f12 = drawAll(12, []);
+  check('lotF 6a: Ruines en Boucle, aucune énigme de héros sans héros', f12.has('r_dormeur') && ![...f12].some(id => /^r_hero_/.test(id)));
+
+  // 6a — événements : 6 de plus, `kind` vers un effet existant, gatés 5-10.
+  const fe = loadModule('js/floor-events.js', ['FLOOR_EVENTS', 'floorEventKind', 'getFloorEvent']);
+  const baseIds = ['hante', 'calme', 'marche', 'tresor', 'pieges', 'runique'];
+  const kinded = fe.FLOOR_EVENTS.filter(e => e.kind);
+  check('lotF 6a: 6 événements à kind existant', kinded.length === 6 && kinded.every(e => baseIds.includes(e.kind)));
+  check('lotF 6a: gatés entre 5 et 10', kinded.every(e => e.minFloor >= 5 && e.maxFloor <= 10));
+  check('lotF 6a: étages 5, 7, 8 couverts', [5, 7, 8].every(f => kinded.some(e => f >= e.minFloor && f <= e.maxFloor)));
+  check('lotF 6a: floorEventKind', fe.floorEventKind('crue_lac') === 'pieges' && fe.floorEventKind('hante') === 'hante'
+    && fe.floorEventKind(null) === null);
+
+  // 6c — salles uniques (purs, floor-ambiance.js).
+  const fa = loadModule('js/floor-ambiance.js', ['FLOOR_LANDMARKS', 'floorLandmark', 'landmarkReflection', 'landmarkTrophyPlaques']);
+  check('lotF 6c: salles aux étages 1, 5, 7, 8 seulement', Object.keys(fa.FLOOR_LANDMARKS).join() === '1,5,7,8'
+    && !fa.floorLandmark(2) && !fa.floorLandmark(11));
+  check('lotF 6c: chaque salle a titre, texte, action, effet', [1, 5, 7, 8].every(f => { const l = fa.floorLandmark(f);
+    return l.title && l.desc && l.action && l.done && ['housePoints', 'sp', 'hp', 'xp'].includes(l.effect); }));
+  check('lotF 6c: reflet propre au héros, repli sinon', fa.landmarkReflection('harry') !== fa.landmarkReflection('zzz')
+    && typeof fa.landmarkReflection(undefined) === 'string');
+  const pl0 = fa.landmarkTrophyPlaques({ kills: 0 });
+  const pl = fa.landmarkTrophyPlaques({ bossCount: 2, kills: 40, quests: 9, choices: 3, house: 'Serdaigle' });
+  check('lotF 6c: plaques dérivées des exploits', pl0.length === 1 && pl.length === 4
+    && pl[0].includes('2 gardiens') && pl[0].includes('Serdaigle') && pl[1].includes('40 créatures'));
+  const { CELL } = loadModule('js/data.js', ['CELL']);
+  check('lotF 6c: CELL.LANDMARK = 20, unique', CELL.LANDMARK === 20
+    && Object.values(CELL).filter(v => v === 20).length === 1);
 })();
 
 // ============================================================

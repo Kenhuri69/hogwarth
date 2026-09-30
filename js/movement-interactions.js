@@ -64,7 +64,8 @@ function openChest() {
   if (typeof DFX_safe !== 'undefined') DFX_safe.burst('explore-overlay', 'gold'); // VFX d'ouverture (E3)
   if (typeof HAPTICS_safe !== 'undefined') HAPTICS_safe.chest(); // N2
   if (puzzleReward) {
-    _openPuzzleChest(currentFloorEvent === 'runique' || currentFloorEvent === 'sceau_fissure');
+    const _evK = (typeof floorEventKind === 'function') ? floorEventKind(currentFloorEvent) : currentFloorEvent;
+    _openPuzzleChest(_evK === 'runique' || _evK === 'sceau_fissure');
     return;
   }
 
@@ -719,6 +720,62 @@ function useRefuge() {
   safeCall('autoSave', 'refuge-used');
 }
 
+// ── Salle unique d'étage (Lot F, axe 6c) ─────────────────────
+// FLOOR_LANDMARKS (floor-ambiance.js) : action une fois par partie
+// (sentinelle `landmark:<étage>` dans seenScriptedBeat). Effet léger et
+// identique pour toutes les Maisons.
+function landmarkSpent(floor) {
+  return typeof seenScriptedBeat !== 'undefined' && seenScriptedBeat.has('landmark:' + floor);
+}
+
+function useLandmark() {
+  if (inBattle) return;
+  if (dungeon[playerY][playerX] !== CELL.LANDMARK) return;
+  const lm = (typeof floorLandmark === 'function') ? floorLandmark(currentFloor) : null;
+  if (!lm || landmarkSpent(currentFloor)) { _hideExploreOverlay(); return; }
+  seenScriptedBeat.add('landmark:' + currentFloor);
+  const alive = livingParty();
+  const lines = [];
+  if (lm.effect === 'housePoints') {
+    if (chosenHouse) {
+      housePoints += lm.amount;
+      lines.push("Une poignée de pierres tombe dans le sablier de " + chosenHouse + ", sans bruit. Quelqu'un compte encore.");
+      addMsg(`${lm.emoji} +${lm.amount} points pour ${chosenHouse}.`, 'good');
+      safeCall('checkHouseLevelUp');
+    }
+  } else if (lm.effect === 'sp') {
+    alive.forEach(c => { c.sp = c.spMax; });
+    lines.push("Une chouette effraie se pose sur ton bras, ébouriffe ses plumes contre ta joue, et repart. Tu te sens étrangement reposé, comme après une lettre de chez soi.");
+    addMsg(`${lm.emoji} PM du groupe entièrement restaurés.`, 'good');
+  } else if (lm.effect === 'hp') {
+    const lead = alive[0] && alive[0].heroKey;
+    lines.push(landmarkReflection(lead));
+    alive.forEach(c => { c.hp = Math.min(c.hpMax, c.hp + Math.ceil(c.hpMax * lm.amount)); });
+    addMsg(`${lm.emoji} +${Math.round(lm.amount * 100)} % des PV du groupe.`, 'good');
+  } else if (lm.effect === 'xp') {
+    const plaques = landmarkTrophyPlaques({
+      bossCount: (typeof defeatedBosses !== 'undefined' && defeatedBosses) ? defeatedBosses.size : 0,
+      kills:     (typeof totalKills === 'number') ? totalKills : 0,
+      quests:    (typeof completedQuests !== 'undefined' && completedQuests) ? completedQuests.size : 0,
+      choices:   (typeof questChoices !== 'undefined' && questChoices) ? Object.keys(questChoices).length : 0,
+      house:     chosenHouse,
+    });
+    plaques.forEach(t => addMsg('🏆 ' + t, 'narrative'));
+    lines.push("Les plaques neuves portent ton nom. Le château, lui, n'a rien oublié.");
+    player.xp += lm.amount;
+    addMsg(`${lm.emoji} +${lm.amount} XP.`, 'good');
+    safeCall('checkLevelUp');
+  }
+  if (lines.length) {
+    setNarrative(lines[lines.length - 1]);
+    addMsg(lines[lines.length - 1], 'narrative');
+  }
+  if (typeof DFX_safe !== 'undefined') DFX_safe.burst('explore-overlay', 'gold');
+  _hideExploreOverlay();
+  updateUI();
+  safeCall('autoSave', 'landmark');
+}
+
 // ── Salle sur Demande (easter egg) ───────────────────────────
 // Révèle la porte : le mur « propice » de l'étage devient CELL.REQUIREMENT,
 // marchable. Déclenché par le 3ᵉ passage sur la tuile (cf. movement.js _step).
@@ -1063,6 +1120,8 @@ function rest() {
   restCooldown = 5;
   setNarrative("Le groupe se repose quelques instants. Les forces se restaurent partiellement.");
   addMsg(`Repos : HP et PM restaurés (repos disponible dans 5 pas)`, 'good');
+  // Lot E (arc H9) : en Boucle, le repos peut ouvrir un rêve du Dormeur.
+  if (typeof maybeDormeurDream === 'function') maybeDormeurDream();
   updateUI();
 }
 

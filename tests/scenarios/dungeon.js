@@ -2370,7 +2370,7 @@ async function scenarioFloorEvents() {
     state:  typeof currentFloorEvent !== 'undefined',
   }));
   console.log('  T1:', t1);
-  assert(t1.events === 10, 'FLOOR_EVENTS doit compter 10 événements (6 base + 4 Zone D)');
+  assert(t1.events === 16, 'FLOOR_EVENTS doit compter 16 événements (6 base + 6 Lot F + 4 Zone D)');
   assert(t1.roll && t1.get, 'rollFloorEvent / getFloorEvent non exposées');
   assert(t1.state,          'currentFloorEvent non exposé');
 
@@ -2814,7 +2814,7 @@ async function scenarioRiddleStele() {
   console.log('  T1:', t1);
   assert(t1.cellStele === 14,            'CELL.STELE doit valoir 14');
   assert(t1.steleOk,                     'runeStele non exposé');
-  assert(t1.riddles >= 6 && t1.riddles <= 12, 'RIDDLES doit compter 6 à 12 devinettes');
+  assert(t1.riddles === 30, 'RIDDLES doit compter 30 devinettes (Lot F)');
   assert(t1.getFn,                       'getRiddleById non exposée');
   assert(t1.ansFn,                       'answerSteleRiddle non exposée');
   assert(t1.genFn,                       '_generateRuneStele non exposée');
@@ -4413,4 +4413,96 @@ async function scenarioEscapeRewards() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioEscapePocket, scenarioEscapeRiddleSolve, scenarioEscapeMalus, scenarioEscapeMirror, scenarioEscapeWarden, scenarioEscapeIronman, scenarioEscapeRewards, scenarioCh13EndgamePivot, scenarioScriptedFloorBeats, scenarioVoixDesRuines, scenarioDungeonLife, scenarioFountain, scenarioRefuge, scenarioSoloSoftlock, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioRespawn20Percent, scenarioVictoryTrigger, scenarioStairsGated, scenarioFinalBossGuaranteed, scenarioActBossesAndWhispers, scenarioChamberGuardians, scenarioChamberGuardianPolish, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryRespec, scenarioForgeLibraryAudit, scenarioFloorTheming, scenarioZoneDEchoes, scenarioZoneDFx, scenarioFounderChamber, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioRoomOfRequirement, scenarioStairsReachable, scenarioHouseRoomBias] };
+async function scenarioLotFTexture() {
+  console.log('\n── Scénario Lot F : salles uniques, énigmes filtrées, événements à kind ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Serdaigle' });
+
+  // T1 : une salle unique exactement aux étages 1, 5, 7, 8 ; aucune ailleurs.
+  const t1 = await page.evaluate(() => {
+    const count = (f) => { currentFloor = f; generateDungeon(f); let n = 0;
+      for (let y = 0; y < MAP_H; y++) for (let x = 0; x < MAP_W; x++) if (dungeon[y][x] === CELL.LANDMARK) n++; return n; };
+    const out = {};
+    for (const f of [1, 2, 5, 7, 8, 9]) out[f] = count(f);
+    return out;
+  });
+  console.log('  T1 placement:', t1);
+  assert(t1[1] === 1 && t1[5] === 1 && t1[7] === 1 && t1[8] === 1, 'une salle unique aux étages 1, 5, 7, 8');
+  assert(t1[2] === 0 && t1[9] === 0, 'aucune salle unique ailleurs');
+
+  // T2 : Salle des Trophées (ét. 8) — overlay, action une fois, plaques, XP.
+  const t2 = await page.evaluate(() => {
+    const goTo = (f) => { currentFloor = f; generateDungeon(f);
+      for (let y = 0; y < MAP_H; y++) for (let x = 0; x < MAP_W; x++)
+        if (dungeon[y][x] === CELL.LANDMARK) { playerX = x; playerY = y; return true; }
+      return false; };
+    goTo(8);
+    totalKills = 12; defeatedBosses.add('fenrir_greyback');
+    handleCellEntry(dungeon[playerY][playerX]);
+    const title = document.getElementById('explore-title').textContent;
+    const hasBtn = /useLandmark\(\)/.test(document.getElementById('explore-actions').innerHTML);
+    const xp0 = player.xp, lvl0 = player.level;
+    useLandmark();
+    const log = document.getElementById('msg-log').textContent;
+    const gained = player.xp !== xp0 || player.level !== lvl0;
+    _showExploreOverlay(CELL.LANDMARK);
+    const spentBtn = /useLandmark\(\)/.test(document.getElementById('explore-actions').innerHTML);
+    const xp1 = player.xp; useLandmark();
+    _hideExploreOverlay();
+    // T3 : Hall des Sabliers (+15 points) et Volière (PM restaurés).
+    goTo(1); const hp0 = housePoints; useLandmark(); const hpGain = housePoints - hp0;
+    goTo(5); player.sp = 0; useLandmark(); const spFull = player.sp === player.spMax;
+    goTo(7); player.hp = 1; useLandmark(); const healed = player.hp > 1;
+    const reflet = /cicatrice qui ne saigne pas/.test(document.getElementById('msg-log').textContent);
+    return { title, hasBtn, gained, plaques: /12 créatures/.test(log) && /1 gardien des profondeurs/.test(log),
+      spentBtn, once: player.xp === xp1, hpGain, spFull, healed, reflet };
+  });
+  console.log('  T2/T3 salles:', t2);
+  assert(t2.title === 'La Salle des Trophées corrompue' && t2.hasBtn, 'overlay de la Salle des Trophées');
+  assert(t2.gained && t2.plaques, 'plaques tirées des exploits, XP gagnée');
+  assert(!t2.spentBtn && t2.once, 'action une seule fois par partie');
+  assert(t2.hpGain === 15 && t2.spFull && t2.healed && t2.reflet, 'Sabliers, Volière et Lac : effets et reflet de Harry');
+
+  // T4 : stèles — jamais d'énigme des Ruines ni d'un héros absent à l'étage 1.
+  const t4 = await page.evaluate(() => {
+    const ids = new Set();
+    for (let i = 0; i < 60; i++) {
+      currentFloor = 1; generateDungeon(1);
+      _generateRuneStele(lastDungeonRooms, true);
+      if (runeStele) ids.add(runeStele.riddleId);
+    }
+    return { n: ids.size, bad: [...ids].filter(id => ['r_dormeur', 'r_quatre_unis', 'r_voute_corruption'].includes(id)
+      || (/^r_hero_/.test(id) && id !== 'r_hero_harry')) };
+  });
+  console.log('  T4 énigmes:', t4);
+  assert(t4.n > 5 && t4.bad.length === 0, 'énigmes filtrées par étage et par héros');
+
+  // T5 : un événement à `kind` applique l'effet de son modèle (crue_lac → pièges).
+  const t5 = await page.evaluate(() => {
+    const realRandom = Math.random;
+    const traps = (evt) => {
+      let total = 0;
+      for (let i = 0; i < 20; i++) {
+        Math.random = realRandom;
+        const orig = rollFloorEvent;
+        window.rollFloorEvent = () => evt;
+        currentFloor = 7; generateDungeon(7);
+        window.rollFloorEvent = orig;
+        for (let y = 0; y < MAP_H; y++) for (let x = 0; x < MAP_W; x++) if (dungeon[y][x] === CELL.TRAP) total++;
+      }
+      return total / 20;
+    };
+    return { none: traps(null), crue: traps('crue_lac'), name: getFloorEvent('crue_lac').name };
+  });
+  console.log('  T5 kind:', t5);
+  assert(t5.crue >= t5.none + 1.5 && t5.name === 'Crue du lac', 'Crue du lac = effet « Étage piégé »');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Lot F OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioLotFTexture, scenarioEscapePocket, scenarioEscapeRiddleSolve, scenarioEscapeMalus, scenarioEscapeMirror, scenarioEscapeWarden, scenarioEscapeIronman, scenarioEscapeRewards, scenarioCh13EndgamePivot, scenarioScriptedFloorBeats, scenarioVoixDesRuines, scenarioDungeonLife, scenarioFountain, scenarioRefuge, scenarioSoloSoftlock, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioRespawn20Percent, scenarioVictoryTrigger, scenarioStairsGated, scenarioFinalBossGuaranteed, scenarioActBossesAndWhispers, scenarioChamberGuardians, scenarioChamberGuardianPolish, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryRespec, scenarioForgeLibraryAudit, scenarioFloorTheming, scenarioZoneDEchoes, scenarioZoneDFx, scenarioFounderChamber, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioRoomOfRequirement, scenarioStairsReachable, scenarioHouseRoomBias] };

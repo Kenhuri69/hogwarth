@@ -28,12 +28,57 @@ function _npcPassesHouseGate(npc) {
   return Array.isArray(gate) ? gate.includes(chosenHouse) : gate === chosenHouse;
 }
 
+// `questGate` (Lot D, revue 2026-09) : PNJ présent selon l'état d'une quête.
+//   { quest, state:'active', untilTalked:true } → quête active, pas encore
+//     consulté (étape `talk` dont `_seen` ne le contient pas) — les égarés ;
+//   { quest, state:'notDone' } → tant que la quête n'est pas remise ;
+//   { choice:'qid:cid' }      → si ce choix de dilemme a été fait.
+// Sans `questGate`, le PNJ est toujours présent (comportement inchangé).
+function _npcPassesQuestGate(npc) {
+  const g = npc && npc.questGate;
+  if (!g) return true;
+  if (g.choice) {
+    const parts = String(g.choice).split(':');
+    const choices = (typeof questChoices !== 'undefined' && questChoices) ? questChoices : {};
+    return choices[parts[0]] === parts[1];
+  }
+  const done = (typeof completedQuests !== 'undefined' && completedQuests) ? completedQuests.has(g.quest) : false;
+  if (g.state === 'notDone') return !done;
+  const q = (typeof activeQuests !== 'undefined' && Array.isArray(activeQuests))
+    ? activeQuests.find(x => x.id === g.quest) : null;
+  if (!q) return false;
+  if (g.untilTalked) {
+    const talked = (q.objectives || []).some(o => o.type === 'talk'
+      && Array.isArray(o._seen) && o._seen.indexOf(npc.id) !== -1);
+    if (talked) return false;
+  }
+  return true;
+}
+
+// Retire de l'étage courant les PNJ placés qui ne passent plus leur
+// `questGate` (égaré retrouvé qui suit le groupe, elfe libéré…). Appelé à la
+// fermeture d'un dialogue, à l'entrée d'étage et au chargement. Retourne le
+// nombre de PNJ retirés. Défensif.
+function _pruneGatedNpcs() {
+  if (typeof npcPlacements === 'undefined' || !npcPlacements || typeof dungeon === 'undefined') return 0;
+  let removed = 0;
+  for (const [key, npcId] of Array.from(npcPlacements.entries())) {
+    const npc = getNpcById(npcId);
+    if (!npc || !npc.questGate || _npcPassesQuestGate(npc)) continue;
+    npcPlacements.delete(key);
+    const [x, y] = key.split(',').map(Number);
+    if (dungeon[y] && typeof CELL !== 'undefined' && dungeon[y][x] === CELL.NPC) dungeon[y][x] = CELL.FLOOR;
+    removed++;
+  }
+  return removed;
+}
+
 function getNpcsForFloor(floor) {
   // PNJ fixes : placement déterministe par étage. La Boucle Ténébreuse
   // (effectiveFloor remappe 11→1, 18→8, etc.) recycle automatiquement
   // les PNJ étages 1-10 : Kingsley apparaît à 8 ET 18, etc.
   const ef = (typeof effectiveFloor === 'function') ? effectiveFloor(floor) : floor;
-  return NPCS.filter(n => n.placement && _npcPassesHouseGate(n) && (
+  return NPCS.filter(n => n.placement && _npcPassesHouseGate(n) && _npcPassesQuestGate(n) && (
     n.placement.floor === floor || n.placement.floor === ef
   ));
 }

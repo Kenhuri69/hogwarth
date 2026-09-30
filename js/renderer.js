@@ -335,7 +335,7 @@ function drawCorridor(cx, cy, scale, W, H) {
       // sprite — il se comporte comme du sol (visiteurs/fantômes/messages OK).
       const _gardenVisible = cell === CELL.GARDEN
         && !(typeof gardenHiddenAt === 'function' && gardenHiddenAt(_mx, _my));
-      const _isCellSprite = (cell === CELL.CHEST || cell === CELL.STAIRS_D || cell === CELL.STAIRS_U || cell === CELL.SHOP || cell === CELL.NPC || cell === CELL.FORGE || cell === CELL.LIBRARY || cell === CELL.CAULDRON || cell === CELL.FOUNTAIN || cell === CELL.REFUGE || cell === CELL.ALTAR || cell === CELL.RUNE || cell === CELL.STELE || cell === CELL.REQUIREMENT || _gardenVisible);
+      const _isCellSprite = (cell === CELL.CHEST || cell === CELL.STAIRS_D || cell === CELL.STAIRS_U || cell === CELL.SHOP || cell === CELL.NPC || cell === CELL.FORGE || cell === CELL.LIBRARY || cell === CELL.CAULDRON || cell === CELL.FOUNTAIN || cell === CELL.REFUGE || cell === CELL.ALTAR || cell === CELL.RUNE || cell === CELL.STELE || cell === CELL.REQUIREMENT || cell === CELL.LANDMARK || _gardenVisible);
       // Mondes parallèles §6.5 — visiteur incarné (côté host) : prioritaire
       // sur le fantôme asynchrone (un visiteur incarné est une présence
       // réelle, pas un écho de présence).
@@ -568,6 +568,11 @@ function drawCorridor(cx, cy, scale, W, H) {
       const spent = (typeof usedRefuges !== 'undefined') && usedRefuges
         && usedRefuges.has(`${pendingSprite.mapX},${pendingSprite.mapY}`);
       drawRefugeSprite(x, baseY, sz, spent);
+    }
+    else if (cell === CELL.LANDMARK) {
+      const lm = (typeof floorLandmark === 'function') ? floorLandmark(currentFloor) : null;
+      const spent = (typeof landmarkSpent === 'function') && landmarkSpent(currentFloor);
+      drawLandmarkSprite(x, baseY, sz, lm ? lm.emoji : '✨', spent);
     }
     else if (cell === CELL.GARDEN)   drawGardenSprite(x, baseY, sz, (typeof _gardenHerbTier === 'function') ? _gardenHerbTier(currentFloor) : 1);
     else if (cell === CELL.REQUIREMENT) {

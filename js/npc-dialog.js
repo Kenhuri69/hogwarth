@@ -171,8 +171,18 @@ function _houseClaimableItems(house) {
   return ids;
 }
 
+// Aide de l'elfe libre (Lot D, H5) : clé one-shot par étage.
+function _elfHelpKey() {
+  return 'elf_help:' + ((typeof currentFloor === 'number') ? currentFloor : 1);
+}
+function _elfHelpSpent() {
+  if (typeof seenScriptedBeat === 'undefined' || !seenScriptedBeat) return true;
+  return seenScriptedBeat.has(_elfHelpKey());
+}
+
 function _isSpecialActionSpent(npc) {
   if (!npc || !npc.specialAction) return false;
+  if (npc.specialAction.type === 'elf_help') return _elfHelpSpent();
   return (typeof usedSpecialNpcs !== 'undefined') && usedSpecialNpcs.has(npc.id);
 }
 
@@ -585,6 +595,20 @@ function _prophecySuffixPages(npc) {
   return text ? _splitDialogPage(text, _DIALOG_PAGE_MAXLEN) : [];
 }
 
+// Archiviste des boucles (Lot E, arc H10) : `npc.profileMemory`, pages-suffixes
+// muettes tirées du profil persistant (lecture seule, archivistMemoryLines).
+function _archivistSuffixPages(npc) {
+  if (!npc || !npc.profileMemory) return [];
+  if (typeof archivistMemoryLines !== 'function' || typeof getPlayerProfile !== 'function') return [];
+  const lines = archivistMemoryLines(getPlayerProfile(), {
+    floor:  (typeof currentFloor === 'number') ? currentFloor : 0,
+    ngPlus: (typeof ngPlusLevel === 'number') ? ngPlusLevel : 0,
+  });
+  const out = [];
+  for (const text of lines) out.push(..._splitDialogPage(text, _DIALOG_PAGE_MAXLEN));
+  return out;
+}
+
 function _npcDialogActions(npc, state) {
   const out = [];
   // Actions contextuelles quête — énumère TOUTES les quêtes actionnables du
@@ -635,7 +659,10 @@ function _npcDialogActions(npc, state) {
       for (const c of _tpl.choices) {
         out.push({
           label: '<img class="ui-icon ui-icon-md" src="img/icons/quest.png" alt=""> ' + c.label,
-          onClick: `turnInQuestChoice('${qid}', '${c.id}'); openNpcDialog('${npc.id}');`
+          // Option `fight` (Lot D) : le duel ferme le dialogue, ne pas le rouvrir.
+          onClick: c.fight
+            ? `turnInQuestChoice('${qid}', '${c.id}');`
+            : `turnInQuestChoice('${qid}', '${c.id}'); openNpcDialog('${npc.id}');`
         });
       }
       continue;
@@ -674,6 +701,8 @@ function _npcDialogActions(npc, state) {
       available = (typeof _grimoireFusionReady === 'function') && _grimoireFusionReady();
     } else if (saType === 'open_riddle') {
       available = (typeof _riddleStepReady === 'function') && _riddleStepReady();
+    } else if (saType === 'elf_help') {
+      available = !_elfHelpSpent();
     } else {
       available = !_isSpecialActionSpent(npc);
     }
@@ -810,6 +839,22 @@ function triggerNpcSpecialAction(npcId) {
     }
     closeNpcDialog();
     if (typeof openRiddleModal === 'function') openRiddleModal();
+    return;
+  }
+  // elf_help (Lot D, H5) : l'aide de Tilly, une fois PAR ÉTAGE (sentinelle
+  // seenScriptedBeat, sérialisée) — pas par visite, pour ne pas la farmer.
+  if (action.type === 'elf_help') {
+    if (_elfHelpSpent()) return;
+    seenScriptedBeat.add(_elfHelpKey());
+    for (const c of activeParty()) {
+      if (!c) continue;
+      if (c.hp <= 0) c.hp = 1;
+      c.hp = c.hpMax;
+      c.sp = c.spMax;
+    }
+    if (typeof addMsg === 'function') addMsg(action.msg || "Tilly claque des doigts : le groupe est à pleine forme.", 'good');
+    if (typeof updateUI === 'function') updateUI();
+    safeCall('autoSave', 'elf-help');
     return;
   }
   if (_isSpecialActionSpent(npc)) {
@@ -1122,7 +1167,7 @@ function openNpcDialog(npcId) {
   }
   // Suffixe réputation (§6.9.2) — appendu après les autres suffixes muets, pour
   // les PNJ à choix gris (écho de Salazar, Kingsley) selon la réputation dérivée.
-  const _repPages = _reputationSuffixPages(npc).concat(_choiceSuffixPages(npc), _prophecySuffixPages(npc));
+  const _repPages = _reputationSuffixPages(npc).concat(_choiceSuffixPages(npc), _prophecySuffixPages(npc), _archivistSuffixPages(npc));
   if (_repPages.length) {
     const lastSrc = _pageData.srcPages.length
       ? _pageData.srcPages[_pageData.srcPages.length - 1] : 0;
@@ -1166,6 +1211,12 @@ function closeNpcDialog() {
     AudioSystem.stopVoice();
   }
   if (typeof Karaoke !== 'undefined') Karaoke.stop();
+  // Lot D (G2) : un PNJ conditionné qui ne l'est plus quitte l'étage
+  // (égaré retrouvé qui suit le groupe, elfe libéré ou vaincu).
+  if (typeof _pruneGatedNpcs === 'function' && _pruneGatedNpcs() > 0) {
+    if (typeof renderMinimap === 'function') renderMinimap();
+    if (typeof drawDungeon === 'function') drawDungeon();
+  }
 }
 
 // ── Fermeture par Échap / clic backdrop ────────────────────────

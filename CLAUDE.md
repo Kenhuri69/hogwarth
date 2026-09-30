@@ -57,8 +57,9 @@ js/
   npcs-b.js        →  NPCS.push(…) — PNJ ambiants/aléatoires & endgame/Boucle.
                       APRÈS npcs-a.js
   npcs-helpers.js  →  Helpers de requête : getNpcById(), getNpcsForFloor(),
-                      getRandom{Vendors,Lore,Encounters,QuestGivers,Ambient}ForFloor().
-                      Chargé APRÈS npcs.js
+                      getRandom{Vendors,Lore,Encounters,QuestGivers,Ambient}ForFloor(),
+                      PNJ conditionnels _npcPassesQuestGate()/_pruneGatedNpcs()
+                      (questGate, Lot D). Chargé APRÈS npcs.js
   riddles.js       →  RIDDLES[] — registre des devinettes des stèles
                       d'énigme du donjon. getRiddleById()
   codex.js         →  CODEX_ENTRIES + évaluateur pur — journal vivant
@@ -359,7 +360,7 @@ attendus se sont exécutés correctement et expose 2 helpers d'accès défensif.
 
 ### Manifeste
 
-Le `MANIFEST` dans `loader.js` énumère **380** entrées `{ name, source, kind,
+Le `MANIFEST` dans `loader.js` énumère **399** entrées `{ name, source, kind,
 optional? }` :
 - `kind: 'fn'` → `typeof name === 'function'`
 - `kind: 'obj'` → `typeof name !== 'undefined'` (couvre `let`/`const`/`var`)
@@ -1471,6 +1472,45 @@ window.checkKillQuests(monsterId) → incrémente q.progress, auto-complète (d�
   qui clôt porte la quête dans son `questsTurnedIn`).
 - Le Pacte des Cachots (Serpentard) reste codé à part (`turnInSlythSignature`).
 
+#### Extensions du Lot D (arcs H7, H1, H5, H4)
+
+- **`search` localisé** : `floors: [4, 7, 10]` — l'étape ne progresse que sur
+  ces étages, une fois par étage (`_floors`, sérialisé avec la quête).
+- **Option `fight`** (+ `fightName`) : après la remise, duel contre ce monstre
+  (seul, mis à l'échelle de l'étage). Le bouton ne rouvre pas le dialogue.
+- **`doneLine`** : ligne de récit jouée à la remise ; une étape `discover`
+  complétée déclenche la remise auto des quêtes `autoTurnIn`.
+- **PNJ conditionnels `questGate`** (`npcs-helpers.js`) :
+  `{ quest, state:'active', untilTalked:true }` (égarés), `{ quest,
+  state:'notDone' }` (elfe liée), `{ choice:'qid:cid' }` (elfe libre). Filtré
+  dans `getNpcsForFloor` ; `_pruneGatedNpcs()` retire les PNJ devenus absents
+  (fermeture de dialogue, entrée d'étage, chargement) ; `acceptQuest` les
+  place aussitôt (migration).
+- **Action spéciale `elf_help`** : soin + relève, une fois **par étage**
+  (sentinelle `elf_help:<étage>` dans `seenScriptedBeat`).
+- **Promotion par choix** : `BOSS_PROMO_BEATS[id].lineByChoice`
+  (`bossPromoLine`). **Trêve du dragon** (`DRAGON_TRUCE`) : œuf rendu →
+  le Magyar Ancestral rompt le combat à 50 % PV, une fois ; compte comme
+  vaincu, XP intégrale, or ÷ 2, aucun drop.
+- **Échos de fin** : `VICTORY_CHOICE_ECHOES` (`endgame.js`), une phrase par
+  dilemme tranché, plus les égarés mis à l'abri.
+
+#### Extensions du Lot E (arcs H9, H10, H6 — endgame narratif)
+
+- **Rêves du Dormeur** (`floor-ambiance.js`) : en Boucle, un repos réussi
+  (`rest()`) peut ouvrir un rêve (`DORMEUR_DREAMS`, 10, dans l'ordre, chance
+  `DORMEUR_DREAM_CHANCE`, un par étage). Sentinelles `dream:<n>` /
+  `dreamfloor:<étage>` dans `seenScriptedBeat` (aucun état neuf). Codex
+  `reves_dormeur` (condition `dream`) ; le 10ᵉ rêve change le texte du jalon IV
+  de Briser le Cycle (`break-cycle.js`).
+- **Archiviste des boucles** (`archiviste_boucles`, étage 11 → 11 et 21) :
+  `profileMemory` → pages-suffixes tirées de `archivistMemoryLines(profile,
+  ctx)` (`profile.js`, PUR, **lecture seule** du profil persistant).
+- **Chronique de la Garde de l'Aube** (`chronique_aube`, Fumseck) : `search`
+  aux étages 7-10, `progressHeroLines` (une réplique si le héros de la Garde
+  lié est présent), remise auto (`autoTurnIn` désormais honoré par les étapes
+  `search`) → **Reliquaire Lunaire**.
+
 > Pour ajouter des quêtes : pousser un objet dans `activeQuests` dans `state.js`.
 > Détail des objectifs et récompenses : voir le tableau dans `state.js`.
 
@@ -1523,6 +1563,7 @@ par le type de cellule (`CELL.*`), pas par une couche d'objets séparée.
 | Escalier descendant | `CELL.STAIRS_D = 3` | SVG inline | `goDeeper()` |
 | Escalier montant    | `CELL.STAIRS_U = 4` | SVG inline | `goUp()` |
 | Fontaine | `CELL.FOUNTAIN = 7` | SVG inline | `useFountain()` |
+| Salle unique | `CELL.LANDMARK = 20` | emoji du lieu | `useLandmark()` |
 
 ### Génération (`dungeon.js`)
 - Chaque room intermédiaire reçoit aléatoirement `CHEST` (~30 %) ou
@@ -1530,6 +1571,21 @@ par le type de cellule (`CELL.*`), pas par une couche d'objets séparée.
 - La dernière room reçoit `STAIRS_D`, la première `STAIRS_U` (étage > 1).
 - Les étages `2, 5, 8, …` reçoivent en plus une `FOUNTAIN` garantie
   (cf. section dédiée).
+
+### Salles uniques et texture (Lot F, revue 2026-09)
+- **Salles uniques** (`FLOOR_LANDMARKS`, `floor-ambiance.js`) aux étages
+  réels 1, 5, 7, 8 : Hall des Sabliers (+15 points de Maison), Volière
+  effondrée (PM restaurés), Lac souterrain (reflet propre au héros de tête,
+  +30 % PV), Salle des Trophées corrompue (plaques tirées de la partie,
+  +100 XP). Posées sur un cul-de-sac ; action une fois par partie
+  (sentinelle `landmark:<étage>` dans `seenScriptedBeat`).
+- **Énigmes** (`riddles.js`, 30) : `minFloor` (énigmes des Ruines en Boucle
+  seulement) et `hero` (posée par un héros présent) — tirage par
+  `pickRiddleFor(floor, heroKeys)` ; les Poches du Sceau excluent `hero`.
+- **Événements d'étage** (16) : un événement peut porter `kind` (effet d'un
+  événement existant sous un autre nom) — lu via `floorEventKind(id)`. 6
+  événements neufs ciblent les étages 5 à 10.
+- **Ambiance de salle** (`room-flavor.js`) : 16 phrases par zone.
 
 ### Interaction
 - À chaque déplacement, `handleCellEntry(cell)` (dans `movement.js`)

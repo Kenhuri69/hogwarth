@@ -238,6 +238,16 @@ circonstance** :
   de tension (`houseTension[<Maison>]`) qui colorent les rencontres de PNJ et de
   signature (ex. un Maxence Serpentard-canon qui commente *L'Étendard de Godric*
   d'une partie Gryffondor). Pur flavor, zéro mécanique (§6.9.5).
+
+> ✅ **Lot E (revue 2026-09, arc H6)** — **« La Chronique de la Garde de
+> l'Aube »** (quête `chronique_aube`, confiée par Fumseck à l'étage 7) : quatre
+> feuillets à retrouver en fouillant les étages 7 à 10. Ils disent que la Garde
+> n'a pas de fondateur, qu'elle se reforme à chaque génération d'élèves qui
+> *entendent* la pierre, et qu'elle connaissait la fêlure avant Dumbledore
+> (elle se taisait : un secret qu'on nomme trop fort se met à écouter). Chaque
+> feuillet a une réplique propre si le héros de la Garde lié est présent
+> (Agathe, Olivier de Clairval, Nathalie, Olivier de Châtillon). Le dernier
+> mène au **Reliquaire Lunaire**. Plan `lotE-endgame-narratif-2026-09.md`.
 - **Opposition :** les Forces de la Corruption (§6.5) et tout ce que la Boucle
   ramène.
 
@@ -321,6 +331,18 @@ Mme Norris, Peeves, lutins, Acromantules, Trolls, Hippogriffes, Gargouilles…
 
 > ✅ Chaque boss tombé **affaiblit le sceau** ; la présence de Voldemort se
 > densifie d'étage en étage.
+
+> ✅ **Lot D (revue 2026-09)** — quatre arcs secondaires à dilemme, ouverts
+> à toutes les Maisons (plan `lotD-arcs-secondaires-2026-09.md`) :
+> **« L'Œuf des Profondeurs »** (Hagrid, œuf de Magyar à l'étage 7 ; le
+> confier à Hagrid ou le rendre à sa lignée — rendu, le Magyar Ancestral le
+> reconnaît et rompt le combat à 50 % PV), **« Le Prix de Rogue »** (trois
+> fioles de sa potion de scellement aux étages 4, 7 et 10 ; les lui rendre ou
+> les confier au portrait de Dumbledore), **« La Chaussette »** (Tilly, elfe
+> des Vantrell, ét. 6 ; libérée, elle aide aux étages 10 et 20), **« Les
+> Égarés »** (Chourave ; Tobias et Lila, deux premières années, ét. 3 et 6,
+> mis à l'abri dans un refuge). Traces : répliques des PNJ, Codex, lettres de
+> la surface, Grande Salle, échos du discours de victoire.
 
 > ✅ **Lot C (revue 2026-09)** — les Mangemorts ont un **chef intermédiaire
 > nommé**, personnage original : **Casimir Vantrell, le Lieutenant**

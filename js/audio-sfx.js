@@ -806,7 +806,8 @@ Object.assign(AudioSystem, {
     let chance = (typeof this._AMBIENT_BARK_CHANCE === 'number') ? this._AMBIENT_BARK_CHANCE : 0.07;
     // Signature d'événement d'étage (I2) : un étage hanté est plus « vivant »
     // — barks plus fréquents. Purement audio, n'altère aucun état de jeu.
-    const haunted = (typeof currentFloorEvent !== 'undefined') && currentFloorEvent === 'hante';
+    const haunted = (typeof currentFloorEvent !== 'undefined')
+      && ((typeof floorEventKind === 'function') ? floorEventKind(currentFloorEvent) : currentFloorEvent) === 'hante';
     if (haunted) chance *= 1.6;
     if (Math.random() >= chance) return false;
     this.init();

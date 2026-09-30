@@ -618,6 +618,8 @@ const GRANDE_SALLE_BEAT = {
   id: 'grande_salle',
   narrative: "Tu es remonté. Le givre a fondu des fenêtres ; un soleil pâle traverse de nouveau les grands vitraux. Dans son cadre, Dumbledore lève les yeux de son livre et te sourit, sans surprise : « Tu es redescendu jusqu'au fond, et tu es revenu. Peu en sont capables. » Autour de toi, l'école respire — les escaliers recommencent à tourner. Mais sous tes pieds, très loin, quelque chose veille encore.",
   toast: "La Grande Salle — l'école respire à nouveau. Dumbledore te salue d'un cadre.",
+  // Lot D (arc H4) — ajouté si « Les Égarés » a été remise.
+  egaresLine: "Au bout de la table de Poufsouffle, deux premières années se lèvent d'un bond : Tobias agite les bras, Lila brandit sa lanterne éteinte. Ils ne disent rien. Ils n'en ont pas besoin.",
 };
 
 // Résolveur PUR : retourne le beat de l'étage `floor`, ou null.
@@ -638,7 +640,9 @@ function maybeScriptedFloorBeat(floor) {
       && typeof GRANDE_SALLE_BEAT !== 'undefined'
       && typeof grandeSalleBeatSeen !== 'undefined' && !grandeSalleBeatSeen) {
     grandeSalleBeatSeen = true;
-    if (typeof setNarrative === 'function') setNarrative(GRANDE_SALLE_BEAT.narrative);
+    // Lot D (arc H4) : les égarés mis à l'abri t'attendent dans la Grande Salle.
+    const saved = (typeof completedQuests !== 'undefined' && completedQuests && completedQuests.has('les_egares'));
+    if (typeof setNarrative === 'function') setNarrative(GRANDE_SALLE_BEAT.narrative + (saved ? ' ' + GRANDE_SALLE_BEAT.egaresLine : ''));
     if (typeof addMsg === 'function') addMsg('📜 ' + GRANDE_SALLE_BEAT.toast, 'narrative');
     return true;
   }
@@ -1009,7 +1013,8 @@ function maybeCrackWhisper(floor) {
 // une phrase qui REFLÈTE l'état du joueur (quêtes remises, Quête Signature,
 // palier de Maison). Les professeurs vouvoient, les élèves et Hagrid tutoient.
 // Texte seulement, one-shot (sentinelle 'surface_letter:<étage>').
-// ctx = { house, questsDone, houseTier, signatureDone }.
+// ctx = { house, questsDone, houseTier, signatureDone, egaresSaved }.
+// `egaresSaved` (Lot D, arc H4) : les deux premières années sont à l'abri.
 function composeSurfaceLetter(floor, ctx) {
   const c = ctx || {};
   const n = c.questsDone || 0;
@@ -1031,7 +1036,10 @@ function composeSurfaceLetter(floor, ctx) {
           ? "On a entendu ce que tu as fait pour notre Maison. Personne n'osait. On est fiers de toi."
           : n >= 5
             ? "Il paraît que tu as aidé tellement de gens là-dessous qu'on a arrêté de compter."
-            : "Reviens vite. On garde ta place à table."),
+            : "Reviens vite. On garde ta place à table.")
+        + (c.egaresSaved
+          ? " Et Tobias et Lila sont revenus ! Tobias raconte à tout le monde que tu l'as trouvé derrière une armure. Lila dit que c'est elle qui tenait la lanterne."
+          : ""),
     };
   }
   if (floor === 10) {
@@ -1040,7 +1048,10 @@ function composeSurfaceLetter(floor, ctx) {
       text: "Les portraits ne dorment plus. Ils disent que le froid monte des fondations, et que vous êtes tout près de sa source. Je ne vous demanderai pas de faire demi-tour : je sais que vous ne le feriez pas. "
         + (n >= 8
           ? "Tant de gens me parlent de vous que j'ai cessé de m'en étonner. Ceux que vous avez aidés attendent votre retour, et moi aussi."
-          : "Quoi qu'il vous attende en bas, le château tout entier retient son souffle avec vous."),
+          : "Quoi qu'il vous attende en bas, le château tout entier retient son souffle avec vous.")
+        + (c.egaresSaved
+          ? " Miss Fenwick et Mr Meadows vous font dire qu'ils ont repris les cours. Ils ont surtout repris l'habitude de guetter l'escalier."
+          : ""),
     };
   }
   if (floor === 11) {
@@ -1071,6 +1082,7 @@ function maybeSurfaceLetter(floor) {
     questsDone:  (typeof completedQuests !== 'undefined' && completedQuests) ? completedQuests.size : 0,
     houseTier:   (typeof houseTier === 'number') ? houseTier : 0,
     signatureDone,
+    egaresSaved: (typeof completedQuests !== 'undefined' && completedQuests) ? completedQuests.has('les_egares') : false,
   });
   if (!letter) return false;
   seenScriptedBeat.add(key);
@@ -1118,4 +1130,148 @@ function maybeProphecyFragment(floor) {
       + text + " » (" + prophecyFragments + "/" + PROPHECY_FRAGMENTS.length + ")", 'magic');
   }
   return prophecyFragments;
+}
+
+// ============================================================
+// Lot E (revue 2026-09, arc H9) — Les Rêves du Dormeur
+// ------------------------------------------------------------
+// En Boucle, un repos réussi peut ouvrir un rêve partagé : le Dormeur des
+// Fondations ne parle pas, il rêve, et le groupe rêve avec lui. 10 rêves, joués
+// dans l'ordre, au plus un par étage. Aucun état neuf : sentinelles
+// `dream:<n>` et `dreamfloor:<étage>` dans seenScriptedBeat (déjà sérialisé).
+// Le dernier rêve change le texte du jalon IV de Briser le Cycle (break-cycle.js).
+// Codex `reves_dormeur` (condition `dream`).
+const DORMEUR_DREAMS = [
+  "Tu rêves d'un monde sans mots. Pas de noms, pas de runes : seulement de la chaleur, et un battement lent sous une roche qui n'est pas encore de la roche.",
+  "Tu rêves de quatre silhouettes penchées au-dessus de toi. Elles chantent sans savoir que tu les entends. Ce n'est pas une incantation : c'est une berceuse.",
+  "Tu rêves d'une école qui pousse sur ta poitrine comme une forêt sur une colline. Chaque tour est une racine. Chaque escalier, un pouls qui s'est un peu déplacé.",
+  "Tu rêves d'élèves qui courent au-dessus de toi, des milliers, génération après génération. Tu ne les distingues pas. Leur agitation te berce, comme la pluie berce un dormeur.",
+  "Tu rêves d'une voix froide qui descend vers toi en cherchant une serrure. Elle ne sait pas ce qu'elle ouvre. Elle croit être le fond. Elle n'est qu'un cadenas de plus.",
+  "Tu rêves que la clé se fend. Un filet d'air entre. Pour la première fois depuis mille ans, tu te retournes dans ton sommeil — et en haut, les escaliers basculent.",
+  "Tu rêves de toi-même, descendant. Tu es minuscule, une étincelle dans un couloir. Le rêve ne te craint pas et ne te veut aucun mal. Il te regarde avec curiosité, comme on regarde une luciole.",
+  "Tu rêves que tu dors aussi. Et dans ton sommeil, quelque chose rêve de toi. Tu ne sais plus lequel des deux rêves a commencé le premier.",
+  "Tu rêves de toutes les fois où tu es déjà descendu. Elles se superposent comme des feuilles de papier calque. Le Dormeur ne compte pas les boucles : pour lui, c'est une seule nuit.",
+  "Tu rêves du fond, enfin. Il n'y a pas de porte. Il y a un visage qui n'en est pas un, tourné vers le haut, qui rêve qu'un jour quelqu'un descendra non pour le réveiller, mais pour s'asseoir à côté de lui — et le laisser dormir.",
+];
+const DORMEUR_DREAM_CHANCE = 0.4;
+
+// PUR — nombre de rêves déjà faits (sentinelles `dream:<n>`).
+function dormeurDreamCount(seen) {
+  if (!seen || typeof seen.has !== 'function') return 0;
+  let n = 0;
+  while (n < DORMEUR_DREAMS.length && seen.has('dream:' + (n + 1))) n++;
+  return n;
+}
+
+// PUR — un rêve peut-il survenir ? ctx = { victory, floor, seen, roll }.
+// Boucle uniquement, un rêve par étage, dans l'ordre, tant qu'il en reste.
+function dormeurDreamWanted(ctx) {
+  ctx = ctx || {};
+  if (!ctx.victory || typeof ctx.floor !== 'number' || ctx.floor < 11) return false;
+  if (!ctx.seen || typeof ctx.seen.has !== 'function') return false;
+  if (ctx.seen.has('dreamfloor:' + ctx.floor)) return false;
+  if (dormeurDreamCount(ctx.seen) >= DORMEUR_DREAMS.length) return false;
+  const roll = (typeof ctx.roll === 'number') ? ctx.roll : Math.random();
+  return roll < DORMEUR_DREAM_CHANCE;
+}
+
+// Hook de rest() (repos réussi). Retourne le rang du rêve joué (1..10) ou 0.
+function maybeDormeurDream() {
+  if (typeof seenScriptedBeat === 'undefined') return 0;
+  const ok = dormeurDreamWanted({
+    victory: (typeof victoryAchieved !== 'undefined') && victoryAchieved,
+    floor:   (typeof currentFloor === 'number') ? currentFloor : 1,
+    seen:    seenScriptedBeat,
+  });
+  if (!ok) return 0;
+  const n = dormeurDreamCount(seenScriptedBeat) + 1;
+  seenScriptedBeat.add('dream:' + n);
+  seenScriptedBeat.add('dreamfloor:' + currentFloor);
+  const text = DORMEUR_DREAMS[n - 1];
+  if (typeof setNarrative === 'function') setNarrative('💤 ' + text);
+  if (typeof addMsg === 'function') {
+    addMsg('💤 Le groupe s\'assoupit, et le battement sous la pierre se glisse dans son sommeil. Rêve du Dormeur (' + n + '/' + DORMEUR_DREAMS.length + ').', 'magic');
+    addMsg('« ' + text + ' »', 'narrative');
+  }
+  if (typeof checkCodexUnlocks === 'function') checkCodexUnlocks('dream');
+  return n;
+}
+
+// ============================================================
+// Lot F (revue 2026-09, axe 6c) — Salles uniques des étages « pauvres »
+// ------------------------------------------------------------
+// Une salle signée par étage 1, 5, 7 et 8 (étage réel), posée par
+// generateDungeon sur CELL.LANDMARK. Interaction via l'overlay d'exploration
+// (movement.js) ; action une fois par partie (sentinelle `landmark:<étage>`
+// dans seenScriptedBeat). Effets légers, identiques pour toutes les Maisons.
+// Données + helpers PURS ; l'effet est appliqué par useLandmark().
+const FLOOR_LANDMARKS = {
+  1: {
+    id: 'hall_sabliers', emoji: '⏳', title: 'Le Hall des Sabliers',
+    desc: "Quatre sabliers géants se dressent contre le mur, remplis de rubis, d'émeraudes, de saphirs et de diamants jaunes. Depuis la fêlure, personne ne compte plus les points. Les pierres, elles, tombent encore.",
+    action: 'Poser la main sur le sablier de ta Maison',
+    done: "Les pierres de ton sablier scintillent encore de ton passage. Les trois autres attendent leurs propres élèves.",
+    effect: 'housePoints', amount: 15,
+  },
+  5: {
+    id: 'voliere_effondree', emoji: '🦉', title: 'La Volière effondrée',
+    desc: "La volière a glissé ici quand les escaliers ont basculé : perchoirs brisés, paille et plumes, une fenêtre qui donne sur un ciel qui n'existe pas. Quelques hiboux sont restés. Ce sont eux qui portent les lettres de la surface.",
+    action: 'Tendre le bras à un hibou',
+    done: "Les hiboux somnolent sur leurs perchoirs brisés. L'un d'eux ouvre un œil quand tu passes, puis le referme.",
+    effect: 'sp',
+  },
+  7: {
+    id: 'lac_souterrain', emoji: '🌊', title: 'Le Lac souterrain',
+    desc: "Une eau noire et immobile s'étend sous une voûte trop haute pour ta lumière. C'est le Lac Noir, ou ce qu'il en reste sous l'école : ses racines. Rien ne bouge à la surface. Rien, sauf ton reflet, qui tarde un peu à te suivre.",
+    action: "Contempler ton reflet dans l'eau",
+    done: "L'eau a repris son immobilité. Ton reflet te suit, maintenant, sans retard.",
+    effect: 'hp', amount: 0.30,
+  },
+  8: {
+    id: 'salle_trophees', emoji: '🏆', title: 'La Salle des Trophées corrompue',
+    desc: "Les vitrines de la Salle des Trophées sont descendues avec le reste. La poussière s'est faite cendre, les coupes ont noirci. Mais certaines plaques sont neuves, gravées d'une écriture fine que tu ne connais pas.",
+    action: 'Lire les plaques neuves',
+    done: "Les plaques neuves brillent faiblement dans la cendre. Le château se souviendra.",
+    effect: 'xp', amount: 100,
+  },
+};
+
+// PUR — salle unique de l'étage (réel), ou null.
+function floorLandmark(floor) {
+  return FLOOR_LANDMARKS[floor] || null;
+}
+
+// PUR — reflet du Lac souterrain selon le héros de tête (repli générique).
+const LANDMARK_REFLECTIONS = {
+  harry:     "Dans l'eau, ton reflet porte une cicatrice qui ne saigne pas. Il a l'air plus vieux. Il a l'air d'avoir gagné.",
+  hermione:  "Ton reflet tient un livre ouvert, et pour une fois, il ne le lit pas. Il te regarde, simplement.",
+  draco:     "Ton reflet porte une robe sans blason. Il n'a pas l'air d'avoir peur. Tu ne te souviens pas de la dernière fois.",
+  cedric:    "Ton reflet se tient au bord d'un labyrinthe. Il tend la main vers une coupe, puis la retire, et sourit.",
+  nathalie:  "Ton reflet a les mains pleines de terre, et derrière lui, quelqu'un est à l'abri.",
+  agathe:    "Des fleurs poussent dans l'eau autour de ton reflet. Elles ne fanent pas.",
+  chatillon: "Pour une fois, ton reflet se tient en pleine lumière. Il n'a pas l'air de s'en excuser.",
+  celeste:   "Ton reflet a des étoiles dans les cheveux. Elles forment une constellation que tu ne connais pas encore.",
+};
+function landmarkReflection(heroKey) {
+  return LANDMARK_REFLECTIONS[heroKey]
+    || "Ton reflet tarde un instant, puis te rattrape. Il a l'air fatigué, et décidé. Tu ne savais pas que tu avais ce visage-là.";
+}
+
+// PUR — plaques de la Salle des Trophées, tirées des exploits de la partie.
+// ctx = { bossCount, kills, quests, choices, house }. 2 à 4 plaques.
+function landmarkTrophyPlaques(ctx) {
+  const c = ctx || {};
+  const out = [];
+  const house = c.house || 'sans Maison';
+  if ((c.bossCount | 0) > 0) {
+    out.push("« Pour avoir abattu " + (c.bossCount | 0) + " gardien" + ((c.bossCount | 0) > 1 ? "s" : "") + " des profondeurs, au nom de " + house + ". »");
+  }
+  out.push("« Pour " + (c.kills | 0) + " créature" + ((c.kills | 0) > 1 ? "s" : "") + " repoussée" + ((c.kills | 0) > 1 ? "s" : "") + " dans l'ombre, pendant l'Année de la Fêlure. »");
+  if ((c.quests | 0) > 0) {
+    out.push("« Pour " + (c.quests | 0) + " service" + ((c.quests | 0) > 1 ? "s" : "") + " rendu" + ((c.quests | 0) > 1 ? "s" : "") + " à ceux qui restaient debout. »");
+  }
+  if ((c.choices | 0) > 0) {
+    out.push("« Pour " + ((c.choices | 0) > 1 ? "des choix difficiles, faits sans témoins" : "un choix difficile, fait sans témoin") + ". »");
+  }
+  return out.slice(0, 4);
 }

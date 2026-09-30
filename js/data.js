@@ -39,7 +39,10 @@ const CELL = {
   CAULDRON:18,
   // Escape Game via pièges (escape-game-traps.md) — « faille du sceau » : la
   // sortie d'une Poche du Sceau (étage caché temporaire, étages 11+). Marchable.
-  SEAL_RIFT:19
+  SEAL_RIFT:19,
+  // Lot F (revue 2026-09, axe 6c) — salle unique signée des étages 1, 5, 7, 8
+  // (FLOOR_LANDMARKS, floor-ambiance.js). Marchable ; overlay d'exploration.
+  LANDMARK:20
 };
 
 // Refuge du Blaireau — fraction des PV/PM max rendus par usage (≠ fontaine

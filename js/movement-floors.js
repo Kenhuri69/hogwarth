@@ -81,6 +81,8 @@ function _restoreFloorFromCache(floor) {
   if (typeof _migrateMissingNpcsForFloor === 'function') {
     _migrateMissingNpcsForFloor(floor);
   }
+  // PNJ conditionnés (`questGate`, Lot D) devenus absents : retirés.
+  if (typeof _pruneGatedNpcs === 'function') _pruneGatedNpcs();
   // Migration : re-spawn des cibles de quête `kill` manquantes
   // (cf. dungeon.js — _ensureActiveKillQuestTargets).
   if (typeof _ensureActiveKillQuestTargets === 'function') {

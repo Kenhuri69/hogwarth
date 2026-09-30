@@ -135,7 +135,13 @@ function endBattle(won) {
     const equipGoldMult = (typeof _equipmentGoldMultiplier === 'function')
       ? _equipmentGoldMultiplier() : 1;
     let totalXp = 0, totalGold = 0;
-    enemyGroup.forEach(e => { totalXp += e.xp; totalGold += e.gold + Math.floor(Math.random() * 5); });
+    // Trêve du dragon (Lot D, H7) : un ennemi `_truce` s'est retiré — XP
+    // intégrale, or divisé par 2, aucun drop (butin réduit).
+    enemyGroup.forEach(e => {
+      totalXp += e.xp;
+      const g = e.gold + Math.floor(Math.random() * 5);
+      totalGold += e._truce ? Math.floor(g / 2) : g;
+    });
 
     // D5 — Fortune (volet LCK) : le butin du groupe est majoré par la Fortune.
     // Or à poids ½ pour protéger l'économie (cf. luck-fortune.md §2.4 +
@@ -153,6 +159,7 @@ function endBattle(won) {
     // bonus 8 % sur 1 des 3 drops Ténèbres légendaires.
     const TENEBRES_DROPS = ['cape_voldemort', 'cendres_phenix', 'oeil_basilic'];
     enemyGroup.forEach(e => {
+      if (e._truce) return;
       const darkMult = (e.variant === 'darkness') ? 1.5 : 1.0;
       if (e.drops && e.drops.length) {
         e.drops.forEach(drop => {
