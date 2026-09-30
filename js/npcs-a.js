@@ -470,7 +470,7 @@ NPCS.push(
     placement: { floor: 4, anchor: "any" },
     // lettre_jamais_envoyee : Lupin ne la DONNE pas (c'est Manon) mais il
     // la CLÔT — destinataire de la livraison (questsTurnedIn seulement).
-    questsGiven:    ["lumiere_desespoir", "aconit_de_la_meute"],
+    questsGiven:    ["lumiere_desespoir", "aconit_de_la_meute", "carnet_lieutenant"],
     questsTurnedIn: ["lumiere_desespoir", "aconit_de_la_meute", "lettre_jamais_envoyee", "tue_loup_lupin"],
     dialogues: {
       greeting:    [
@@ -511,6 +511,19 @@ NPCS.push(
         questOffer:  "Ma fille sait ce que je suis, maintenant. Alors la potion Tue-Loup, je ne la brasserai plus jamais caché dans une cave, comme une honte. Je la préparerai dans ma classe, à sa vue. Rapporte-moi trois brins d'aconit — c'est amer, c'est laid, et c'est ce qui me garde homme. Manon doit voir cela aussi : le loup, ET ce que je fais de lui.",
         questActive: "L'aconit pousse là où le château laisse entrer le froid — jardins murés des profondeurs, ou l'étal d'un apothicaire. Trois brins, pas moins : la recette de Belby ne pardonne pas l'à-peu-près.",
         questReady:  "(Il pèse les brins un à un, sans hâte, et pose le chaudron sur le bureau — face à la porte ouverte.) Voilà. La première Tue-Loup de ma vie que je prépare à la lumière. Prends-en une fiole : ce qui rend un loup patient rendra bien un sorcier plus dur à mordre. Et si tu croises Manon… dis-lui que la classe sent l'aconit, et que la porte est ouverte."
+      },
+      // Lot C (revue 2026-09, arc H3) — Lupin ouvre la piste du Lieutenant ;
+      // la remise se fait chez Kingsley (étage 8).
+      carnet_lieutenant: {
+        questOffer:  "(Il te tend un pli déchiré, scellé d'une clé à l'encre noire.) Un hibou des Mangemorts, abattu au-dessus des Cachots. Quelqu'un organise leur descente — quelqu'un de patient. Ses lettres traînent forcément ailleurs : fouille les recoins, en bas. Et quand tu en auras assez, porte-les à Kingsley, au Seuil. L'Ordre doit savoir qui tient la clé.",
+        questActive: "Les lettres, vois-tu, ce sont les Mangemorts qui les cachent le plus mal : ils se croient trop malins pour être lus. Fouille les recoins des étages du dessous, puis descends jusqu'à Kingsley."
+      }
+    },
+    // Trace du dilemme de Kingsley (Lot C, verbe `choice`) — Lupin l'apprend.
+    choiceLines: {
+      lieutenant_vantrell: {
+        bruler: "Kingsley m'a écrit : la cache de Vantrell a brûlé. Bien. Il y a des portes qu'il vaut mieux ne jamais rouvrir — j'en sais quelque chose.",
+        garder: "Kingsley m'a dit que tu avais gardé un des grimoires de Vantrell. Je ne te juge pas. Souviens-toi seulement que la magie noire ne s'apprend jamais à moitié."
       }
     }
   },

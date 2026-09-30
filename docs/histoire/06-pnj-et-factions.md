@@ -322,6 +322,13 @@ Mme Norris, Peeves, lutins, Acromantules, Trolls, Hippogriffes, Gargouilles…
 > ✅ Chaque boss tombé **affaiblit le sceau** ; la présence de Voldemort se
 > densifie d'étage en étage.
 
+> ✅ **Lot C (revue 2026-09)** — les Mangemorts ont un **chef intermédiaire
+> nommé**, personnage original : **Casimir Vantrell, le Lieutenant**
+> (`lieutenant_vantrell`, `questOnly`, duel à l'étage 8). Arc « Le Carnet du
+> Lieutenant » : Lupin (ét. 4) → 4 lettres trouvées en fouillant → Kingsley
+> (ét. 8) → arrestation → **dilemme** (brûler ou garder ses grimoires), dont
+> Kingsley, Lupin et le Codex gardent la trace.
+
 > ✅ **Lot B (revue 2026-09)** — les boss canon **parlent** : réplique d'entrée
 > à la 1re rencontre et **ligne de chute** à la 1re défaite (`BOSS_PROMO_BEATS`,
 > champ `fall`, `battle.js`) pour Quirrell, Bellatrix, Greyback, Aragog, Dolohov

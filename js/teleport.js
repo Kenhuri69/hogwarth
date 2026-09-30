@@ -399,7 +399,7 @@ function _portusTriggerAmbush() {
   if (typeof MONSTERS === 'undefined' || typeof scaleMonster !== 'function') return;
   const ef   = (typeof effectiveFloor === 'function') ? effectiveFloor(currentFloor) : currentFloor;
   const pool = MONSTERS.filter(m =>
-    m.minFloor <= ef && (m.maxFloor === null || ef <= m.maxFloor) && !_PORTUS_BOSS_IDS.has(m.id)
+    !m.questOnly && m.minFloor <= ef && (m.maxFloor === null || ef <= m.maxFloor) && !_PORTUS_BOSS_IDS.has(m.id)
   );
   if (!pool.length) return;
   const base  = (typeof weightedPick === 'function') ? weightedPick(pool) : pool[0];

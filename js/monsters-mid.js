@@ -496,6 +496,47 @@ MONSTERS.push(
   // ÉTAGES 8-10 : Les Seigneurs des Ténèbres
   // ════════════════════════════════════════════
 
+  // Lot C (revue 2026-09, arc H3 « Le Carnet du Lieutenant ») — chef
+  // intermédiaire ORIGINAL des Mangemorts, qui exploite la fêlure pour ramener
+  // son maître. `questOnly` : jamais tiré au hasard, posé par spawnOnAccept de la
+  // quête `lieutenant_vantrell` (Kingsley, ét. 8). `soloEncounter` : duel sans
+  // escorte (calibré par tools/sim-difficulty.js --boss --boss-alone).
+  {
+    id:       "lieutenant_vantrell",
+    epic:     true,
+    questOnly: true,
+    soloEncounter: true,
+    name:     "Casimir Vantrell, le Lieutenant",
+    icon:     "🗝️",
+    // Illustration provisoire : copie du Mangemort d'élite (masqué), en
+    // attendant un portrait dédié (convention img/monsters/<id>.png).
+    imgSrc:   "img/monsters/lieutenant_vantrell.png",
+    category: "humain",
+    loreFamily: "F4",
+    desc:     "Casimir Vantrell referme son carnet, sans hâte, et lève sa baguette.",
+    lore:     "Lieutenant du cercle intérieur, resté dans l'ombre des grands noms. Quand la Clé de Voûte s'est fendue, il a été le premier à comprendre ce que la fêlure pouvait rendre. Il tient un carnet de tout : les étages, les gardes, les morts utiles.",
+    habitat:  "Le Seuil des Profondeurs (étage 8), là où ses lettres le trahissent",
+    anecdote: "Ses lettres ne sont jamais signées de son nom : seulement d'une clé dessinée à l'encre noire. Il n'a jamais eu besoin qu'on se souvienne de lui — seulement de son maître.",
+    danger:   9,
+    minFloor: 8, maxFloor: null, weight: 1,
+    hp: 72, atk: 18, def: 9, mag: 19, agi: 12, lck: 10,
+    scale: 0.36,
+    abilities: [
+      { name: "Maléfice Consigné",  icon: "🗝️", desc: "Un sort écrit d'avance, exécuté sans hésiter", effect: "damage", power: 17, chance: 0.40 },
+      { name: "Cruciatus Froid",    icon: "⚡", desc: "Torture appliquée avec méthode",             effect: "drain",  power: 14, chance: 0.30 },
+      { name: "Marque Brûlante",    icon: "🔥", desc: "Marque incandescente sur la peau",           effect: "status", statusId: "burn", power: 5, chance: 0.25, turns: 3 },
+      { name: "Contre-Mesure",      icon: "❌", desc: "Il avait prévu ta protection",                effect: "dispel", chance: 0.35 }
+    ],
+    ai: "cautious",
+    resist: ["ténèbres"],
+    weak:   ["lumière"],
+    xp: 140, gold: { min: 60, max: 90 },
+    drops:  [
+      { itemId: "potion_m",    chance: 0.50 },
+      { itemId: "livre_crucio", chance: 0.30 }
+    ]
+  },
+
   {
     id:       "bellatrix",
     epic:     true,

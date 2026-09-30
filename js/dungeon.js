@@ -210,14 +210,14 @@ function _generateRunePuzzle(rooms) {
 // `FLOOR → mur-barrière → CHEST` via `_findWallPocket`. Une devinette de
 // `RIDDLES` est tirée ; sa bonne réponse dissout la barrière (cf.
 // `answerRiddle` dans movement.js). Voir dungeon-enrichment-v2.md §3.
-function _generateRuneStele(rooms) {
+function _generateRuneStele(rooms, force) {
   runeStele = null;
   if (typeof RIDDLES === 'undefined' || !RIDDLES.length) return;
   // L'événement « Étage runique » force la stèle si aucune dalle-rune
   // n'a pu être posée (cf. generateDungeon — Phase 4.2/4.3).
   const forced = (typeof currentFloorEvent !== 'undefined'
     && (currentFloorEvent === 'runique' || currentFloorEvent === 'sceau_fissure'));
-  if (!forced && Math.random() >= 0.30) return;
+  if (!forced && !force && Math.random() >= 0.30) return;
   const pocket = _findWallPocket();
   if (!pocket) return;
   const floorCells = [];
@@ -494,11 +494,14 @@ function generateDungeon(floor) {
       && typeof houseRoomBias === 'function')
     ? houseRoomBias(typeof chosenHouse !== 'undefined' ? chosenHouse : null)
     : { puzzlePreference: null };
-  if (_roomBias.puzzlePreference === 'stele') {
+  // Prophétie en éclats (Lot C, arc H2) : stèle garantie aux étages 3/6/9 tant
+  // que la prophétie est incomplète (pré-victoire) — au moins 3 occasions.
+  const _prophecyStele = (typeof prophecyWantsStele === 'function') && prophecyWantsStele(floor);
+  if (_roomBias.puzzlePreference === 'stele' || _prophecyStele) {
     // Stèle prioritaire (Serdaigle). `_generateRuneStele` réinitialise
     // `runeStele` ; on réinitialise explicitement `runePuzzle`/`litRunes`
     // (non appelés si la stèle est posée) pour ne pas conserver d'état rance.
-    _generateRuneStele(rooms);
+    _generateRuneStele(rooms, _prophecyStele);
     if (!runeStele) _generateRunePuzzle(rooms);
     else { runePuzzle = null; litRunes = new Set(); }
   } else {
@@ -593,7 +596,7 @@ function generateDungeon(floor) {
   // en post-victoire pour la Boucle Ténébreuse — §7.2).
   const ef = effectiveFloor(floor);
   const eligibleTypes = MONSTERS.filter(m =>
-    m.minFloor <= ef && (m.maxFloor === null || ef <= m.maxFloor)
+    !m.questOnly && m.minFloor <= ef && (m.maxFloor === null || ef <= m.maxFloor)
   );
   const pool = eligibleTypes.length ? eligibleTypes : MONSTERS;
 
@@ -615,6 +618,10 @@ function generateDungeon(floor) {
       }
     }
   }
+
+  // Boss d'acte (Lot B) posé AVANT la clé : il peut ainsi la porter (l'appel
+  // des garde-fous plus bas est alors sans effet, idempotent).
+  if (typeof _ensureActBossPresent === 'function') _ensureActBossPresent(floor);
 
   // Clé de la salle scellée : attribuée aux drops d'un monstre de l'étage
   // (chance garantie). Sans monstre sur l'étage, la salle reste close.

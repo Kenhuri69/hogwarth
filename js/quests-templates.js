@@ -317,6 +317,51 @@ const QUEST_TEMPLATES = [
   // ── Phase 3 — Tranche étage 8 « Le Seuil » ──────────────────────
   // (cf. .claude/plans/content-audit-stabilization.md §5.1)
   // 3 quêtes données par Kingsley Shacklebolt à l'étage 8.
+  // ── Lot C (revue 2026-09, arc H3) — « Le Carnet du Lieutenant » ──────
+  // Donne aux Mangemorts un chef nommé (Casimir Vantrell). 1) Lupin (ét. 4)
+  // confie la piste : 4 lettres à retrouver en fouillant (progressLines), à
+  // porter à Kingsley (ét. 8, livraison inter-PNJ). 2) Kingsley envoie arrêter
+  // le Lieutenant (spawnOnAccept, duel) ; dilemme `choices` à la remise.
+  {
+    id: "carnet_lieutenant",
+    title: "Le Carnet du Lieutenant",
+    giver: "Professeur Lupin",
+    turnInName: "Kingsley Shacklebolt",
+    desc: "Lupin a intercepté une lettre scellée d'une clé noire : quelqu'un organise la descente des Mangemorts, étage après étage. Fouille les recoins des Cachots et des Profondeurs pour retrouver ses lettres, puis porte-les à Kingsley Shacklebolt, qui tient l'avant-garde de l'Ordre à l'étage 8.",
+    objectives: [
+      { type: "search", amount: 4, progress: 0, completed: false }
+    ],
+    progressLines: [
+      "Une lettre froissée, scellée d'une clé noire : « La Clé de Voûte s'est fendue cette nuit. Ce qui dort sous l'école respire de nouveau — et le Maître respire avec lui. Descendez. »",
+      "Une deuxième lettre, même écriture serrée : « Les professeurs tiennent les étages du haut. Laissez-les faire. Nous n'avons besoin ni des couloirs ni des élèves : seulement de la fêlure. »",
+      "Une troisième lettre, tachée de boue : « Greyback est lâché dans les Profondeurs, qu'il chasse ceux qui descendent trop loin. Les grimoires restent dans ma cache, sous le Seuil. »",
+      "La dernière lettre, signée cette fois de deux initiales : « Au Seuil, j'ouvrirai la faille assez large pour qu'Il la traverse. Le Maître n'a besoin que d'une porte. Je serai cette porte. — C. V. »"
+    ],
+    reward: { xp: 240, gold: 120 },
+    location: "Cachots et Profondeurs (remise à Kingsley, étage 8)"
+  },
+  {
+    id: "lieutenant_vantrell",
+    title: "Le Lieutenant à la clé noire",
+    giver: "Kingsley Shacklebolt",
+    prereq: "carnet_lieutenant",
+    desc: "Les lettres désignent un homme : Casimir Vantrell, lieutenant du cercle intérieur, qui veut ouvrir la fêlure assez large pour que son maître la traverse. Il se terre sur cet étage, avec sa cache de grimoires. Arrête-le — puis décide de ce que deviendront ses livres.",
+    objectives: [
+      { type: "kill", monsterId: "lieutenant_vantrell", amount: 1, progress: 0, completed: false }
+    ],
+    reward: { xp: 320, gold: 160 },
+    // Dilemme (verbe `choice`) : récompenses différentes mais équivalentes.
+    choices: [
+      { id: "bruler", label: "Brûler les grimoires",
+        reward: { xp: 360, gold: 380 },
+        msg: "🔥 Les grimoires de Vantrell se tordent dans les flammes. Kingsley hoche la tête : certains savoirs ne méritent pas de survivre à leur auteur." },
+      { id: "garder", label: "Garder les grimoires",
+        reward: { xp: 360, gold: 60, item: "livre_morsmordre" },
+        msg: "📕 Tu glisses le grimoire le plus intact dans ton sac. Kingsley ne dit rien, mais son regard s'attarde sur ta besace." }
+    ],
+    spawnOnAccept: { targetMonsterId: "lieutenant_vantrell", extraRandomCount: 0 },
+    location: "Le Seuil (étage 8)"
+  },
   {
     id: "chasse_greyback",
     title: "Chasse au loup-garou",

@@ -3779,6 +3779,10 @@ async function scenarioHouseRoomBias() {
 
     let isoOk = true; const isoFail = [];
     const agg = {}; HOUSES.forEach(h => agg[h] = { rune: 0, stele: 0 });
+    // Prophétie en éclats (Lot C) : stèle garantie aux étages 3/6/9 tant
+    // qu'elle est incomplète — neutre entre Maisons mais elle masquerait la
+    // saveur mesurée ici. On la considère complète pour isoler le biais Maison.
+    prophecyFragments = 3;
     const SEEDS = 60;
     try {
       for (let s = 0; s < SEEDS; s++) {

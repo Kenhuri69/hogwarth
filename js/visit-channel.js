@@ -562,7 +562,7 @@
     // Tire un monstre dont la fenêtre [minFloor, maxFloor] couvre le floor.
     // Sans pondération — un tirage uniforme suffit en V1b. La fenêtre garantit
     // un monstre cohérent avec la zone explorée par le host.
-    const pool = MONSTERS.filter(m =>
+    const pool = MONSTERS.filter(m => !m.questOnly &&
       (m.minFloor === undefined || floor >= m.minFloor) &&
       (m.maxFloor === undefined || m.maxFloor === null || floor <= m.maxFloor));
     if (!pool.length) return null;

@@ -132,7 +132,7 @@ function scaledGold(rawBase, scale, floor) {
 // ── Pool éligible + taille de groupe moyenne ─────────────────
 function eligiblePool(floor) {
   const ef = effectiveFloor(floor);
-  const p = MONSTERS.filter(m => m.minFloor <= ef && (m.maxFloor === null || ef <= m.maxFloor));
+  const p = MONSTERS.filter(m => !m.questOnly && m.minFloor <= ef && (m.maxFloor === null || ef <= m.maxFloor));
   return p.length ? p : MONSTERS;
 }
 // Or de drop moyen d'un ennemi à l'étage f (pondéré weight, × goldMultiplier).

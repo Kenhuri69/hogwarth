@@ -382,3 +382,5 @@ pour le moins de code. Le lot C ouvre la porte à tous les dilemmes.
 - **2026-09-30** — Lot A livré (PR #751, fusionnée). Lot B implémenté
   (plan `lotB-antagonistes-rythme-2026-09.md`) : 3a, 3b, 3c (Quirrell ét. 6,
   Greyback seul ét. 8, simulés), H8.
+- **2026-09-30** — Lot B livré (PR #752, fusionnée). Lot C implémenté
+  (plan `lotC-choix-carnet-prophetie-2026-09.md`) : verbe `choice`, H3, H2.

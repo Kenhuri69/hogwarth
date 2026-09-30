@@ -41,7 +41,7 @@ function spawnQuestMonsters(targetMonsterId, extraRandomCount) {
 
   const efFloor = effectiveFloor(floor);
   const pool = MONSTERS.filter(m =>
-    m.minFloor <= efFloor && (m.maxFloor === null || efFloor <= m.maxFloor)
+    !m.questOnly && m.minFloor <= efFloor && (m.maxFloor === null || efFloor <= m.maxFloor)
   );
   for (let i = 0; i < extraRandomCount && free.length && pool.length; i++) {
     const cell = free.pop();

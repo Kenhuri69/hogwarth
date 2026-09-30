@@ -452,7 +452,7 @@ function _triggerDungeonTrap() {
     setNarrative("Le sol se dérobe en un déclic sec — une créature jaillit de la fosse !");
     addMsg("Piège ! Une embuscade vous tombe dessus.", 'bad');
     const f = currentFloor || 1;
-    const pool = MONSTERS.filter(m => m.minFloor <= f
+    const pool = MONSTERS.filter(m => !m.questOnly && m.minFloor <= f
       && (m.maxFloor === null || f <= m.maxFloor));
     startBattle(scaleMonster(weightedPick(pool.length ? pool : MONSTERS), f));
     return;
@@ -557,6 +557,8 @@ function answerSteleRiddle(choiceIdx) {
     }
     renderMinimap();
     drawDungeon();
+    // Prophétie en éclats (Lot C, arc H2) : la stèle grave le fragment suivant.
+    if (typeof maybeProphecyFragment === 'function') maybeProphecyFragment(currentFloor);
     if (typeof checkCodexUnlocks === 'function') checkCodexUnlocks('riddle-solved');
     // Sorts & Magie 2.0 — Lot P4 §1.7 : les stèles des Ruines profondes (ét. 21+)
     // enseignent progressivement les sorts ultimes (Le Mot du Dormeur + temporels),
@@ -1045,7 +1047,7 @@ function rest() {
     });
     addMsg("Le groupe n'a eu qu'un répit partiel.", '');
     const restFloor = Math.max(1, currentFloor - 1);
-    const restPool  = MONSTERS.filter(m => m.minFloor <= restFloor);
+    const restPool  = MONSTERS.filter(m => !m.questOnly && m.minFloor <= restFloor);
     const pool      = restPool.length ? restPool : MONSTERS;
     const enemy     = scaleMonster(weightedPick(pool), restFloor);
     restCooldown = 5;

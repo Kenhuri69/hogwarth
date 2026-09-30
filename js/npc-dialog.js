@@ -562,6 +562,29 @@ function _reputationSuffixPages(npc) {
   return _splitDialogPage(text, _DIALOG_PAGE_MAXLEN);
 }
 
+// Trace d'un dilemme (Lot C, verbe `choice`) : `npc.choiceLines[qid][cid]`,
+// page-suffixe muette jouée tant que le choix correspondant est posé.
+function _choiceSuffixPages(npc) {
+  const lines = npc && npc.choiceLines;
+  if (!lines || typeof questChoiceOf !== 'function') return [];
+  const out = [];
+  for (const qid of Object.keys(lines)) {
+    const cid = questChoiceOf(qid);
+    const text = cid && lines[qid] && lines[qid][cid];
+    if (text) out.push(..._splitDialogPage(text, _DIALOG_PAGE_MAXLEN));
+  }
+  return out;
+}
+
+// Prophétie en éclats (Lot C, arc H2) : `npc.prophecyLines[n]`, n = nombre de
+// fragments gravés. Page-suffixe muette (Trelawney).
+function _prophecySuffixPages(npc) {
+  const lines = npc && npc.prophecyLines;
+  const n = (typeof prophecyFragments === 'number') ? prophecyFragments : 0;
+  const text = lines && n > 0 && lines[n];
+  return text ? _splitDialogPage(text, _DIALOG_PAGE_MAXLEN) : [];
+}
+
 function _npcDialogActions(npc, state) {
   const out = [];
   // Actions contextuelles quête — énumère TOUTES les quêtes actionnables du
@@ -604,6 +627,17 @@ function _npcDialogActions(npc, state) {
         label: '<img class="ui-icon ui-icon-md" src="img/icons/quest.png" alt=""> Défier l\'écho de Salazar',
         onClick: `turnInSlythSignature('defiance'); openNpcDialog('${npc.id}');`
       });
+      continue;
+    }
+    // Verbe `choice` (Lot C) : un bouton par option du dilemme.
+    const _tpl = (typeof getQuestTemplate === 'function') ? getQuestTemplate(qid) : null;
+    if (_tpl && Array.isArray(_tpl.choices) && _tpl.choices.length) {
+      for (const c of _tpl.choices) {
+        out.push({
+          label: '<img class="ui-icon ui-icon-md" src="img/icons/quest.png" alt=""> ' + c.label,
+          onClick: `turnInQuestChoice('${qid}', '${c.id}'); openNpcDialog('${npc.id}');`
+        });
+      }
       continue;
     }
     out.push({
@@ -1088,7 +1122,7 @@ function openNpcDialog(npcId) {
   }
   // Suffixe réputation (§6.9.2) — appendu après les autres suffixes muets, pour
   // les PNJ à choix gris (écho de Salazar, Kingsley) selon la réputation dérivée.
-  const _repPages = _reputationSuffixPages(npc);
+  const _repPages = _reputationSuffixPages(npc).concat(_choiceSuffixPages(npc), _prophecySuffixPages(npc));
   if (_repPages.length) {
     const lastSrc = _pageData.srcPages.length
       ? _pageData.srcPages[_pageData.srcPages.length - 1] : 0;
