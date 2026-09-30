@@ -536,6 +536,8 @@ function parseArgs(argv) {
     else if (k === 'elan-step')    out.elanStep = parseFloat(v) || 8;
     else if (k === 'elan-cap')     out.elanCap  = parseInt(v, 10) || 5;
     else if (k === 'elan-decay')   out.elanDecay = String(v || 'none').toLowerCase();
+    else if (k === 'boss')         out.boss = String(v || '') || null;
+    else if (k === 'boss-alone')   out.bossAlone = v !== '0';
   }
   return out;
 }
@@ -628,6 +630,9 @@ Options:
                           l'AGI : celerite = max × agi²/(agi²+half²).
   --celerite-half=H       [D5 AGI] AGI de demi-saturation de la courbe Célérité (def 45)
   --endgame               Boucle Ténébreuse : étages 11..maxFloor, récursion ENDGAME_SCALING
+  --boss=ID               Le monstre ID mène chaque combat (boss d'acte garanti) ;
+                          étages < minFloor du boss ignorés
+  --boss-alone=1          Avec --boss : le boss combat seul (boss d'acte, Lot B)
   --max-floor=N           Étage max en mode --endgame (def 40)
   --endgame-scaldelta=F   [Boucle] scalDelta de base de la récursion endgame
                           (def 0.5). Plus haut = boucles plus raides (toutes).
@@ -1631,10 +1636,13 @@ function enemyAct(enemy, target, partySize) {
 function runSimulations(cfg) {
   const rows = [];
 
+  const bossBase = cfg.boss ? MONSTERS.find(m => m.id === cfg.boss) : null;
+  if (cfg.boss && !bossBase) throw new Error('--boss inconnu : ' + cfg.boss);
   for (const floor of FLOORS) {
     const pool = eligiblePool(floor, cfg);
     const stats = poolStats(floor, cfg);
     if (!stats) { rows.push({ floor, skip: true }); continue; }
+    if (bossBase && floor < bossBase.minFloor) { rows.push({ floor, skip: true }); continue; }
 
     for (const partySize of [1, 2]) {
       const level = expectedLevelAtFloor(floor, partySize, cfg) + (cfg.bonusLevels || 0);
@@ -1645,10 +1653,13 @@ function runSimulations(cfg) {
         const party = partySize === 1
           ? [createHero('harry', level, cfg, floor, 1)]
           : [createHero('harry', level, cfg, floor, 2), createHero('hermione', level, cfg, floor, 2)];
-        const size = rollGroupSize(floor, partySize, cfg);
+        const size = (bossBase && cfg.bossAlone) ? 1 : rollGroupSize(floor, partySize, cfg);
         groupSizes[size]++;
         const enemyGroup = Array.from({ length: size },
           () => scaleMonster(weightedPick(pool), floor, cfg));
+        // --boss=ID : le boss mène le groupe (boss d'acte garanti, Lot B 3c),
+        // escorté comme au runtime (startBattle : taille tirée normalement).
+        if (bossBase) enemyGroup[0] = scaleMonster(bossBase, floor, cfg);
         const res = simulateBattle(party, enemyGroup);
         if (res.won) {
           wins.count++;

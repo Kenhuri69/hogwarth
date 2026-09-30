@@ -885,6 +885,89 @@ async function scenarioChamberGuardians() {
   await browser.close();
 }
 
+// Lot B (revue 2026-09) — boss d'acte garantis (6 / 8), promotion + chute des
+// boss canon, murmures de la fêlure et lettres de la surface.
+async function scenarioActBossesAndWhispers() {
+  console.log('\n── Scénario Lot B : boss d\'acte, murmures, lettres ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Serdaigle' });
+
+  const count = (id) => `(() => { let n = 0; for (const r of enemyMap) for (const m of r) if (m && m.id === '${id}') n++; return n; })()`;
+
+  // T1 : étage 8 pré-victoire → Greyback placé, seul.
+  const t1 = await page.evaluate((c) => {
+    seenScriptedBeat = new Set();
+    victoryAchieved = false;
+    currentFloor = 8;
+    generateDungeon(8);
+    let boss = null;
+    for (const r of enemyMap) for (const m of r) if (m && m.actBoss) boss = m;
+    return { n: eval(c), id: boss && boss.id, solo: !!(boss && boss.soloEncounter) };
+  }, count('fenrir_greyback'));
+  console.log('  T1 étage 8:', t1);
+  assert(t1.n === 1 && t1.id === 'fenrir_greyback' && t1.solo, 'Greyback doit être placé seul à l\'étage 8');
+
+  // T2 : combat → groupe de 1, promotion jouée ; victoire → chute + garantie close.
+  const t2 = await page.evaluate(() => {
+    let boss = null, bx = 0, by = 0;
+    enemyMap.forEach((r, y) => r.forEach((m, x) => { if (m && m.actBoss) { boss = m; bx = x; by = y; } }));
+    playerX = bx; playerY = by;
+    startBattle(boss);
+    const size = enemyGroup.length;
+    const promo = seenScriptedBeat.has('boss_promo:fenrir_greyback');
+    enemyGroup.forEach(e => { e.currentHp = 0; });
+    try { endBattle(true); } catch (e) { return { err: String(e) }; }
+    return { size, promo,
+      fall: seenScriptedBeat.has('boss_fall:fenrir_greyback'),
+      down: seenScriptedBeat.has('act_boss_down:fenrir_greyback') };
+  });
+  console.log('  T2 combat:', t2);
+  assert(!t2.err, `endBattle ne doit pas throw (${t2.err || ''})`);
+  assert(t2.size === 1, `Greyback combat seul (1), got ${t2.size}`);
+  assert(t2.promo && t2.fall && t2.down, 'promotion, chute et garantie close attendues');
+
+  // T3 : Greyback vaincu → plus replacé ; Quirrell à l'étage 6 escorté.
+  const t3 = await page.evaluate(() => {
+    for (const r of enemyMap) r.fill(null);
+    const again = _ensureActBossPresent(8);
+    currentFloor = 6;
+    generateDungeon(6);
+    let q = null;
+    for (const r of enemyMap) for (const m of r) if (m && m.actBoss) q = m;
+    return { again, q: q && q.id, solo: !!(q && q.soloEncounter) };
+  });
+  console.log('  T3 garantie close + étage 6:', t3);
+  assert(t3.again === 0, 'boss d\'acte vaincu : plus de placement');
+  assert(t3.q === 'ombre_quirrell' && !t3.solo, 'Quirrell placé à l\'étage 6, escorté');
+
+  // T4 : murmure + lettre joués par la descente réelle (hook _changeFloor).
+  await page.evaluate(() => {
+    document.getElementById('encounter-overlay').style.display = 'none';
+    inBattle = false;
+    currentFloor = 4;
+    generateDungeon(4);
+    goDeeper();
+  });
+  await page.waitForFunction(() => currentFloor === 5 && seenScriptedBeat.has('crack_whisper:5'), { timeout: 8000 });
+  const t4 = await page.evaluate(() => ({
+    again: maybeCrackWhisper(5),
+    letter4: maybeSurfaceLetter(4),
+    letter4b: maybeSurfaceLetter(4),
+    letter11: maybeSurfaceLetter(11),
+  }));
+  console.log('  T4 murmure/lettre:', t4);
+  assert(t4.again === false, 'murmure one-shot');
+  assert(t4.letter4 === true && t4.letter4b === false, 'lettre de l\'étage 4 one-shot');
+  assert(t4.letter11 === false, 'lettre de la Boucle : jamais avant la victoire');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Lot B OK');
+  await browser.close();
+}
+
 // Phase 3 Lot 3 — polish des gardiens : beat de promotion (1re rencontre) +
 // révélation de l'écho de Chambre au Codex à la défaite.
 async function scenarioChamberGuardianPolish() {
@@ -4326,4 +4409,4 @@ async function scenarioEscapeRewards() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioEscapePocket, scenarioEscapeRiddleSolve, scenarioEscapeMalus, scenarioEscapeMirror, scenarioEscapeWarden, scenarioEscapeIronman, scenarioEscapeRewards, scenarioCh13EndgamePivot, scenarioScriptedFloorBeats, scenarioVoixDesRuines, scenarioDungeonLife, scenarioFountain, scenarioRefuge, scenarioSoloSoftlock, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioRespawn20Percent, scenarioVictoryTrigger, scenarioStairsGated, scenarioFinalBossGuaranteed, scenarioChamberGuardians, scenarioChamberGuardianPolish, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryRespec, scenarioForgeLibraryAudit, scenarioFloorTheming, scenarioZoneDEchoes, scenarioZoneDFx, scenarioFounderChamber, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioRoomOfRequirement, scenarioStairsReachable, scenarioHouseRoomBias] };
+module.exports = { scenarios: [scenarioEscapePocket, scenarioEscapeRiddleSolve, scenarioEscapeMalus, scenarioEscapeMirror, scenarioEscapeWarden, scenarioEscapeIronman, scenarioEscapeRewards, scenarioCh13EndgamePivot, scenarioScriptedFloorBeats, scenarioVoixDesRuines, scenarioDungeonLife, scenarioFountain, scenarioRefuge, scenarioSoloSoftlock, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioRespawn20Percent, scenarioVictoryTrigger, scenarioStairsGated, scenarioFinalBossGuaranteed, scenarioActBossesAndWhispers, scenarioChamberGuardians, scenarioChamberGuardianPolish, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryRespec, scenarioForgeLibraryAudit, scenarioFloorTheming, scenarioZoneDEchoes, scenarioZoneDFx, scenarioFounderChamber, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioRoomOfRequirement, scenarioStairsReachable, scenarioHouseRoomBias] };

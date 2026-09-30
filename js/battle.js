@@ -298,6 +298,45 @@ const BOSS_PROMO_BEATS = {
     icon: '🦡',
     line: "Le Gardien du Blaireau s'interpose sans un mot, puis cède une phrase : « Helga a creusé cet abri pour les vivants. Prouve que tu en es un — je ne m'écarte que devant ceux qui tiennent. »",
   },
+  // Lot B (revue 2026-09, axe 3a) — les boss canon prennent la parole à leur
+  // 1re rencontre. `fall` (optionnel) : ligne de chute jouée à leur 1re
+  // défaite (_maybeBossFallBeat). Voldemort reste une corruption résiduelle
+  // qui parle À TRAVERS la fêlure (02:175) ; pas de `fall` pour le Ressuscité,
+  // la cinématique de victoire (endgame.js) prend le relais.
+  ombre_quirrell: {
+    icon: '👳',
+    line: "L'ombre de Quirrell bégaie encore, par habitude : « J-je n'étais qu'un p-professeur… » Puis une seconde voix, froide, parle derrière sa nuque : « Il n'était qu'un hôte. Les hôtes se remplacent. Tu ferais un excellent hôte. »",
+    fall: "L'ombre de Quirrell se défait comme un turban qu'on déroule. Dans le dernier pli, la voix froide ne crie pas : elle attend déjà ailleurs, plus bas.",
+  },
+  bellatrix: {
+    icon: '🖤',
+    line: "Bellatrix Lestrange t'accueille d'un rire trop aigu pour ces voûtes : « Oh, de la visite, si bas ! Le Maître aime qu'on vienne à lui. Je vais juste… t'abîmer un peu d'abord. »",
+    fall: "Bellatrix tombe à genoux, et c'est encore vers le bas qu'elle regarde : « Maître… je vous ai gardé la porte… » Sa voix se perd dans la pierre, sans réponse.",
+  },
+  fenrir_greyback: {
+    icon: '🐺',
+    line: "Fenrir Greyback renifle l'air longuement avant de sourire : « Ça sent l'élève. Le château envoie ses petits jusqu'ici, maintenant ? Je chasse seul, ce soir. Personne ne viendra t'aider. »",
+    fall: "Greyback s'effondre en grondant, les griffes encore plantées dans la roche. « La meute… » souffle-t-il. Mais aucune meute ne répond dans les Profondeurs.",
+  },
+  aragog: {
+    icon: '🕷️',
+    line: "Aragog s'immobilise, ses huit yeux laiteux posés sur toi : « Tu sens l'ami de Hagrid… ou peut-être pas. Mes enfants ont faim, et je suis vieux. Je ne les retiendrai pas longtemps. »",
+    fall: "Aragog replie lentement ses pattes, comme on s'endort. « Dis à Hagrid… » Le reste se perd dans un cliquetis. Autour de toi, la toile cesse de trembler.",
+  },
+  antonin_dolohov: {
+    icon: '🟣',
+    line: "Antonin Dolohov trace sans hâte une courbe violette dans l'air, comme on signe un registre : « Deux fois Azkaban. Deux fois je suis sorti. Toi, tu ne remonteras qu'une fois — ou jamais. »",
+    fall: "Dolohov regarde sa baguette comme un outil qui l'a trahi. « Il reviendra… il revient toujours… » La courbe violette se dissipe avant qu'il ait fini de la tracer.",
+  },
+  voldemort_affaibli: {
+    icon: '🌫️',
+    line: "La forme spectrale ne marche pas : elle suinte de la fêlure, à peine un visage. « Tu m'entends depuis des étages, n'est-ce pas ? Je n'ai plus de corps. Il me reste ceci — la faille, et ceux qui viennent jusqu'à elle. »",
+    fall: "Le spectre se déchire sans un cri, comme un voile dans le vent. Une dernière pensée glisse jusqu'à toi, calme et patiente : « Plus bas. Je t'attendrai plus bas. »",
+  },
+  voldemort_revenu: {
+    icon: '🐍',
+    line: "Ici, la fêlure est si large qu'elle lui prête un visage entier. Lord Voldemort ne te menace pas : il t'examine. « Tous les autres n'étaient que des échos. Moi, je suis ce que la pierre n'a jamais réussi à oublier. Approche. »",
+  },
 };
 
 // Orchestrateur one-shot : joue le monologue de promotion à la 1re rencontre du
@@ -316,6 +355,26 @@ function _maybeBossPromoBeat() {
   seenScriptedBeat.add(key);
   if (typeof addMsg === 'function') addMsg(beat.line, 'magic');
   return true;
+}
+
+// Ligne de chute (Lot B, axe 3a) : à la 1re défaite d'un boss promu porteur
+// d'un `fall`, joue sa dernière réplique. Sentinelle 'boss_fall:<id>'. Parcourt
+// tout le groupe (le boss peut ne pas être en tête après une invocation).
+// Appelé par endBattle (victoire). Retourne le nombre de lignes jouées.
+function _maybeBossFallBeat(group) {
+  if (!Array.isArray(group)) return 0;
+  if (typeof seenScriptedBeat === 'undefined' || !seenScriptedBeat) return 0;
+  let played = 0;
+  for (const e of group) {
+    const beat = e && e.id && BOSS_PROMO_BEATS[e.id];
+    if (!beat || !beat.fall) continue;
+    const key = 'boss_fall:' + e.id;
+    if (seenScriptedBeat.has(key)) continue;
+    seenScriptedBeat.add(key);
+    if (typeof addMsg === 'function') addMsg(beat.fall, 'magic');
+    played++;
+  }
+  return played;
 }
 
 // ── Imperius : asservissement (l'ennemi frappe ses alliés) ───
@@ -676,7 +735,9 @@ function startBattle(baseEnemyData, opts) {
   } else if (echoGroup && echoGroup.length) {
     enemyGroup = echoGroup.map(e => ({ ...e, currentHp: e.hp, statusEffects: [] }));
   } else {
-    const size = rollGroupSize();
+    // Boss d'acte « seul » (Lot B, axe 3c — Greyback à l'étage 8) : combat
+    // sans escorte, posé par _ensureActBossPresent. Calibré par la sim.
+    const size = (baseEnemyData && baseEnemyData.soloEncounter) ? 1 : rollGroupSize();
     enemyGroup = [];
     for (let i = 0; i < size; i++) {
       const base = i === 0 ? baseEnemyData : pickSimilarEnemy(baseEnemyData);

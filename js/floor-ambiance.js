@@ -930,3 +930,153 @@ function computeEnvModifiers(floor, victoryAchieved) {
     spellElemBonus: runic ? { feu: 0.10, foudre: 0.10 } : {}
   };
 }
+
+// ============================================================
+// Lot B (revue 2026-09, axe 3b) — Murmures de la fêlure
+// ------------------------------------------------------------
+// Voldemort, corruption résiduelle (02:175), parle À TRAVERS la fêlure avant
+// son combat : une seule phrase, à la 1re entrée des étages 5, 6 et 9
+// (pré-victoire ; le 8 porte déjà un étage-scène). Voix unique, rare et
+// conditionnelle — pas des floorLines génériques (rejetées en 2026-07).
+//   5 : selon la Maison (la tentation épouse sa vertu) ;
+//   6 : selon le héros présent (Harry, Drago) ;
+//   9 : selon le Pacte des Cachots (Serpentard).
+const CRACK_WHISPERS = {
+  5: {
+    by: 'house',
+    lines: {
+      Gryffondor:  "Du courage… Je connais bien le courage. C'est lui qui pousse les enfants à descendre seuls, là où personne ne les entendra appeler.",
+      Serpentard:  "Tu sens que tu vaux plus que ce qu'ils t'ont donné, n'est-ce pas ? Je l'ai senti, moi aussi, à ton âge. Descends, et prends-le.",
+      Serdaigle:   "Tu veux comprendre. Tout comprendre. Rowena n'a jamais osé écrire ce qui dort ici. Moi, je peux te le lire.",
+      Poufsouffle: "Loyal jusqu'au bout… Loyal envers qui ? Ils sont restés là-haut, au chaud. C'est toi qui descends.",
+    },
+    fallback: "Tiens… un pas léger sur les marches. Il y a longtemps que personne n'était descendu si loin pour moi.",
+  },
+  6: {
+    by: 'hero',
+    lines: {
+      harry: "Harry… Nous voilà encore seuls, toi et moi. Ta cicatrice s'en souvient, n'est-ce pas ?",
+      draco: "Malefoy. Ton père savait s'agenouiller. Tu apprendras, toi aussi.",
+    },
+    fallback: "Plus bas, la pierre se souvient de moi. Bientôt, elle se souviendra de toi — comme d'une chose que j'ai prise.",
+  },
+  9: {
+    by: 'pact',
+    lines: {
+      pact:     "Tu as passé un marché avec Salazar. Il ne tenait jamais ses marchés. Moi, si.",
+      defiance: "Tu as trahi le secret de Salazar. Bien. Ceux qui trahissent finissent toujours par venir jusqu'à moi.",
+    },
+    fallback: "Je n'ai plus de corps, plus de nom qu'on ose dire. Il me reste la fêlure… et toi, qui viens jusqu'à elle.",
+  },
+};
+
+// Résolveur PUR : la phrase murmurée à l'étage `floor`, ou null.
+// ctx = { house, heroKeys: [], pactChoice }.
+function pickCrackWhisper(floor, ctx) {
+  const w = CRACK_WHISPERS[floor];
+  if (!w) return null;
+  const c = ctx || {};
+  if (w.by === 'house' && c.house && w.lines[c.house]) return w.lines[c.house];
+  if (w.by === 'hero' && Array.isArray(c.heroKeys)) {
+    for (const k of c.heroKeys) if (w.lines[k]) return w.lines[k];
+  }
+  if (w.by === 'pact' && c.pactChoice && w.lines[c.pactChoice]) return w.lines[c.pactChoice];
+  return w.fallback;
+}
+
+// Orchestrateur one-shot (sentinelle 'crack_whisper:<étage>'), pré-victoire.
+function maybeCrackWhisper(floor) {
+  if (typeof victoryAchieved !== 'undefined' && victoryAchieved) return false;
+  if (typeof seenScriptedBeat === 'undefined' || !seenScriptedBeat) return false;
+  const key = 'crack_whisper:' + floor;
+  if (!CRACK_WHISPERS[floor] || seenScriptedBeat.has(key)) return false;
+  const text = pickCrackWhisper(floor, {
+    house:      (typeof chosenHouse !== 'undefined') ? chosenHouse : null,
+    heroKeys:   (typeof activeParty === 'function') ? activeParty().map(c => c && c.heroKey).filter(Boolean) : [],
+    pactChoice: (typeof slythPactChoice !== 'undefined') ? slythPactChoice : null,
+  });
+  if (!text) return false;
+  seenScriptedBeat.add(key);
+  if (typeof addMsg === 'function') addMsg('🌑 Un murmure glacé monte de la fêlure : « ' + text + ' »', 'magic');
+  return true;
+}
+
+// ============================================================
+// Lot B (revue 2026-09, arc H8) — Lettres de la surface
+// ------------------------------------------------------------
+// À chaque entrée d'Acte (étages 4, 7, 10) et à l'entrée de la Boucle (11), un
+// hibou apporte une lettre de ceux qui tiennent l'école. Paragraphe de base +
+// une phrase qui REFLÈTE l'état du joueur (quêtes remises, Quête Signature,
+// palier de Maison). Les professeurs vouvoient, les élèves et Hagrid tutoient.
+// Texte seulement, one-shot (sentinelle 'surface_letter:<étage>').
+// ctx = { house, questsDone, houseTier, signatureDone }.
+function composeSurfaceLetter(floor, ctx) {
+  const c = ctx || {};
+  const n = c.questsDone || 0;
+  if (floor === 4) {
+    return {
+      from: 'le professeur McGonagall',
+      text: "Les escaliers se sont figés, mais nous tenons les couloirs. Les premières années dorment dans la Grande Salle, sous la garde des préfets. "
+        + (n > 0
+          ? "Les nouvelles vont vite, même sous la pierre : on me dit que vous avez déjà rendu service à plusieurs. Continuez ainsi."
+          : "Prenez le temps d'aider ceux que vous croiserez : là-dessous, personne ne s'en sort seul.")
+        + (c.house && c.houseTier > 0 ? " Le sablier de " + c.house + " s'est remis à couler ; chaque grain gagné en bas tombe aussi ici." : ""),
+    };
+  }
+  if (floor === 7) {
+    return {
+      from: c.house ? 'une élève de première année de ' + c.house : "une élève de première année",
+      text: "On nous a dit que tu avais pris l'escalier du bas. Au dîner, tout le monde chuchote ton nom, et les grands disent que les couloirs sont plus calmes depuis. "
+        + (c.signatureDone
+          ? "On a entendu ce que tu as fait pour notre Maison. Personne n'osait. On est fiers de toi."
+          : n >= 5
+            ? "Il paraît que tu as aidé tellement de gens là-dessous qu'on a arrêté de compter."
+            : "Reviens vite. On garde ta place à table."),
+    };
+  }
+  if (floor === 10) {
+    return {
+      from: 'le professeur McGonagall',
+      text: "Les portraits ne dorment plus. Ils disent que le froid monte des fondations, et que vous êtes tout près de sa source. Je ne vous demanderai pas de faire demi-tour : je sais que vous ne le feriez pas. "
+        + (n >= 8
+          ? "Tant de gens me parlent de vous que j'ai cessé de m'en étonner. Ceux que vous avez aidés attendent votre retour, et moi aussi."
+          : "Quoi qu'il vous attende en bas, le château tout entier retient son souffle avec vous."),
+    };
+  }
+  if (floor === 11) {
+    return {
+      from: 'Hagrid',
+      text: "L'école respire de nouveau, tu sais ? Les escaliers tournent, Crockdur a retrouvé ses pantoufles, et le professeur Flitwick a fait danser les armures pour fêter ça. Mais le portrait de Dumbledore dit que t'as repris l'escalier vers le bas. "
+        + (n >= 10
+          ? "Tous ceux que t'as aidés ont écrit pour te remercier. J'ai rangé les lettres dans une boîte à biscuits. Elle est pleine."
+          : "J'ai pas besoin de comprendre pourquoi. Fais attention à toi, c'est tout."),
+    };
+  }
+  return null;
+}
+
+function maybeSurfaceLetter(floor) {
+  if (typeof seenScriptedBeat === 'undefined' || !seenScriptedBeat) return false;
+  const key = 'surface_letter:' + floor;
+  if (seenScriptedBeat.has(key)) return false;
+  if (floor === 11 && !(typeof victoryAchieved !== 'undefined' && victoryAchieved)) return false;
+  const house = (typeof chosenHouse !== 'undefined') ? chosenHouse : null;
+  const signatureDone =
+    (house === 'Gryffondor'  && typeof gryffSignatureDone !== 'undefined' && !!gryffSignatureDone) ||
+    (house === 'Serpentard'  && typeof slythSignatureDone !== 'undefined' && !!slythSignatureDone) ||
+    (house === 'Serdaigle'   && typeof ravenSignatureDone !== 'undefined' && !!ravenSignatureDone) ||
+    (house === 'Poufsouffle' && typeof poufSignatureDone  !== 'undefined' && !!poufSignatureDone);
+  const letter = composeSurfaceLetter(floor, {
+    house,
+    questsDone:  (typeof completedQuests !== 'undefined' && completedQuests) ? completedQuests.size : 0,
+    houseTier:   (typeof houseTier === 'number') ? houseTier : 0,
+    signatureDone,
+  });
+  if (!letter) return false;
+  seenScriptedBeat.add(key);
+  if (typeof addMsg === 'function') {
+    addMsg('🦉 Un hibou fend l\'obscurité et te dépose une lettre de ' + letter.from + '.', 'narrative');
+    addMsg('✉️ « ' + letter.text + ' »', 'narrative');
+  }
+  return true;
+}

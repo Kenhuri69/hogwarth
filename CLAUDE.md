@@ -84,7 +84,9 @@ js/
   floor-themes.js  →  FLOOR_THEMES{} + getFloorTheme() — source unique de
                       vérité tileset/ambiance par tranche d'étages (pur)
   floor-ambiance.js → Descriptions d'ambiance zonées + corruption (PUR, aucun
-                      état). APRÈS floor-themes.js
+                      état) + étages-scènes one-shot, murmures de la fêlure
+                      (CRACK_WHISPERS, ét. 5/6/9) et lettres de la surface
+                      (composeSurfaceLetter, ét. 4/7/10/11). APRÈS floor-themes.js
   floor-events.js  →  ÉVÉNEMENTS D'ÉTAGE : micro-événements rares tirés à
                       l'entrée d'étage (FLOOR_EVENTS, FLOOR_EVENT_CHANCE)
   room-flavor.js   →  Phrases d'atmosphère à l'entrée de salle (donjon vivant)
@@ -133,8 +135,10 @@ js/
                       (salles, couloirs, cellules spéciales, puzzles, PNJ)
   dungeon-spawning.js → spawnQuestMonsters(), spawnFarmingMonsters(),
                       _ensureActiveKillQuestTargets(), _ensureStairsExist(),
-                      _migrateMissingNpcsForFloor(), _findFreeNpcCell() —
-                      spawn de quête & garde-fous. Chargé APRÈS dungeon.js
+                      _migrateMissingNpcsForFloor(), _findFreeNpcCell(),
+                      _ensureActBossPresent() (boss d'acte garantis ét. 6/8,
+                      ACT_BOSSES) — spawn de quête & garde-fous. Chargé APRÈS
+                      dungeon.js
   textures.js      →  Chargement des textures pixel art (TEXTURES, loadTextures()).
                       Consommé par renderer.js
   renderer.js      →  drawDungeon(), drawCorridor() — rendu 3D canvas + textures + fog
@@ -355,7 +359,7 @@ attendus se sont exécutés correctement et expose 2 helpers d'accès défensif.
 
 ### Manifeste
 
-Le `MANIFEST` dans `loader.js` énumère **369** entrées `{ name, source, kind,
+Le `MANIFEST` dans `loader.js` énumère **374** entrées `{ name, source, kind,
 optional? }` :
 - `kind: 'fn'` → `typeof name === 'function'`
 - `kind: 'obj'` → `typeof name !== 'undefined'` (couvre `let`/`const`/`var`)

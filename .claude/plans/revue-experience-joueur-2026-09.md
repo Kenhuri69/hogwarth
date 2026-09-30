@@ -379,3 +379,6 @@ pour le moins de code. Le lot C ouvre la porte à tous les dilemmes.
   existants, bible comparée au code, audit quantitatif). Constats 0.1 et 0.2
   re-vérifiés à la main. Aucun code touché. En attente d'arbitrage (Q1 à Q6).
 - **2026-09-29** — Arbitrages Q1-Q4 reçus ; Lot 0 implémenté (plan dédié).
+- **2026-09-30** — Lot A livré (PR #751, fusionnée). Lot B implémenté
+  (plan `lotB-antagonistes-rythme-2026-09.md`) : 3a, 3b, 3c (Quirrell ét. 6,
+  Greyback seul ét. 8, simulés), H8.
