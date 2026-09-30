@@ -57,6 +57,9 @@ function _serializeState() {
     currentFloorEvent,
     secretWalls: Array.from(secretWalls),
     roomArchetypes,
+    hunterMarks,
+    traqueUnlocked,
+    traqueContract,
     runePuzzle,
     litRunes: Array.from(litRunes),
     runeStele,
@@ -533,6 +536,9 @@ function _applyState(gs) {
   secretWalls = new Set(gs.secretWalls || []);
   roomArchetypes = Array.isArray(gs.roomArchetypes) ? gs.roomArchetypes : [];
   announcedArchetypes = new Set();
+  hunterMarks = Math.max(0, gs.hunterMarks | 0);
+  traqueUnlocked = !!gs.traqueUnlocked;
+  traqueContract = (gs.traqueContract && typeof gs.traqueContract === 'object') ? gs.traqueContract : null;
   runePuzzle = gs.runePuzzle || null;
   litRunes = new Set(gs.litRunes || []);
   runeStele = gs.runeStele || null;

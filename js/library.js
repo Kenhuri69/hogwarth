@@ -147,11 +147,16 @@ function reforgeSpellPathAtLibrary(charIdx, spellName, newPath, element) {
   if (newPath === c.spellPaths[spellName]) return false;
   if (newPath === 'meta' && !LIBRARY_ELEMENTS.includes(element)) return false;
   const cost = _libraryRespecCost(lvl);
-  if ((player.gold | 0) < cost) {
-    addMsg(`Reforger la voie : ${cost} Gallions requis (vous en avez ${player.gold | 0}).`, 'bad');
-    return false;
+  // Traques Rituelles (Lot 3) : payable en or ou en Marques de Traque.
+  if (typeof traqueRespecCharge === 'function') {
+    if (!traqueRespecCharge(cost)) return false;
+  } else {
+    if ((player.gold | 0) < cost) {
+      addMsg(`Reforger la voie : ${cost} Gallions requis (vous en avez ${player.gold | 0}).`, 'bad');
+      return false;
+    }
+    player.gold -= cost;
   }
-  player.gold -= cost;
   c.spellPaths[spellName] = newPath;
   if (newPath === 'meta') c.spellElements[spellName] = element;
   else delete c.spellElements[spellName];
@@ -429,8 +434,11 @@ function openLibrary() {
         ? `<div class="library-preview">🜍 ${c.spellElements[name] || spell.element} · power ${(spell.power | 0) + lvl} → <b>${(spell.power | 0) + lvl + 1}</b></div>`
         : `<div class="library-preview">power ${pwrNow} → <b>${pwrNext}</b></div>`;
       const respecCost   = _libraryRespecCost(lvl);
-      const respecAfford = (player.gold | 0) >= respecCost;
+      const respecAfford = (typeof traqueRespecAffordable === 'function')
+        ? traqueRespecAffordable(respecCost) : (player.gold | 0) >= respecCost;
       const respecDis    = respecAfford ? '' : 'disabled';
+      const respecLbl    = (typeof traqueRespecCostLabel === 'function') ? traqueRespecCostLabel(respecCost) : `${respecCost}g`;
+      const respecPay    = (typeof traqueRespecToggleHtml === 'function') ? traqueRespecToggleHtml('library-upgrade-btn', 'openLibrary()') : '';
       let respecUi;
       if (_libraryUiExpand === `${expandKey}:respec-meta`) {
         respecUi = `<div class="library-path-choice">
@@ -447,11 +455,12 @@ function openLibrary() {
                    onclick="libraryToggleExpand('${expandKey}:respec-meta')">🜍 ${LIBRARY_PATH_LABELS[p]}</button>`
               : `<button class="library-upgrade-btn ${respecDis}" ${respecDis}
                    onclick="reforgeSpellPathAtLibrary(${_libraryCharIdx}, '${nameEsc}', '${p}')">${LIBRARY_PATH_LABELS[p]}</button>`).join('')}
+            ${respecPay}
             <button class="library-upgrade-btn" onclick="libraryToggleExpand('${expandKey}:respec')">↩</button>
           </div>`;
       } else {
         respecUi = `<button class="library-upgrade-btn ${respecDis}" ${respecDis}
-            onclick="libraryToggleExpand('${expandKey}:respec')">♻️ Reforger (${respecCost}g)</button>`;
+            onclick="libraryToggleExpand('${expandKey}:respec')">♻️ Reforger (${respecLbl})</button>`;
       }
       btn = `<button class="library-upgrade-btn ${dis}" ${dis}
                onclick="upgradeSpellAtLibrary(${_libraryCharIdx}, '${nameEsc}')">Amplifier (${voieLbl})</button>${respecUi}`;

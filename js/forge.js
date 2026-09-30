@@ -202,11 +202,16 @@ function reforgePathAtForge(charIdx, slot, newPath, element) {
   if (newPath === (item.forgePath || 'power')) return false;
   if (newPath === 'resonance' && !FORGE_ELEMENTS.includes(element)) return false;
   const cost = _forgeRespecCost(lvl);
-  if ((player.gold | 0) < cost) {
-    addMsg(`Reforger la voie : ${cost} Gallions requis (vous en avez ${player.gold | 0}).`, 'bad');
-    return false;
+  // Traques Rituelles (Lot 3) : payable en or ou en Marques de Traque.
+  if (typeof traqueRespecCharge === 'function') {
+    if (!traqueRespecCharge(cost)) return false;
+  } else {
+    if ((player.gold | 0) < cost) {
+      addMsg(`Reforger la voie : ${cost} Gallions requis (vous en avez ${player.gold | 0}).`, 'bad');
+      return false;
+    }
+    player.gold -= cost;
   }
-  player.gold -= cost;
   item.forgePath = newPath;
   if (newPath === 'resonance') item.resonanceElement = element;
   else delete item.resonanceElement;
@@ -498,8 +503,11 @@ function openForge() {
           previewLine = `<div class="forge-preview">${primBonus.key.replace('bonus', '')} ${primBonus.value + lvl} → <b>${primBonus.value + lvl + 1}</b></div>`;
         }
         const respecCost   = _forgeRespecCost(lvl);
-        const respecAfford = (player.gold | 0) >= respecCost;
+        const respecAfford = (typeof traqueRespecAffordable === 'function')
+          ? traqueRespecAffordable(respecCost) : (player.gold | 0) >= respecCost;
         const respecDis    = respecAfford ? '' : 'disabled';
+        const respecLbl    = (typeof traqueRespecCostLabel === 'function') ? traqueRespecCostLabel(respecCost) : `${respecCost}g`;
+        const respecPay    = (typeof traqueRespecToggleHtml === 'function') ? traqueRespecToggleHtml('forge-upgrade-btn', 'openForge()') : '';
         let respecUi;
         if (_forgeUiExpand === `${expandKey}:respec-reso`) {
           respecUi = `<div class="forge-path-choice">
@@ -516,11 +524,12 @@ function openForge() {
                      onclick="forgeToggleExpand('${expandKey}:respec-reso')">🜂 ${FORGE_PATH_LABELS[p]}</button>`
                 : `<button class="forge-upgrade-btn ${respecDis}" ${respecDis}
                      onclick="reforgePathAtForge(${charIdx}, '${slot}', '${p}')">${FORGE_PATH_LABELS[p]}</button>`).join('')}
+              ${respecPay}
               <button class="forge-upgrade-btn" onclick="forgeToggleExpand('${expandKey}:respec')">↩</button>
             </div>`;
         } else {
           respecUi = `<button class="forge-enchant-btn ${respecDis}" ${respecDis}
-              onclick="forgeToggleExpand('${expandKey}:respec')">♻️ Reforger la voie (${respecCost}g)</button>`;
+              onclick="forgeToggleExpand('${expandKey}:respec')">♻️ Reforger la voie (${respecLbl})</button>`;
         }
         btn = `<button class="forge-upgrade-btn ${dis}" ${dis}
                  onclick="upgradeItemAtForge(${charIdx}, '${slot}')">Améliorer (${voieLbl})</button>${respecUi}`;

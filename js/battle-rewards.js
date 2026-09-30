@@ -246,6 +246,8 @@ function endBattle(won) {
 
     // Progression des quêtes de type "kill"
     enemyGroup.forEach(e => safeCall('checkKillQuests', e.id));
+    // Traques Rituelles (Lot 3) : progression du contrat de l'étage.
+    safeCall('traqueOnBattleWon', enemyGroup);
 
     // Endgame : déclenche la modale de victoire si Voldemort Ressuscité
     // est tombé. No-op pour tout autre monstre ou si déjà déclenché.

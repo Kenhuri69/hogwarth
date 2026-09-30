@@ -101,6 +101,7 @@
   //   'spell'   {exploitedWeakness}        — castSpellInBattle (synergyUsageRate)
   //   'descend' {prevFloor}                — goDeeper (loopDepthMedian / averageClearTime)
   //   'escape'  {type, founder, houseMatch, outcome, corruptionPct} — exitEscapePocket (escapeClearRate)
+  //   'traque'  {marks, mult}              — contrat de Traque honoré (traque.js)
   function record(event, payload) {
     if (!enabled()) return;
     payload = payload || {};
@@ -154,6 +155,14 @@
           corruptionPct: (typeof payload.corruptionPct === 'number') ? payload.corruptionPct : null,
         });
         break;
+      case 'traque':
+        if (!Array.isArray(store.traques)) store.traques = [];
+        store.traques.push({
+          floor, mode,
+          marks: payload.marks | 0,
+          mult:  payload.mult | 0,
+        });
+        break;
       default:
         return;
     }
@@ -202,6 +211,8 @@
       escapeCount:     escapes.length,
       escapeClearRate: escapes.length ? escapeCleared / escapes.length : null,
       escapeCorruptionMean: mean(escapes.map(e => e.corruptionPct).filter(p => typeof p === 'number')),
+      traqueCount: (store.traques || []).length,
+      traqueMarks: (store.traques || []).reduce((a, t) => a + (t.marks | 0), 0),
     };
   }
 
