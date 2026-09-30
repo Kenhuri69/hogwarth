@@ -89,6 +89,11 @@ window.UX_safe = new Proxy({}, {
     { name: 'pickHeroBark',       source: 'hero-barks.js',   kind: 'fn',  optional: true },
     { name: 'heroBark',           source: 'hero-barks.js',   kind: 'fn',  optional: true },
     { name: 'heroBarkScripted',   source: 'hero-barks.js',   kind: 'fn',  optional: true },
+    // Lot A (revue 2026-09) — répliques de paire + dénouement des arcs de héros.
+    { name: 'HERO_PAIR_BARKS',    source: 'hero-barks.js',   kind: 'obj', optional: true },
+    { name: 'HERO_VICTORY_PAYOFF', source: 'hero-barks.js',  kind: 'obj', optional: true },
+    { name: 'pickPairBark',       source: 'hero-barks.js',   kind: 'fn',  optional: true },
+    { name: '_heroGreetingLine',  source: 'npc-dialog.js',   kind: 'fn',  optional: true },
     { name: 'maitreDeLaMort',     source: 'state.js',        kind: 'obj' },
     { name: 'checkHallowsUnion',  source: 'inventory-core.js', kind: 'fn' },
     { name: 'RIDDLES_LUMIERE',    source: 'data-spells.js',     kind: 'obj' },

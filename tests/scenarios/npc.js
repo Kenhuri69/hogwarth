@@ -2000,4 +2000,61 @@ async function scenarioEndgameMiniTours() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioNpcIntegration, scenarioVendors, scenarioRandomLoreNpcs, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioHelpTour, scenarioGrimoirePages, scenarioGrimoireActe3, scenarioDumbledoreLux, scenarioOnboarding, scenarioCleVouteIntro, scenarioNpcEclatReaction, scenarioLoopDarkSuffix, scenarioNpcReputation, scenarioNpcPostVictory, scenarioNpcCreatureReaction, scenarioEndgameMiniTours] };
+
+// Lot A (revue 2026-09) — le monde reconnaît les héros : page d'accueil propre
+// au héros (muette), répliques de paire, fiches Codex des héros présents seules.
+async function scenarioHeroReactivity() {
+  console.log('\n── Scénario : réactivité aux héros (Lot A) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 2, heroes: ['draco', 'harry'], house: 'Serpentard' });
+
+  const r = await page.evaluate(() => {
+    const voices = [];
+    AudioSystem.playVoice = (k) => voices.push(k);
+    seenNpcs.delete('rogue');
+    openNpcDialog('rogue');
+    const first = { page0: _dialogState.pages[0], src0: _dialogState.srcPages[0], voicesAtOpen: voices.slice() };
+    nextDialogPage();
+    first.page1 = _dialogState.pages[1];
+    first.voicesAfterNext = voices.slice();
+    closeNpcDialog();
+    openNpcDialog('rogue');
+    const secondPage0 = _dialogState.pages[0];
+    closeNpcDialog();
+
+    const ctx = _codexContext();
+    const st = (id) => codexEntryState(getCodexEntry(id), ctx);
+    openCodex();
+    switchCodexSection('personnages');
+    const grid = document.getElementById('codex-grid').textContent;
+    const progress = document.getElementById('codex-progress').textContent;
+    closeCodex();
+
+    const pairLine = pickPairBark('draco', 'harry', 'allyDown');
+    return {
+      first, secondPage0,
+      heroKeys: ctx.heroKeys, dracoState: st('heros_draco'), louisState: st('heros_louis'),
+      gridHasDraco: /Drago Malefoy/.test(grid), gridHasLouis: /Louis Dragonflamme/.test(grid),
+      progress, pairLine, partner: _heroPartnerKey('draco'),
+    };
+  });
+  console.log('  ', JSON.stringify(r).slice(0, 600));
+  assert(/Malefoy/.test(r.first.page0), `1er contact : la page du héros vient en tête (${r.first.page0})`);
+  assert(r.first.src0 === -1, 'page ajoutée marquée srcPages = -1');
+  assert(r.first.voicesAtOpen.length === 0, `page du héros muette (voix : ${r.first.voicesAtOpen})`);
+  assert(/de ma maison/.test(r.first.page1), 'l\'accueil habituel suit la page du héros');
+  assert(r.first.voicesAfterNext.includes('rogue_greeting_1'), 'la voix de l\'accueil habituel est conservée');
+  assert(!/Malefoy\. Je vous croyais/.test(r.secondPage0), '2e visite : pas de page de reconnaissance');
+  assert(r.heroKeys.includes('draco') && r.heroKeys.includes('harry'), 'ctx Codex : héros du groupe');
+  assert(r.dracoState === 'veiled' && r.louisState === 'locked', 'fiche du héros présent ouverte, absent verrouillée');
+  assert(r.gridHasDraco && !r.gridHasLouis, 'liste Codex : fiche d\'un héros absent masquée');
+  const m = /(\d+) \/ (\d+)/.exec(r.progress);
+  assert(m && Number(m[2]) > 0, `compteur Codex lisible (${r.progress})`);
+  assert(r.partner === 'harry' && typeof r.pairLine === 'string', 'réplique de paire Drago → Harry résolue');
+
+  if (errors.length) throw new Error(`${errors.length} erreurs JS : ${errors.join(' | ')}`);
+  console.log('  ✅ Réactivité aux héros (Lot A) OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioHeroReactivity, scenarioNpcIntegration, scenarioVendors, scenarioRandomLoreNpcs, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioHelpTour, scenarioGrimoirePages, scenarioGrimoireActe3, scenarioDumbledoreLux, scenarioOnboarding, scenarioCleVouteIntro, scenarioNpcEclatReaction, scenarioLoopDarkSuffix, scenarioNpcReputation, scenarioNpcPostVictory, scenarioNpcCreatureReaction, scenarioEndgameMiniTours] };

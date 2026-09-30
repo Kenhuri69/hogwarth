@@ -321,6 +321,151 @@ const HERO_BARKS = {
   }
 };
 
+// ── Dénouement des arcs de héros (Lot A, revue 2026-09 — axe 1c) ──────
+// Une phrase par héros, dite sur le palier de la victoire (endgame.js,
+// _victorySpeechVariants). Elle referme l'arc léger du héros (05 §5.1/§5.2)
+// sans branche ni fin alternative : texte posé sur la même cinématique.
+const HERO_VICTORY_PAYOFF = {
+  harry:     "Je suis descendu devant, comme toujours. Mais pour la première fois, je n'ai pas refusé qu'on me tende la main.",
+  hermione:  "Je n'ai pas tout compris, là-dessous. Et pour une fois… ça ne m'a pas empêchée de réussir.",
+  draco:     "Ils ont prononcé mon nom, en bas. Je n'ai pas répondu. C'est tout ce que j'avais à prouver.",
+  cho:       "J'ai eu peur à chaque marche. Je suis descendue quand même. Je crois que c'est ça, garder les yeux ouverts.",
+  cedric:    "Je n'ai pas été un exemple, en bas. J'ai été un camarade. Je crois que c'est mieux.",
+  celeste:   "Les astres l'avaient écrit. Mais c'est nous qui avons descendu les marches.",
+  iris:      "Vous voyez ? Les couleurs reviennent. Je vous avais dit qu'on pouvait en rire.",
+  maxence:   "Le sang m'a appelé à chaque étage. Je n'ai répondu qu'à ce que j'avais choisi.",
+  anastasia: "Aucun de mes plans n'a tenu. Et pourtant, on est là. Je devrais peut-être m'y habituer.",
+  louis:     "Il y avait des feux, en bas, que personne ne dompte. J'ai appris à tenir le mien.",
+  jeanne:    "J'ai vu des choses que je n'oublierai pas. Mais regardez : l'escalier vient encore de changer de sens !",
+  margaux:   "Je n'ai pas tout noté. J'avais les mains prises — il fallait bien aider.",
+  agathe:    "Il a fallu arracher avant de faire pousser. Maintenant, ça peut repousser.",
+  olivier:   "Chaque sortilège avait enfin une raison. C'est la première fois que je me bats pour quelqu'un.",
+  nathalie:  "J'ai dû frapper la première. Mais personne n'est tombé derrière moi.",
+  chatillon: "Tout le monde m'a vu, en bas. Étrangement, je n'ai rien perdu."
+};
+
+// ── Répliques de paire (Lot A, revue 2026-09 — axe 2a) ─────────────────
+// Clé = les deux heroKey triés, joints par « | ». Par événement, puis par
+// LOCUTEUR : ce que ce héros dit quand l'AUTRE est son partenaire de duo.
+// Prioritaires sur la réplique générique (cf. heroBark). `victory` = échange
+// du palier de fin (une chaîne par héros, lue par endgame.js).
+const HERO_PAIR_BARKS = {
+  'harry|hermione': {
+    allyDown:       { harry:    ["Hermione ! Ne me fais pas ça — pas toi !"],
+                      hermione: ["Harry ! Tu fonces toujours sans regarder… Relève-toi, je te couvre !"] },
+    tierTransition: { harry:    ["Comme au bon vieux temps, hein ? Toi qui réfléchis, moi qui fonce."],
+                      hermione: ["J'ai lu tout ce qu'on sait de cette partie du château. C'est-à-dire presque rien. Reste près de moi."] },
+    bossAppear:     { harry:    ["Tu as un plan ? … Oui, bien sûr que tu as un plan."],
+                      hermione: ["Harry, cette fois, tu attends mon signal. S'il te plaît."] },
+    victory:        { harry:    "Tu te rends compte ? On l'a encore fait.",
+                      hermione: "Oui. Et cette fois, tu ne l'as pas fait seul." }
+  },
+  'draco|harry': {
+    allyDown:       { draco: ["Potter ! Tu ne vas pas me laisser finir ça seul, quand même ?"],
+                      harry: ["Malefoy ! Accroche-toi. Je ne te laisse pas ici."] },
+    tierTransition: { draco: ["Si on m'avait dit que je descendrais ici avec toi, Potter…"],
+                      harry: ["Tu aurais pu rester en haut, Malefoy. Pourquoi tu ne l'as pas fait ?"] },
+    bossAppear:     { draco: ["Ne le prends pas mal, Potter, mais je frappe le premier."],
+                      harry: ["Malefoy, sur la gauche. Pour une fois, fais-moi confiance."] },
+    victory:        { draco: "Ne va pas t'imaginer qu'on est amis, Potter.",
+                      harry: "Je n'imagine rien. Mais tu es resté." }
+  },
+  'cedric|cho': {
+    allyDown:       { cedric: ["Cho ! Reste avec moi, tu m'entends ? Reste avec moi !"],
+                      cho:    ["Cedric ! Non, non, non — pas toi. Relève-toi !"] },
+    tierTransition: { cedric: ["On descend ensemble, Cho. Personne ne remonte seul."],
+                      cho:    ["Chaque étage me rappelle le labyrinthe. Reste là où je peux te voir."] },
+    bossAppear:     { cedric: ["Je le tiens de face — toi, sois plus rapide que lui."],
+                      cho:    ["Je le vois venir. Cedric, à ta droite !"] },
+    victory:        { cedric: "On remonte ensemble. Comme promis.",
+                      cho:    "Je ne t'ai pas quitté des yeux une seule fois." }
+  },
+  'draco|hermione': {
+    allyDown:       { draco:    ["Granger ! Relève-toi — j'ai besoin de quelqu'un qui sait ce qu'il fait."],
+                      hermione: ["Malefoy ! Ne bouge pas, je m'en occupe. Et ne dis rien."] },
+    tierTransition: { draco:    ["Granger, tu as sûrement lu quelque chose sur cet endroit. Pour une fois, je t'écoute."],
+                      hermione: ["On ne s'apprécie pas, Malefoy. Mais en bas, ça n'a aucune importance."] },
+    victory:        { draco:    "Tu avais raison sur presque tout, Granger. Ne le répète pas.",
+                      hermione: "Je n'en aurai pas besoin. Tout le monde t'a vu." }
+  },
+  'iris|louis': {
+    allyDown:       { iris:  ["Louis ! Allez, lève-toi — qui va me faire rire avec ses brûlures, sinon ?"],
+                      louis: ["Iris ! Tiens bon, je fais barrage. Personne ne te touche !"] },
+    tierTransition: { iris:  ["Plus on descend, plus tout devient gris. Heureusement que tes étincelles mettent de la couleur."],
+                      louis: ["Il fait froid en bas. Reste près de ma baguette, elle chauffe."] },
+    victory:        { iris:  "Tu as vu ? Tout est redevenu en couleurs.",
+                      louis: "Et rien n'a brûlé. Enfin… presque rien." }
+  },
+  'celeste|margaux': {
+    allyDown:       { celeste: ["Margaux ! Non… Les étoiles ne l'avaient pas écrit. Relève-toi."],
+                      margaux: ["Céleste ! Tu disais que tu avais tout vu venir ! Réveille-toi !"] },
+    tierTransition: { celeste: ["Regarde bien, Margaux. Ici, le ciel est sous nos pieds."],
+                      margaux: ["Céleste, tu crois que les constellations continuent sous la terre ? Je note, au cas où."] },
+    victory:        { celeste: "Tu vois, Margaux ? Les astres avaient raison.",
+                      margaux: "Oui. Mais c'est nous qui avons fait tout le chemin !" }
+  },
+  'chatillon|maxence': {
+    allyDown:       { maxence:   ["Châtillon ! Ne t'avise pas de disparaître pour de bon."],
+                      chatillon: ["Ravenwood ! Garde ta soif pour eux, et relève-toi."] },
+    tierTransition: { maxence:   ["Tu sens ça, Châtillon ? L'obscurité nous reconnaît."],
+                      chatillon: ["Tiens ta soif, Ravenwood. Moi, je tiens l'ombre. Ce sera suffisant."] },
+    bossAppear:     { maxence:   ["Je le prends de face. Occupe-toi de ce qu'il ne verra pas."],
+                      chatillon: ["Occupe-le, Ravenwood. Je frappe là où il ne regarde pas."] },
+    victory:        { maxence:   "Deux Serpentard du bon côté. Personne ne va nous croire.",
+                      chatillon: "Tant mieux. Personne n'a besoin de le savoir." }
+  },
+  'anastasia|jeanne': {
+    allyDown:       { anastasia: ["Jeanne ! Reste avec moi — on suit le plan, d'accord ? Il y a toujours un plan."],
+                      jeanne:    ["Anastasia ! Tu disais que tu avais tout prévu ! Relève-toi !"] },
+    tierTransition: { anastasia: ["Jeanne, reste derrière moi. J'ai compté chaque marche."],
+                      jeanne:    ["Anastasia, et si on improvisait ? Juste un peu ?"] },
+    victory:        { anastasia: "Rien ne s'est passé comme prévu.",
+                      jeanne:    "C'était bien mieux comme ça !" }
+  },
+  'agathe|nathalie': {
+    allyDown:       { agathe:   ["Nathalie ! Tu as tenu le mur pour tout le monde — laisse-moi te tenir, toi."],
+                      nathalie: ["Agathe ! Personne ne te touche tant que je suis debout. Relève-toi."] },
+    tierTransition: { agathe:   ["Même ici, il y a de la mousse entre les pierres. Rien n'est jamais tout à fait mort."],
+                      nathalie: ["Plus bas, la terre est plus froide. On plantera quand même."] },
+    victory:        { agathe:   "On a fait pousser quelque chose, là-dessous.",
+                      nathalie: "Et personne n'est tombé derrière nous." }
+  },
+  'chatillon|olivier': {
+    allyDown:       { olivier:   ["Châtillon ! Tu ne vas pas me laisser finir ça seul ? Debout !"],
+                      chatillon: ["De Clairval ! Ta belle technique ne sert à rien si tu restes à terre."] },
+    tierTransition: { olivier:   ["Deux Olivier pour une descente. Essaie de suivre, Châtillon."],
+                      chatillon: ["Frappe fort, de Clairval. Je m'occupe de ce que tu ne vois pas."] },
+    bossAppear:     { olivier:   ["Je l'attaque de front, proprement."],
+                      chatillon: ["Va de front. Je passe derrière."] },
+    victory:        { olivier:   "Belle manœuvre, Châtillon. Je ne l'ai même pas vue venir.",
+                      chatillon: "C'est tout l'intérêt, de Clairval." }
+  }
+};
+
+// Résolveur PUR (testé dans tests/units.js) : réplique de `speaker` pour
+// `event` quand `partner` est son partenaire de duo, ou null. Accepte une
+// chaîne ou un tableau (tirage via `rng`, défaut Math.random).
+function pickPairBark(speaker, partner, event, rng) {
+  if (!speaker || !partner || speaker === partner) return null;
+  const key = [speaker, partner].sort().join('|');
+  const pair = (typeof HERO_PAIR_BARKS !== 'undefined') ? HERO_PAIR_BARKS[key] : null;
+  const byEvent = pair && pair[event];
+  const v = byEvent && byEvent[speaker];
+  if (typeof v === 'string') return v || null;
+  if (!Array.isArray(v) || !v.length) return null;
+  const r = (typeof rng === 'function') ? rng : Math.random;
+  return v[Math.floor(r() * v.length)];
+}
+
+// Partenaire de duo de `heroKey` dans le groupe actif (même KO), ou null.
+function _heroPartnerKey(heroKey) {
+  try {
+    const keys = (typeof activeParty === 'function' ? activeParty() : [])
+      .map(c => c && c.heroKey).filter(Boolean);
+    return keys.find(k => k !== heroKey) || null;
+  } catch (_) { return null; }
+}
+
 // ── Résolveur PUR ────────────────────────────────────────────
 // Retourne une réplique (string) pour (heroKey, event) ou `null` si rien
 // n'est défini → call-site silencieux. Préfère la variante `houseTension`
@@ -385,10 +530,13 @@ function heroBark(heroKey, event, opts) {
   const now = (typeof Date !== 'undefined') ? Date.now() : 0;
   if (!opts.once && now < _barkCooldownUntil) return null;
 
-  const text = pickHeroBark(heroKey, event, {
-    canonHouse:  _heroCanonHouse(heroKey),
-    chosenHouse: (typeof chosenHouse !== 'undefined') ? chosenHouse : null
-  });
+  // Réplique de paire (Lot A) prioritaire quand le partenaire de duo en a une ;
+  // sinon réplique du héros seul (houseTension puis standard).
+  const text = pickPairBark(heroKey, _heroPartnerKey(heroKey), event)
+    || pickHeroBark(heroKey, event, {
+      canonHouse:  _heroCanonHouse(heroKey),
+      chosenHouse: (typeof chosenHouse !== 'undefined') ? chosenHouse : null
+    });
   if (!text) return null;
 
   const name = (() => {
@@ -449,4 +597,6 @@ if (typeof window !== 'undefined') {
   window.pickHeroBark     = pickHeroBark;
   window.heroBark         = heroBark;
   window.heroBarkScripted = heroBarkScripted;
+  window.HERO_PAIR_BARKS  = HERO_PAIR_BARKS;
+  window.pickPairBark     = pickPairBark;
 }

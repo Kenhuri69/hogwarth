@@ -3253,6 +3253,91 @@ function loadNpcs() {
 })();
 
 // ============================================================
+// §21 — Lot A (revue 2026-09) : réactivité aux héros
+// ------------------------------------------------------------
+// Fiches Codex par héros (robinet `hero`), dénouements de fin, répliques de
+// paire et reconnaissance du héros par les PNJ. Tout est cosmétique : on
+// verrouille la COUVERTURE (16 héros) et la PURETÉ des résolveurs.
+// ============================================================
+(function () {
+  const heroKeys = Object.keys(loadModule('js/data-characters.js', ['CHARACTERS'],
+    { window: {} }).CHARACTERS);
+  check('lotA: 16 héros jouables', heroKeys.length === 16);
+
+  // Codex : condition `hero` + une fiche par héros, révélée à la victoire.
+  const cx = loadModule('js/codex.js', ['CODEX_ENTRIES', 'codexEntryState', 'codexVariantNote']);
+  const entry = (k) => cx.CODEX_ENTRIES.find(e => e.id === 'heros_' + k);
+  check('lotA codex: une fiche par héros', heroKeys.every(k => !!entry(k)));
+  check('lotA codex: fiches marquées heroEntry + personnages',
+    heroKeys.every(k => entry(k).heroEntry === true && entry(k).category === 'personnages'));
+  const e = entry('draco');
+  check('lotA codex: héros absent → locked',
+    cx.codexEntryState(e, { heroKeys: ['harry', 'hermione'] }) === 'locked');
+  check('lotA codex: héros présent → veiled',
+    cx.codexEntryState(e, { heroKeys: ['harry', 'draco'] }) === 'veiled');
+  check('lotA codex: héros présent + victoire → revealed',
+    cx.codexEntryState(e, { heroKeys: ['draco'], victoryAchieved: true }) === 'revealed');
+  check('lotA codex: ctx sans heroKeys → locked (défensif)', cx.codexEntryState(e, {}) === 'locked');
+  const dumb = cx.CODEX_ENTRIES.find(x => x.id === 'dumbledore');
+  check('lotA codex: note de variante Harry sur Dumbledore',
+    /Harry/.test(cx.codexVariantNote(dumb, null, ['harry']) || ''));
+
+  // Dénouements + répliques de paire.
+  const hb = loadModule('js/hero-barks.js',
+    ['HERO_VICTORY_PAYOFF', 'HERO_PAIR_BARKS', 'pickPairBark'], {});
+  check('lotA payoff: une phrase par héros',
+    heroKeys.every(k => typeof hb.HERO_VICTORY_PAYOFF[k] === 'string' && hb.HERO_VICTORY_PAYOFF[k].length > 10));
+  const pairs = Object.keys(hb.HERO_PAIR_BARKS);
+  check('lotA paires: 10 paires écrites', pairs.length === 10);
+  for (const key of pairs) {
+    const [a, b] = key.split('|');
+    check('lotA paire ' + key + ': clé triée, héros valides',
+      [a, b].sort().join('|') === key && heroKeys.includes(a) && heroKeys.includes(b) && a !== b);
+    const ev = hb.HERO_PAIR_BARKS[key];
+    check('lotA paire ' + key + ': locuteurs = la paire uniquement',
+      Object.values(ev).every(bySpeaker => Object.keys(bySpeaker).every(sp => sp === a || sp === b)));
+    check('lotA paire ' + key + ': échange de victoire complet',
+      typeof (ev.victory || {})[a] === 'string' && typeof (ev.victory || {})[b] === 'string');
+    check('lotA paire ' + key + ': allyDown dans les deux sens',
+      !!hb.pickPairBark(a, b, 'allyDown', () => 0) && !!hb.pickPairBark(b, a, 'allyDown', () => 0));
+  }
+  check('lotA pickPairBark: ordre des héros indifférent',
+    hb.pickPairBark('hermione', 'harry', 'victory') === hb.HERO_PAIR_BARKS['harry|hermione'].victory.hermione);
+  check('lotA pickPairBark: paire non écrite → null', hb.pickPairBark('harry', 'louis', 'allyDown') === null);
+  check('lotA pickPairBark: même héros → null', hb.pickPairBark('harry', 'harry', 'allyDown') === null);
+  check('lotA pickPairBark: partenaire absent → null', hb.pickPairBark('harry', null, 'allyDown') === null);
+  check('lotA pickPairBark: événement non écrit → null', hb.pickPairBark('harry', 'hermione', 'levelUp') === null);
+
+  // Fin : payoff par héros + échange de paire (pur).
+  const { _victorySpeechVariants } = loadModule('js/endgame.js', ['_victorySpeechVariants'], { window: {} });
+  const withPayoff = _victorySpeechVariants({ heroes: [{ name: 'Drago Malefoy', payoff: 'Je n\'ai pas répondu.' }] });
+  check('lotA fin: payoff du héros affiché', withPayoff.includes('Je n&#39;ai pas répondu.') || withPayoff.includes("Je n'ai pas répondu."));
+  const pairEnd = _victorySpeechVariants({
+    heroes: [{ name: 'Harry Potter' }, { name: 'Hermione Granger' }],
+    pairVictory: ['On l\'a encore fait.', 'Pas seul.'] });
+  check('lotA fin: échange de paire remplace le générique',
+    pairEnd.includes('Pas seul.') && !pairEnd.includes('Ensemble'));
+  const halfPair = _victorySpeechVariants({
+    heroes: [{ name: 'Harry Potter' }, { name: 'Louis Dragonflamme' }], pairVictory: [null, null] });
+  check('lotA fin: paire non écrite → échange générique', halfPair.includes('Ensemble'));
+
+  // PNJ : reconnaissance du héros (helper pur de npc-dialog.js).
+  const nd = loadModule('js/npc-dialog.js', ['_heroGreetingLine'], { window: {}, document: { addEventListener() {}, getElementById() { return null; } } });
+  const npc = { heroGreeting: { draco: 'Malefoy.', harry: 'Potter.' } };
+  check('lotA pnj: 1er héros du groupe qui a une réplique', nd._heroGreetingLine(npc, ['hermione', 'draco', 'harry']) === 'Malefoy.');
+  check('lotA pnj: aucun héros concerné → null', nd._heroGreetingLine(npc, ['louis']) === null);
+  check('lotA pnj: PNJ sans heroGreeting → null', nd._heroGreetingLine({}, ['harry']) === null);
+  const npcs = loadNpcs().NPCS;
+  const covered = new Set();
+  for (const n of npcs) for (const k of Object.keys(n.heroGreeting || {})) {
+    check('lotA pnj ' + n.id + ': clé héros valide (' + k + ')', heroKeys.includes(k));
+    covered.add(k);
+  }
+  check('lotA pnj: les 16 héros sont reconnus par au moins un PNJ',
+    heroKeys.every(k => covered.has(k)));
+})();
+
+// ============================================================
 // Rapport
 // ============================================================
 if (failures.length) {

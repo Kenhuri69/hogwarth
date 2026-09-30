@@ -181,6 +181,11 @@ NPCS.push(
   },
   {
     id:    "pomfresh",
+    // Reconnaissance du héros au 1er contact (Lot A, revue 2026-09) :
+    // page ajoutée EN TÊTE de l'accueil (muette), cf. _heroGreetingLine.
+    heroGreeting: {
+      nathalie: "Nathalie Finch ! Enfin quelqu'un qui sait ce qu'est une compresse de dictame. Tiens le mur en bas, je tiens l'infirmerie en haut."
+    },
     name:  "Madame Pomfresh",
     title: "Infirmière en chef",
     sprite: "prof_f",
@@ -328,6 +333,11 @@ NPCS.push(
   },
   {
     id:    "slughorn",
+    // Reconnaissance du héros au 1er contact (Lot A, revue 2026-09) :
+    // page ajoutée EN TÊTE de l'accueil (muette), cf. _heroGreetingLine.
+    heroGreeting: {
+      draco: "Drago Malefoy ! J'ai bien connu ta famille… (Il hésite.) Enfin. Ce qui compte, c'est ce que toi, tu en feras, n'est-ce pas ?"
+    },
     name:  "Horace Slughorn",
     title: "Maître des Potions",
     sprite: "prof_h",
@@ -446,6 +456,12 @@ NPCS.push(
   },
   {
     id:    "lupin",
+    // Reconnaissance du héros au 1er contact (Lot A, revue 2026-09) :
+    // page ajoutée EN TÊTE de l'accueil (muette), cf. _heroGreetingLine.
+    heroGreeting: {
+      harry: "Harry… Tu as les yeux de ta mère, et cette façon qu'avait ton père de foncer tête baissée. Laisse-moi au moins t'apprendre à te défendre contre ce qui t'attend en bas.",
+      anastasia: "Une Mage de la Lune… Tu sais ce que la lune fait à certains d'entre nous. Je suis heureux qu'elle t'éclaire, toi, au lieu de te changer."
+    },
     name:  "Professeur Lupin",
     title: "Professeur de DCFM",
     sprite: "prof_h",
@@ -702,6 +718,14 @@ NPCS.push(
   },
   {
     id:    "hagrid",
+    // Reconnaissance du héros au 1er contact (Lot A, revue 2026-09) :
+    // page ajoutée EN TÊTE de l'accueil (muette), cf. _heroGreetingLine.
+    heroGreeting: {
+      harry: "Harry ! Par la barbe de Merlin, j'savais qu'tu viendrais. T'as jamais su rester en haut quand y'avait du grabuge, hein ?",
+      hermione: "Hermione ! Ah, t'es là, alors tout va bien s'passer. T'as toujours su trouver c'que les autres cherchaient.",
+      draco: "Malefoy… (Il se racle la gorge.) Bon. Si t'es là pour aider, t'es l'bienvenu. Mais tu touches pas à mes bestioles.",
+      louis: "Un dompteur de dragons ! T'as des brûlures aux mains comme les miennes, toi. On va bien s'entendre, j'le sens."
+    },
     name:  "Hagrid",
     title: "Garde-chasse de Poudlard",
     sprite: "prof_h",
@@ -753,6 +777,12 @@ NPCS.push(
   },
   {
     id:    "mcgonagall",
+    // Reconnaissance du héros au 1er contact (Lot A, revue 2026-09) :
+    // page ajoutée EN TÊTE de l'accueil (muette), cf. _heroGreetingLine.
+    heroGreeting: {
+      hermione: "Miss Granger. Je n'en attendais pas moins de vous. Tâchez seulement de regarder où vous mettez les pieds, et pas uniquement dans vos livres.",
+      olivier: "Monsieur de Clairval. Votre maîtrise des sortilèges offensifs fait parler en salle des professeurs. Montrez-moi qu'elle sait aussi protéger."
+    },
     name:  "Professeur McGonagall",
     title: "Directrice de Gryffondor",
     sprite: "prof_f",
@@ -836,6 +866,14 @@ NPCS.push(
   },
   {
     id:    "rogue",
+    // Reconnaissance du héros au 1er contact (Lot A, revue 2026-09) :
+    // page ajoutée EN TÊTE de l'accueil (muette), cf. _heroGreetingLine.
+    heroGreeting: {
+      draco: "Malefoy. Je vous croyais plus avisé que de descendre ici. (Un silence.) Restez près de vos camarades — et ne répondez à aucun masque qui prononcera votre nom.",
+      harry: "Potter. Évidemment. Toujours là où il ne faudrait pas être, persuadé que le château tourne autour de vous.",
+      maxence: "Ravenwood. Je connais la soif qui vous habite mieux que vous ne le croyez. Tenez-la, ou c'est elle qui vous tiendra.",
+      chatillon: "De Châtillon. L'un des rares élèves à savoir se taire. Continuez ainsi : l'ombre récompense ceux qui ne s'en vantent pas."
+    },
     name:  "Professeur Severus Rogue",
     title: "Directeur de Serpentard",
     sprite: "prof_h",
@@ -953,6 +991,13 @@ NPCS.push(
   },
   {
     id:    "flitwick",
+    // Reconnaissance du héros au 1er contact (Lot A, revue 2026-09) :
+    // page ajoutée EN TÊTE de l'accueil (muette), cf. _heroGreetingLine.
+    heroGreeting: {
+      cho: "Miss Chang ! Ma meilleure Attrapeuse… Voir votre vivacité ici me réchauffe le cœur — et m'inquiète un peu, aussi.",
+      jeanne: "Oh, Miss d'Argenciel ! Vos Wingardium Leviosa sont les plus gracieux que j'aie vus depuis des années. Gardez-en la légèreté, même en bas.",
+      margaux: "Miss Aiglebrume ! Si jeune, et déjà dans les profondeurs… Restez près des plus grands, promettez-le-moi. Et notez tout, bien entendu."
+    },
     name:  "Professeur Filius Flitwick",
     title: "Directeur de Serdaigle",
     sprite: "prof_h",
@@ -1002,6 +1047,13 @@ NPCS.push(
   },
   {
     id:    "sprout",
+    // Reconnaissance du héros au 1er contact (Lot A, revue 2026-09) :
+    // page ajoutée EN TÊTE de l'accueil (muette), cf. _heroGreetingLine.
+    heroGreeting: {
+      cedric: "Monsieur Diggory ! Mon Champion. Toute la Maison compte sur vous — mais n'oubliez pas que vous avez le droit, vous aussi, de vous appuyer sur quelqu'un.",
+      iris: "Miss Prismara ! Les fleurs que vous avez colorées ont refleuri toutes seules dans ma serre numéro trois. Emportez un peu de cette lumière en bas.",
+      agathe: "Miss Lumiflore ! Vos boutures tiennent encore dans les couloirs gelés. Une Gryffondor qui fait pousser… vous avez tout mon respect."
+    },
     name:  "Professeur Pomona Chourave",
     title: "Directrice de Poufsouffle",
     sprite: "prof_f",
@@ -1158,6 +1210,12 @@ NPCS.push(
   },
   {
     id:    "portrait_dumbledore",
+    // Reconnaissance du héros au 1er contact (Lot A, revue 2026-09) :
+    // page ajoutée EN TÊTE de l'accueil (muette), cf. _heroGreetingLine.
+    heroGreeting: {
+      harry: "(Le portrait s'éveille et son regard s'adoucit.) Harry. Je me doutais que ce serait toi, une fois encore, qui descendrais le premier. Cette fois, je t'en prie : ne descends pas seul.",
+      hermione: "(Le portrait sourit derrière ses lunettes en demi-lune.) Miss Granger. Toujours la première à vouloir comprendre. Garde ce goût — mais souviens-toi que certaines portes s'ouvrent avant qu'on en ait trouvé la clé."
+    },
     name:  "Portrait d'Albus Dumbledore",
     title: "Toile animée",
     sprite: "fantome",

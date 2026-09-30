@@ -83,7 +83,16 @@ function _codexContext() {
     // Robinets Poche du Sceau (escape-game-traps.md — Lot 4).
     escapePocketsCleared: (typeof escapePocketsCleared !== 'undefined') ? escapePocketsCleared : 0,
     escapeFoundersCleared: (typeof escapeFoundersCleared !== 'undefined') ? escapeFoundersCleared : new Set(),
+    // Robinet `hero` (Lot A, revue 2026-09) : héros du groupe actif.
+    heroKeys: _codexHeroKeys(),
   };
+}
+
+// Une fiche de héros (`heroEntry`) verrouillée appartient à un héros absent du
+// groupe : elle n'est ni affichée ni comptée, sinon la collection serait
+// incomplétable (2 héros au plus par partie sur 16).
+function _codexCounts(entry, state) {
+  return !(entry && entry.heroEntry && state === 'locked');
 }
 
 function _codexHeroKeys() {
@@ -139,12 +148,14 @@ function _updateCodexProgress() {
   const el = safeEl('codex-progress');
   if (!el || typeof CODEX_ENTRIES === 'undefined' || typeof codexEntryState !== 'function') return;
   const ctx = _codexContext();
-  let revealed = 0;
+  let revealed = 0, total = 0;
   for (const e of CODEX_ENTRIES) {
     const st = codexEntryState(e, ctx);
+    if (!_codexCounts(e, st)) continue;
+    total++;
     if (st === 'revealed' || st === 'corrupted') revealed++;
   }
-  el.textContent = `✨ ${revealed} / ${CODEX_ENTRIES.length} révélées`;
+  el.textContent = `✨ ${revealed} / ${total} révélées`;
 }
 
 function showCodexList() {
@@ -169,7 +180,8 @@ function showCodexList() {
   }
 
   // Tri : ouvertes en premier, puis par acte.
-  const rows = entries.map(e => ({ e, state: codexEntryState(e, ctx) }));
+  const rows = entries.map(e => ({ e, state: codexEntryState(e, ctx) }))
+    .filter(({ e, state }) => _codexCounts(e, state));
   rows.sort((a, b) => {
     const la = a.state === 'locked' ? 1 : 0, lb = b.state === 'locked' ? 1 : 0;
     if (la !== lb) return la - lb;

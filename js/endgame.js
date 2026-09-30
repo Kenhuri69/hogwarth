@@ -37,7 +37,14 @@ function _victorySpeechVariants(ctx) {
   // (b) §14.2.2(b) — Beat des héros sur le palier, selon solo/duo et l'identité
   // des héros choisis. Camera sur les héros avant le dernier mot de Dumbledore.
   const heroes = Array.isArray(ctx.heroes) ? ctx.heroes.filter(h => h && h.name) : [];
-  if (heroes.length === 1) {
+  // Échange propre à la paire (Lot A, axe 2a) : remplace l'échange générique
+  // du duo quand les deux répliques existent (ctx.pairVictory = [h0, h1]).
+  const pv = Array.isArray(ctx.pairVictory) ? ctx.pairVictory : null;
+  if (heroes.length >= 2 && pv && pv[0] && pv[1]) {
+    blocks.push(
+      `<p class="victory-speech-heroes"><em>Sur le palier, ${esc(heroes[0].name)}
+       se tourne vers ${esc(heroes[1].name)} : « ${esc(pv[0])} » — « ${esc(pv[1])} »</em></p>`);
+  } else if (heroes.length === 1) {
     blocks.push(
       `<p class="victory-speech-heroes"><em>Sur le palier, ${esc(heroes[0].name)}
        s'arrête un instant, seul·e. « Je suis descendu·e seul·e jusqu'au fond. Le
@@ -48,6 +55,14 @@ function _victorySpeechVariants(ctx) {
        se tourne vers ${esc(heroes[1].name)} : « On a touché le fond — et on est
        remontés. » — « Ensemble, répond ${esc(heroes[1].name)}. Comme
        toujours. »</em></p>`);
+  }
+  // Dénouement de l'arc de chaque héros (Lot A, axe 1c) : une phrase par héros
+  // (heroes[i].payoff, lu dans HERO_VICTORY_PAYOFF au point d'appel).
+  for (const h of heroes) {
+    if (typeof h.payoff === 'string' && h.payoff) {
+      blocks.push(
+        `<p class="victory-speech-heroes"><em>${esc(h.name)} : « ${esc(h.payoff)} »</em></p>`);
+    }
   }
   // Clin d'œil : un héros dont la Maison canon diffère de la Maison jouée note
   // l'ironie d'avoir vaincu sous une autre bannière (1er concerné seulement).
@@ -364,6 +379,9 @@ function _refreshEndgameCompassBtn() {
               .map(c => ({
                 name:       c.name,
                 canonHouse: (typeof _heroCanonHouse === 'function') ? _heroCanonHouse(c.heroKey) : null,
+                // Lot A (axe 1c) — dénouement de l'arc du héros.
+                payoff:     (typeof HERO_VICTORY_PAYOFF !== 'undefined') ? (HERO_VICTORY_PAYOFF[c.heroKey] || null) : null,
+                key:        c.heroKey,
               }))
           : [],
         slythPactChoice:    (typeof slythPactChoice !== 'undefined') ? slythPactChoice : null,
@@ -375,6 +393,11 @@ function _refreshEndgameCompassBtn() {
                              typeof completedQuests.has === 'function' &&
                              completedQuests.has('eclats_clef_voute'))
       };
+      // Lot A (axe 2a) — échange propre à la paire du duo, si écrit.
+      if (ctx.heroes.length >= 2 && typeof pickPairBark === 'function') {
+        const [h0, h1] = ctx.heroes;
+        ctx.pairVictory = [pickPairBark(h0.key, h1.key, 'victory'), pickPairBark(h1.key, h0.key, 'victory')];
+      }
       const variants = _victorySpeechVariants(ctx);
       speech.innerHTML = `
         « Vous avez fait ce que même les plus grands sorciers n'auraient

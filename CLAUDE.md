@@ -95,8 +95,11 @@ js/
                       dungeon, combat, seenMonsters, activeQuests, usedFountains,
                       searchedCells, floorDungeons, restCooldown, barksEnabled,
                       chosenHouse, housePoints, houseTier, HOUSE_BONUSES, DIFFICULTY_SETTINGS)
-  hero-barks.js    →  HERO_BARKS{} (registre des répliques des 15 héros par
+  hero-barks.js    →  HERO_BARKS{} (registre des répliques des 16 héros par
                       événement + variantes houseTension + beats scénarisés) +
+                      HERO_PAIR_BARKS{} (répliques de paire du duo, 10 paires,
+                      prioritaires via pickPairBark()) + HERO_VICTORY_PAYOFF{}
+                      (dénouement de l'arc de chaque héros, lu par endgame.js) +
                       pickHeroBark() (résolveur pur) + heroBark() (orchestrateur
                       défensif) + heroBarkScripted() (beat de trame délivré par
                       un héros précis si présent, one-shot). Voix des héros en
@@ -352,7 +355,7 @@ attendus se sont exécutés correctement et expose 2 helpers d'accès défensif.
 
 ### Manifeste
 
-Le `MANIFEST` dans `loader.js` énumère **365** entrées `{ name, source, kind,
+Le `MANIFEST` dans `loader.js` énumère **369** entrées `{ name, source, kind,
 optional? }` :
 - `kind: 'fn'` → `typeof name === 'function'`
 - `kind: 'obj'` → `typeof name !== 'undefined'` (couvre `let`/`const`/`var`)

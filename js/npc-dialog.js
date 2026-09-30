@@ -449,6 +449,27 @@ function _npcDialogPages(npc, state, resolved) {
   return { pages: out, srcPages };
 }
 
+// Reconnaissance du héros (Lot A, revue 2026-09 — axe 1a) : réplique
+// `heroGreeting[heroKey]` du 1er héros du groupe qui en a une, ou null.
+// PUR (testé dans tests/units.js). Ajoutée EN TÊTE de l'accueil au 1er contact,
+// sans le remplacer : certaines premières pages portent l'accroche d'une quête.
+function _heroGreetingLine(npc, heroKeys) {
+  const g = npc && npc.heroGreeting;
+  if (!g || !Array.isArray(heroKeys)) return null;
+  for (let i = 0; i < heroKeys.length; i++) {
+    const line = g[heroKeys[i]];
+    if (typeof line === 'string' && line) return line;
+  }
+  return null;
+}
+
+function _partyHeroKeys() {
+  try {
+    return (typeof activeParty === 'function' ? activeParty() : [])
+      .map(c => c && c.heroKey).filter(Boolean);
+  } catch (_) { return []; }
+}
+
 // Suffixe « fil rouge des Éclats » (ch.06 §6.9.3) : si le PNJ porte le champ
 // `eclatLines` et que le joueur a entamé la collecte des Éclats (eclatProgress
 // > 0), on ajoute la ligne du palier courant EN FIN de dialogue — un suffixe
@@ -966,6 +987,8 @@ function _playPageVoice() {
   // Index de la page d'origine : une page longue scindée garde la clé
   // voix de son authored-page (pas de décalage de sample).
   const authoredIdx = (srcPages && srcPages[page] != null) ? srcPages[page] : page;
+  // Page ajoutée (reconnaissance du héros) : aucune voix enregistrée.
+  if (authoredIdx < 0) return;
   // Sous-page de continuation (même authored-page que la précédente) :
   // ne pas relancer le sample depuis le début.
   if (page > 0 && srcPages && srcPages[page - 1] === authoredIdx) return;
@@ -1016,6 +1039,17 @@ function openNpcDialog(npcId) {
   // affiché et la clé voix (sinon deux tirages → voix décalée).
   const _resolved = _resolveDialogSource(npc, state);
   const _pageData = _npcDialogPages(npc, state, _resolved);
+  // Préfixe de reconnaissance du héros (Lot A) — 1er contact seulement. Les
+  // sous-pages portent srcPages = -1 : _playPageVoice n'y joue aucun OGG (les
+  // samples suivent l'accueil déclaré, pas cette page ajoutée).
+  if (_resolved.source === 'greeting') {
+    const _heroLine = _heroGreetingLine(npc, _partyHeroKeys());
+    if (_heroLine) {
+      const _subs = _splitDialogPage(_heroLine, _DIALOG_PAGE_MAXLEN);
+      _pageData.pages.unshift(..._subs);
+      _pageData.srcPages.unshift(..._subs.map(() => -1));
+    }
+  }
   // Suffixe fil rouge des Éclats (§6.9.3) — appendu après la réplique d'état,
   // calé sur l'authored-page précédente (suffixe muet : pas de relance voix).
   const _eclatPages = _eclatSuffixPages(npc);
