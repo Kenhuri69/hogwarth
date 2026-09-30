@@ -6,6 +6,19 @@
 // Chargé APRÈS battle.js.
 // ============================================================
 // ── Fin de combat ────────────────────────────────────────────
+// Lot G (axe 2b) — un combat gagné ensemble en Duo nourrit la complicité de la
+// paire (profil persistant). Toast au franchissement d'un palier. Défensif.
+function _recordDuoBond() {
+  if (partySize !== 2 || typeof recordPairBattleWon !== 'function') return;
+  const duo = activeParty();
+  if (duo.length < 2 || !duo[0].heroKey || !duo[1].heroKey) return;
+  const res = recordPairBattleWon(duo[0].heroKey, duo[1].heroKey);
+  if (!res || !res.tierUp) return;
+  const title = (typeof pairBondTitle === 'function') ? pairBondTitle(res.count) : '';
+  const n0 = duo[0].name.split(' ')[0], n1 = duo[1].name.split(' ')[0];
+  addMsg(`🤝 ${n0} et ${n1} : <b>${title}</b> (${res.count} combats gagnés ensemble).`, 'narrative');
+}
+
 function endBattle(won) {
   document.getElementById('encounter-overlay').style.display = 'none';
   document.body.classList.remove('in-battle');
@@ -122,6 +135,8 @@ function endBattle(won) {
     }
     // Compteurs de score Ironman (monstres vaincus + faits d'armes boss).
     if (typeof recordIronmanKills === 'function') recordIronmanKills(enemyGroup);
+    // Lot G (axe 2b) — complicité du duo (profil hors-save, cosmétique).
+    _recordDuoBond();
     // Lot B (axes 3a/3c) — ligne de chute des boss canon (1re défaite) et
     // boss d'acte vaincu (plus de placement garanti ensuite).
     if (typeof _maybeBossFallBeat === 'function') _maybeBossFallBeat(enemyGroup);

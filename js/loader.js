@@ -146,6 +146,13 @@ window.UX_safe = new Proxy({}, {
     { name: 'FLOOR_LANDMARKS',         source: 'floor-ambiance.js', kind: 'obj' },
     { name: 'floorLandmark',           source: 'floor-ambiance.js', kind: 'fn' },
     { name: 'useLandmark',             source: 'movement-interactions.js', kind: 'fn' },
+    // Lot G (revue 2026-09, axe 2) — complicité (2b) + technique de duo (2c).
+    { name: 'recordPairBattleWon',     source: 'profile.js',        kind: 'fn' },
+    { name: 'pairBondTierOf',          source: 'profile.js',        kind: 'fn' },
+    { name: 'HERO_PAIR_BOND_BARKS',    source: 'hero-barks.js',     kind: 'obj', optional: true },
+    { name: 'DUO_TECHNIQUES',          source: 'battle-spells.js',  kind: 'obj' },
+    { name: 'duoTechniqueAvailable',   source: 'battle-spells.js',  kind: 'fn' },
+    { name: 'triggerDuoTechnique',     source: 'battle-spells.js',  kind: 'fn' },
     { name: 'FLOOR_EVENTS',       source: 'floor-events.js',  kind: 'obj' },
     { name: 'rollFloorEvent',     source: 'floor-events.js', kind: 'fn'  },
     { name: 'floorEventKind',     source: 'floor-events.js', kind: 'fn'  },

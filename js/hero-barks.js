@@ -442,19 +442,102 @@ const HERO_PAIR_BARKS = {
   }
 };
 
+// ── Répliques de complicité (Lot G, revue 2026-09 — axe 2b) ────────────
+// Même forme que HERO_PAIR_BARKS. Prioritaires dès le palier de complicité
+// PAIR_BOND_MIN_TIER (« Complices », profil hors-save) : la paire a gagné assez
+// de combats ensemble, toutes parties confondues, pour se parler autrement.
+const PAIR_BOND_MIN_TIER = 2;
+const HERO_PAIR_BOND_BARKS = {
+  'harry|hermione': {
+    allyDown: { harry:    ["Hermione… On a traversé pire. Tu me l'as dit toi-même, la dernière fois. Relève-toi."],
+                hermione: ["Harry, regarde-moi. Tu reviens toujours. C'est la seule chose dont je sois sûre."] },
+    victory:  { harry:    "Je ne sais plus combien de fois on est descendus. Mais je sais avec qui.",
+                hermione: "Chaque fois, j'ai eu peur. Et chaque fois, tu étais là. Ça suffit." }
+  },
+  'draco|harry': {
+    allyDown: { draco: ["Potter. Pas comme ça. Tu me dois encore une revanche, tu te souviens ?"],
+                harry: ["Drago ! … Oui, Drago. Relève-toi, on n'a pas fini."] },
+    victory:  { draco: "Je te déteste un peu moins à chaque descente, Potter. C'est très agaçant.",
+                harry: "Tu m'as appelé Harry, en bas. Deux fois. Je n'ai rien dit." }
+  },
+  'cedric|cho': {
+    allyDown: { cedric: ["Cho… Je t'ai promis qu'on remonterait ensemble. Je tiens toujours mes promesses."],
+                cho:    ["Cedric, ouvre les yeux. Je ne laisse plus rien m'enlever quelqu'un. Plus jamais."] },
+    victory:  { cedric: "Tu te souviens de la première fois, en haut de l'escalier ? Tu tremblais moins que moi.",
+                cho:    "Je ne compte plus les étages. Je compte les fois où tu m'as attendue." }
+  },
+  'draco|hermione': {
+    allyDown: { draco:    ["Hermione… Oui, je connais ton prénom. Maintenant, relève-toi."],
+                hermione: ["Drago, tiens bon. Je ne te laisserai pas là. Pas après tout ça."] },
+    victory:  { draco:    "Si mon père savait avec qui je descends… Tant pis pour lui.",
+                hermione: "Tu as changé, tu sais. Je crois que moi aussi." }
+  },
+  'iris|louis': {
+    allyDown: { iris:  ["Louis, ce n'est pas drôle. Et tu sais que je ris de tout. Lève-toi."],
+                louis: ["Iris, je garde ton feu allumé. Reviens le prendre."] },
+    victory:  { iris:  "Tu sais que tes étincelles sont ma couleur préférée ? Ne le dis à personne.",
+                louis: "Avec toi, même le noir d'en bas a l'air moins grave." }
+  },
+  'celeste|margaux': {
+    allyDown: { celeste: ["Margaux… Je ne regarde plus les étoiles pour savoir. Je te regarde toi. Reviens."],
+                margaux: ["Céleste, j'ai noté chaque descente dans mon carnet. Il manque la suite. Relève-toi."] },
+    victory:  { celeste: "Tu as rempli combien de carnets, depuis le début ? Garde une page pour nous.",
+                margaux: "Toutes les pages sont pour nous. Je ne l'ai jamais écrit, c'est tout." }
+  },
+  'chatillon|maxence': {
+    allyDown: { maxence:   ["Olivier. Reste. Je ne sais pas descendre sans toi, maintenant."],
+                chatillon: ["Maxence, respire. Je tiens l'ombre, je te tiens toi."] },
+    victory:  { maxence:   "Le sang s'est tu, cette fois. Je crois que c'est grâce à toi.",
+                chatillon: "On n'en parlera à personne. Mais je m'en souviendrai." }
+  },
+  'anastasia|jeanne': {
+    allyDown: { anastasia: ["Jeanne, j'ai arrêté de faire des plans sans toi. Tu n'as pas le droit de me laisser."],
+                jeanne:    ["Anastasia ! On improvise, d'accord ? Tu te relèves, et on improvise !"] },
+    victory:  { anastasia: "Tu m'as appris à ne rien prévoir. C'est le meilleur plan que j'aie jamais eu.",
+                jeanne:    "Et toi, tu m'as appris à compter les marches. Un peu. Parfois." }
+  },
+  'agathe|nathalie': {
+    allyDown: { agathe:   ["Nathalie, tu m'as protégée à chaque descente. Cette fois, c'est mon tour."],
+                nathalie: ["Agathe, tiens bon. Rien ne pousse si tu n'es pas là pour arroser."] },
+    victory:  { agathe:   "Tout ce qu'on a planté là-dessous a pris racine. Même nous.",
+                nathalie: "Je me bats mieux quand je sais que tu es derrière moi." }
+  },
+  'chatillon|olivier': {
+    allyDown: { olivier:   ["Olivier… Oui, on a le même prénom. Et j'ai besoin de toi debout."],
+                chatillon: ["De Clairval, ta belle technique m'a sauvé plus souvent que je ne l'avoue. Relève-toi."] },
+    victory:  { olivier:   "Je ne cherche plus à briller, tu sais. Je cherche où tu frappes.",
+                chatillon: "Et moi, je ne me cache plus tout à fait. C'est ta faute." }
+  }
+};
+
 // Résolveur PUR (testé dans tests/units.js) : réplique de `speaker` pour
 // `event` quand `partner` est son partenaire de duo, ou null. Accepte une
-// chaîne ou un tableau (tirage via `rng`, défaut Math.random).
-function pickPairBark(speaker, partner, event, rng) {
+// chaîne ou un tableau (tirage via `rng`, défaut Math.random). `bondTier`
+// (Lot G, 0..3) : dès PAIR_BOND_MIN_TIER, la réplique de complicité passe
+// devant la réplique de paire ordinaire.
+function pickPairBark(speaker, partner, event, rng, bondTier) {
   if (!speaker || !partner || speaker === partner) return null;
   const key = [speaker, partner].sort().join('|');
-  const pair = (typeof HERO_PAIR_BARKS !== 'undefined') ? HERO_PAIR_BARKS[key] : null;
-  const byEvent = pair && pair[event];
-  const v = byEvent && byEvent[speaker];
-  if (typeof v === 'string') return v || null;
-  if (!Array.isArray(v) || !v.length) return null;
   const r = (typeof rng === 'function') ? rng : Math.random;
-  return v[Math.floor(r() * v.length)];
+  const pick = (reg) => {
+    const byEvent = reg && reg[key] && reg[key][event];
+    const v = byEvent && byEvent[speaker];
+    if (typeof v === 'string') return v || null;
+    if (!Array.isArray(v) || !v.length) return null;
+    return v[Math.floor(r() * v.length)];
+  };
+  if ((bondTier | 0) >= PAIR_BOND_MIN_TIER) {
+    const bond = pick(HERO_PAIR_BOND_BARKS);
+    if (bond) return bond;
+  }
+  return pick((typeof HERO_PAIR_BARKS !== 'undefined') ? HERO_PAIR_BARKS : null);
+}
+
+// Palier de complicité (profil) de `heroKey` avec son partenaire, 0 si absent.
+function _heroPairBondTier(heroKey, partnerKey) {
+  try {
+    return (typeof pairBondTierOf === 'function' && partnerKey) ? pairBondTierOf(heroKey, partnerKey) : 0;
+  } catch (_) { return 0; }
 }
 
 // Partenaire de duo de `heroKey` dans le groupe actif (même KO), ou null.
@@ -532,7 +615,8 @@ function heroBark(heroKey, event, opts) {
 
   // Réplique de paire (Lot A) prioritaire quand le partenaire de duo en a une ;
   // sinon réplique du héros seul (houseTension puis standard).
-  const text = pickPairBark(heroKey, _heroPartnerKey(heroKey), event)
+  const partnerKey = _heroPartnerKey(heroKey);
+  const text = pickPairBark(heroKey, partnerKey, event, null, _heroPairBondTier(heroKey, partnerKey))
     || pickHeroBark(heroKey, event, {
       canonHouse:  _heroCanonHouse(heroKey),
       chosenHouse: (typeof chosenHouse !== 'undefined') ? chosenHouse : null
@@ -598,5 +682,6 @@ if (typeof window !== 'undefined') {
   window.heroBark         = heroBark;
   window.heroBarkScripted = heroBarkScripted;
   window.HERO_PAIR_BARKS  = HERO_PAIR_BARKS;
+  window.HERO_PAIR_BOND_BARKS = HERO_PAIR_BOND_BARKS;
   window.pickPairBark     = pickPairBark;
 }

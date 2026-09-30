@@ -1698,3 +1698,117 @@ function castSpellInBattle(spellName, targetIdx, targetAllyIdx) {
   if (checkAllEnemiesDead()) return;
   advanceBattleChar();
 }
+
+// ── Technique de duo (Lot G, revue 2026-09 — axe 2c) ─────────
+// Action combinée par COUPLE D'ÉLÉMENTS (pas par paire de héros) : chacun des
+// deux héros a lancé un sort offensif ce combat (_lastCastSpellByChar) ; si
+// leurs éléments forment un couple connu, le héros de tête peut, en début de
+// round, déclencher la technique. Elle coûte LES DEUX tours du round (le 2ᵉ
+// héros n'agit pas), aucun PM, et ne sert qu'une fois par combat. Base =
+// Σ (puissance du dernier sort + MAG/2) des deux héros, × DUO_TECHNIQUE_MULT.
+// Calibrée par tools/sim-difficulty.js --duo-tech (miroir SIM_DUO_TECH_MULT).
+// La complicité du profil (2b) n'intervient JAMAIS ici (aucun héritage).
+const DUO_TECHNIQUE_MULT = { burst: 1.4, aoe: 0.7, stunAll: 0.4, drain: 1.0,
+                             execute: 1.5, shield: 0.9, resonance: 1.4 };
+const DUO_TECHNIQUES = {
+  'feu|glace':         { name: 'Choc thermique',     icon: '🌡️', kind: 'burst',
+    desc: 'Le brûlant et le glacé frappent ensemble : la cible éclate, sans résistance possible.' },
+  'foudre|lumière':    { name: 'Aveuglement',        icon: '⚡', kind: 'stunAll',
+    desc: 'Un éclair blanc : tous les ennemis sont étourdis, la cible est blessée.' },
+  'feu|foudre':        { name: 'Tempête ardente',    icon: '🌩️', kind: 'aoe',
+    desc: 'Une pluie de braises électriques s\'abat sur tous les ennemis.' },
+  'lumière|ténèbres':  { name: 'Crépuscule',         icon: '🌗', kind: 'drain',
+    desc: 'L\'ombre et la lumière se mêlent : la cible s\'affaiblit, le duo se soigne.' },
+  'feu|physique':      { name: 'Lame ardente',       icon: '🗡️', kind: 'execute',
+    desc: 'Un coup chauffé à blanc sur l\'ennemi le plus faible — dévastateur s\'il vacille.' },
+  'glace|lumière':     { name: 'Prisme de givre',    icon: '💎', kind: 'shield',
+    desc: 'Un miroir de glace blesse la cible et protège les deux héros un instant.' },
+  'foudre|ténèbres':   { name: 'Orage noir',         icon: '🌑', kind: 'execute',
+    desc: 'La foudre sombre cherche l\'ennemi le plus faible et l\'achève s\'il chancelle.' },
+  '*':                 { name: 'Résonance',          icon: '🔔', kind: 'resonance',
+    desc: 'Deux sorts du même élément vibrent à l\'unisson sur une seule cible.' },
+};
+
+// PUR (units.js) — technique du couple d'éléments (ordre indifférent), ou null.
+function duoTechniqueFor(el0, el1) {
+  if (!el0 || !el1) return null;
+  if (el0 === el1) return DUO_TECHNIQUES['*'];
+  return DUO_TECHNIQUES[[el0, el1].sort().join('|')] || null;
+}
+
+// Sort (objet SPELLS) du dernier sort offensif lancé par le héros `idx`, ou null.
+function _duoLastSpell(idx) {
+  const name = (typeof _lastCastSpellByChar !== 'undefined') ? _lastCastSpellByChar[idx] : null;
+  return name ? (SPELLS.find(s => s.name === name) || null) : null;
+}
+
+// Technique disponible maintenant (objet DUO_TECHNIQUES + sorts), ou null.
+function duoTechniqueAvailable() {
+  if (typeof inBattle === 'undefined' || !inBattle || partySize !== 2) return null;
+  if (typeof duoTechUsed !== 'undefined' && duoTechUsed) return null;
+  if (currentBattleChar !== 0) return null;
+  const a = party[0], b = party[1];
+  if (!a || !b || a.hp <= 0 || b.hp <= 0) return null;
+  if ((b.statusEffects || []).some(s => s.id === 'stun')) return null;
+  const s0 = _duoLastSpell(0), s1 = _duoLastSpell(1);
+  if (!s0 || !s1) return null;
+  const tech = duoTechniqueFor(s0.element || 'physique', s1.element || 'physique');
+  return tech ? { tech, spells: [s0, s1] } : null;
+}
+
+// Résolution (PUR hors mutations des cibles/héros passés en argument).
+// Retourne le message. `targets` = ennemis vivants, `heroes` = [h0, h1].
+function _duoTechniqueResolve(tech, spells, heroes, targets) {
+  const base = spells.reduce((s, sp, i) => s + (sp.power || 0) + Math.floor((heroes[i].mag || 0) / 2), 0);
+  const d = Math.max(1, Math.floor(base * (DUO_TECHNIQUE_MULT[tech.kind] || 1)));
+  const hit = (e, dmg) => {
+    e.currentHp -= dmg;
+    UX_safe.floatDmg(`enemy:${enemyGroup.indexOf(e)}`, dmg, 'dmg');
+    return `${e.name} −${dmg}`;
+  };
+  const parts = [];
+  let target = targets[0];
+  if (tech.kind === 'aoe') {
+    targets.forEach(e => parts.push(hit(e, d)));
+  } else if (tech.kind === 'execute') {
+    target = targets.reduce((x, y) => (y.currentHp < x.currentHp ? y : x));
+    const low = target.currentHp < target.hp * 0.35;
+    parts.push(hit(target, low ? d * 2 : d) + (low ? ' 💀' : ''));
+  } else {
+    parts.push(hit(target, d));
+    if (tech.kind === 'stunAll') {
+      targets.forEach(e => { if (e.currentHp > 0) applyStatus(e, 'stun', 0, 1); });
+      parts.push('tous étourdis 💫');
+    } else if (tech.kind === 'drain') {
+      const heal = Math.floor(d * 0.25);
+      heroes.forEach(h => { if (h.hp > 0) h.hp = Math.min(h.hpMax, h.hp + heal); });
+      parts.push(`duo +${heal} PV`);
+    } else if (tech.kind === 'shield') {
+      shieldTurns[0] = Math.max(shieldTurns[0], 1);
+      shieldTurns[1] = Math.max(shieldTurns[1], 1);
+      parts.push('duo protégé 🛡️');
+    }
+  }
+  return `${tech.icon} ${heroes[0].name.split(' ')[0]} & ${heroes[1].name.split(' ')[0]} : ${tech.name} — ${parts.join(', ')}`;
+}
+
+// Action 🤝 : déclenche la technique, consomme les deux tours du round.
+function triggerDuoTechnique() {
+  const av = duoTechniqueAvailable();
+  if (!av) { setBattleLog('🤝 Aucune technique de duo n\'est prête.'); return; }
+  const targets = livingEnemies();
+  if (!targets.length) return;
+  duoTechUsed = true;
+  celeriteExtra[0] = 0;
+  const msg = _duoTechniqueResolve(av.tech, av.spells, [party[0], party[1]], targets);
+  if (typeof AudioSystem !== 'undefined' && AudioSystem.playSpellCast) AudioSystem.playSpellCast(av.spells[0].name);
+  UX_safe.combatBanner(`${av.tech.icon} ${av.tech.name}`, 'tenaille');
+  targets.forEach(e => CFX_safe.spellBurst(`enemy:${enemyGroup.indexOf(e)}`, av.spells[0].element || 'physique'));
+  addMsg(msg, 'magic');
+  UX_safe.logCombat(msg, 'magic');
+  setBattleLog(msg);
+  renderEnemyGroup();
+  updateUI();
+  if (checkAllEnemiesDead()) return;
+  enemyTurn();   // le 2ᵉ héros a prêté son tour : les ennemis agissent
+}

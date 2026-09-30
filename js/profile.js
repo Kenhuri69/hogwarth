@@ -42,8 +42,36 @@ function _profileEmpty() {
     eclatsConsecrated: 0,
     // Étage le plus profond jamais atteint, toutes parties confondues (Thème D
     // — Hauts Faits). Alimente les succès de descente. Cosmétique.
-    deepestFloor: 0
+    deepestFloor: 0,
+    // Complicité (Lot G, axe 2b) — combats gagnés ensemble par paire de héros
+    // du duo, clé = heroKeys triés joints par « | ». PUREMENT cosmétique :
+    // débloque des répliques de paire et un titre de paire, jamais un bonus.
+    pairBonds: {}
   };
+}
+
+// Lot G (axe 2b) — paliers de complicité (combats gagnés ensemble). PUR.
+const PAIR_BOND_TIERS = [
+  { at: 10,  title: 'Compagnons de route' },
+  { at: 40,  title: 'Complices' },
+  { at: 120, title: 'Inséparables' },
+];
+// Palier 0..3 atteint pour `n` combats gagnés ensemble.
+function pairBondTier(n) {
+  const v = (typeof n === 'number' && n > 0) ? n : 0;
+  let t = 0;
+  PAIR_BOND_TIERS.forEach((p, i) => { if (v >= p.at) t = i + 1; });
+  return t;
+}
+// Titre du palier atteint, ou '' sous le premier palier.
+function pairBondTitle(n) {
+  const t = pairBondTier(n);
+  return t ? PAIR_BOND_TIERS[t - 1].title : '';
+}
+// Clé de paire canonique (heroKeys triés), ou null.
+function pairBondKey(a, b) {
+  if (!a || !b || a === b) return null;
+  return [String(a), String(b)].sort().join('|');
 }
 
 // Hauts Faits (Thème D — succès) — registre PUR. Chaque entrée est dérivée du
@@ -105,6 +133,12 @@ function _profileRead() {
       ? Math.floor(obj.eclatsConsecrated) : 0;
     base.deepestFloor = (typeof obj.deepestFloor === 'number' && obj.deepestFloor >= 0)
       ? Math.floor(obj.deepestFloor) : 0;
+    if (obj.pairBonds && typeof obj.pairBonds === 'object') {
+      for (const k of Object.keys(obj.pairBonds)) {
+        const v = obj.pairBonds[k];
+        if (/^[a-z]+\|[a-z]+$/.test(k) && typeof v === 'number' && v > 0) base.pairBonds[k] = Math.floor(v);
+      }
+    }
     return base;
   } catch (e) {
     return _profileEmpty();
@@ -257,6 +291,28 @@ function recordDeepestFloor(floor) {
   return p.deepestFloor | 0;
 }
 
+// Lot G (axe 2b) — un combat gagné en Duo par la paire (a, b). Retourne
+// { count, tier, tierUp } (tierUp vrai si un palier vient d'être franchi), ou
+// null si la paire est invalide. Cosmétique : aucun calcul de combat ne le lit.
+function recordPairBattleWon(a, b) {
+  const key = pairBondKey(a, b);
+  if (!key) return null;
+  const p = _profileRead();
+  const before = p.pairBonds[key] | 0;
+  const count = before + 1;
+  p.pairBonds[key] = count;
+  _profileWrite(p);
+  const tier = pairBondTier(count);
+  return { count, tier, tierUp: tier > pairBondTier(before) };
+}
+
+// Palier de complicité de la paire (a, b) lu dans le profil (0..3).
+function pairBondTierOf(a, b) {
+  const key = pairBondKey(a, b);
+  if (!key) return 0;
+  return pairBondTier(_profileRead().pairBonds[key] | 0);
+}
+
 // PUR & testable (units.js) — union d'un élément dans la collection, en
 // conservant l'ordre canonique PROFILE_MASTERY_ELEMENTS. Les valeurs
 // inconnues (élément invalide, entrées corrompues de la liste) sont
@@ -369,6 +425,24 @@ function renderProfileCodex() {
          + `${got ? a.icon : '🔒'} ${esc(got ? a.title : '???')}</span>`;
   }).join('');
 
+  // Complicités (Lot G, axe 2b) : les paires du duo, les plus liées d'abord.
+  const heroName = (k) => {
+    const c = (typeof CHARACTERS !== 'undefined') ? CHARACTERS[k] : null;
+    return (c && c.name) ? c.name.split(' ')[0] : k;
+  };
+  const bonds = Object.keys(p.pairBonds || {})
+    .map(k => ({ k, n: p.pairBonds[k] | 0 }))
+    .filter(b => b.n > 0).sort((a, b) => b.n - a.n).slice(0, 8);
+  const bondPills = bonds.map(b => {
+    const [x, y] = b.k.split('|');
+    const title = pairBondTitle(b.n);
+    return `<span class="prof-ending ${title ? 'seen' : 'locked'}" title="${esc(b.n + ' combat' + (b.n > 1 ? 's' : '') + ' gagné' + (b.n > 1 ? 's' : '') + ' ensemble')}">`
+         + `🤝 ${esc(heroName(x))} & ${esc(heroName(y))}${title ? ' · ' + esc(title) : ''} (${b.n})</span>`;
+  }).join('');
+  const bondSection = bonds.length
+    ? `<div class="wcodex-section-label">Complicités</div><div class="prof-endings">${bondPills}</div>`
+    : '';
+
   el.innerHTML = `
     ${banner}
     <div class="wcodex-sub">Mémoire de tes parties achevées. Purement honorifique — aucun avantage hérité.</div>
@@ -384,7 +458,8 @@ function renderProfileCodex() {
     <div class="wcodex-section-label">Fins découvertes · ${gotEndings}/${_PROFILE_ENDINGS.length}</div>
     <div class="prof-endings">${endingPills}</div>
     <div class="wcodex-section-label">Bibliothèque des Maîtrises · ${mastered.size}/${_PROFILE_MASTERY_BOOKS.length}</div>
-    <div class="prof-endings">${masteryPills}</div>`;
+    <div class="prof-endings">${masteryPills}</div>
+    ${bondSection}`;
 }
 
 function openWizardCodex() {
@@ -407,7 +482,8 @@ function _refreshHubCodexBtn() {
   // Visible dès qu'il y a quelque chose à montrer : une fin atteinte OU un
   // premier Livre de Maîtrise collecté (P7 — collectible dès l'étage 8).
   const has = (p.victories | 0) > 0 || (p.cyclesBroken | 0) > 0
-    || (p.masteredElements || []).length > 0;
+    || (p.masteredElements || []).length > 0
+    || Object.keys(p.pairBonds || {}).length > 0;
   btn.style.display = has ? '' : 'none';
 }
 

@@ -360,7 +360,7 @@ attendus se sont exécutés correctement et expose 2 helpers d'accès défensif.
 
 ### Manifeste
 
-Le `MANIFEST` dans `loader.js` énumère **399** entrées `{ name, source, kind,
+Le `MANIFEST` dans `loader.js` énumère **405** entrées `{ name, source, kind,
 optional? }` :
 - `kind: 'fn'` → `typeof name === 'function'`
 - `kind: 'obj'` → `typeof name !== 'undefined'` (couvre `let`/`const`/`var`)
@@ -1177,7 +1177,7 @@ pendingSpell      // nom du sort en attente de sélection de cible (ennemi ou al
 
 ### Actions de combat (#battle-actions)
 
-5 actions de base + 3 actions **conditionnelles** (boutons masqués hors contexte,
+5 actions de base + 4 actions **conditionnelles** (boutons masqués hors contexte,
 montrés par `_refreshBattleActionButtons` dans `battle-ui.js`) :
 
 | Action | Coût | Effet |
@@ -1190,6 +1190,7 @@ montrés par `_refreshBattleActionButtons` dans `battle-ui.js`) :
 | 🏺 Artefact (P2) | charge | `#btn-artifact` — `triggerActiveArtifact()`. Visible si le perso actif équipe un artefact à `item.activeEffect` avec une charge restante (`artifactCharges[idx]`, 1×/combat, reset `startBattle`). Résolveurs `elemBurst`/`purgeStatus`/`shieldGroup`. Ciblage 1-ennemi via `pendingAction='artifact'`. |
 | 🔄 Posture (P2) | — | `#btn-posture` — `toggleDuoPosture()`. Visible en **Duo** tant que la bascule gratuite n'a pas servi ce combat (`duoPostureSwitched`). Bascule `duoPosture` phalange↔tenaille. Cf. « Positionnement Duo ». |
 | 🌿 Rune (P4) | — | `#btn-env` — `triggerRuneEnv()`. Visible en **zone runique** (D / override post-victoire) tant que `envRuneCharge > 0` (1×/combat). Étourdit (`stun` 1 tour) l'ennemi le plus proche. Cf. « Environnement en combat ». |
+| 🤝 Duo (Lot G) | les 2 tours | `#btn-duo-tech` — `triggerDuoTechnique()`. Visible en **Duo** au tour du héros de tête quand les derniers sorts offensifs des deux héros forment un couple d'éléments connu (1×/combat). Cf. « Technique de duo & complicité ». |
 
 ### Tour de jeu
 ```
@@ -1214,6 +1215,27 @@ aussi modifiable hors combat dans la fiche perso (`_renderDuoPosturePanel` /
 
 > Le rider « +10 % mitigation Garde » de Phalange (design `combat-system-synthesis.md`
 > §1.1) a été **écarté** pour préserver la baseline Garde 50 % (zéro régression).
+
+### Technique de duo & complicité (Lot G, revue 2026-09)
+
+- **Technique de duo** (`DUO_TECHNIQUES`, `battle-spells.js`) : une action par
+  **couple d'éléments** (7 couples + « Résonance » pour deux éléments
+  identiques). Chaque héros a lancé un sort offensif ce combat
+  (`_lastCastSpellByChar`) ; si leurs éléments forment un couple connu, le
+  bouton 🤝 (`#btn-duo-tech`, `triggerDuoTechnique`) apparaît **au tour du
+  héros de tête**. Coût : les **deux tours** du round, aucun PM ; 1×/combat
+  (`duoTechUsed`, combat-scoped). Base = Σ (puissance du dernier sort + MAG/2),
+  × `DUO_TECHNIQUE_MULT[kind]` (`burst`/`aoe`/`stunAll`/`drain`/`execute`/
+  `shield`/`resonance`). Calibré par `tools/sim-difficulty.js --duo-tech[=kind]`
+  (miroir `SIM_DUO_TECH_MULT`, égalité vérifiée par `units.js` §27).
+- **Complicité** (`profile.js`, profil hors-save) : `pairBonds['a|b']` compte
+  les combats gagnés ensemble en Duo (`recordPairBattleWon`, appelé par
+  `endBattle`). Paliers `PAIR_BOND_TIERS` 10/40/120 (« Compagnons de route »,
+  « Complices », « Inséparables ») : message au franchissement, section
+  « Complicités » du Codex du Sorcier. Dès « Complices », les répliques de
+  `HERO_PAIR_BOND_BARKS` (10 paires, `allyDown` + `victory`) passent devant les
+  répliques de paire. **Aucun effet de combat** : la technique de duo ne lit
+  jamais le profil (zéro héritage).
 
 ### Environnement en combat (`envModifiers`, P4)
 

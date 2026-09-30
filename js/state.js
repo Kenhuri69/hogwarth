@@ -542,6 +542,7 @@ let serpentPactDoubleNext   = false; // Pacte du Serpent — double le prochain 
 let lionHeartActive         = false; // Cœur de Lion — buff de groupe actif ce combat
 let _shieldReflect          = [0, 0];// Protego Diabolica — renvoi de coups physiques (par perso)
 let badgerOathUsedThisFight = false; // Serment du Blaireau — 1×/combat
+let duoTechUsed             = false; // Lot G (2c) — technique de duo, 1×/combat
 // Compteur de corruption du groupe (Lot P4 §2.6) — monte via le contrecoup
 // `counter`, majore le power des sorts corrompus ET leur risque. SÉRIALISÉ
 // (clé save `corruptionLevel`, comme floorKillCount). Monotone croissant ;

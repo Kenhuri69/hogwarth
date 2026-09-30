@@ -787,6 +787,7 @@ function startBattle(baseEnemyData, opts) {
   serpentPactDoubleNext    = false;
   lionHeartActive          = false;
   badgerOathUsedThisFight  = false;
+  duoTechUsed              = false;   // Lot G (2c) — technique de duo réarmée
   _shieldReflect           = [0, 0];
   if (typeof window._resetTeleportFightFlag === 'function') window._resetTeleportFightFlag();
 
@@ -1009,6 +1010,7 @@ function battleAction(action) {
   if (action === 'artifact') { triggerActiveArtifact(); return; }   // P2 — artefact actif
   if (action === 'posture')  { toggleDuoPosture();      return; }   // P2 — bascule de posture (gratuite)
   if (action === 'env')      { triggerRuneEnv();        return; }   // P4 — interaction d'environnement (rune)
+  if (action === 'duotech')  { triggerDuoTechnique();   return; }   // Lot G — technique de duo (2 tours)
 
   if (action === 'guard') {
     const idx    = currentBattleChar;

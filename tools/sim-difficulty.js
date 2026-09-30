@@ -486,6 +486,7 @@ function parseArgs(argv) {
     }
     if (a === '--endgame')              { out.endgame = true; continue; }
     if (a === '--tenebres-set')         { out.tenebresSet = true; continue; }
+    if (a === '--duo-tech')             { out.duoTech = 'all'; continue; }
     if (!a.includes('=')) {
       // Compat : `node sim-difficulty.js 800` → nSims positionnel
       const n = parseInt(a, 10);
@@ -538,6 +539,7 @@ function parseArgs(argv) {
     else if (k === 'elan-decay')   out.elanDecay = String(v || 'none').toLowerCase();
     else if (k === 'boss')         out.boss = String(v || '') || null;
     else if (k === 'boss-alone')   out.bossAlone = v !== '0';
+    else if (k === 'duo-tech')     out.duoTech = String(v || 'all');
   }
   return out;
 }
@@ -1274,18 +1276,35 @@ function simulateBattle(party, enemyGroup, opts = {}) {
     c.guardStacks = 0; c.guardRegenCD = 0;
     c._celGauge = 0;   // D5 AGI — accumulateur de Célérité (combat-scoped)
   });
-  enemyGroup.forEach(e => { e.currentHp = e.hp; e.disarmed = 0; });
+  enemyGroup.forEach(e => { e.currentHp = e.hp; e.disarmed = 0; e._simStun = 0; });
 
   const partySize = party.length;
   let turn = 0;
   const MAX_TURNS = 80;
   let totalEnemyDmg = 0;
 
+  let duoTechUsed = false;
   while (turn < MAX_TURNS) {
     turn++;
 
+    // Lot G (2c) — technique de duo : 1×/combat, dès le 2ᵉ round (chaque héros
+    // a lancé un sort offensif au 1ᵉʳ), les deux debout et libres. Coûte les
+    // deux tours du round, aucun PM. Miroir de triggerDuoTechnique (battle-spells.js).
+    let techRound = false;
+    if (opts.duoTech && !duoTechUsed && partySize === 2 && turn >= 2 &&
+        party.every(c => c.hp > 0 && !(c.statusEffects || []).some(s => s.id === 'stun'))) {
+      const enemiesNow = enemyGroup.filter(e => e.currentHp > 0);
+      if (enemiesNow.length && party.every(c => pickDamageSpell(c))) {
+        simDuoTechnique(party, enemiesNow, opts.duoTech);
+        duoTechUsed = true; techRound = true;
+        if (!enemyGroup.some(e => e.currentHp > 0)) {
+          return { won: true, turns: turn, survivors: 2, hpPct: avgHpPct(party), enemyDmg: totalEnemyDmg };
+        }
+      }
+    }
+
     // Tour de chaque héros vivant
-    for (const char of party) {
+    for (const char of (techRound ? [] : party)) {
       if (char.hp <= 0) continue;
       // Contrôle : stun saute le tour (et consomme 1 tour de stun) ;
       // fear saute 50 % du temps (battle.js — consumeStun / rollFearSkip).
@@ -1317,6 +1336,7 @@ function simulateBattle(party, enemyGroup, opts = {}) {
     }
     for (const enemy of enemyGroup) {
       if (enemy.currentHp <= 0) continue;
+      if (enemy._simStun > 0) { enemy._simStun--; continue; }   // Lot G — Aveuglement
       // Phases de boss évaluées en tête de tour (peut enrager / soigner /
       // gagner une capacité). Puis ciblage par tempérament.
       checkBossPhasesSim(enemy);
@@ -1367,6 +1387,35 @@ function simulateBattle(party, enemyGroup, opts = {}) {
 
   // Stalemate (très long) — on considère comme une défaite mole
   return { won: false, turns: MAX_TURNS, survivors: party.filter(c => c.hp > 0).length, hpPct: avgHpPct(party), enemyDmg: totalEnemyDmg, stalemate: true };
+}
+
+// Lot G (2c) — miroir de DUO_TECHNIQUE_MULT / _duoTechniqueResolve
+// (battle-spells.js). Base = Σ (puissance du meilleur sort + MAG/2) des deux
+// héros. `kind` = type de technique, ou 'all' (tirage uniforme par combat).
+const SIM_DUO_TECH_MULT = { burst: 1.4, aoe: 0.7, stunAll: 0.4, drain: 1.0,
+                            execute: 1.5, shield: 0.9, resonance: 1.4 };
+function simDuoTechnique(party, enemies, kind) {
+  const kinds = Object.keys(SIM_DUO_TECH_MULT);
+  const k = SIM_DUO_TECH_MULT[kind] ? kind : kinds[Math.floor(Math.random() * kinds.length)];
+  const base = party.reduce((s, c) => {
+    const sp = pickDamageSpell(c);
+    return s + (sp ? sp.power : 0) + Math.floor((c.mag || 0) / 2);
+  }, 0);
+  const d = Math.floor(base * SIM_DUO_TECH_MULT[k]);
+  let target = enemies[0];
+  if (k === 'aoe') { enemies.forEach(e => { e.currentHp -= d; }); return; }
+  if (k === 'stunAll') enemies.forEach(e => { e._simStun = 1; });
+  if (k === 'execute') {
+    target = enemies.reduce((a, b) => (b.currentHp < a.currentHp ? b : a));
+    target.currentHp -= (target.currentHp < target.hp * 0.35) ? d * 2 : d;
+    return;
+  }
+  target.currentHp -= d;
+  if (k === 'drain') {
+    const heal = Math.floor(d * 0.25);
+    party.forEach(c => { if (c.hp > 0) c.hp = Math.min(c.hpMax, c.hp + heal); });
+  }
+  if (k === 'shield') party.forEach(c => { c.shieldTurns = Math.max(c.shieldTurns || 0, 1); });
 }
 
 function avgHpPct(party) {
@@ -1660,7 +1709,7 @@ function runSimulations(cfg) {
         // --boss=ID : le boss mène le groupe (boss d'acte garanti, Lot B 3c),
         // escorté comme au runtime (startBattle : taille tirée normalement).
         if (bossBase) enemyGroup[0] = scaleMonster(bossBase, floor, cfg);
-        const res = simulateBattle(party, enemyGroup);
+        const res = simulateBattle(party, enemyGroup, { duoTech: cfg.duoTech });
         if (res.won) {
           wins.count++;
           wins.turns += res.turns;
@@ -1750,7 +1799,7 @@ function simulateFloorRun(cfg, floor, partySize, level) {
 
   const fight = (group) => {
     stats.combats++;
-    return simulateBattle(party, group, { keepVitals: true }).won;
+    return simulateBattle(party, group, { keepVitals: true, duoTech: cfg.duoTech }).won;
   };
 
   for (let room = 0; room < COMBATS_PER_FLOOR_AVG; room++) {

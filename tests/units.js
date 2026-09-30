@@ -3778,6 +3778,90 @@ function loadNpcs() {
 })();
 
 // ============================================================
+// §27 — Lot G (revue 2026-09, axe 2) : complicité + technique de duo
+// ============================================================
+(function testLotG() {
+  // 2b — paliers purs.
+  const store = {};
+  const ls = { getItem: k => (k in store ? store[k] : null), setItem: (k, v) => { store[k] = String(v); } };
+  const pr = loadModule('js/profile.js',
+    ['pairBondTier', 'pairBondTitle', 'pairBondKey', 'recordPairBattleWon', 'pairBondTierOf', 'getPlayerProfile', 'PAIR_BOND_TIERS'],
+    { localStorage: ls, window: {}, document: { getElementById: () => null } });
+  check('lotG 2b: paliers 10/40/120', pr.pairBondTier(0) === 0 && pr.pairBondTier(9) === 0 && pr.pairBondTier(10) === 1
+    && pr.pairBondTier(39) === 1 && pr.pairBondTier(40) === 2 && pr.pairBondTier(120) === 3 && pr.pairBondTier(-5) === 0);
+  check('lotG 2b: titres', pr.pairBondTitle(5) === '' && pr.pairBondTitle(40) === 'Complices' && pr.pairBondTitle(500) === 'Inséparables');
+  check('lotG 2b: clé triée, paire invalide', pr.pairBondKey('hermione', 'harry') === 'harry|hermione'
+    && pr.pairBondKey('harry', 'harry') === null && pr.pairBondKey(null, 'harry') === null);
+  let last = null;
+  for (let i = 0; i < 10; i++) last = pr.recordPairBattleWon('hermione', 'harry');
+  check('lotG 2b: compteur persistant + tierUp au 10e', last.count === 10 && last.tier === 1 && last.tierUp === true
+    && pr.getPlayerProfile().pairBonds['harry|hermione'] === 10 && pr.pairBondTierOf('harry', 'hermione') === 1);
+  const again = pr.recordPairBattleWon('harry', 'hermione');
+  check('lotG 2b: pas de tierUp sans franchissement', again.count === 11 && again.tierUp === false);
+  store.hogwarts_rpg_profile = JSON.stringify({ pairBonds: { 'harry|hermione': 3, 'BAD KEY': 9, 'cho|cedric': -2 } });
+  const cleaned = pr.getPlayerProfile().pairBonds;
+  check('lotG 2b: nettoyage des clés/valeurs corrompues', cleaned['harry|hermione'] === 3 && Object.keys(cleaned).length === 1);
+  check('lotG 2b: paire invalide → null', pr.recordPairBattleWon('harry', 'harry') === null);
+
+  // 2b — répliques de complicité : 10 paires, prioritaires dès « Complices ».
+  const hb = loadModule('js/hero-barks.js', ['HERO_PAIR_BARKS', 'HERO_PAIR_BOND_BARKS', 'pickPairBark', 'PAIR_BOND_MIN_TIER'], { window: {} });
+  const bondKeys = Object.keys(hb.HERO_PAIR_BOND_BARKS);
+  check('lotG 2b: 10 paires de complicité, toutes écrites en paire', bondKeys.length === 10
+    && bondKeys.every(k => !!hb.HERO_PAIR_BARKS[k]));
+  check('lotG 2b: allyDown + victory pour les deux voix', bondKeys.every(k => {
+    const [a, b] = k.split('|'); const e = hb.HERO_PAIR_BOND_BARKS[k];
+    return [a, b].every(h => Array.isArray(e.allyDown[h]) && e.allyDown[h].length && typeof e.victory[h] === 'string' && e.victory[h]);
+  }));
+  const rng0 = () => 0;
+  check('lotG 2b: sous le palier → réplique de paire', hb.pickPairBark('harry', 'hermione', 'victory', rng0, 1)
+    === hb.HERO_PAIR_BARKS['harry|hermione'].victory.harry);
+  check('lotG 2b: dès Complices → réplique de complicité', hb.pickPairBark('harry', 'hermione', 'victory', rng0, 2)
+    === hb.HERO_PAIR_BOND_BARKS['harry|hermione'].victory.harry);
+  check('lotG 2b: repli si pas de complicité pour l\'événement', hb.pickPairBark('harry', 'hermione', 'bossAppear', rng0, 3)
+    === hb.HERO_PAIR_BARKS['harry|hermione'].bossAppear.harry[0]);
+
+  // 2c — registre des techniques.
+  const logs = [];
+  const env = { window: {}, enemyGroup: [], shieldTurns: [0, 0],
+    UX_safe: { floatDmg() {}, combatBanner() {}, logCombat() {} },
+    applyStatus: (e, id) => { e.statusEffects = (e.statusEffects || []).concat([{ id }]); logs.push(id); } };
+  const bs = loadModule('js/battle-spells.js', ['DUO_TECHNIQUES', 'DUO_TECHNIQUE_MULT', 'duoTechniqueFor', '_duoTechniqueResolve'], env);
+  check('lotG 2c: 8 entrées (7 couples + Résonance)', Object.keys(bs.DUO_TECHNIQUES).length === 8);
+  check('lotG 2c: couple symétrique', bs.duoTechniqueFor('glace', 'feu') === bs.duoTechniqueFor('feu', 'glace')
+    && bs.duoTechniqueFor('feu', 'glace').name === 'Choc thermique');
+  check('lotG 2c: même élément → Résonance, couple inconnu → null', bs.duoTechniqueFor('feu', 'feu').kind === 'resonance'
+    && bs.duoTechniqueFor('glace', 'physique') === null && bs.duoTechniqueFor(null, 'feu') === null);
+  const kinds = Object.keys(bs.DUO_TECHNIQUE_MULT);
+  check('lotG 2c: chaque technique a un type calibré', Object.values(bs.DUO_TECHNIQUES).every(t => kinds.includes(t.kind) && t.name && t.icon && t.desc));
+  // Miroir sim ↔ runtime (tools/sim-difficulty.js SIM_DUO_TECH_MULT).
+  const simSrc = fs.readFileSync(path.join(ROOT, 'tools/sim-difficulty.js'), 'utf8');
+  const m = simSrc.match(/const SIM_DUO_TECH_MULT = (\{[^}]+\})/);
+  const simMult = m ? vm.runInNewContext('(' + m[1] + ')') : null;
+  check('lotG 2c: multiplicateurs identiques sim/runtime', simMult && kinds.length === Object.keys(simMult).length
+    && kinds.every(k => simMult[k] === bs.DUO_TECHNIQUE_MULT[k]));
+
+  // 2c — résolution : base = Σ (puissance + MAG/2).
+  const heroes = [{ name: 'Harry Potter', mag: 20, hp: 50, hpMax: 100 }, { name: 'Hermione Granger', mag: 30, hp: 50, hpMax: 100 }];
+  const spells = [{ power: 10 }, { power: 15 }];   // base = 10+10 + 15+15 = 50
+  const mk = (hp) => ({ name: 'X', currentHp: hp, hp: 400 });
+  const run = (kind, targets) => { env.enemyGroup.length = 0; env.enemyGroup.push(...targets);
+    return bs._duoTechniqueResolve({ kind, name: 'T', icon: '*' }, spells, heroes, targets); };
+  let t = [mk(300)]; run('burst', t);
+  check('lotG 2c: burst = base × mult', t[0].currentHp === 300 - Math.floor(50 * bs.DUO_TECHNIQUE_MULT.burst));
+  t = [mk(300), mk(300)]; run('aoe', t);
+  check('lotG 2c: aoe touche tous', t.every(e => e.currentHp === 300 - Math.floor(50 * bs.DUO_TECHNIQUE_MULT.aoe)));
+  t = [mk(300), mk(300)]; run('stunAll', t);
+  check('lotG 2c: stunAll étourdit tous', t.every(e => (e.statusEffects || []).some(s => s.id === 'stun')));
+  t = [mk(300), mk(100)]; run('execute', t);
+  check('lotG 2c: execute vise le plus faible, ×2 sous 35 %', t[0].currentHp === 300
+    && t[1].currentHp === 100 - 2 * Math.floor(50 * bs.DUO_TECHNIQUE_MULT.execute));
+  t = [mk(300)]; const hp0 = heroes[0].hp; run('drain', t);
+  check('lotG 2c: drain soigne le duo', heroes[0].hp === hp0 + Math.floor(Math.floor(50 * bs.DUO_TECHNIQUE_MULT.drain) * 0.25));
+  t = [mk(300)]; run('shield', t);
+  check('lotG 2c: shield protège les deux', env.shieldTurns[0] === 1 && env.shieldTurns[1] === 1);
+})();
+
+// ============================================================
 // Rapport
 // ============================================================
 if (failures.length) {
