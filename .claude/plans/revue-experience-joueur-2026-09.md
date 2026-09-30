@@ -398,3 +398,5 @@ pour le moins de code. Le lot C ouvre la porte à tous les dilemmes.
   `lotF-texture-2026-09.md`) : 6a (64 phrases d'ambiance, 30 énigmes filtrées
   par étage/héros, 16 événements d'étage avec `kind`) et 6c (salles uniques
   des étages 1, 5, 7, 8). 6b reste au plan C2.
+- 2026-09-30 — **Lot G** (2b Complicité, 2c technique de duo) livré, cf.
+  [`lotG-duo-2026-09.md`](./lotG-duo-2026-09.md). Axe 7 abandonné (Q4).

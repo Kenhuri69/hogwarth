@@ -340,6 +340,13 @@ function _refreshBattleActionButtons() {
       postBtn.title = `Posture : ${duoPosture === 'phalange' ? 'Phalange → Tenaille' : 'Tenaille → Phalange'} (gratuit, 1×/combat)`;
     }
   }
+  // Lot G (2c) — bouton 🤝 technique de duo : couple d'éléments prêt, tour du héros de tête.
+  const duoBtn = document.getElementById('btn-duo-tech');
+  if (duoBtn) {
+    const av = (typeof duoTechniqueAvailable === 'function') ? duoTechniqueAvailable() : null;
+    duoBtn.style.display = av ? '' : 'none';
+    if (av) duoBtn.title = `${av.tech.name} — ${av.tech.desc} (les deux tours, 1×/combat)`;
+  }
   // P4 — bouton 🌿 Rune : visible en zone runique tant que la charge subsiste.
   const envBtn = document.getElementById('btn-env');
   if (envBtn) {

@@ -2926,6 +2926,76 @@ async function scenarioCombatEnv() {
   await browser.close();
 }
 
+// ── Scénario Lot G (revue 2026-09, axe 2) : complicité + technique de duo ──
+// 2b : un combat gagné en Duo nourrit la complicité de la paire (profil
+// hors-save) ; palier franchi → message ; Codex du Sorcier la liste.
+// 2c : deux sorts feu + glace → bouton 🤝 au tour du héros de tête ; la
+// technique frappe, consomme les deux tours et ne sert qu'une fois.
+async function scenarioLotGDuo() {
+  console.log('\n── Scénario Lot G : complicité + technique de duo ──');
+  const { browser, page, errors } = await launchGame();
+  await page.evaluate(() => localStorage.setItem('hogwarts_rpg_profile',
+    JSON.stringify({ version: 1, victories: 0, pairBonds: { 'harry|hermione': 39 } })));
+  await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'] });
+  await startDummyFight(page, { hp: 30 });
+
+  // T1 : victoire en Duo → 40 combats → palier « Complices ».
+  const t1 = await page.evaluate(() => {
+    enemyGroup.forEach(e => { e.currentHp = 0; });
+    endBattle(true);
+    const log = document.getElementById('msg-log').textContent;
+    renderProfileCodex();
+    return { count: getPlayerProfile().pairBonds['harry|hermione'], tier: pairBondTierOf('harry', 'hermione'),
+      toast: log.includes('Complices'), codex: document.getElementById('wizard-codex-body').textContent.includes('Complices') };
+  });
+  console.log('  T1 complicité :', t1);
+  assert(t1.count === 40 && t1.tier === 2, 'le combat gagné en Duo devrait porter la paire à 40 (Complices)');
+  assert(t1.toast, 'le franchissement de palier devrait être annoncé');
+  assert(t1.codex, 'le Codex du Sorcier devrait lister la complicité');
+
+  // T2 : technique de duo feu + glace (Choc thermique).
+  await startDummyFight(page, { hp: 5000 });
+  const t2 = await page.evaluate(() => {
+    const feu = SPELLS.find(s => s.element === 'feu' && s.effect === 'burn');
+    const glace = SPELLS.find(s => s.element === 'glace' && ['instant', 'stun', 'burn'].includes(s.effect));
+    const hiddenBefore = document.getElementById('btn-duo-tech').style.display === 'none';
+    _lastCastSpellByChar = [feu.name, glace.name];
+    currentBattleChar = 0;
+    updateBattleCharIndicator();
+    const shown = document.getElementById('btn-duo-tech').style.display !== 'none';
+    const base = feu.power + Math.floor(party[0].mag / 2) + glace.power + Math.floor(party[1].mag / 2);
+    const hp0 = enemyGroup[0].currentHp, turn0 = battleTurn;
+    battleAction('duotech');
+    return { hiddenBefore, shown, dmg: hp0 - enemyGroup[0].currentHp, expected: Math.floor(base * DUO_TECHNIQUE_MULT.burst),
+      used: duoTechUsed, turnAdvanced: battleTurn === turn0 + 1, name: duoTechniqueFor('feu', 'glace').name };
+  });
+  console.log('  T2 technique :', t2);
+  assert(t2.hiddenBefore, 'bouton 🤝 caché tant qu\'aucun couple n\'est prêt');
+  assert(t2.shown, 'bouton 🤝 visible avec un couple feu + glace au tour du héros de tête');
+  assert(t2.dmg === t2.expected, `Choc thermique : ${t2.dmg} dégâts au lieu de ${t2.expected}`);
+  assert(t2.used && t2.turnAdvanced, 'la technique doit être consommée et passer la main aux ennemis');
+
+  // T3 : une seule fois par combat ; réarmée au combat suivant.
+  const t3 = await page.evaluate(() => {
+    currentBattleChar = 0;
+    const again = duoTechniqueAvailable();
+    const enemy = { id: 'd2', name: 'Mannequin', icon: '🎯', hp: 30, atk: 1, def: 0, mag: 0,
+      agi: 0, lck: 0, xp: 0, gold: 0, abilities: [], drops: [], resist: [], weak: [], desc: 'x' };
+    startBattle(enemy);
+    return { again, rearmed: duoTechUsed === false, noSpells: duoTechniqueAvailable() === null };
+  });
+  console.log('  T3 1×/combat  :', t3);
+  assert(t3.again === null, 'la technique ne doit servir qu\'une fois par combat');
+  assert(t3.rearmed && t3.noSpells, 'nouveau combat : technique réarmée, mais aucun sort lancé encore');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Lot G OK (complicité persistante + technique de duo)');
+  await browser.close();
+}
+
 // ── Scénario P5 : feedback/UI (bandeaux de combat + FX/son Premium) ──
 // Vérifie la surcouche additive du palier P5 : la fonction de bandeau callout
 // (UX.combatBanner), le FX Premium par Maison (CombatFX.premiumCast), les sons
@@ -3019,4 +3089,4 @@ async function scenarioP5Feedback() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBuffBadgesPng, scenarioBruteCrush, scenarioStatRework, scenarioFortuneStat, scenarioAgiCelerite, scenarioCeleriteGuardCounting, scenarioDuoStatuses, scenarioCritDodge, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioGuardAndFerula, scenarioCombatBuffs, scenarioLegilimensEscalation, scenarioStun, scenarioStatusComboNoFreeze, scenarioCombatExtV2, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioDeathPetrify, scenarioIronmanDeath, scenarioLargeEnemyGroup, scenarioMonsterDiscovery, scenarioArtifactForms, scenarioActiveArtifact, scenarioDuoPosture, scenarioBossPhase, scenarioCombatEnv, scenarioP5Feedback] };
+module.exports = { scenarios: [scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBuffBadgesPng, scenarioBruteCrush, scenarioStatRework, scenarioFortuneStat, scenarioAgiCelerite, scenarioCeleriteGuardCounting, scenarioDuoStatuses, scenarioCritDodge, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioGuardAndFerula, scenarioCombatBuffs, scenarioLegilimensEscalation, scenarioStun, scenarioStatusComboNoFreeze, scenarioCombatExtV2, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioDeathPetrify, scenarioIronmanDeath, scenarioLargeEnemyGroup, scenarioMonsterDiscovery, scenarioArtifactForms, scenarioActiveArtifact, scenarioDuoPosture, scenarioBossPhase, scenarioCombatEnv, scenarioP5Feedback, scenarioLotGDuo] };

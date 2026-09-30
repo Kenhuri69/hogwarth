@@ -426,7 +426,9 @@ function _refreshEndgameCompassBtn() {
       // Lot A (axe 2a) — échange propre à la paire du duo, si écrit.
       if (ctx.heroes.length >= 2 && typeof pickPairBark === 'function') {
         const [h0, h1] = ctx.heroes;
-        ctx.pairVictory = [pickPairBark(h0.key, h1.key, 'victory'), pickPairBark(h1.key, h0.key, 'victory')];
+        // Lot G (axe 2b) — la complicité du profil peut débloquer l'échange intime.
+        const bt = (typeof pairBondTierOf === 'function') ? pairBondTierOf(h0.key, h1.key) : 0;
+        ctx.pairVictory = [pickPairBark(h0.key, h1.key, 'victory', null, bt), pickPairBark(h1.key, h0.key, 'victory', null, bt)];
       }
       const variants = _victorySpeechVariants(ctx);
       speech.innerHTML = `
