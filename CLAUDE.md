@@ -57,8 +57,9 @@ js/
   npcs-b.js        →  NPCS.push(…) — PNJ ambiants/aléatoires & endgame/Boucle.
                       APRÈS npcs-a.js
   npcs-helpers.js  →  Helpers de requête : getNpcById(), getNpcsForFloor(),
-                      getRandom{Vendors,Lore,Encounters,QuestGivers,Ambient}ForFloor().
-                      Chargé APRÈS npcs.js
+                      getRandom{Vendors,Lore,Encounters,QuestGivers,Ambient}ForFloor(),
+                      PNJ conditionnels _npcPassesQuestGate()/_pruneGatedNpcs()
+                      (questGate, Lot D). Chargé APRÈS npcs.js
   riddles.js       →  RIDDLES[] — registre des devinettes des stèles
                       d'énigme du donjon. getRiddleById()
   codex.js         →  CODEX_ENTRIES + évaluateur pur — journal vivant
@@ -359,7 +360,7 @@ attendus se sont exécutés correctement et expose 2 helpers d'accès défensif.
 
 ### Manifeste
 
-Le `MANIFEST` dans `loader.js` énumère **380** entrées `{ name, source, kind,
+Le `MANIFEST` dans `loader.js` énumère **390** entrées `{ name, source, kind,
 optional? }` :
 - `kind: 'fn'` → `typeof name === 'function'`
 - `kind: 'obj'` → `typeof name !== 'undefined'` (couvre `let`/`const`/`var`)
@@ -1470,6 +1471,29 @@ window.checkKillQuests(monsterId) → incrémente q.progress, auto-complète (d�
 - **`turnInName`** : destinataire annoncé d'une livraison inter-PNJ (le PNJ
   qui clôt porte la quête dans son `questsTurnedIn`).
 - Le Pacte des Cachots (Serpentard) reste codé à part (`turnInSlythSignature`).
+
+#### Extensions du Lot D (arcs H7, H1, H5, H4)
+
+- **`search` localisé** : `floors: [4, 7, 10]` — l'étape ne progresse que sur
+  ces étages, une fois par étage (`_floors`, sérialisé avec la quête).
+- **Option `fight`** (+ `fightName`) : après la remise, duel contre ce monstre
+  (seul, mis à l'échelle de l'étage). Le bouton ne rouvre pas le dialogue.
+- **`doneLine`** : ligne de récit jouée à la remise ; une étape `discover`
+  complétée déclenche la remise auto des quêtes `autoTurnIn`.
+- **PNJ conditionnels `questGate`** (`npcs-helpers.js`) :
+  `{ quest, state:'active', untilTalked:true }` (égarés), `{ quest,
+  state:'notDone' }` (elfe liée), `{ choice:'qid:cid' }` (elfe libre). Filtré
+  dans `getNpcsForFloor` ; `_pruneGatedNpcs()` retire les PNJ devenus absents
+  (fermeture de dialogue, entrée d'étage, chargement) ; `acceptQuest` les
+  place aussitôt (migration).
+- **Action spéciale `elf_help`** : soin + relève, une fois **par étage**
+  (sentinelle `elf_help:<étage>` dans `seenScriptedBeat`).
+- **Promotion par choix** : `BOSS_PROMO_BEATS[id].lineByChoice`
+  (`bossPromoLine`). **Trêve du dragon** (`DRAGON_TRUCE`) : œuf rendu →
+  le Magyar Ancestral rompt le combat à 50 % PV, une fois ; compte comme
+  vaincu, XP intégrale, or ÷ 2, aucun drop.
+- **Échos de fin** : `VICTORY_CHOICE_ECHOES` (`endgame.js`), une phrase par
+  dilemme tranché, plus les égarés mis à l'abri.
 
 > Pour ajouter des quêtes : pousser un objet dans `activeQuests` dans `state.js`.
 > Détail des objectifs et récompenses : voir le tableau dans `state.js`.

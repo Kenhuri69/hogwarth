@@ -588,6 +588,8 @@ function _applyState(gs) {
   if (typeof _migrateMissingNpcsForFloor === 'function') {
     _migrateMissingNpcsForFloor(currentFloor);
   }
+  // PNJ conditionnés (`questGate`, Lot D) devenus absents : retirés.
+  if (typeof _pruneGatedNpcs === 'function') _pruneGatedNpcs();
   // Migration : re-spawn des cibles de quête `kill` manquantes
   // (saves antérieures au hook `spawnOnAccept`).
   if (typeof _ensureActiveKillQuestTargets === 'function') {

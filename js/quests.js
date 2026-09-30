@@ -153,7 +153,19 @@ function turnInQuestChoice(qid, cid) {
   // Posé AVANT la remise : completeQuest déclenche les robinets du Codex.
   questChoices[qid] = cid;
   if (opt.msg && typeof addMsg === 'function') addMsg(opt.msg, 'magic');
-  return turnInQuestById(qid);
+  const ok = turnInQuestById(qid);
+  // `fight` (Lot D, G3) : l'option débouche sur un duel (ex. l'elfe lié qui
+  // barre la route). Le monstre combat seul, mis à l'échelle de l'étage.
+  if (ok && opt.fight && typeof startBattle === 'function' && typeof MONSTERS !== 'undefined') {
+    const base = MONSTERS.find(m => m.id === opt.fight);
+    if (base) {
+      if (typeof closeNpcDialog === 'function') closeNpcDialog();
+      const f = (typeof currentFloor === 'number') ? currentFloor : 1;
+      const foe = (typeof scaleMonster === 'function') ? scaleMonster(base, f) : { ...base };
+      startBattle({ ...foe, name: opt.fightName || foe.name, soloEncounter: true });
+    }
+  }
+  return ok;
 }
 window.turnInQuestChoice = turnInQuestChoice;
 
@@ -433,6 +445,13 @@ function acceptQuest(id) {
   availableQuests.delete(id);
   addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/quest.png" alt=""> Nouvelle quête : « ${tpl.title} »`, 'magic');
 
+  // PNJ conditionnés à cette quête (`questGate`, Lot D) : placés tout de suite
+  // sur l'étage courant s'ils y ont leur place (ex. Tobias, étage 3).
+  if (typeof _migrateMissingNpcsForFloor === 'function' && typeof currentFloor === 'number'
+      && _migrateMissingNpcsForFloor(currentFloor) > 0 && typeof renderMinimap === 'function') {
+    renderMinimap();
+  }
+
   // Hook générique : si la quête déclare `spawnOnAccept`, on injecte
   // les mobs sur l'étage courant. Utile pour les quêtes répétables qui
   // se ré-acceptent sur des étages déjà nettoyés.
@@ -657,7 +676,14 @@ function _renderQuestStep(o, isActive, ready, isFirst) {
     });
     label = names.length ? `Consulter ${names.join(', ')}` : `Consulter ${o.amount} personne(s)`;
   } else if (o.type === 'search') {
-    label = `Fouiller ${o.amount} recoin${o.amount > 1 ? 's' : ''}`;
+    if (Array.isArray(o.floors) && o.floors.length) {
+      const fl = o.floors.length > 1
+        ? `aux étages ${o.floors.slice(0, -1).join(', ')} et ${o.floors[o.floors.length - 1]}`
+        : `à l'étage ${o.floors[0]}`;
+      label = `Fouiller un recoin ${fl}`;
+    } else {
+      label = `Fouiller ${o.amount} recoin${o.amount > 1 ? 's' : ''}`;
+    }
   } else if (o.type === 'escape') {
     label = `Re-sceller ${o.amount} Poche${o.amount > 1 ? 's' : ''} du Sceau`;
   } else if (o.type === 'herb') {
@@ -849,6 +875,8 @@ function completeQuest(index) {
   if (AudioSystem.playQuestComplete) AudioSystem.playQuestComplete();
   else AudioSystem.playLevelUp();
   addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/quest.png" alt=""> Quête terminée : « ${q.title} » !`, 'good');
+  // `doneLine` (Lot D) : ligne de récit jouée à la remise (ex. les Égarés).
+  if (tpl && tpl.doneLine) addMsg('📜 ' + tpl.doneLine, 'narrative');
   if (window.UX_safe) UX_safe.questFanfare(q.title);
   if (typeof HAPTICS_safe !== 'undefined') HAPTICS_safe.quest(); // N2
 
@@ -1114,11 +1142,17 @@ window.checkDiscoverQuests = function(cellType, x, y) {
     step.progress = step._seen.length;
     if (step.progress >= step.amount) {
       step.completed = true;
-      addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/quest.png" alt=""> Quête « ${q.title} » prête — retourne voir ${q.giver}.`, 'good');
+      // Quête `autoTurnIn` (ex. les_egares, Lot D) : pas de retour au donneur.
+      const _tpl = getQuestTemplate(q.id);
+      if (!(_tpl && _tpl.autoTurnIn)) {
+        addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/quest.png" alt=""> Quête « ${q.title} » prête — retourne voir ${q.giver}.`, 'good');
+      }
     } else {
       addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/quest.png" alt=""> Quête « ${q.title} » : ${step.progress}/${step.amount} lieux trouvés.`, '');
     }
   });
+  // Lot D (G4) : remise automatique des quêtes `autoTurnIn` devenues prêtes.
+  _autoTurnInReadyQuests();
   if (typeof updateQuestTracker === 'function') updateQuestTracker();
 };
 
@@ -1189,6 +1223,15 @@ window.checkSearchQuests = function() {
   activeQuests.forEach((q) => {
     const step = getActiveStep(q);
     if (!step || step.type !== 'search') return;
+    // `floors` (Lot D, G1) : l'étape ne progresse que sur ces étages, une
+    // seule fois par étage (_floors, sérialisé avec la quête).
+    if (Array.isArray(step.floors)) {
+      const f = (typeof currentFloor === 'number') ? currentFloor : 1;
+      if (step.floors.indexOf(f) === -1) return;
+      if (!Array.isArray(step._floors)) step._floors = [];
+      if (step._floors.indexOf(f) !== -1) return;
+      step._floors.push(f);
+    }
     step.progress++;
     // `progressLines` (Lot C) : une ligne de récit par recoin fouillé
     // (ex. les lettres du Lieutenant, arc H3).

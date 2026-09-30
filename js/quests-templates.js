@@ -362,6 +362,108 @@ const QUEST_TEMPLATES = [
     spawnOnAccept: { targetMonsterId: "lieutenant_vantrell", extraRandomCount: 0 },
     location: "Le Seuil (étage 8)"
   },
+  // ── Lot D (revue 2026-09) — arcs secondaires H7, H1, H5, H4 ──────────
+  // Recherches localisées (`search` + `floors`, une fois par étage), dilemmes
+  // (`choices`) et PNJ conditionnels (`questGate`). Plan :
+  // .claude/plans/lotD-arcs-secondaires-2026-09.md
+  //
+  // H7 — L'Œuf des Profondeurs : Hagrid a senti une chaleur sous les
+  // Profondeurs. L'œuf du Magyar Ancestral se trouve à l'étage 7 ; dilemme à
+  // la remise (Hagrid ou Scamander). Rendu à sa lignée, le dragon s'en
+  // souvient en combat (promotion + trêve, battle.js).
+  {
+    id: "oeuf_profondeurs",
+    title: "L'Œuf des Profondeurs",
+    giver: "Hagrid",
+    desc: "Hagrid jure qu'il a senti une chaleur monter des Profondeurs, « comme un nid, j'te dis ». Fouille l'étage 7 : si un œuf de dragon s'y cache, il ne survivra pas longtemps dans le froid de la fêlure. Rapporte-le à Hagrid — ou à Newt Scamander, qui saura quoi en faire.",
+    objectives: [
+      { type: "search", floors: [7], amount: 1, progress: 0, completed: false }
+    ],
+    progressLines: [
+      "Sous un éboulis encore tiède, un œuf noir strié de bronze, gros comme un chaudron. Il est chaud. Il bat, très lentement. Tu l'emmaillotes dans ta cape."
+    ],
+    reward: { xp: 300, gold: 160 },
+    choices: [
+      { id: "hagrid", label: "Le confier à Hagrid",
+        reward: { xp: 300, gold: 60, item: "eclat_vitalite" },
+        msg: "🥚 Hagrid serre l'œuf contre lui comme un nouveau-né. « Norbert aurait adoré avoir un p'tit frère… » Il te glisse un Éclat de Vitalité, les yeux brillants." },
+      { id: "scamander", label: "Le rendre à sa lignée sauvage",
+        reward: { xp: 300, gold: 280 },
+        msg: "🐉 L'œuf repart vers les Ruines, là où couvent encore les siens. Hagrid renifle bruyamment, mais il hoche la tête : « C'est c'qu'il fallait. J'le sais bien. »" }
+    ],
+    location: "Profondeurs (étage 7) — Hagrid ou Scamander"
+  },
+  // H1 — Le Prix de Rogue : la potion de scellement que Rogue a brassée jadis
+  // pour Dumbledore, versée dans les fondations, a nourri la fêlure. Trois réactifs
+  // corrompus (ét. 4, 7, 10) ; remise au portrait de Dumbledore ; dilemme.
+  {
+    id: "prix_de_rogue",
+    title: "Le Prix de Rogue",
+    giver: "Professeur Severus Rogue",
+    turnInName: "le portrait de Dumbledore",
+    desc: "Rogue ne l'avouera qu'une fois : il y a des années, il a brassé pour Dumbledore une potion de scellement, versée dans les fondations. La fêlure s'en est nourrie. Trois de ses réactifs dorment encore, corrompus, aux étages 4, 7 et 10. Rapporte-les au portrait de Dumbledore — c'est à lui qu'il en rendra compte.",
+    objectives: [
+      { type: "search", floors: [4, 7, 10], amount: 3, progress: 0, completed: false }
+    ],
+    progressLines: [
+      "Au fond d'une niche, une fiole scellée à la cire verte, frappée d'un « S. R. » à demi effacé. Le liquide a noirci : il remue quand tu approches ta baguette.",
+      "Une deuxième fiole, fêlée cette fois. Ce qui en a coulé a rongé la pierre en dessinant une fissure, fine et droite, qui descend.",
+      "La dernière fiole est vide. Autour d'elle, la roche a la couleur de la fêlure. La potion n'a pas scellé le mal : elle lui a appris le chemin."
+    ],
+    reward: { xp: 380, gold: 200 },
+    choices: [
+      { id: "rendre", label: "Rendre les fioles à Rogue",
+        reward: { xp: 420, gold: 100, item: "livre_prince" },
+        msg: "🧪 Dumbledore acquiesce : « C'est son erreur. Il a le droit d'essayer de la réparer. » Les fioles disparaissent du cadre. Plus tard, un vieux manuel annoté t'attend dans ton sac, sans un mot." },
+      { id: "detruire", label: "Les confier à Dumbledore",
+        reward: { xp: 420, gold: 400 },
+        msg: "🕯️ Dumbledore regarde longtemps les fioles, puis les fait disparaître. « Severus a assez payé. Certaines erreurs, on ne les répare pas : on les laisse enfin s'éteindre. »" }
+    ],
+    location: "Étages 4, 7 et 10 — remise au portrait de Dumbledore"
+  },
+  // H5 — La Chaussette : Tilly, elfe de maison des Vantrell, garde l'étage 6
+  // pour le Lieutenant (arc H3). Une chaussette de son maître la libère —
+  // ou elle doit barrer la route (option `fight`). Libre, elle revient
+  // aider aux étages 10 et 20.
+  {
+    id: "la_chaussette",
+    title: "La Chaussette",
+    giver: "Tilly",
+    desc: "Tilly, l'elfe de maison des Vantrell, a reçu l'ordre de garder l'étage et de rapporter qui descend. Elle ne peut pas désobéir. Mais on raconte qu'un elfe qui reçoit un vêtement de son maître est libre… Fouille les étages 5 et 6 : les affaires du Lieutenant traînent quelque part.",
+    objectives: [
+      { type: "search", floors: [5, 6], amount: 1, progress: 0, completed: false }
+    ],
+    progressLines: [
+      "Dans une malle marquée « C. V. », sous des robes pliées au carré : une chaussette de laine noire, reprisée avec soin. Une chaussette du Lieutenant."
+    ],
+    reward: { xp: 220, gold: 120 },
+    choices: [
+      { id: "liberer", label: "Lui tendre la chaussette",
+        reward: { xp: 220, gold: 40 },
+        msg: "🧦 Tilly fixe la chaussette, puis ses mains, puis toi. « Maître a… Maître a donné une chaussette ? Tilly est… Tilly est libre ! » Elle transplane dans un craquement, en riant et en pleurant à la fois." },
+      { id: "combattre", label: "Refuser — elle te barre la route",
+        reward: { xp: 220, gold: 200 }, fight: "elfe_rebelle", fightName: "Tilly, elfe liée",
+        msg: "🍽️ Tilly se tord les mains. « Tilly doit garder l'étage… Tilly n'a pas le choix ! » Les assiettes se soulèvent autour d'elle." }
+    ],
+    location: "Étages 5 et 6 — Tilly (étage 6)"
+  },
+  // H4 — Les Égarés : deux premières années descendus à la fêlure. On les
+  // retrouve (étape `talk` — ils suivent alors le groupe, questGate), puis on
+  // les met à l'abri dans un refuge. Remise automatique au refuge.
+  {
+    id: "les_egares",
+    title: "Les Égarés",
+    giver: "Professeur Pomona Chourave",
+    autoTurnIn: true,
+    desc: "Deux premières années manquent à l'appel depuis la nuit de la fêlure : Tobias Meadows, qui voulait « voir d'où venait le bruit », et Lila Fenwick, partie le chercher. On a vu Tobias à l'étage 3, Lila bien plus bas, vers l'étage 6. Retrouve-les, puis ranime un refuge pour qu'ils y attendent en sécurité.",
+    objectives: [
+      { type: "talk", npcIds: ["egare_tobias", "egare_lila"], amount: 2, progress: 0, completed: false },
+      { type: "discover", cell: "REFUGE", amount: 1, progress: 0, completed: false }
+    ],
+    doneLine: "Tu ranimes le foyer du refuge. Tobias et Lila s'y pelotonnent sous ta cape, épaule contre épaule. Lila s'endort la première ; Tobias lutte encore un peu, puis murmure : « Tu reviendras nous chercher ? » Un hibou de Chourave les ramènera vers le haut dès que les escaliers le permettront.",
+    reward: { xp: 300, gold: 150 },
+    location: "Étages 3 et 6 — un refuge"
+  },
   {
     id: "chasse_greyback",
     title: "Chasse au loup-garou",

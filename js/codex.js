@@ -595,6 +595,71 @@ const CODEX_ENTRIES = [
       celeste: "Céleste a lu ces vers dans le ciel avant de les lire dans la pierre. Pour elle, la prophétie n'est pas une découverte : c'est une confirmation.",
     } },
   },
+  // ── Lot D (revue 2026-09) — arcs H1, H7, H5, H4 ──
+  {
+    id: 'prince_felure', category: 'histoire', icon: '🧪', act: 3,
+    title: 'Le Prince et la fêlure',
+    links: ['le_dormeur'],
+    unlockConditions: [{ type: 'quest', value: 'prix_de_rogue' }],
+    revealedBy: [{ type: 'quest', value: 'prix_de_rogue' }],
+    textVersions: {
+      veiled: "Trois fioles scellées d'un « S. R. », retrouvées aux étages 4, 7 et 10.",
+      revealed: "Des années avant la fêlure, Dumbledore demanda à Severus Rogue une potion de scellement pour les fondations. Rogue la brassa sans une erreur, et elle fut versée sous l'école. Elle n'a rien scellé : elle a montré le chemin à ce qui dormait dessous. Ce n'est pas une trahison. C'est le genre d'erreur que font les gens très doués, quand ils croient savoir à quoi ils ont affaire. Rogue le sait. Il ne se le pardonne pas.",
+    },
+    variants: {
+      choice: {
+        'prix_de_rogue:rendre': "Tu as rendu les fioles à Rogue. Quelque part dans les cachots, il essaie de défaire ce qu'il a fait.",
+        'prix_de_rogue:detruire': "Dumbledore a éteint les fioles. Rogue n'aura pas l'occasion de réparer son erreur, seulement de la porter.",
+      },
+      hero: {
+        draco: "Drago connaît ce regard chez Rogue : celui d'un homme qui paie une dette dont personne ne lui a donné le montant.",
+      },
+    },
+  },
+  {
+    id: 'oeuf_profondeurs', category: 'histoire', icon: '🥚', act: 3,
+    title: "L'Œuf des Profondeurs",
+    links: [],
+    unlockConditions: [{ type: 'quest', value: 'oeuf_profondeurs' }],
+    revealedBy: [{ type: 'quest', value: 'oeuf_profondeurs' }],
+    textVersions: {
+      veiled: "Un œuf de dragon, noir strié de bronze, trouvé tiède à l'étage 7.",
+      revealed: "Un œuf de Magyar à Pointes, pondu sous les Ruines par le Magyar Ancestral bien avant la fêlure, et remonté jusqu'aux Profondeurs par la chaleur de la pierre. Les dragons n'oublient pas l'odeur de leur couvée. Celui qui a tenu l'œuf entre ses mains la porte longtemps sur lui.",
+    },
+    variants: { choice: {
+      'oeuf_profondeurs:hagrid': "L'œuf couve dans la cabane de Hagrid, sous trois couvertures et une théière. Sa mère, elle, le cherche encore.",
+      'oeuf_profondeurs:scamander': "L'œuf a rejoint sa lignée sauvage. Le jour où tu croiseras sa mère, elle saura qui tu es.",
+    } },
+  },
+  {
+    id: 'tilly_elfe', category: 'personnages', icon: '🧦', act: 2,
+    title: 'Tilly, elfe de maison',
+    links: ['lieutenant_vantrell'],
+    unlockConditions: [{ type: 'quest', value: 'la_chaussette' }],
+    revealedBy: [{ type: 'quest', value: 'la_chaussette' }],
+    textVersions: {
+      veiled: "Une elfe de maison en taie d'oreiller brodée d'une clé noire, chargée de garder l'étage 6.",
+      revealed: "Tilly a servi trois générations de Vantrell. On lui a appris à ne jamais parler du Maître, à ne jamais dire non, et à se punir chaque fois qu'elle y pensait. Personne ne lui avait jamais appris à vouloir quelque chose. Il a suffi d'une chaussette pour qu'elle commence.",
+    },
+    variants: { choice: {
+      'la_chaussette:liberer': "Tilly est libre. Elle porte la chaussette du Lieutenant sur la tête, et elle aide qui elle veut.",
+      'la_chaussette:combattre': "Tilly a gardé l'étage jusqu'au bout, parce qu'on ne lui a pas laissé le choix. Elle a transplané, vaincue, vers une maison vide.",
+    } },
+  },
+  {
+    id: 'les_egares', category: 'personnages', icon: '🧒', act: 2,
+    title: 'Les Égarés',
+    links: [],
+    unlockConditions: [{ type: 'quest', value: 'les_egares' }],
+    revealedBy: [{ type: 'quest', value: 'les_egares' }],
+    textVersions: {
+      veiled: "Deux premières années descendus la nuit de la fêlure.",
+      revealed: "Tobias Meadows voulait voir d'où venait le bruit. Lila Fenwick est descendue le chercher avec un cercle de runes recopié d'un livre de sixième année. Tu les as retrouvés et mis à l'abri près d'un foyer. Ils ne sont pas des héros. Ils sont ce que les héros protègent — et ils ne l'oublieront pas.",
+    },
+    variants: { house: {
+      Poufsouffle: "« On ne laisse personne derrière. » Chourave l'a dit à ses premières années le soir même. Tobias l'a répété à toute la table de Poufsouffle.",
+    } },
+  },
   // ── Fiches des héros jouables (Lot A, revue 2026-09 — axe 1b) ──
   // Ouvertes quand le héros est dans le groupe actif (robinet `hero`),
   // révélées à la victoire : la version révélée DÉNOUE l'arc léger du héros
@@ -1168,10 +1233,19 @@ function codexVariantNote(entry, house, heroKeys, choices) {
   if (!entry || !entry.variants) return null;
   const v = entry.variants;
   // Lot C : la note d'un dilemme (clé "qid:cid") prime — c'est la plus précise.
+  // Lot D : une note de héros présent s'y ajoute (ex. Drago et les fioles de Rogue).
   if (v.choice && choices) {
     for (const key of Object.keys(v.choice)) {
       const parts = key.split(':');
-      if (choices[parts[0]] === parts[1] && typeof v.choice[key] === 'string') return v.choice[key];
+      if (choices[parts[0]] === parts[1] && typeof v.choice[key] === 'string') {
+        let heroNote = null;
+        if (v.hero && Array.isArray(heroKeys)) {
+          for (let i = 0; i < heroKeys.length && !heroNote; i++) {
+            if (typeof v.hero[heroKeys[i]] === 'string') heroNote = v.hero[heroKeys[i]];
+          }
+        }
+        return heroNote ? v.choice[key] + ' ' + heroNote : v.choice[key];
+      }
     }
   }
   if (house && v.house && typeof v.house[house] === 'string') return v.house[house];

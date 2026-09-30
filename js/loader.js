@@ -487,6 +487,13 @@ window.UX_safe = new Proxy({}, {
     { name: 'prophecyFragments',        source: 'state.js',               kind: 'obj' },
     { name: 'turnInQuestChoice',        source: 'quests.js',              kind: 'fn'  },
     { name: 'questChoiceOf',            source: 'quests.js',              kind: 'fn'  },
+    // Lot D (revue 2026-09) — PNJ conditionnels, trêve du dragon, échos de fin.
+    { name: '_npcPassesQuestGate',      source: 'npcs-helpers.js',        kind: 'fn'  },
+    { name: '_pruneGatedNpcs',          source: 'npcs-helpers.js',        kind: 'fn'  },
+    { name: 'bossPromoLine',            source: 'battle.js',              kind: 'fn'  },
+    { name: 'DRAGON_TRUCE',             source: 'battle.js',              kind: 'obj' },
+    { name: 'dragonTruceReady',         source: 'battle.js',              kind: 'fn'  },
+    { name: 'VICTORY_CHOICE_ECHOES',    source: 'endgame.js',             kind: 'obj' },
     { name: 'OUTREMONDE_SOUVENIRS',     source: 'data-world.js',          kind: 'obj', optional: true },
     { name: 'OUTREMONDE_COSMETICS',     source: 'data-world.js',          kind: 'obj', optional: true },
     { name: '_checkSouvenirs',          source: 'atelier-voyageur.js',    kind: 'fn',  optional: true },

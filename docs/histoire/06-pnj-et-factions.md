@@ -322,6 +322,18 @@ Mme Norris, Peeves, lutins, Acromantules, Trolls, Hippogriffes, Gargouilles…
 > ✅ Chaque boss tombé **affaiblit le sceau** ; la présence de Voldemort se
 > densifie d'étage en étage.
 
+> ✅ **Lot D (revue 2026-09)** — quatre arcs secondaires à dilemme, ouverts
+> à toutes les Maisons (plan `lotD-arcs-secondaires-2026-09.md`) :
+> **« L'Œuf des Profondeurs »** (Hagrid, œuf de Magyar à l'étage 7 ; le
+> confier à Hagrid ou le rendre à sa lignée — rendu, le Magyar Ancestral le
+> reconnaît et rompt le combat à 50 % PV), **« Le Prix de Rogue »** (trois
+> fioles de sa potion de scellement aux étages 4, 7 et 10 ; les lui rendre ou
+> les confier au portrait de Dumbledore), **« La Chaussette »** (Tilly, elfe
+> des Vantrell, ét. 6 ; libérée, elle aide aux étages 10 et 20), **« Les
+> Égarés »** (Chourave ; Tobias et Lila, deux premières années, ét. 3 et 6,
+> mis à l'abri dans un refuge). Traces : répliques des PNJ, Codex, lettres de
+> la surface, Grande Salle, échos du discours de victoire.
+
 > ✅ **Lot C (revue 2026-09)** — les Mangemorts ont un **chef intermédiaire
 > nommé**, personnage original : **Casimir Vantrell, le Lieutenant**
 > (`lieutenant_vantrell`, `questOnly`, duel à l'étage 8). Arc « Le Carnet du

@@ -3,6 +3,13 @@
 // (extrait de npcs.js — Lot C P3.3, pattern push, ordre préservé)
 // ============================================================
 
+// Lot D (arc H1) — remise de « Le Prix de Rogue » au portrait de Dumbledore
+// (bureau et cadres-relais 4 / 7 / 10) : même réplique partout.
+const _DUMBLEDORE_PRIX_ROGUE_READY = [
+  "(Le portrait pose les yeux sur les fioles noircies, et son sourire s'efface.) Je lui avais demandé de sceller. Il a scellé — exactement comme je le lui avais demandé. L'erreur était peut-être la mienne autant que la sienne.",
+  "Il reste à décider de ce qu'elles deviennent. Severus voudra réparer lui-même ce qu'il a brisé ; moi, je pourrais les éteindre pour de bon. Choisis. Ni lui ni moi ne t'en voudrons."
+];
+
 NPCS.push(
   {
     id:    "dumbledore",
@@ -21,7 +28,7 @@ NPCS.push(
                      "eclats_clef_voute"],
     questsTurnedIn: ["intro_tutoriel", "dumbledore_eveil", "dumbledore_courage",
                      "dumbledore_resistance", "dumbledore_revelation",
-                     "eclats_clef_voute"],
+                     "eclats_clef_voute", "prix_de_rogue"],
     dialogues: {
       // Cinématique d'intro (Clé de Voûte des Quatre) : 4 pages paginées
       // par showIntroScreen(). Voix : dumbledore_intro_1..4 (fallback muet).
@@ -52,6 +59,8 @@ NPCS.push(
     // .claude/plans/voice-dumbledore-chain.md §3). Garder synchronisés
     // avec les samples OGG, sinon décalage texte/voix.
     dialoguesByQuest: {
+      // Lot D (arc H1) : Rogue rend compte au portrait de ses fioles.
+      prix_de_rogue: { questReady: _DUMBLEDORE_PRIX_ROGUE_READY },
       intro_tutoriel: {
         questOffer:  "Tu as entendu la pierre se fendre, toi aussi. La Clé de Voûte des Quatre tenait le château fermé sur ses profondeurs — et la voilà brisée. Descends d'un étage : chaque pas vers le bas est un pas vers la fêlure. Reviens me voir une fois la descente accomplie.",
         questActive: "Le grand escalier t'attend, jeune sorcier. Trouve-le, et reviens me retrouver dès que tu auras fait tes premiers pas vers le bas.",
@@ -114,7 +123,9 @@ NPCS.push(
                      "eclats_clef_voute"],
     questsTurnedIn: ["intro_tutoriel", "dumbledore_eveil", "dumbledore_courage",
                      "dumbledore_resistance", "dumbledore_revelation",
-                     "eclats_clef_voute"],
+                     "eclats_clef_voute", "prix_de_rogue"],
+    // Lot D (arc H1) : Rogue rend compte au portrait de ses fioles.
+    dialoguesByQuest: { prix_de_rogue: { questReady: _DUMBLEDORE_PRIX_ROGUE_READY } },
     dialogues: {
       greeting: [
         "Ne t'étonne pas de me trouver ici : les portraits voyagent de cadre en cadre, comme toi d'escalier en escalier. Je descends avec toi — d'une certaine façon.",
@@ -140,7 +151,9 @@ NPCS.push(
                      "eclats_clef_voute"],
     questsTurnedIn: ["intro_tutoriel", "dumbledore_eveil", "dumbledore_courage",
                      "dumbledore_resistance", "dumbledore_revelation",
-                     "eclats_clef_voute"],
+                     "eclats_clef_voute", "prix_de_rogue"],
+    // Lot D (arc H1) : Rogue rend compte au portrait de ses fioles.
+    dialoguesByQuest: { prix_de_rogue: { questReady: _DUMBLEDORE_PRIX_ROGUE_READY } },
     dialogues: {
       greeting: [
         "Un cadre oublié, si profond ? Les Profondeurs furent cartographiées, jadis — puis on a préféré oublier. Moi, je me souviens, et je descends avec toi.",
@@ -166,7 +179,9 @@ NPCS.push(
                      "eclats_clef_voute"],
     questsTurnedIn: ["intro_tutoriel", "dumbledore_eveil", "dumbledore_courage",
                      "dumbledore_resistance", "dumbledore_revelation",
-                     "eclats_clef_voute"],
+                     "eclats_clef_voute", "prix_de_rogue"],
+    // Lot D (arc H1) : Rogue rend compte au portrait de ses fioles.
+    dialoguesByQuest: { prix_de_rogue: { questReady: _DUMBLEDORE_PRIX_ROGUE_READY } },
     dialogues: {
       greeting: [
         "Le dernier cadre avant le fond. Au-delà, la peinture s'écaille et les murs n'écoutent plus. C'est ici que je t'attends — pas plus haut.",
@@ -294,7 +309,14 @@ NPCS.push(
     portraitImg: "img/npc/scamander.png",
     placement: { floor: 2, anchor: "any" },
     questsGiven:    ["niffleurs_trésor", "chasse_magizoologiste_boucle"],
-    questsTurnedIn: ["niffleurs_trésor", "chasse_magizoologiste_boucle"],
+    questsTurnedIn: ["niffleurs_trésor", "chasse_magizoologiste_boucle", "oeuf_profondeurs"],
+    // Trace du dilemme de l'œuf (Lot D, arc H7).
+    choiceLines: {
+      oeuf_profondeurs: {
+        hagrid: "Hagrid a gardé l'œuf. Je ne lui en veux pas : c'est l'homme le plus doux que je connaisse. Mais un Magyar élevé dans une cabane apprend une chose avant toutes les autres — qu'il n'est pas chez lui.",
+        scamander: "L'œuf a rejoint les siens. Tu as fait ce que peu de sorciers font : tu as rendu quelque chose à une créature au lieu de la lui prendre. Elles s'en souviennent, tu sais. Plus longtemps que nous."
+      }
+    },
     // Sorts & Magie 2.0 Lot P2 — enseignant générique (teach_spell) : le
     // magizoologiste apprend à invoquer un familier protecteur (Avis Praesidium).
     specialAction: {
@@ -305,6 +327,9 @@ NPCS.push(
     },
     // Chasse farming en Boucle (étage 12) — cible dynamique {target}/{amount}.
     dialoguesByQuest: {
+      oeuf_profondeurs: {
+        questReady: "Un œuf de Magyar ! Vivant ! Regarde, la coquille réagit à ta voix. Hagrid voudra l'élever, bien sûr — et je le comprends. Mais sa mère couve encore sous les Ruines. À toi de choisir : je ne déciderai pas à ta place."
+      },
       chasse_magizoologiste_boucle: {
         questOffer:  "Fascinant ! La Boucle reforme des spécimens que je croyais perdus. Pour mon recensement, élimine {amount}× {target} repérés sur cet étage — au nom de la science, bien sûr.",
         questActive: "Mon carnet attend ! Ces {target}, tu les recenses ?",
@@ -745,8 +770,15 @@ NPCS.push(
     icon:  "🦉",
     portraitImg: "img/npc/hagrid.png",
     placement: { floor: 4, anchor: "any" },
-    questsGiven:    ["chouette_perdue", "defense_cabane"],
-    questsTurnedIn: ["chouette_perdue", "defense_cabane", "braise_hagrid"],
+    questsGiven:    ["chouette_perdue", "defense_cabane", "oeuf_profondeurs"],
+    questsTurnedIn: ["chouette_perdue", "defense_cabane", "braise_hagrid", "oeuf_profondeurs"],
+    // Trace du dilemme de l'œuf (Lot D, arc H7).
+    choiceLines: {
+      oeuf_profondeurs: {
+        hagrid: "L'œuf ? Il est au chaud, dans ma cabane, sous trois couvertures et une théière. Il a bougé hier soir, j'te jure. J'l'ai pas encore appelé. J't'attends pour ça.",
+        scamander: "J'pense encore à c't'œuf, tu sais. Newt a dit qu'il éclorait parmi les siens, là où il faut. C'est mieux comme ça. (Il se mouche.) C'est mieux comme ça."
+      }
+    },
     dialogues: {
       greeting:    [
         "Ah, te v'là ! Tu tombes bien — j'ai perdu une de mes chouettes ensorcelées dans la Forêt Interdite.",
@@ -773,6 +805,14 @@ NPCS.push(
         questOffer:  "Trouve cette Chouette Ensorcelée et ramène-la moi, j'te r'compenserai bien.",
         questActive: "Toujours pas trouvé ? Fais attention, c'te bestiole sait s'cacher.",
         questReady:  "Tu l'as ! Magnifique ! Tiens, prends c'balai — t'en auras plus besoin que moi."
+      },
+      oeuf_profondeurs: {
+        questOffer:  [
+          "Tu l'sens pas, toi ? Y'a une chaleur qui monte des Profondeurs. Pas une chaleur de feu — une chaleur de nid. J'ai élevé un dragon, une fois, j'sais d'quoi j'parle.",
+          "Si y'a un œuf là-dessous, vers l'étage 7, il tiendra pas longtemps dans c'froid. Trouve-le. Après… après, on verra c'qu'on en fait. Newt dira sûrement qu'il faut l'rendre aux siens."
+        ],
+        questActive: "Un œuf, ça se cache pas bien, ça chauffe. Fouille l'étage 7, et fais attention à pas l'cogner.",
+        questReady:  "Il est là ! Regarde-moi ces stries… un Magyar, j'en mettrais ma main au feu. Bon. Faut décider, maintenant. Moi, j'pourrais l'élever. Mais c'est à toi d'voir."
       },
       defense_cabane: {
         questOffer:  [
@@ -901,8 +941,16 @@ NPCS.push(
     // La Quête Signature 🐍 « Le Pacte des Cachots » est désormais confiée par le
     // donneur thématique dédié (Écho de Salazar `echo_salazar`, ch.06 §6.8.6) ;
     // Rogue garde le set, le don et la remise cérémonielle de la relique.
-    questsGiven:    ["quest_set_slyth", "quest_don_slyth"],
+    questsGiven:    ["quest_set_slyth", "quest_don_slyth", "prix_de_rogue"],
     questsTurnedIn: ["quest_set_slyth", "quest_don_slyth"],
+    // Trace du dilemme des fioles (Lot D, arc H1) : prix_de_rogue est remis
+    // au portrait de Dumbledore ; Rogue en connaît l'issue.
+    choiceLines: {
+      prix_de_rogue: {
+        rendre: "Vous m'avez rendu mes fioles. (Un long silence.) Je ne vous remercierai pas : je n'en ai pas l'habitude. Mais je réparerai ce que j'ai brisé. Cela, vous pouvez le croire.",
+        detruire: "Dumbledore les a détruites, naturellement. Il a toujours su mieux que moi ce que je méritais. (Il détourne les yeux.) Il avait peut-être raison. Cela ne rend pas la chose plus facile."
+      }
+    },
     // Le greeting par défaut (voixé) suppose un Serpentard : les trois autres
     // Maisons ont leur 1re page propre (texte seul — _voiceKeyForPage coupe
     // l'OGG d'une page dont le texte diffère du défaut). Revue 2026-09, Lot 0.6.
@@ -943,6 +991,13 @@ NPCS.push(
       ]
     },
     dialoguesByQuest: {
+      prix_de_rogue: {
+        questOffer: [
+          "Vous voulez savoir quelle erreur ? (Il ferme la porte.) Il y a des années, Dumbledore m'a demandé une potion de scellement, pour renforcer les fondations. Je l'ai brassée. Elle a été versée sous l'école.",
+          "Elle n'a pas scellé la fêlure. Elle l'a nourrie. Trois de mes réactifs dorment encore là-dessous, aux étages 4, 7 et 10, et ils pourrissent la pierre. Rapportez-les au portrait de Dumbledore. C'est à lui que je dois des comptes — pas à vous."
+        ],
+        questActive: "Les étages 4, 7 et 10. Fouillez. Ne les ouvrez pas, et ne les respirez pas. Et ne m'en parlez plus : c'est au portrait qu'il faut les rapporter."
+      },
       quest_set_slyth: {
         questOffer:  "Trois Basilics Mineurs souillent les cachots oubliés. Élimine-les. Sans bruit, sans gloire. La Couronne du Basilic n'est pas pour les vantards.",
         questActive: "Encore en vie ? Surprenant. Le travail n'est pas terminé.",
@@ -1078,7 +1133,7 @@ NPCS.push(
       house: "Poufsouffle",
       label: "<img class='ui-icon ui-icon-md' src='img/icons/gold.png' alt=''> Recevoir votre récompense"
     },
-    questsGiven:    ["quest_signature_pouf", "quest_set_pouf", "quest_don_pouf", "quest_garden_sprout", "quest_garden_sprout_2"],
+    questsGiven:    ["quest_signature_pouf", "quest_set_pouf", "quest_don_pouf", "quest_garden_sprout", "quest_garden_sprout_2", "les_egares"],
     questsTurnedIn: ["quest_signature_pouf", "quest_set_pouf", "quest_don_pouf", "quest_garden_sprout", "quest_garden_sprout_2"],
     dialogues: {
       greeting: [
@@ -1097,6 +1152,13 @@ NPCS.push(
       ]
     },
     dialoguesByQuest: {
+      les_egares: {
+        questOffer: [
+          "Deux de mes premières années ne sont pas remontés depuis la fêlure. Tobias Meadows a voulu « voir d'où venait le bruit », et Lila Fenwick est partie le chercher. Des enfants de onze ans, là-dessous.",
+          "On a aperçu Tobias à cet étage, et Lila bien plus bas, vers l'étage 6. Trouve-les, et ne les ramène pas jusqu'ici : ranime plutôt un refuge sur ton chemin, qu'ils y attendent au chaud. Mes hiboux feront le reste."
+        ],
+        questActive: "Tobias à cet étage, Lila vers l'étage 6, puis un refuge pour les abriter. On n'avance pas vite, mon petit — on avance sûrement."
+      },
       quest_signature_pouf: {
         questOffer:  "Quand le château bascule, tout le monde regarde vers le bas. Toi, regarde autour : combien sont restés coincés ? Trois choses, mon petit : rapporte des vivres pour les blessés, escorte les égarés en lieu sûr plus bas, puis tiens bon contre la vague d'Inferi. On n'avance pas vite — on avance sûrement, et ensemble. Que personne ne soit oublié au fond.",
         questActive: "Le Refuge tient-il encore, mon petit ? D'abord les vivres pour les blessés, puis les égarés ramenés à l'abri plus bas — et alors seulement tu pourras faire front contre la vague d'Inferi.",
@@ -1285,6 +1347,88 @@ NPCS.push(
           "Toi, tu as réuni la lumière, affronté les énigmes, et porté l'épreuve jusqu'à son terme. *Lux Aeterna* est à toi. Souviens-toi seulement de ceci : une lumière qu'on garde pour soi finit toujours par s'éteindre. Fais-en profiter ceux qui marchent derrière toi."
         ]
       }
+    }
+  },
+  // ── Lot D (revue 2026-09) — PNJ conditionnels (`questGate`) ──────────
+  // H5 — Tilly, l'elfe de maison des Vantrell. Liée (ét. 6) tant que « La
+  // Chaussette » n'est pas remise ; libérée, elle revient aux étages 10 (et 20
+  // par recyclage de Boucle) avec une aide, une fois par étage (elf_help).
+  {
+    id:    "tilly",
+    name:  "Tilly",
+    title: "Elfe de maison des Vantrell",
+    sprite: "mage",
+    icon:  "🧝",
+    placement: { floor: 6, anchor: "any" },
+    questGate: { quest: "la_chaussette", state: "notDone" },
+    questsGiven:    ["la_chaussette"],
+    questsTurnedIn: ["la_chaussette"],
+    dialogues: {
+      greeting: [
+        "(Une petite elfe en taie d'oreiller brodée d'une clé noire te barre le passage, les oreilles basses.) Tilly garde l'étage. Tilly doit dire au Maître qui descend. Tilly ne veut pas, mais Tilly doit.",
+        "Tilly ne parle pas du Maître. Tilly ne dit pas où sont ses affaires. (Elle jette un regard appuyé vers l'escalier du haut, puis se tape la tête contre le mur.) Mauvaise Tilly !"
+      ],
+      idle:        "Tilly garde l'étage. Tilly regarde ailleurs, parfois. Juste parfois.",
+      questOffer:  "Tilly ne demande rien. Tilly ne peut rien demander. Mais les affaires du Maître sont restées aux étages 5 et 6, dans une malle… Tilly n'a rien dit. Tilly n'a RIEN dit !",
+      questActive: "La malle du Maître. Étage 5, étage 6. Tilly n'a toujours rien dit.",
+      questReady:  "(Tilly voit ce que tu tiens, et tout son corps se met à trembler.) C'est… c'est au Maître, ça. Qu'est-ce que tu vas en faire ?"
+    }
+  },
+  {
+    id:    "tilly_libre",
+    name:  "Tilly",
+    title: "Elfe libre",
+    sprite: "mage",
+    icon:  "🧝",
+    placement: { floor: 10, anchor: "any" },
+    questGate: { choice: "la_chaussette:liberer" },
+    specialAction: {
+      type:  "elf_help",
+      label: "🧦 Accepter l'aide de Tilly",
+      msg:   "🧦 Tilly claque des doigts : les plaies se referment, la fatigue s'envole. « Tilly aide qui elle veut, maintenant ! »"
+    },
+    dialogues: {
+      greeting: [
+        "Toi ! (Tilly porte la chaussette noire sur la tête, comme une couronne.) Tilly est libre. Tilly va où elle veut. Et Tilly veut aider celui qui lui a donné la chaussette.",
+        "Tilly connaît les chemins que les sorciers oublient. Quand tu as mal, Tilly peut réparer. Une fois par étage — Tilly est libre, pas infatigable."
+      ],
+      idle:      "Tilly est libre ! Tilly le dit à tous les murs, pour qu'ils s'en souviennent.",
+      idleSpent: "Tilly a déjà aidé ici. Tilly t'attendra plus bas — les elfes libres transplanent où ils veulent !"
+    }
+  },
+  // H4 — Les Égarés : deux premières années originaux. Présents tant que la
+  // quête est active et qu'on ne leur a pas parlé ; retrouvés, ils suivent le
+  // groupe (retirés de l'étage à la fermeture du dialogue).
+  {
+    id:    "egare_tobias",
+    name:  "Tobias Meadows",
+    title: "Première année de Poufsouffle",
+    sprite: "mage",
+    icon:  "🧒",
+    placement: { floor: 3, anchor: "any" },
+    questGate: { quest: "les_egares", state: "active", untilTalked: true },
+    dialogues: {
+      greeting: [
+        "(Un garçon recroquevillé derrière une armure sursaute, baguette tremblante.) T'es… t'es pas un monstre ? Je voulais juste voir d'où venait le bruit. Et après, les escaliers se sont arrêtés.",
+        "Lila est partie me chercher, je crois. Plus bas. Je peux venir avec toi ? Je ferai pas de bruit, promis. (Il attrape un pan de ta cape et ne le lâche plus.)"
+      ],
+      idle: "Tobias ne lâche plus ta cape."
+    }
+  },
+  {
+    id:    "egare_lila",
+    name:  "Lila Fenwick",
+    title: "Première année de Serdaigle",
+    sprite: "mage",
+    icon:  "👧",
+    placement: { floor: 6, anchor: "any" },
+    questGate: { quest: "les_egares", state: "active", untilTalked: true },
+    dialogues: {
+      greeting: [
+        "(Une fillette a tracé à la craie, autour d'elle, un cercle couvert de runes approximatives.) N'entre pas dans le cercle ! Enfin… il ne marche pas, je crois. Je l'ai recopié d'un livre de sixième année.",
+        "Tu as trouvé Tobias ? Il est vivant ? (Elle efface le cercle du pied, soulagée.) Alors je viens. Mais c'est moi qui tiens la lanterne."
+      ],
+      idle: "Lila tient la lanterne, et le bout de ta manche."
     }
   },
 );

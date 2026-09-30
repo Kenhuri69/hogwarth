@@ -233,7 +233,13 @@ NPCS.push(
     minFloor:  3,
     maxFloor:  8,
     questsGiven:    ["chasse_magizoologiste"],
-    questsTurnedIn: ["chasse_magizoologiste"],
+    // Lot D (arc H7) : l'œuf peut aussi être remis au Scamander en tournée.
+    questsTurnedIn: ["chasse_magizoologiste", "oeuf_profondeurs"],
+    dialoguesByQuest: {
+      oeuf_profondeurs: {
+        questReady: "Un œuf de Magyar, si bas ! Et vivant. Hagrid rêvera de l'élever, bien sûr. Mais sa lignée couve encore sous les Ruines. Décide, toi : je ne choisirai pas à ta place."
+      }
+    },
     dialogues: {
       greeting: [
         "Oh ! Un visiteur ! Tombe à pic — j'observe les créatures de cet étage et certaines me préoccupent un peu.",
@@ -259,7 +265,13 @@ NPCS.push(
     minFloor:  4,
     maxFloor:  9,
     questsGiven:    ["course_hagrid"],
-    questsTurnedIn: ["course_hagrid"],
+    // Lot D (arc H7) : l'œuf peut aussi être remis au Hagrid en maraude.
+    questsTurnedIn: ["course_hagrid", "oeuf_profondeurs"],
+    dialoguesByQuest: {
+      oeuf_profondeurs: {
+        questReady: "C'est… c'est lui ? L'œuf ? Oh, regarde-moi ça, il est encore tout chaud ! Bon. Faut décider, maintenant. Moi, j'pourrais l'élever. Mais c'est à toi d'voir."
+      }
+    },
     dialogues: {
       greeting: [
         "Ah, te v'là ! J'tombe bien — j'ai un p'tit service à t'demander pour mes bestioles.",

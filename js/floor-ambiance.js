@@ -618,6 +618,8 @@ const GRANDE_SALLE_BEAT = {
   id: 'grande_salle',
   narrative: "Tu es remonté. Le givre a fondu des fenêtres ; un soleil pâle traverse de nouveau les grands vitraux. Dans son cadre, Dumbledore lève les yeux de son livre et te sourit, sans surprise : « Tu es redescendu jusqu'au fond, et tu es revenu. Peu en sont capables. » Autour de toi, l'école respire — les escaliers recommencent à tourner. Mais sous tes pieds, très loin, quelque chose veille encore.",
   toast: "La Grande Salle — l'école respire à nouveau. Dumbledore te salue d'un cadre.",
+  // Lot D (arc H4) — ajouté si « Les Égarés » a été remise.
+  egaresLine: "Au bout de la table de Poufsouffle, deux premières années se lèvent d'un bond : Tobias agite les bras, Lila brandit sa lanterne éteinte. Ils ne disent rien. Ils n'en ont pas besoin.",
 };
 
 // Résolveur PUR : retourne le beat de l'étage `floor`, ou null.
@@ -638,7 +640,9 @@ function maybeScriptedFloorBeat(floor) {
       && typeof GRANDE_SALLE_BEAT !== 'undefined'
       && typeof grandeSalleBeatSeen !== 'undefined' && !grandeSalleBeatSeen) {
     grandeSalleBeatSeen = true;
-    if (typeof setNarrative === 'function') setNarrative(GRANDE_SALLE_BEAT.narrative);
+    // Lot D (arc H4) : les égarés mis à l'abri t'attendent dans la Grande Salle.
+    const saved = (typeof completedQuests !== 'undefined' && completedQuests && completedQuests.has('les_egares'));
+    if (typeof setNarrative === 'function') setNarrative(GRANDE_SALLE_BEAT.narrative + (saved ? ' ' + GRANDE_SALLE_BEAT.egaresLine : ''));
     if (typeof addMsg === 'function') addMsg('📜 ' + GRANDE_SALLE_BEAT.toast, 'narrative');
     return true;
   }
@@ -1009,7 +1013,8 @@ function maybeCrackWhisper(floor) {
 // une phrase qui REFLÈTE l'état du joueur (quêtes remises, Quête Signature,
 // palier de Maison). Les professeurs vouvoient, les élèves et Hagrid tutoient.
 // Texte seulement, one-shot (sentinelle 'surface_letter:<étage>').
-// ctx = { house, questsDone, houseTier, signatureDone }.
+// ctx = { house, questsDone, houseTier, signatureDone, egaresSaved }.
+// `egaresSaved` (Lot D, arc H4) : les deux premières années sont à l'abri.
 function composeSurfaceLetter(floor, ctx) {
   const c = ctx || {};
   const n = c.questsDone || 0;
@@ -1031,7 +1036,10 @@ function composeSurfaceLetter(floor, ctx) {
           ? "On a entendu ce que tu as fait pour notre Maison. Personne n'osait. On est fiers de toi."
           : n >= 5
             ? "Il paraît que tu as aidé tellement de gens là-dessous qu'on a arrêté de compter."
-            : "Reviens vite. On garde ta place à table."),
+            : "Reviens vite. On garde ta place à table.")
+        + (c.egaresSaved
+          ? " Et Tobias et Lila sont revenus ! Tobias raconte à tout le monde que tu l'as trouvé derrière une armure. Lila dit que c'est elle qui tenait la lanterne."
+          : ""),
     };
   }
   if (floor === 10) {
@@ -1040,7 +1048,10 @@ function composeSurfaceLetter(floor, ctx) {
       text: "Les portraits ne dorment plus. Ils disent que le froid monte des fondations, et que vous êtes tout près de sa source. Je ne vous demanderai pas de faire demi-tour : je sais que vous ne le feriez pas. "
         + (n >= 8
           ? "Tant de gens me parlent de vous que j'ai cessé de m'en étonner. Ceux que vous avez aidés attendent votre retour, et moi aussi."
-          : "Quoi qu'il vous attende en bas, le château tout entier retient son souffle avec vous."),
+          : "Quoi qu'il vous attende en bas, le château tout entier retient son souffle avec vous.")
+        + (c.egaresSaved
+          ? " Miss Fenwick et Mr Meadows vous font dire qu'ils ont repris les cours. Ils ont surtout repris l'habitude de guetter l'escalier."
+          : ""),
     };
   }
   if (floor === 11) {
@@ -1071,6 +1082,7 @@ function maybeSurfaceLetter(floor) {
     questsDone:  (typeof completedQuests !== 'undefined' && completedQuests) ? completedQuests.size : 0,
     houseTier:   (typeof houseTier === 'number') ? houseTier : 0,
     signatureDone,
+    egaresSaved: (typeof completedQuests !== 'undefined' && completedQuests) ? completedQuests.has('les_egares') : false,
   });
   if (!letter) return false;
   seenScriptedBeat.add(key);

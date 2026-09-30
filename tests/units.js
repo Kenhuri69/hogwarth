@@ -1545,7 +1545,8 @@ function loadNpcs() {
   const { BOSS_PROMO_BEATS } = pure;
   // Lot B (axe 3a) : + 7 boss canon.
   // Lot C (arc H3) : + le Lieutenant.
-  check('BOSS_PROMO_BEATS = 14 boss', Object.keys(BOSS_PROMO_BEATS).length === 14);
+  // Lot D (arc H7) : + le Magyar Ancestral (ligne selon le choix de l'œuf).
+  check('BOSS_PROMO_BEATS = 15 boss', Object.keys(BOSS_PROMO_BEATS).length === 15);
   const { MONSTERS: _promoMonsters } = loadMonsters();
   for (const id of Object.keys(BOSS_PROMO_BEATS)) {
     check(`promo ${id} : monstre existant`, _promoMonsters.some(m => m.id === id));
@@ -3546,6 +3547,116 @@ function loadNpcs() {
   const trel = npcs.find(n => n.id === 'trelawney');
   check('lotC H2: Trelawney réagit à 1, 2 et 3 fragments',
     [1, 2, 3].every(k => typeof trel.prophecyLines[k] === 'string'));
+})();
+
+// ============================================================
+// 24. Lot D (revue 2026-09) — arcs H7 (Œuf), H1 (Rogue), H5 (Chaussette),
+//     H4 (Égarés) + mécanismes génériques (search localisé, questGate,
+//     fight, promotion par choix, trêve du dragon, échos de fin)
+// ============================================================
+(function testLotD() {
+  const { QUEST_TEMPLATES } = loadModule('js/quests-templates.js', ['QUEST_TEMPLATES']);
+  const tplOf = (id) => QUEST_TEMPLATES.find(t => t.id === id);
+  const ids = ['oeuf_profondeurs', 'prix_de_rogue', 'la_chaussette', 'les_egares'];
+  check('lotD: 4 quêtes', ids.every(id => !!tplOf(id)));
+  // Recherches localisées : une ligne de récit par étage.
+  for (const id of ['oeuf_profondeurs', 'prix_de_rogue', 'la_chaussette']) {
+    const st = tplOf(id).objectives[0];
+    check('lotD ' + id + ': search localisé', st.type === 'search' && Array.isArray(st.floors)
+      && st.amount <= st.floors.length && tplOf(id).progressLines.length === st.amount);
+  }
+  check('lotD H1: réactifs aux étages 4, 7, 10', tplOf('prix_de_rogue').objectives[0].floors.join() === '4,7,10');
+  check('lotD H5: option combat = duel contre un monstre existant', (() => {
+    const c = tplOf('la_chaussette').choices.find(x => x.id === 'combattre');
+    return c && c.fight && loadMonsters().MONSTERS.some(m => m.id === c.fight);
+  })());
+  const eg = tplOf('les_egares');
+  check('lotD H4: remise auto + ligne de fin', eg.autoTurnIn === true && typeof eg.doneLine === 'string');
+  check('lotD H4: retrouver puis abriter', eg.objectives[0].type === 'talk'
+    && eg.objectives[1].type === 'discover' && eg.objectives[1].cell === 'REFUGE');
+
+  // PNJ : donneurs / remises / PNJ conditionnels existants.
+  const npcs = loadNpcs().NPCS;
+  const byId = (id) => npcs.find(n => n.id === id);
+  check('lotD H7: Hagrid donne, 4 PNJ peuvent clore', byId('hagrid').questsGiven.includes('oeuf_profondeurs')
+    && ['hagrid', 'hagrid_random', 'scamander', 'scamander_random'].every(id => byId(id).questsTurnedIn.includes('oeuf_profondeurs')));
+  check('lotD H1: Rogue donne, 4 portraits de Dumbledore closent',
+    byId('rogue').questsGiven.includes('prix_de_rogue') && !byId('rogue').questsTurnedIn.includes('prix_de_rogue')
+    && ['dumbledore', 'dumbledore_relais_4', 'dumbledore_relais_7', 'dumbledore_relais_10']
+      .every(id => byId(id).questsTurnedIn.includes('prix_de_rogue')));
+  check('lotD H4: Chourave donne', byId('sprout').questsGiven.includes('les_egares'));
+  check('lotD H4: égarés = PNJ de l\'étape talk',
+    eg.objectives[0].npcIds.every(id => byId(id) && byId(id).questGate && byId(id).questGate.untilTalked));
+  check('lotD H5: Tilly libre = aide elf_help', byId('tilly_libre').specialAction.type === 'elf_help'
+    && byId('tilly_libre').questGate.choice === 'la_chaussette:liberer');
+
+  // questGate (pur, via npcs-helpers.js).
+  const gateEnv = (over) => Object.assign({ NPCS: npcs, questChoices: {}, completedQuests: new Set(),
+    activeQuests: [], chosenHouse: 'Poufsouffle', effectiveFloor: (f) => f }, over);
+  const h0 = loadModule('js/npcs-helpers.js', ['_npcPassesQuestGate', 'getNpcsForFloor'], gateEnv({}));
+  check('lotD gate: égaré absent sans quête', !h0._npcPassesQuestGate(byId('egare_tobias')));
+  check('lotD gate: Tilly liée présente au départ', h0._npcPassesQuestGate(byId('tilly')));
+  check('lotD gate: Tilly libre absente sans choix', !h0._npcPassesQuestGate(byId('tilly_libre')));
+  check('lotD gate: PNJ sans gate inchangé', h0._npcPassesQuestGate(byId('hagrid')));
+  const act = JSON.parse(JSON.stringify(eg));
+  const h1 = loadModule('js/npcs-helpers.js', ['_npcPassesQuestGate', 'getNpcsForFloor'], gateEnv({ activeQuests: [act] }));
+  check('lotD gate: égaré présent, quête active', h1._npcPassesQuestGate(byId('egare_tobias'))
+    && h1.getNpcsForFloor(3).some(n => n.id === 'egare_tobias'));
+  act.objectives[0]._seen = ['egare_tobias'];
+  check('lotD gate: égaré retrouvé → retiré', !h1._npcPassesQuestGate(byId('egare_tobias'))
+    && h1._npcPassesQuestGate(byId('egare_lila')));
+  const h2 = loadModule('js/npcs-helpers.js', ['_npcPassesQuestGate', 'getNpcsForFloor'],
+    gateEnv({ completedQuests: new Set(['la_chaussette']), questChoices: { la_chaussette: 'liberer' } }));
+  check('lotD gate: Tilly liée partie, libre à l\'étage 10',
+    !h2._npcPassesQuestGate(byId('tilly')) && h2.getNpcsForFloor(10).some(n => n.id === 'tilly_libre'));
+
+  // Promotion par choix + trêve (purs, battle.js).
+  const b = loadModule('js/battle.js', ['BOSS_PROMO_BEATS', 'bossPromoLine', 'dragonTruceReady', 'DRAGON_TRUCE']);
+  const mb = b.BOSS_PROMO_BEATS.magyar_ancestral;
+  check('lotD H7: promo par défaut sans choix', b.bossPromoLine(mb, {}) === mb.line);
+  check('lotD H7: promo différente selon le choix',
+    b.bossPromoLine(mb, { oeuf_profondeurs: 'hagrid' }) !== b.bossPromoLine(mb, { oeuf_profondeurs: 'scamander' })
+    && b.bossPromoLine(mb, { oeuf_profondeurs: 'hagrid' }) !== mb.line);
+  const drag = (pct) => ({ id: 'magyar_ancestral', hp: 100, currentHp: pct });
+  const sc = { oeuf_profondeurs: 'scamander' };
+  check('lotD trêve: à 50 % avec l\'œuf rendu', b.dragonTruceReady(drag(50), sc, new Set()));
+  check('lotD trêve: pas au-dessus de 50 %', !b.dragonTruceReady(drag(51), sc, new Set()));
+  check('lotD trêve: pas si l\'œuf est chez Hagrid', !b.dragonTruceReady(drag(40), { oeuf_profondeurs: 'hagrid' }, new Set()));
+  check('lotD trêve: une seule fois', !b.dragonTruceReady(drag(40), sc, new Set(['magyar_truce'])));
+  check('lotD trêve: autre monstre → non', !b.dragonTruceReady({ id: 'troll', hp: 100, currentHp: 10 }, sc, new Set()));
+
+  // Codex : 4 fiches, notes de dilemme valides, note Drago ajoutée à celle du choix.
+  const cx = loadModule('js/codex.js', ['CODEX_ENTRIES', 'codexEntryState', 'codexVariantNote']);
+  const base = { questsDone: new Set(), questChoices: {}, prophecyFragments: 0, heroKeys: [] };
+  for (const [eid, qid] of [['prince_felure', 'prix_de_rogue'], ['oeuf_profondeurs', 'oeuf_profondeurs'],
+                            ['tilly_elfe', 'la_chaussette'], ['les_egares', 'les_egares']]) {
+    const e = cx.CODEX_ENTRIES.find(x => x.id === eid);
+    check('lotD codex ' + eid + ': verrouillé puis révélé', e && cx.codexEntryState(e, base) === 'locked'
+      && cx.codexEntryState(e, { ...base, questsDone: new Set([qid]) }) === 'revealed');
+  }
+  const pf = cx.CODEX_ENTRIES.find(x => x.id === 'prince_felure');
+  const nR = cx.codexVariantNote(pf, 'Gryffondor', [], { prix_de_rogue: 'rendre' });
+  const nRD = cx.codexVariantNote(pf, 'Gryffondor', ['draco'], { prix_de_rogue: 'rendre' });
+  check('lotD codex: note Drago ajoutée à la note du choix', nR && nRD && nRD.startsWith(nR) && nRD.length > nR.length);
+  const eh = cx.CODEX_ENTRIES.find(x => x.id === 'les_egares');
+  check('lotD codex: note Poufsouffle', !!cx.codexVariantNote(eh, 'Poufsouffle', [], {}));
+
+  // Traces : lettres de la surface et échos de fin.
+  const fa = loadModule('js/floor-ambiance.js', ['composeSurfaceLetter', 'GRANDE_SALLE_BEAT']);
+  check('lotD H4: lettres 7 et 10 changent si les égarés sont à l\'abri',
+    [7, 10].every(f => fa.composeSurfaceLetter(f, { egaresSaved: true }).text
+      !== fa.composeSurfaceLetter(f, { egaresSaved: false }).text));
+  check('lotD H4: ligne Grande Salle', typeof fa.GRANDE_SALLE_BEAT.egaresLine === 'string');
+  const eg2 = loadModule('js/endgame.js', ['_victorySpeechVariants', 'VICTORY_CHOICE_ECHOES'], { window: {} });
+  for (const key of Object.keys(eg2.VICTORY_CHOICE_ECHOES)) {
+    const [qid, cid] = key.split(':');
+    const t = tplOf(qid);
+    check('lotD écho ' + key + ': option existante', !!(t && t.choices && t.choices.some(c => c.id === cid)));
+  }
+  const plain = eg2._victorySpeechVariants({});
+  const withEchoes = eg2._victorySpeechVariants({ questChoices: { prix_de_rogue: 'rendre' }, egaresSaved: true });
+  check('lotD échos: présents dans le discours de fin', withEchoes.length > plain.length
+    && withEchoes.includes('Rogue') && withEchoes.includes('Tobias'));
 })();
 
 // ============================================================

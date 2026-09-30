@@ -24,6 +24,19 @@
 // sont des couches de TEXTE posées sur la même cinématique. Tout est
 // défensif — champ absent → bloc omis (jamais de crash, texte de base seul).
 
+// Lot D (revue 2026-09) — échos de fin des dilemmes (clé "qid:cid").
+const VICTORY_CHOICE_ECHOES = {
+  'prix_de_rogue:rendre':   "Dans les cachots, une lumière verte brûle tard : Rogue répare ce qu'il a brisé, fiole après fiole, sans rien dire à personne.",
+  'prix_de_rogue:detruire': "Rogue t'adresse un signe de tête bref au passage. Les fioles ont disparu. Sa dette, elle, n'a pas changé de poids.",
+  'oeuf_profondeurs:hagrid':    "Derrière la cabane de Hagrid, une coquille noire striée de bronze vient de se fendre.",
+  'oeuf_profondeurs:scamander': "Très loin sous les Ruines, un dragon couve un œuf qu'on lui a rendu.",
+  'la_chaussette:liberer':  "Une elfe coiffée d'une chaussette noire raconte aux cuisines de Poudlard qu'elle est libre. Elle le raconte beaucoup.",
+  'la_chaussette:combattre': "Dans une maison vide, une elfe attend un maître qui ne reviendra pas.",
+  'lieutenant_vantrell:bruler': "La cache de Vantrell n'est plus que cendres. Personne ne rouvrira sa porte.",
+  'lieutenant_vantrell:garder': "Le grimoire de Vantrell dort au fond de ton sac. Tu n'as pas encore décidé de ce qu'il deviendra.",
+};
+const VICTORY_EGARES_ECHO = "Tobias et Lila t'attendent au pied de l'escalier, comme ils l'ont promis.";
+
 // Pur & testable. `ctx` regroupe les flags de fin déjà présents dans l'état.
 // Ordre d'affichage (concaténé après le discours de base) : beat des héros sur
 // le palier (solo intime / duo à deux voix + clin d'œil Maison canon ≠ jouée) →
@@ -122,6 +135,19 @@ function _victorySpeechVariants(ctx) {
       `<p class="victory-speech-warm"><em>« Tu as tenu tête à une voix vieille
        de mille ans, et tu n'as rien cédé. Peu y parviennent. Cela, je ne
        l'oublierai pas. »</em></p>`);
+  }
+
+  // Lot D (revue 2026-09) — échos des arcs secondaires : une phrase par
+  // dilemme tranché (ctx.questChoices) et pour les égarés mis à l'abri.
+  const ch = ctx.questChoices || {};
+  const echoes = [];
+  for (const key of Object.keys(VICTORY_CHOICE_ECHOES)) {
+    const parts = key.split(':');
+    if (ch[parts[0]] === parts[1]) echoes.push(VICTORY_CHOICE_ECHOES[key]);
+  }
+  if (ctx.egaresSaved) echoes.push(VICTORY_EGARES_ECHO);
+  for (const e of echoes) {
+    blocks.push(`<p class="victory-speech-legacy">${esc(e)}</p>`);
   }
 
   // (a) §14.2.2(a) — Dernier mot de Dumbledore, coloré par la Maison du héros.
@@ -389,6 +415,10 @@ function _refreshEndgameCompassBtn() {
         slythSignatureDone: (typeof slythSignatureDone !== 'undefined') && slythSignatureDone,
         ravenSignatureDone: (typeof ravenSignatureDone !== 'undefined') && ravenSignatureDone,
         poufSignatureDone:  (typeof poufSignatureDone !== 'undefined') && poufSignatureDone,
+        // Lot D — échos des arcs secondaires.
+        questChoices:       (typeof questChoices !== 'undefined' && questChoices) ? questChoices : {},
+        egaresSaved:        (typeof completedQuests !== 'undefined' && completedQuests &&
+                             typeof completedQuests.has === 'function' && completedQuests.has('les_egares')),
         eclatsComplete:     (typeof completedQuests !== 'undefined' && completedQuests &&
                              typeof completedQuests.has === 'function' &&
                              completedQuests.has('eclats_clef_voute'))

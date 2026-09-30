@@ -316,14 +316,25 @@ async function scenarioChainAndRepeatable() {
     const q = activeQuests.find(x => x.id === 'defense_cabane');
     q.objectives.forEach(o => { o.completed = true; o.progress = o.amount; });
     turnInQuestById('defense_cabane');
+    // Lot D (arc H7) : la chaîne de Hagrid se prolonge par l'Œuf des Profondeurs.
+    const stateMid   = getNpcQuestState(hagrid);
+    const currentMid = _currentQuestForState(hagrid, stateMid);
+    // Remise simulée SANS récompense : l'XP de l'œuf ferait monter de niveau et
+    // rouvrirait chouette_perdue (cooldown testé en T5). Le dilemme est couvert
+    // par scenarioLotDArcs.
+    availableQuests.delete('oeuf_profondeurs');
+    completedQuests.add('oeuf_profondeurs');
     return {
       bothCompleted: completedQuests.has('chouette_perdue') && completedQuests.has('defense_cabane'),
+      stateMid, currentMid,
       state:         getNpcQuestState(hagrid),
       cabaneLastLevel: lastQuestCompletion['defense_cabane']  // pas répétable → undefined attendu
     };
   });
   console.log('  T4 chain finished:', t4);
   assert(t4.bothCompleted,                  'les 2 quêtes doivent être completed');
+  assert(t4.stateMid === 'offer' && t4.currentMid === 'oeuf_profondeurs',
+                                            `la chaîne doit avancer vers oeuf_profondeurs, got ${t4.stateMid}/${t4.currentMid}`);
   assert(t4.state === 'done',               `Hagrid doit être 'done', got ${t4.state}`);
   assert(t4.cabaneLastLevel === undefined,  'defense_cabane (non répétable) ne doit pas écrire lastQuestCompletion');
 
@@ -2192,4 +2203,184 @@ async function scenarioLieutenantAndProphecy() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioLieutenantAndProphecy, scenarioDiscoverObjective, scenarioTalkObjective, scenarioDeliveryQuestsWired, scenarioChainedQuest, scenarioHeadlessHunt, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioFarmingQuests, scenarioDelayedSearch, scenarioCleVoute, scenarioQuestFanfare, scenarioLoopNpcQuests, scenarioLoopNpcQuests2, scenarioLoopNpcQuests3, scenarioSignatureQuestBadge, scenarioDeliveryQuestLetter, scenarioMainQuestDescente, scenarioDumbledoreRelais] };
+// Lot D (revue 2026-09) — arcs H7 (Œuf), H1 (Rogue), H5 (Chaussette), H4
+// (Égarés) : recherche localisée, dilemmes et traces, trêve du dragon, PNJ
+// conditionnels (questGate), aide de l'elfe libre, remise auto au refuge.
+async function scenarioLotDArcs() {
+  console.log('\n── Scénario Lot D : œuf, fioles de Rogue, chaussette, égarés ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Poufsouffle' });
+
+  // T1 (H7) : l'œuf ne se trouve qu'à l'étage 7, une seule fois ; dilemme chez Scamander.
+  const t1 = await page.evaluate(() => {
+    const offered = _npcDialogActions(getNpcById('hagrid'), 'offer').some(a => /oeuf_profondeurs/.test(a.onClick));
+    acceptQuest('oeuf_profondeurs');
+    const q = activeQuests.find(x => x.id === 'oeuf_profondeurs');
+    currentFloor = 5; checkSearchQuests();
+    const at5 = q.objectives[0].progress;
+    currentFloor = 7; checkSearchQuests(); checkSearchQuests();
+    const labels = _npcDialogActions(getNpcById('scamander_random'), 'ready').map(a => a.label + ' ' + a.onClick);
+    const ok = turnInQuestChoice('oeuf_profondeurs', 'scamander');
+    seenNpcs.add('hagrid');
+    openNpcDialog('hagrid');
+    const hPages = _dialogState.pages.join(' ');
+    closeNpcDialog();
+    return {
+      offered, at5, at7: q.objectives[0].progress,
+      egg: /œuf noir strié de bronze/.test(document.getElementById('msg-log').textContent),
+      choices: labels.filter(l => /turnInQuestChoice\('oeuf_profondeurs'/.test(l)).length,
+      ok, choice: questChoiceOf('oeuf_profondeurs'),
+      hagridTrace: /Newt a dit qu'il éclorait/.test(hPages),
+    };
+  });
+  console.log('  T1 œuf:', t1);
+  assert(t1.offered, 'Hagrid propose l\'Œuf des Profondeurs');
+  assert(t1.at5 === 0 && t1.at7 === 1 && t1.egg, 'œuf trouvé à l\'étage 7 seulement, une fois');
+  assert(t1.choices === 2 && t1.ok && t1.choice === 'scamander', 'dilemme chez le Scamander en tournée');
+  assert(t1.hagridTrace, 'Hagrid se souvient de l\'œuf rendu');
+
+  // T2 (H7) : le Magyar reconnaît l'œuf rendu, puis rompt le combat à 50 % PV.
+  const t2 = await page.evaluate(() => {
+    currentFloor = 10;
+    generateDungeon(10);
+    player.inventory = player.inventory.filter(it => it.id !== 'livre_feu_dragon');
+    const base = MONSTERS.find(m => m.id === 'magyar_ancestral');
+    startBattle({ ...scaleMonster(base, 10), soloEncounter: true });
+    const promo = /son œuf, rendu aux siens/.test(document.getElementById('msg-log').textContent);
+    const drag = enemyGroup[0];
+    drag.currentHp = Math.floor(drag.hp * 0.45);
+    const xp0 = player.xp, lvl0 = player.level;
+    enemyTurn();
+    return {
+      promo, truce: !!drag._truce, over: !inBattle,
+      once: seenScriptedBeat.has('magyar_truce'),
+      xpGained: player.xp !== xp0 || player.level !== lvl0,
+      noDrop: !player.inventory.some(it => it.id === 'livre_feu_dragon'),
+      codex: codexEntryState(getCodexEntry('oeuf_profondeurs'), _codexContext()),
+    };
+  });
+  console.log('  T2 trêve:', t2);
+  assert(t2.promo, 'promotion du Magyar selon le choix de l\'œuf');
+  assert(t2.truce && t2.over && t2.once, 'le Magyar rompt le combat, une seule fois');
+  assert(t2.xpGained && t2.noDrop, 'XP intégrale, aucun drop (butin réduit)');
+  assert(t2.codex === 'revealed', 'Codex de l\'œuf révélé');
+
+  // T3 (H1) : trois fioles aux étages 4, 7, 10 ; remise au portrait-relais ; dilemme.
+  const t3 = await page.evaluate(() => {
+    const offered = _npcDialogActions(getNpcById('rogue'), 'offer').some(a => /prix_de_rogue/.test(a.onClick));
+    acceptQuest('prix_de_rogue');
+    for (const f of [4, 4, 7, 10]) { currentFloor = f; checkSearchQuests(); }
+    const q = activeQuests.find(x => x.id === 'prix_de_rogue');
+    const labels = _npcDialogActions(getNpcById('dumbledore_relais_7'), 'ready').map(a => a.label + ' ' + a.onClick);
+    player.inventory = player.inventory.filter(it => it.id !== 'livre_prince');
+    const ok = turnInQuestChoice('prix_de_rogue', 'rendre');
+    seenNpcs.add('rogue');
+    openNpcDialog('rogue');
+    const rPages = _dialogState.pages.join(' ');
+    closeNpcDialog();
+    return {
+      offered, progress: q.objectives[0].progress,
+      relayChoices: labels.filter(l => /turnInQuestChoice\('prix_de_rogue'/.test(l)).length,
+      ok, book: player.inventory.some(it => it.id === 'livre_prince'),
+      rogueTrace: /réparerai ce que j'ai brisé/.test(rPages),
+    };
+  });
+  console.log('  T3 Rogue:', t3);
+  assert(t3.offered && t3.progress === 3, 'Rogue propose la quête ; une fiole par étage (4, 7, 10)');
+  assert(t3.relayChoices === 2 && t3.ok && t3.book, 'dilemme au portrait-relais ; « rendre » → manuel du Demi-Sang');
+  assert(t3.rogueTrace, 'Rogue se souvient des fioles rendues');
+
+  // T4 (H4) : égarés posés à l'acceptation, retirés une fois retrouvés, refuge → remise auto.
+  const t4 = await page.evaluate(() => {
+    const has = (id) => Array.from(npcPlacements.values()).includes(id);
+    currentFloor = 3;
+    generateDungeon(3);
+    const before = has('egare_tobias');
+    acceptQuest('les_egares');
+    const afterAccept = has('egare_tobias');
+    openNpcDialog('egare_tobias');
+    closeNpcDialog();
+    const afterTalk = has('egare_tobias');
+    currentFloor = 6;
+    generateDungeon(6);
+    const lila = has('egare_lila');
+    openNpcDialog('egare_lila');
+    closeNpcDialog();
+    checkDiscoverQuests(CELL.REFUGE, 1, 1);
+    const log = document.getElementById('msg-log').textContent;
+    return {
+      before, afterAccept, afterTalk, lila, lilaGone: !has('egare_lila'),
+      done: completedQuests.has('les_egares'),
+      doneLine: /Tu ranimes le foyer du refuge/.test(log),
+      letter: /Tobias et Lila sont revenus/.test(composeSurfaceLetter(7, { egaresSaved: true }).text),
+      codex: codexEntryState(getCodexEntry('les_egares'), _codexContext()),
+    };
+  });
+  console.log('  T4 égarés:', t4);
+  assert(!t4.before && t4.afterAccept, 'Tobias n\'apparaît qu\'à l\'acceptation de la quête');
+  assert(!t4.afterTalk && t4.lila && t4.lilaGone, 'un égaré retrouvé suit le groupe (retiré de l\'étage)');
+  assert(t4.done && t4.doneLine, 'le refuge remet la quête automatiquement');
+  assert(t4.letter && t4.codex === 'revealed', 'traces : lettre de la surface, Codex');
+
+  // T5 (H5) : Tilly liée à l'étage 6, libérée ; libre à l'étage 10, aide une fois par étage.
+  const t5 = await page.evaluate(() => {
+    const has = (id) => Array.from(npcPlacements.values()).includes(id);
+    currentFloor = 6;
+    generateDungeon(6);
+    const bound = has('tilly');
+    acceptQuest('la_chaussette');
+    checkSearchQuests();
+    const labels = _npcDialogActions(getNpcById('tilly'), 'ready').map(a => a.label + ' ' + a.onClick);
+    const ok = turnInQuestChoice('la_chaussette', 'liberer');
+    closeNpcDialog();
+    const gone = !has('tilly');
+    currentFloor = 10;
+    generateDungeon(10);
+    const free = has('tilly_libre');
+    const actions1 = _npcDialogActions(getNpcById('tilly_libre'), 'none').some(a => /triggerNpcSpecialAction\('tilly_libre'\)/.test(a.onClick));
+    player.hp = 1;
+    triggerNpcSpecialAction('tilly_libre');
+    const healed = player.hp === player.hpMax;
+    player.hp = 1;
+    triggerNpcSpecialAction('tilly_libre');
+    const once = player.hp === 1;
+    const actions2 = _npcDialogActions(getNpcById('tilly_libre'), 'none').some(a => /triggerNpcSpecialAction\('tilly_libre'\)/.test(a.onClick));
+    player.hp = player.hpMax;
+    return { bound, choices: labels.filter(l => /turnInQuestChoice\('la_chaussette'/.test(l)).length,
+      ok, gone, free, actions1, healed, once, actions2 };
+  });
+  console.log('  T5 Tilly:', t5);
+  assert(t5.bound && t5.choices === 2 && t5.ok && t5.gone, 'Tilly liée à l\'étage 6, libérée, puis partie');
+  assert(t5.free && t5.actions1 && t5.healed, 'Tilly libre à l\'étage 10 : l\'aide soigne le groupe');
+  assert(t5.once && !t5.actions2, 'l\'aide ne sert qu\'une fois par étage');
+
+  // T6 (G3) : l'option « combattre » ouvre un duel contre l'elfe, seule.
+  const t6 = await page.evaluate(() => {
+    completedQuests.delete('la_chaussette');
+    delete questChoices.la_chaussette;
+    currentFloor = 6;
+    generateDungeon(6);
+    acceptQuest('la_chaussette');
+    checkSearchQuests();
+    const actions = _npcDialogActions(getNpcById('tilly'), 'ready');
+    const fightBtn = actions.find(a => /'combattre'/.test(a.onClick));
+    turnInQuestChoice('la_chaussette', 'combattre');
+    return {
+      noReopen: fightBtn && !/openNpcDialog/.test(fightBtn.onClick),
+      inBattle, size: enemyGroup.length, name: enemyGroup[0] && enemyGroup[0].name,
+      choice: questChoiceOf('la_chaussette'),
+    };
+  });
+  console.log('  T6 duel:', t6);
+  assert(t6.noReopen && t6.inBattle && t6.size === 1 && t6.name === 'Tilly, elfe liée', 'duel contre Tilly, seule');
+  assert(t6.choice === 'combattre', 'choix « combattre » mémorisé');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Lot D OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioLotDArcs, scenarioLieutenantAndProphecy, scenarioDiscoverObjective, scenarioTalkObjective, scenarioDeliveryQuestsWired, scenarioChainedQuest, scenarioHeadlessHunt, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioFarmingQuests, scenarioDelayedSearch, scenarioCleVoute, scenarioQuestFanfare, scenarioLoopNpcQuests, scenarioLoopNpcQuests2, scenarioLoopNpcQuests3, scenarioSignatureQuestBadge, scenarioDeliveryQuestLetter, scenarioMainQuestDescente, scenarioDumbledoreRelais] };

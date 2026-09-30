@@ -339,6 +339,16 @@ const BOSS_PROMO_BEATS = {
     line: "Casimir Vantrell referme son carnet et le range avec soin, comme s'il avait encore le temps : « Tu as lu mes lettres, je suppose. Alors tu sais que je ne me bats pas pour moi. Je ne suis qu'une porte. On n'arrête pas une porte — on la franchit, ou on reste devant. »",
     fall: "Vantrell tombe à genoux, la main tendue vers la fêlure, sans l'atteindre. « Pas encore… » Son carnet glisse de sa robe, ouvert sur une page blanche qu'il n'aura pas eu le temps d'écrire.",
   },
+  // Lot D (arc H7) — le Magyar Ancestral se souvient de l'œuf (lineByChoice,
+  // clé "qid:cid" lue dans questChoices) ; ligne par défaut sinon.
+  magyar_ancestral: {
+    icon: '🐉',
+    line: "Le Magyar Ancestral baisse la tête jusqu'à toi, assez près pour que sa chaleur te sèche les yeux. Il ne rugit pas encore : il flaire, longuement, comme on cherche une odeur perdue.",
+    lineByChoice: {
+      'oeuf_profondeurs:scamander': "Le Magyar Ancestral s'arrête net et flaire l'air autour de toi. Il reconnaît une odeur : celle de son œuf, rendu aux siens. Ses pupilles se resserrent, mais il ne crache pas le feu. Pas tout de suite.",
+      'oeuf_profondeurs:hagrid': "Le Magyar Ancestral flaire l'air, et tout son corps se tend. Tu portes encore l'odeur de son œuf — un œuf qu'on a emporté vers le haut. Sa gorge s'embrase avant même que tu aies levé ta baguette.",
+    },
+  },
   voldemort_revenu: {
     icon: '🐍',
     line: "Ici, la fêlure est si large qu'elle lui prête un visage entier. Lord Voldemort ne te menace pas : il t'examine. « Tous les autres n'étaient que des échos. Moi, je suis ce que la pierre n'a jamais réussi à oublier. Approche. »",
@@ -359,8 +369,58 @@ function _maybeBossPromoBeat() {
   const key = 'boss_promo:' + boss.id;
   if (seenScriptedBeat.has(key)) return false;
   seenScriptedBeat.add(key);
-  if (typeof addMsg === 'function') addMsg(beat.line, 'magic');
+  if (typeof addMsg === 'function') addMsg(bossPromoLine(beat), 'magic');
   return true;
+}
+
+// Ligne de promotion selon les dilemmes (Lot D, G6) : la 1re clé
+// `lineByChoice` ("qid:cid") qui correspond à questChoices l'emporte. PUR.
+function bossPromoLine(beat, choices) {
+  if (!beat) return '';
+  const ch = choices || ((typeof questChoices !== 'undefined' && questChoices) ? questChoices : {});
+  if (beat.lineByChoice) {
+    for (const k of Object.keys(beat.lineByChoice)) {
+      const parts = k.split(':');
+      if (ch[parts[0]] === parts[1]) return beat.lineByChoice[k];
+    }
+  }
+  return beat.line;
+}
+
+// ── Trêve du dragon (Lot D, arc H7 — G7) ──────────────────────
+// Si l'œuf a été rendu à sa lignée (oeuf_profondeurs:scamander), le Magyar
+// Ancestral rompt le combat à 50 % PV, UNE seule fois (sentinelle
+// 'magyar_truce'). Il compte comme vaincu (kills, quêtes, prime du Gardien) ;
+// endBattle accorde l'XP intégrale mais divise l'or et supprime les drops
+// des ennemis marqués `_truce`.
+const DRAGON_TRUCE = {
+  monsterId: 'magyar_ancestral', choice: 'oeuf_profondeurs:scamander', atPct: 0.5,
+  line: "Le Magyar Ancestral recule d'un pas, puis d'un autre. Il te fixe une dernière fois — l'odeur de son œuf rendu aux siens flotte encore sur toi — et replie ses ailes. Il s'enfonce dans les Ruines sans se retourner. Il ne te doit rien. Il te laisse passer.",
+};
+
+// Éligibilité PURE : l'ennemi est-il prêt à rompre le combat ?
+function dragonTruceReady(enemy, choices, seen) {
+  if (!enemy || enemy.id !== DRAGON_TRUCE.monsterId || enemy._truce) return false;
+  if (seen && seen.has('magyar_truce')) return false;
+  const parts = DRAGON_TRUCE.choice.split(':');
+  if (!choices || choices[parts[0]] !== parts[1]) return false;
+  const maxHp = enemy.hp || enemy.currentHp || 1;
+  return enemy.currentHp > 0 && (enemy.currentHp / maxHp) <= DRAGON_TRUCE.atPct;
+}
+
+// Orchestrateur : applique la trêve (retire l'ennemi du combat). Retourne le
+// texte à journaliser, '' sinon.
+function _maybeDragonTruce(enemy) {
+  if (typeof seenScriptedBeat === 'undefined' || !seenScriptedBeat) return '';
+  const choices = (typeof questChoices !== 'undefined' && questChoices) ? questChoices : {};
+  if (!dragonTruceReady(enemy, choices, seenScriptedBeat)) return '';
+  seenScriptedBeat.add('magyar_truce');
+  enemy._truce = true;
+  enemy.currentHp = 0;
+  if (typeof addMsg === 'function') addMsg('🐉 ' + DRAGON_TRUCE.line, 'magic');
+  UX_safe.logCombat('🐉 Le Magyar Ancestral rompt le combat.', 'good');
+  renderEnemyGroup();
+  return '🐉 Le Magyar Ancestral rompt le combat. ';
 }
 
 // Ligne de chute (Lot B, axe 3a) : à la 1re défaite d'un boss promu porteur
@@ -1592,6 +1652,11 @@ function enemyTurn() {
       return;
     }
 
+    // Trêve du dragon (Lot D, H7) : évaluée avant les phases — un dragon qui
+    // se retire n'entre pas en rage.
+    const _truceLog = _maybeDragonTruce(enemy);
+    if (_truceLog) { log += _truceLog; return; }
+
     // Phases de boss : un seuil de PV franchi peut déclencher rage / nouvelle
     // capacité. Évalué juste avant que l'ennemi agisse (il en bénéficie ce tour).
     log += _checkBossPhases(enemy);
@@ -1622,6 +1687,13 @@ function enemyTurn() {
 
   // Une riposte de garde / un familier a pu achever le dernier ennemi.
   if (livingEnemies().length === 0) { setBattleLog(log || '...'); renderEnemyGroup(); endBattle(true); return; }
+
+  // Trêve du dragon (Lot D) : s'il était le dernier ennemi, le combat se clôt.
+  if (enemyGroup.some(e => e._truce) && livingEnemies().length === 0) {
+    setBattleLog(log || '...');
+    checkAllEnemiesDead();
+    return;
+  }
 
   // Statuts persistants : tick sur les alliés vivants en fin de round
   activeParty().forEach(c => {
