@@ -3908,6 +3908,29 @@ function loadNpcs() {
   check('Lot3: donneurs = PNJ existants', g.length === 5 && g.every(id => NPCS.some(n => n.id === id)));
 })();
 
+// §30 — 2.5b (revue de progression) : Éveil d'artefact
+(function test25bAwaken() {
+  const f = loadModule('js/forge.js', ['artifactAwakened', 'ARTIFACT_AWAKEN_COSTS', 'ARTIFACT_AWAKEN_SECONDARY', 'ARTIFACT_AWAKEN_MAX'], { window: {} });
+  const burst = { resolve: 'elemBurst', charges: 1, power: 12 };
+  check('2.5b: rang 0 = inchangé', f.artifactAwakened(burst, 0) === burst);
+  const r1 = f.artifactAwakened(burst, 1), r2 = f.artifactAwakened(burst, 2), r3 = f.artifactAwakened(burst, 3);
+  check('2.5b: rang 1 → +1 charge, puissance inchangée', r1.charges === 2 && r1.power === 12 && !r1.secondary);
+  check('2.5b: rang 2 → puissance +50 %', r2.power === 18 && r2.charges === 2);
+  check('2.5b: rang 3 → secondaire', r3.secondary && r3.secondary.splash === 0.30);
+  check('2.5b: rang borné à 3', f.artifactAwakened(burst, 9).awakenRank === 3);
+  check('2.5b: source intacte', burst.charges === 1 && burst.power === 12);
+  check('2.5b: bouclier +1 tour', f.artifactAwakened({ resolve: 'shieldGroup', power: 1 }, 2).power === 2);
+  check('2.5b: entaille plafonnée à 0,5', f.artifactAwakened({ resolve: 'sapDefense', power: 0.4 }, 2).power === 0.5);
+  check('2.5b: purge → soin au rang 2', f.artifactAwakened({ resolve: 'purgeStatus' }, 2).healFrac === 0.10);
+  const resolvers = ['elemBurst', 'purgeStatus', 'shieldGroup', 'hasteGroup', 'sapDefense', 'succorGroup'];
+  check('2.5b: un secondaire par résolveur', resolvers.every(r => f.ARTIFACT_AWAKEN_SECONDARY[r]));
+  check('2.5b: coûts croissants', f.ARTIFACT_AWAKEN_MAX === 3
+    && f.ARTIFACT_AWAKEN_COSTS[1].marks < f.ARTIFACT_AWAKEN_COSTS[2].marks && f.ARTIFACT_AWAKEN_COSTS[2].marks < f.ARTIFACT_AWAKEN_COSTS[3].marks);
+  const src = require('fs').readFileSync(require('path').join(__dirname, '..', 'js/data-items.js'), 'utf8');
+  const used = new Set([...src.matchAll(/resolve:"(\w+)"/g)].map(m => m[1]));
+  check('2.5b: tous les résolveurs des données sont couverts', [...used].every(r => resolvers.includes(r)));
+})();
+
 // ============================================================
 // Rapport
 // ============================================================

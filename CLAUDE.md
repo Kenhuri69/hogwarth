@@ -364,7 +364,7 @@ attendus se sont exécutés correctement et expose 2 helpers d'accès défensif.
 
 ### Manifeste
 
-Le `MANIFEST` dans `loader.js` énumère **414** entrées `{ name, source, kind,
+Le `MANIFEST` dans `loader.js` énumère **416** entrées `{ name, source, kind,
 optional? }` :
 - `kind: 'fn'` → `typeof name === 'function'`
 - `kind: 'obj'` → `typeof name !== 'undefined'` (couvre `let`/`const`/`var`)
@@ -1191,7 +1191,7 @@ montrés par `_refreshBattleActionButtons` dans `battle-ui.js`) :
 | 🛡️ Garde | — | `guardTurns[idx]` empilé (`min(3, +1)`) ; mitige les coups physiques de 50 % ; restitue `3 + floor(mag/5)` PM par pose (cap `spMax`) **disponible 1 tour sur 2** par personnage (`guardRegenCooldown[idx]`, réarmé à 2, décrémenté par round dans `enemyTurn`). Priorité après Protego/Esquive. **Chaque coup mitigé consomme un palier** ; les paliers non touchés persistent (Double-Garde). Riposte probabiliste `_tryGuardCounter` (base 30 %, plafond 40 %, + `counterChance` d'équipement) — atk/2, sans consommer de tour. |
 | 🧪 Objet | — | Inventaire en mode combat (consommables uniquement) |
 | 💨 Fuir | — | `doFlee()` — chance basée sur AGI vs ATK ennemi, garantie avec Balai |
-| 🏺 Artefact (P2) | charge | `#btn-artifact` — `triggerActiveArtifact()`. Visible si le perso actif équipe un artefact à `item.activeEffect` avec une charge restante (`artifactCharges[idx]`, 1×/combat, reset `startBattle`). Résolveurs `elemBurst`/`purgeStatus`/`shieldGroup`. Ciblage 1-ennemi via `pendingAction='artifact'`. |
+| 🏺 Artefact (P2) | charge | `#btn-artifact` — `triggerActiveArtifact()`. Visible si le perso actif équipe un artefact à `item.activeEffect` avec une charge restante (`artifactCharges[idx]`, 1×/combat, reset `startBattle`). Résolveurs `elemBurst`/`purgeStatus`/`shieldGroup`/`hasteGroup`/`sapDefense`/`succorGroup`. Ciblage 1-ennemi via `pendingAction='artifact'`. **Éveil** (2.5b, Forge) : `item.awakenRank` 1-3 → +1 charge, puissance +50 %, effet secondaire par résolveur (`artifactAwakened`, `ARTIFACT_AWAKEN_SECONDARY`) ; coût Marques de Traque + Essence Primordiale (`ARTIFACT_AWAKEN_COSTS`). |
 | 🔄 Posture (P2) | — | `#btn-posture` — `toggleDuoPosture()`. Visible en **Duo** tant que la bascule gratuite n'a pas servi ce combat (`duoPostureSwitched`). Bascule `duoPosture` phalange↔tenaille. Cf. « Positionnement Duo ». |
 | 🌿 Rune (P4) | — | `#btn-env` — `triggerRuneEnv()`. Visible en **zone runique** (D / override post-victoire) tant que `envRuneCharge > 0` (1×/combat). Étourdit (`stun` 1 tour) l'ennemi le plus proche. Cf. « Environnement en combat ». |
 | 🤝 Duo (Lot G) | les 2 tours | `#btn-duo-tech` — `triggerDuoTechnique()`. Visible en **Duo** au tour du héros de tête quand les derniers sorts offensifs des deux héros forment un couple d'éléments connu (1×/combat). Cf. « Technique de duo & complicité ». |
@@ -1551,7 +1551,8 @@ window.checkKillQuests(monsterId) → incrémente q.progress, auto-complète (d�
   par visite. Ni XP ni or ; les Marques (`hunterMarks`) ne viennent que de là.
 - **Débouchés** : Reforger la voie (Forge/Bibliothèque) payable en or **ou**
   5 Marques (bascule du panneau) ; échange au Gardien (4 Marques → Essence
-  des Ténèbres ou Page de Grimoire). Compteur 🏹 dans la fiche.
+  des Ténèbres ou Page de Grimoire) ; Éveil d'artefact à la Forge
+  (4/8/12 Marques + 1/1/2 Essence Primordiale). Compteur 🏹 dans la fiche.
 - Télémétrie `BalanceLog.record('traque', { marks, mult })`.
 
 > Pour ajouter des quêtes : pousser un objet dans `activeQuests` dans `state.js`.

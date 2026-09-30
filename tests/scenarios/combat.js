@@ -2697,6 +2697,60 @@ async function scenarioActiveArtifact() {
   await browser.close();
 }
 
+// 2.5b — Éveil d'artefact : 3 rangs achetés à la Forge (Marques + Primordiale),
+// +1 charge, puissance +50 %, secondaire (éclaboussure de l'Orbe).
+async function scenarioArtifactAwaken() {
+  console.log('\n── Scénario 2.5b : Éveil d\'artefact ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 — Forge : section Éveil, achat des 3 rangs, coût prélevé, refus au-delà.
+  const t1 = await page.evaluate(() => {
+    party[0].equipped.trinket = JSON.parse(JSON.stringify(ITEMS.find(i => i.id === 'orbe_runique')));
+    const prim = ITEMS.find(i => i.id === 'essence_primordiale');
+    for (let i = 0; i < 4; i++) player.inventory.push({ ...prim });
+    hunterMarks = 3;
+    openForge();
+    const section = document.getElementById('forge-list').innerHTML.includes('Éveil d\'artefact');
+    const ko = awakenArtifactAtForge(0, 'trinket');
+    hunterMarks = 24;
+    const oks = [1, 2, 3].map(() => awakenArtifactAtForge(0, 'trinket'));
+    const over = awakenArtifactAtForge(0, 'trinket');
+    closeModal('forge-modal');
+    const primLeft = player.inventory.filter(i => i.id === 'essence_primordiale').length;
+    return { section, ko, oks, over, rank: party[0].equipped.trinket.awakenRank, marks: hunterMarks, primLeft,
+      saved: _serializeState().party[0].equipped.trinket.awakenRank };
+  });
+  console.log('  T1 forge :', t1);
+  assert(t1.section, 'la Forge affiche la section Éveil');
+  assert(!t1.ko, 'éveil refusé sans assez de Marques');
+  assert(t1.oks.every(Boolean) && t1.rank === 3 && !t1.over, '3 rangs puis refus');
+  assert(t1.marks === 0 && t1.primLeft === 0, 'coût total : 24 Marques, 4 Primordiales');
+  assert(t1.saved === 3, 'le rang d\'éveil est sérialisé avec l\'équipement');
+
+  // T2 — combat : 2 charges, dégâts ×1,5, éclaboussure sur l'autre ennemi.
+  await startDummyFight(page, { hp: 500 });
+  const t2 = await page.evaluate(() => {
+    enemyGroup.push({ ...enemyGroup[0], name: 'Mannequin 2', currentHp: 500, statusEffects: [] });
+    artifactCharges = {};
+    const art = _effArt(party[0].equipped.trinket);
+    const left0 = _artifactChargesLeft(0, art);
+    useActiveArtifact(0, 0);
+    return { left0, left1: artifactCharges[0], dmg: 500 - enemyGroup[0].currentHp, splash: 500 - enemyGroup[1].currentHp, power: art.power };
+  });
+  console.log('  T2 combat :', t2);
+  assert(t2.left0 === 2 && t2.left1 === 1, 'rang 1 : 2 charges par combat');
+  assert(t2.power === 18 && t2.dmg >= 18, 'rang 2 : puissance de l\'Orbe 12 × 1,5 = 18');
+  assert(t2.splash > 0, 'rang 3 : éclaboussure sur l\'autre ennemi');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (Éveil d'artefact)`);
+  }
+  console.log('  ✅ Éveil d\'artefact OK');
+  await browser.close();
+}
+
 // ============================================================
 // P2 — Positionnement Duo (duoPosture) : persistant + bascule 1×/combat,
 // Tenaille (focus-fire), sérialisation, solo ignoré.
@@ -3089,4 +3143,4 @@ async function scenarioP5Feedback() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBuffBadgesPng, scenarioBruteCrush, scenarioStatRework, scenarioFortuneStat, scenarioAgiCelerite, scenarioCeleriteGuardCounting, scenarioDuoStatuses, scenarioCritDodge, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioGuardAndFerula, scenarioCombatBuffs, scenarioLegilimensEscalation, scenarioStun, scenarioStatusComboNoFreeze, scenarioCombatExtV2, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioDeathPetrify, scenarioIronmanDeath, scenarioLargeEnemyGroup, scenarioMonsterDiscovery, scenarioArtifactForms, scenarioActiveArtifact, scenarioDuoPosture, scenarioBossPhase, scenarioCombatEnv, scenarioP5Feedback, scenarioLotGDuo] };
+module.exports = { scenarios: [scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBuffBadgesPng, scenarioBruteCrush, scenarioStatRework, scenarioFortuneStat, scenarioAgiCelerite, scenarioCeleriteGuardCounting, scenarioDuoStatuses, scenarioCritDodge, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioGuardAndFerula, scenarioCombatBuffs, scenarioLegilimensEscalation, scenarioStun, scenarioStatusComboNoFreeze, scenarioCombatExtV2, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioDeathPetrify, scenarioIronmanDeath, scenarioLargeEnemyGroup, scenarioMonsterDiscovery, scenarioArtifactForms, scenarioActiveArtifact, scenarioArtifactAwaken, scenarioDuoPosture, scenarioBossPhase, scenarioCombatEnv, scenarioP5Feedback, scenarioLotGDuo] };

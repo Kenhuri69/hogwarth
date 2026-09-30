@@ -64,6 +64,117 @@ function _consumePrimordiale(n) {
   return _consumeMaterial('essence_primordiale', n);
 }
 
+// ── Éveil d'artefact (2.5b, revue de progression §5.3) ──────
+// 3 rangs par artefact actif (`item.activeEffect`), stockés sur l'objet
+// (`item.awakenRank`, sérialisé avec l'équipement). Coût : Marques de Traque
+// + Essence Primordiale. Rang 1 : +1 charge ; rang 2 : puissance +50 % ;
+// rang 3 : effet secondaire (par résolveur). Plan :
+// .claude/plans/lot2-5b-eveil-artefact-2026-09.md
+const ARTIFACT_AWAKEN_MAX = 3;
+const ARTIFACT_AWAKEN_COSTS = {
+  1: { marks: 4,  primordiale: 1 },
+  2: { marks: 8,  primordiale: 1 },
+  3: { marks: 12, primordiale: 2 },
+};
+const ARTIFACT_AWAKEN_SECONDARY = {
+  elemBurst:   { label: 'éclaboussure (30 %) sur les autres ennemis', splash: 0.30 },
+  purgeStatus: { label: '+1 palier de Garde au groupe', guard: 1 },
+  shieldGroup: { label: 'rend 10 % des PM au groupe', spFrac: 0.10 },
+  hasteGroup:  { label: 'rend 10 % des PM au groupe', spFrac: 0.10 },
+  sapDefense:  { label: 'ATK de la cible −10 %', atkFrac: 0.10 },
+  succorGroup: { label: 'dissipe les altérations du groupe', purge: true },
+};
+
+// Effet actif éveillé (PUR) : copie de `art` modifiée selon `rank`.
+function artifactAwakened(art, rank) {
+  if (!art) return art;
+  const r = Math.max(0, Math.min(ARTIFACT_AWAKEN_MAX, rank | 0));
+  if (!r) return art;
+  const out = { ...art, awakenRank: r };
+  out.charges = (art.charges != null ? art.charges : 1) + 1;
+  if (r >= 2) {
+    if (art.resolve === 'shieldGroup')      out.power = Math.max(1, art.power || 1) + 1;
+    else if (art.resolve === 'sapDefense')  out.power = Math.min(0.5, (art.power != null ? art.power : 0.25) * 1.5);
+    else if (art.resolve === 'purgeStatus') out.healFrac = 0.10;
+    else if (typeof art.power === 'number') out.power = art.resolve === 'elemBurst'
+      ? Math.floor(art.power * 1.5) : art.power * 1.5;
+  }
+  if (r >= 3) out.secondary = ARTIFACT_AWAKEN_SECONDARY[art.resolve] || null;
+  return out;
+}
+
+// Effet actif d'un objet équipé, éveil appliqué.
+function effectiveArtifactEffect(item) {
+  if (!item || !item.activeEffect) return null;
+  return artifactAwakened(item.activeEffect, item.awakenRank | 0);
+}
+
+function awakenArtifactAtForge(charIdx, slot) {
+  const c = party[charIdx];
+  const item = c && c.equipped ? c.equipped[slot] : null;
+  if (!item || !item.activeEffect) return false;
+  const rank = item.awakenRank | 0;
+  if (rank >= ARTIFACT_AWAKEN_MAX) return false;
+  const cost = ARTIFACT_AWAKEN_COSTS[rank + 1];
+  const marks = (typeof hunterMarks === 'number') ? hunterMarks : 0;
+  if (marks < cost.marks || _countPrimordiale() < cost.primordiale) {
+    addMsg(`Éveil : ${cost.marks} 🏹 Marques et ${cost.primordiale} 🔮 Essence Primordiale requises.`, 'bad');
+    return false;
+  }
+  hunterMarks -= cost.marks;
+  _consumePrimordiale(cost.primordiale);
+  item.awakenRank = rank + 1;
+  addMsg(`🏺 ${item.name} s'éveille : rang ${rank + 1}/${ARTIFACT_AWAKEN_MAX}.`, 'magic');
+  if (typeof updateUI === 'function') updateUI();
+  openForge();
+  if (typeof autoSave === 'function') autoSave('artifact-awaken');
+  return true;
+}
+window.artifactAwakened = artifactAwakened;
+window.effectiveArtifactEffect = effectiveArtifactEffect;
+window.awakenArtifactAtForge = awakenArtifactAtForge;
+
+function _awakenRankLabel(r) {
+  return ['—', "+1 charge", 'puissance +50 %', 'effet secondaire'][r] || '';
+}
+
+// Section Forge : artefacts actifs équipés et leur rang d'éveil.
+function _forgeAwakenSectionHtml() {
+  const rows = [];
+  for (let i = 0; i < (partySize || 1); i++) {
+    const c = party[i];
+    if (!c || !c.equipped) continue;
+    for (const [slot, item] of Object.entries(c.equipped)) {
+      if (!item || !item.activeEffect) continue;
+      const rank = item.awakenRank | 0;
+      const maxed = rank >= ARTIFACT_AWAKEN_MAX;
+      const cost = maxed ? null : ARTIFACT_AWAKEN_COSTS[rank + 1];
+      const marks = (typeof hunterMarks === 'number') ? hunterMarks : 0;
+      const ok = cost && marks >= cost.marks && _countPrimordiale() >= cost.primordiale;
+      const dis = ok ? '' : 'disabled';
+      const sec = ARTIFACT_AWAKEN_SECONDARY[item.activeEffect.resolve];
+      const next = maxed ? 'Éveil complet'
+        : `Rang ${rank + 1} : ${rank + 1 === 3 && sec ? sec.label : _awakenRankLabel(rank + 1)}`;
+      const iconHtml = (typeof getItemIconHtml === 'function') ? getItemIconHtml(item, 'ui-icon-md') : (item.icon || '🏺');
+      rows.push(`
+        <div class="forge-item">
+          <div class="forge-item-icon">${iconHtml}${rank ? `<span class="forge-lvl-badge">★${rank}</span>` : ''}</div>
+          <div class="forge-item-text">
+            <div class="forge-item-name">${item.name} <span class="forge-item-slot">(${(c.name || '').split(' ')[0]} · ${item.activeEffect.label})</span></div>
+            <div class="forge-preview">${next}</div>
+            ${cost ? `<div class="forge-cost">${cost.marks} 🏹 · ${cost.primordiale} 🔮</div>` : ''}
+          </div>
+          ${maxed ? '' : `<button class="forge-upgrade-btn ${dis}" ${dis} onclick="awakenArtifactAtForge(${i}, '${slot}')">🏺 Éveiller</button>`}
+        </div>`);
+    }
+  }
+  if (!rows.length) return '';
+  return `<div class="forge-dissolve-section forge-awaken-section">
+      <div class="forge-progress-title">🏺 Éveil d'artefact — 🏹 ${(typeof hunterMarks === 'number') ? hunterMarks : 0} Marques</div>
+      ${rows.join('')}
+    </div>`;
+}
+
 // ── Enchantement rerollable (gold-sink endgame, Piste D) ─────
 // Affixe aléatoire `item.enchant = {key,value,label,disp}` posé/re-tiré contre
 // or pur. Confiné ici ; `recalculateStats` consomme `_enchantTotals` via un
@@ -581,7 +692,7 @@ function openForge() {
       </div>`;
   }
 
-  list.innerHTML = summaryHtml + equipHtml + dissolveHtml;
+  list.innerHTML = summaryHtml + equipHtml + _forgeAwakenSectionHtml() + dissolveHtml;
 
   modal.style.display = 'flex';
   if (typeof maybeForgeTour === 'function') maybeForgeTour();   // P2.4 — mini-tour 1ʳᵉ ouverture

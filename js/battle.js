@@ -1060,6 +1060,15 @@ function _activeArtifactFor(char) {
   }
   return null;
 }
+// Effet actif, éveil d'artefact appliqué (2.5b — forge.js artifactAwakened).
+function _effArt(item) {
+  if (!item) return null;
+  return (typeof effectiveArtifactEffect === 'function') ? effectiveArtifactEffect(item) : item.activeEffect;
+}
+// Rend `frac` des PM max aux héros vivants (secondaires d'éveil).
+function _artifactRestoreSp(frac) {
+  activeParty().forEach(c => { if (c.hp > 0) c.sp = Math.min(c.spMax, c.sp + Math.ceil(c.spMax * frac)); });
+}
 // Charges restantes pour le perso `idx` (init paresseuse depuis activeEffect.charges).
 function _artifactChargesLeft(idx, art) {
   if (artifactCharges[idx] === undefined) {
@@ -1073,7 +1082,7 @@ function triggerActiveArtifact() {
   const char = party[idx];
   const item = _activeArtifactFor(char);
   if (!item) { setBattleLog('Aucun artefact actif équipé.'); return; }
-  const art = item.activeEffect;
+  const art = _effArt(item);
   if (_artifactChargesLeft(idx, art) <= 0) {
     setBattleLog(`🏺 ${art.label} est déjà déchargé pour ce combat.`);
     return;
@@ -1093,7 +1102,8 @@ function useActiveArtifact(charIdx, targetIdx) {
   const char = party[charIdx];
   const item = _activeArtifactFor(char);
   if (!item) return;
-  const art = item.activeEffect;
+  const art = _effArt(item);
+  const sec = art.secondary || null;   // éveil rang 3 (effet secondaire)
   if (_artifactChargesLeft(charIdx, art) <= 0) return;
   artifactCharges[charIdx] = _artifactChargesLeft(charIdx, art) - 1;
 
@@ -1122,6 +1132,15 @@ function useActiveArtifact(charIdx, targetIdx) {
     addMsg(`🏺 ${art.label} : ${dmg} dégâts sur ${enemy.name}.`, 'good');
     UX_safe.floatDmg(`enemy:${tIdx}`, dmg, 'crit');
     UX_safe.logCombat(`🏺 <b>${char.name}</b> — ${art.label} → <b>−${dmg}</b>${suffix} sur ${enemy.name}`, 'magic');
+    if (sec && sec.splash) {
+      for (const other of livingEnemies()) {
+        if (other === enemy) continue;
+        const sp = Math.max(1, Math.floor(dmg * sec.splash));
+        other.currentHp -= sp;
+        UX_safe.floatDmg(`enemy:${enemyGroup.indexOf(other)}`, sp, 'dmg');
+      }
+      UX_safe.logCombat(`🏺 Éveil — éclaboussure sur les autres ennemis`, 'magic');
+    }
     renderEnemyGroup();
     if (checkAllEnemiesDead()) return;
   } else if (art.resolve === 'purgeStatus') {
@@ -1131,6 +1150,12 @@ function useActiveArtifact(charIdx, targetIdx) {
       if (c.hp <= 0 || !Array.isArray(c.statusEffects)) return;
       cleared += c.statusEffects.length;
       c.statusEffects = [];
+    });
+    // Éveil : rang 2 soigne, rang 3 ajoute un palier de Garde.
+    activeParty().forEach((c, i) => {
+      if (c.hp <= 0) return;
+      if (art.healFrac) c.hp = Math.min(c.hpMax, c.hp + Math.ceil(c.hpMax * art.healFrac));
+      if (sec && sec.guard) guardTurns[i] = Math.min(3, (guardTurns[i] || 0) + sec.guard);
     });
     setBattleLog(`🏺 ${char.name} invoque ${art.label} : ${cleared} altération${cleared > 1 ? 's' : ''} dissipée${cleared > 1 ? 's' : ''} !`);
     addMsg(`🏺 ${art.label} : groupe purifié.`, 'good');
@@ -1143,6 +1168,7 @@ function useActiveArtifact(charIdx, targetIdx) {
       if (c.hp <= 0) return;
       shieldTurns[i] = Math.max(shieldTurns[i] || 0, turns);
     });
+    if (sec && sec.spFrac) _artifactRestoreSp(sec.spFrac);
     setBattleLog(`🏺 ${char.name} déploie ${art.label} : bouclier de groupe (${turns} tour${turns > 1 ? 's' : ''}) !`);
     addMsg(`🏺 ${art.label} : bouclier de groupe.`, 'good');
     UX_safe.logCombat(`🏺 <b>${char.name}</b> — ${art.label} protège le groupe (${turns} t)`, 'magic');
@@ -1155,6 +1181,7 @@ function useActiveArtifact(charIdx, targetIdx) {
       if (c.hp <= 0) return;
       celeriteGauge[i] = (celeriteGauge[i] || 0) + gain;
     });
+    if (sec && sec.spFrac) _artifactRestoreSp(sec.spFrac);
     setBattleLog(`🏺 ${char.name} libère ${art.label} : le temps s'accélère (+${gain} Célérité) !`);
     addMsg(`🏺 ${art.label} : jauge de Célérité chargée.`, 'good');
     UX_safe.logCombat(`🏺 <b>${char.name}</b> — ${art.label} accélère le groupe (+${gain} ⚡)`, 'magic');
@@ -1167,6 +1194,7 @@ function useActiveArtifact(charIdx, targetIdx) {
       const frac   = (typeof art.power === 'number') ? art.power : 0.25;
       const before = enemy.def | 0;
       enemy.def    = Math.max(0, Math.floor(before * (1 - frac)));
+      if (sec && sec.atkFrac) enemy.atk = Math.max(1, Math.floor((enemy.atk | 0) * (1 - sec.atkFrac)));
       setBattleLog(`🏺 ${char.name} entaille l'armure de ${enemy.name} : DEF ${before} → ${enemy.def} !`);
       addMsg(`🏺 ${art.label} : DEF de ${enemy.name} réduite (${before} → ${enemy.def}).`, 'good');
       UX_safe.logCombat(`🏺 <b>${char.name}</b> — ${art.label} sape ${enemy.name} (DEF ${before} → ${enemy.def})`, 'magic');
@@ -1180,6 +1208,7 @@ function useActiveArtifact(charIdx, targetIdx) {
       if (c.hp <= 0) return;
       c.hp = Math.min(c.hpMax, c.hp + Math.ceil(c.hpMax * frac));
       c.sp = Math.min(c.spMax, c.sp + Math.ceil(c.spMax * frac));
+      if (sec && sec.purge) c.statusEffects = [];
     });
     setBattleLog(`🏺 ${char.name} fait circuler ${art.label} : le groupe reprend son souffle (+${Math.round(frac * 100)} % PV/PM) !`);
     addMsg(`🏺 ${art.label} : groupe restauré.`, 'good');
