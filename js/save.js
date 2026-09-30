@@ -603,6 +603,10 @@ function _applyState(gs) {
   if (typeof _ensureChamberGuardiansPresent === 'function') {
     _ensureChamberGuardiansPresent(currentFloor);
   }
+  // Boss d'acte garantis (Lot B, axe 3c) — étages 6 et 8 pré-victoire.
+  if (typeof _ensureActBossPresent === 'function') {
+    _ensureActBossPresent(currentFloor);
+  }
 
   recalculateStats();
   if (!('pendingHouseRewards' in gs)) _migrateHouseRewards();

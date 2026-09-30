@@ -655,6 +655,10 @@ function generateDungeon(floor) {
   if (typeof _ensureChamberGuardiansPresent === 'function') {
     _ensureChamberGuardiansPresent(floor);
   }
+  // Boss d'acte garantis (Lot B, axe 3c) — étages 6 et 8 pré-victoire.
+  if (typeof _ensureActBossPresent === 'function') {
+    _ensureActBossPresent(floor);
+  }
 
   // Filet de sécurité de connexité : garantit que l'escalier descendant
   // est atteignable depuis le spawn (perce un couloir de secours sinon).

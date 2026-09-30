@@ -1543,9 +1543,22 @@ function loadNpcs() {
   // chacun avec une ligne de monologue.
   const pure = loadModule('js/battle.js', ['BOSS_PROMO_BEATS']);
   const { BOSS_PROMO_BEATS } = pure;
-  check('BOSS_PROMO_BEATS = 6 boss', Object.keys(BOSS_PROMO_BEATS).length === 6);
+  // Lot B (axe 3a) : + 7 boss canon.
+  check('BOSS_PROMO_BEATS = 13 boss', Object.keys(BOSS_PROMO_BEATS).length === 13);
+  const { MONSTERS: _promoMonsters } = loadMonsters();
+  for (const id of Object.keys(BOSS_PROMO_BEATS)) {
+    check(`promo ${id} : monstre existant`, _promoMonsters.some(m => m.id === id));
+  }
+  for (const id of ['ombre_quirrell', 'bellatrix', 'fenrir_greyback', 'aragog',
+                    'antonin_dolohov', 'voldemort_affaibli']) {
+    check(`${id} : ligne de chute non vide`,
+      typeof BOSS_PROMO_BEATS[id].fall === 'string' && BOSS_PROMO_BEATS[id].fall.length > 20);
+  }
+  check('voldemort_revenu : pas de chute (cinématique de fin)', !BOSS_PROMO_BEATS.voldemort_revenu.fall);
   for (const id of ['maitre_detraqueur', 'heraut_tenebres',
-                    'gardien_lion', 'gardien_serpent', 'gardien_aigle', 'gardien_blaireau']) {
+                    'gardien_lion', 'gardien_serpent', 'gardien_aigle', 'gardien_blaireau',
+                    'ombre_quirrell', 'bellatrix', 'fenrir_greyback', 'aragog',
+                    'antonin_dolohov', 'voldemort_affaibli', 'voldemort_revenu']) {
     check(`${id} : ligne de promotion non vide`,
       BOSS_PROMO_BEATS[id] && typeof BOSS_PROMO_BEATS[id].line === 'string' && BOSS_PROMO_BEATS[id].line.length > 20);
   }
@@ -1575,6 +1588,19 @@ function loadNpcs() {
   const orch3 = loadModule('js/battle.js', ['_maybeBossPromoBeat'],
     { enemyGroup: [], seenScriptedBeat: new Set(), addMsg: () => {} });
   check('groupe vide → false', orch3._maybeBossPromoBeat() === false);
+
+  // Ligne de chute (Lot B) : 1re défaite seulement, tout le groupe parcouru,
+  // boss sans `fall` ignoré.
+  const seenF = new Set();
+  let falls = 0;
+  const fo = loadModule('js/battle.js', ['_maybeBossFallBeat'],
+    { seenScriptedBeat: seenF, addMsg: () => { falls++; } });
+  check('chute : escorte + Greyback → 1 ligne',
+    fo._maybeBossFallBeat([{ id: 'loup_garou' }, { id: 'fenrir_greyback' }]) === 1 && falls === 1);
+  check('chute : sentinelle boss_fall posée', seenF.has('boss_fall:fenrir_greyback'));
+  check('chute : 2e défaite → 0 (one-shot)', fo._maybeBossFallBeat([{ id: 'fenrir_greyback' }]) === 0 && falls === 1);
+  check('chute : Voldemort Ressuscité → 0', fo._maybeBossFallBeat([{ id: 'voldemort_revenu' }]) === 0);
+  check('chute : entrée invalide → 0', fo._maybeBossFallBeat(null) === 0);
 })();
 
 // ============================================================
@@ -3335,6 +3361,93 @@ function loadNpcs() {
   }
   check('lotA pnj: les 16 héros sont reconnus par au moins un PNJ',
     heroKeys.every(k => covered.has(k)));
+})();
+
+// ============================================================
+// 22. Lot B (revue 2026-09) — boss d'acte, murmures de la fêlure,
+//     lettres de la surface
+// ============================================================
+(function testLotB() {
+  // 3c — boss d'acte : placement, marquage, gates, défaite.
+  const FLOOR = 0, STAIRS_D = 3, STAIRS_U = 4;
+  const mkMap = () => {
+    // Couloir 1×9 : escalier montant en 0, descendant en 8 → l'antre la plus
+    // éloignée des deux est la case centrale (4).
+    const d = [[STAIRS_U, FLOOR, FLOOR, FLOOR, FLOOR, FLOOR, FLOOR, FLOOR, STAIRS_D]];
+    return { dungeon: d, enemyMap: [Array(9).fill(null)] };
+  };
+  const { MONSTERS } = loadMonsters();
+  const mkEnv = (extra) => Object.assign(mkMap(), {
+    CELL: { FLOOR, STAIRS_D, STAIRS_U }, MONSTERS,
+    scaleMonster: (b) => Object.assign({}, b),
+    playerX: 0, playerY: 0, victoryAchieved: false, seenScriptedBeat: new Set(),
+  }, extra || {});
+  const names = ['ACT_BOSSES', 'actBossForFloor', '_ensureActBossPresent', '_markActBossesDefeated', 'enemyMap'];
+  const env = mkEnv();
+  const ds = loadModule('js/dungeon-spawning.js', names, env);
+  check('lotB acte: 6 = Quirrell escorté', ds.actBossForFloor(6).id === 'ombre_quirrell' && !ds.actBossForFloor(6).alone);
+  check('lotB acte: 8 = Greyback seul', ds.actBossForFloor(8).id === 'fenrir_greyback' && ds.actBossForFloor(8).alone);
+  check('lotB acte: 7 → aucun', ds.actBossForFloor(7) === null);
+  for (const f of Object.keys(ds.ACT_BOSSES)) {
+    const m = MONSTERS.find(x => x.id === ds.ACT_BOSSES[f].id);
+    check('lotB acte ' + f + ': boss éligible à son étage', m && m.minFloor <= Number(f));
+  }
+  check('lotB acte: étage 8 placé', ds._ensureActBossPresent(8) === 1);
+  const placed = env.enemyMap[0][4];
+  check('lotB acte: antre la plus éloignée des escaliers', placed && placed.id === 'fenrir_greyback');
+  check('lotB acte: marqué actBoss + soloEncounter', placed.actBoss === true && placed.soloEncounter === true);
+  check('lotB acte: idempotent', ds._ensureActBossPresent(8) === 0
+    && env.enemyMap[0].filter(Boolean).length === 1);
+  ds._markActBossesDefeated([{ id: 'loup_garou' }, { id: 'fenrir_greyback' }]);
+  check('lotB acte: défaite → sentinelle', env.seenScriptedBeat.has('act_boss_down:fenrir_greyback'));
+  const envDown = mkEnv({ seenScriptedBeat: new Set(['act_boss_down:ombre_quirrell']) });
+  check('lotB acte: déjà vaincu → rien',
+    loadModule('js/dungeon-spawning.js', names, envDown)._ensureActBossPresent(6) === 0);
+  const envWin = mkEnv({ victoryAchieved: true });
+  check('lotB acte: post-victoire → rien',
+    loadModule('js/dungeon-spawning.js', names, envWin)._ensureActBossPresent(6) === 0);
+  const envQ = mkEnv();
+  const dq = loadModule('js/dungeon-spawning.js', names, envQ);
+  check('lotB acte: Quirrell placé', dq._ensureActBossPresent(6) === 1);
+  check('lotB acte: Quirrell escorté (pas de soloEncounter)', !envQ.enemyMap[0][4].soloEncounter);
+  // Exemplaire déjà présent (tirage naturel) : marqué, pas dupliqué.
+  const envN = mkEnv();
+  envN.enemyMap[0][2] = { id: 'fenrir_greyback' };
+  const dn = loadModule('js/dungeon-spawning.js', names, envN);
+  check('lotB acte: tirage naturel → marqué, non dupliqué',
+    dn._ensureActBossPresent(8) === 0 && envN.enemyMap[0][2].soloEncounter === true
+    && envN.enemyMap[0].filter(Boolean).length === 1);
+
+  // 3b — murmures de la fêlure (résolveur pur).
+  const fa = loadModule('js/floor-ambiance.js', ['CRACK_WHISPERS', 'pickCrackWhisper', 'composeSurfaceLetter']);
+  const W = fa.pickCrackWhisper;
+  check('lotB murmure: étages 5, 6, 9', Object.keys(fa.CRACK_WHISPERS).join(',') === '5,6,9');
+  const houses = ['Gryffondor', 'Serpentard', 'Serdaigle', 'Poufsouffle'];
+  const byHouse = new Set(houses.map(h => W(5, { house: h })));
+  check('lotB murmure 5: une phrase par Maison', byHouse.size === 4);
+  check('lotB murmure 5: sans Maison → repli', W(5, {}) === fa.CRACK_WHISPERS[5].fallback);
+  check('lotB murmure 6: Harry', W(6, { heroKeys: ['hermione', 'harry'] }) === fa.CRACK_WHISPERS[6].lines.harry);
+  check('lotB murmure 6: 1er héros concerné', W(6, { heroKeys: ['draco', 'harry'] }) === fa.CRACK_WHISPERS[6].lines.draco);
+  check('lotB murmure 6: autre héros → repli', W(6, { heroKeys: ['louis'] }) === fa.CRACK_WHISPERS[6].fallback);
+  check('lotB murmure 9: pacte', W(9, { pactChoice: 'pact' }) === fa.CRACK_WHISPERS[9].lines.pact);
+  check('lotB murmure 9: défi', W(9, { pactChoice: 'defiance' }) === fa.CRACK_WHISPERS[9].lines.defiance);
+  check('lotB murmure 9: aucun choix → repli', W(9, { pactChoice: null }) === fa.CRACK_WHISPERS[9].fallback);
+  check('lotB murmure: étage sans murmure → null', W(8, { house: 'Gryffondor' }) === null && W(5) !== null);
+
+  // H8 — lettres de la surface (résolveur pur).
+  const L = fa.composeSurfaceLetter;
+  for (const f of [4, 7, 10, 11]) {
+    const l = L(f, {});
+    check('lotB lettre ' + f + ': expéditeur + texte', l && l.from && typeof l.text === 'string' && l.text.length > 80);
+  }
+  check('lotB lettre: étage 5 → null', L(5, {}) === null);
+  check('lotB lettre 4: reflète les quêtes remises', L(4, { questsDone: 0 }).text !== L(4, { questsDone: 2 }).text);
+  check('lotB lettre 4: sablier de la Maison', L(4, { house: 'Serdaigle', houseTier: 2 }).text.includes('Serdaigle'));
+  check('lotB lettre 7: élève de la Maison', L(7, { house: 'Poufsouffle' }).from.includes('Poufsouffle'));
+  check('lotB lettre 7: Quête Signature prioritaire',
+    L(7, { signatureDone: true, questsDone: 9 }).text !== L(7, { questsDone: 9 }).text);
+  check('lotB lettre 10: reflète les quêtes', L(10, { questsDone: 8 }).text !== L(10, { questsDone: 1 }).text);
+  check('lotB lettre 11: Hagrid', L(11, {}).from === 'Hagrid');
 })();
 
 // ============================================================

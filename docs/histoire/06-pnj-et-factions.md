@@ -322,6 +322,19 @@ Mme Norris, Peeves, lutins, Acromantules, Trolls, Hippogriffes, Gargouilles…
 > ✅ Chaque boss tombé **affaiblit le sceau** ; la présence de Voldemort se
 > densifie d'étage en étage.
 
+> ✅ **Lot B (revue 2026-09)** — les boss canon **parlent** : réplique d'entrée
+> à la 1re rencontre et **ligne de chute** à la 1re défaite (`BOSS_PROMO_BEATS`,
+> champ `fall`, `battle.js`) pour Quirrell, Bellatrix, Greyback, Aragog, Dolohov
+> et Voldemort Affaibli ; Voldemort Ressuscité n'a que l'entrée (la cinématique
+> de victoire fait la chute). **Boss d'acte garantis** (`ACT_BOSSES`,
+> `dungeon-spawning.js`) : **Ombre de Quirrell** escortée à l'étage 6 (fin de
+> l'Acte II) et **Fenrir Greyback** *seul* à l'étage 8 (ouverture de l'Acte III),
+> facultatifs (antre à l'écart des escaliers), garantis jusqu'à leur défaite.
+> Calibrage : `tools/sim-difficulty.js --boss=ID --boss-alone=1`. La présence de
+> Voldemort se densifie par les **murmures de la fêlure** (étages 5, 6, 9 —
+> `CRACK_WHISPERS`, `floor-ambiance.js`), qui répondent à la Maison, au héros et
+> au Pacte des Cachots.
+
 ### Boss originaux (gardiens de seuil, epic)
 
 Antagonistes inédits, **moins scénarisés** que les canon — des gardiens thématiques

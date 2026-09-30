@@ -308,6 +308,84 @@ function _ensureChamberGuardiansPresent(floor) {
   return placed;
 }
 
+// Boss d'acte garantis (Lot B, revue 2026-09, axe 3c) : un boss par fin
+// d'Acte II (étage 6) et ouverture d'Acte III (étage 8), en plus des tirages.
+// Choix et forme calibrés par tools/sim-difficulty.js (--boss / --boss-alone) :
+// Quirrell escorté ≈ moyenne de l'étage 6 ; Greyback SEUL (99 % solo, combat
+// long) — escorté, il faisait un mur solo (51 %). `alone` → soloEncounter lu
+// par startBattle. Cf. .claude/plans/lotB-antagonistes-rythme-2026-09.md.
+const ACT_BOSSES = {
+  6: { id: 'ombre_quirrell',  alone: false },
+  8: { id: 'fenrir_greyback', alone: true  },
+};
+const _ACT_BOSS_DOWN = 'act_boss_down:';
+
+// Pur : le boss d'acte de l'étage, ou null.
+function actBossForFloor(floor) {
+  return ACT_BOSSES[floor] || null;
+}
+
+// Place le boss d'acte de l'étage, pré-victoire, tant qu'il n'a pas été vaincu
+// (sentinelle dans seenScriptedBeat). Facultatif : posé sur la case libre la
+// plus éloignée des deux escaliers (son antre), jamais sur le chemin imposé.
+// Idempotente : un exemplaire déjà présent (tirage naturel compris) est
+// simplement marqué. Appelée aux mêmes points que _ensureFinalBossPresent.
+function _ensureActBossPresent(floor) {
+  const act = actBossForFloor(floor);
+  if (!act) return 0;
+  if (typeof victoryAchieved !== 'undefined' && victoryAchieved) return 0;
+  if (typeof seenScriptedBeat !== 'undefined' && seenScriptedBeat
+      && seenScriptedBeat.has(_ACT_BOSS_DOWN + act.id)) return 0;
+  if (typeof dungeon === 'undefined' || typeof enemyMap === 'undefined') return 0;
+  if (typeof MONSTERS === 'undefined' || typeof scaleMonster !== 'function') return 0;
+
+  const mark = (m) => { m.actBoss = true; if (act.alone) m.soloEncounter = true; };
+  for (let y = 0; y < enemyMap.length; y++) {
+    for (let x = 0; x < enemyMap[y].length; x++) {
+      const m = enemyMap[y][x];
+      if (m && m.id === act.id) { mark(m); return 0; }
+    }
+  }
+  const base = MONSTERS.find(m => m.id === act.id);
+  if (!base) return 0;
+
+  const stairs = [];
+  const free = [];
+  for (let y = 0; y < dungeon.length; y++) {
+    for (let x = 0; x < dungeon[y].length; x++) {
+      const c = dungeon[y][x];
+      if (c === CELL.STAIRS_D || c === CELL.STAIRS_U) stairs.push({ x, y });
+      if (c !== CELL.FLOOR || enemyMap[y][x]) continue;
+      if (typeof playerX === 'number' && x === playerX && y === playerY) continue;
+      free.push({ x, y });
+    }
+  }
+  if (!free.length) return 0;
+  let best = free[0], bestD = -1;
+  for (const c of free) {
+    let d = Infinity;
+    for (const s of stairs) d = Math.min(d, (c.x - s.x) ** 2 + (c.y - s.y) ** 2);
+    if (d > bestD) { bestD = d; best = c; }
+  }
+  const boss = scaleMonster(base, floor);
+  mark(boss);
+  enemyMap[best.y][best.x] = boss;
+  return 1;
+}
+
+// Appelé par endBattle (victoire) : tout kill de l'espèce d'un boss d'acte
+// (tirage naturel compris) clôt sa garantie.
+function _markActBossesDefeated(group) {
+  if (!Array.isArray(group)) return;
+  if (typeof seenScriptedBeat === 'undefined' || !seenScriptedBeat) return;
+  for (const e of group) {
+    if (!e || !e.id) continue;
+    for (const f of Object.keys(ACT_BOSSES)) {
+      if (ACT_BOSSES[f].id === e.id) seenScriptedBeat.add(_ACT_BOSS_DOWN + e.id);
+    }
+  }
+}
+
 // Repère les PNJ qui devraient être placés à l'étage courant (selon
 // `getNpcsForFloor`) mais absents de `npcPlacements`. Les place sur
 // une cellule FLOOR libre. Permet aux saves antérieures à un ajout

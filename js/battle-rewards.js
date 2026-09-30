@@ -122,6 +122,10 @@ function endBattle(won) {
     }
     // Compteurs de score Ironman (monstres vaincus + faits d'armes boss).
     if (typeof recordIronmanKills === 'function') recordIronmanKills(enemyGroup);
+    // Lot B (axes 3a/3c) — ligne de chute des boss canon (1re défaite) et
+    // boss d'acte vaincu (plus de placement garanti ensuite).
+    if (typeof _maybeBossFallBeat === 'function') _maybeBossFallBeat(enemyGroup);
+    if (typeof _markActBossesDefeated === 'function') _markActBossesDefeated(enemyGroup);
     const diff     = DIFFICULTY_SETTINGS[difficulty] || DIFFICULTY_SETTINGS['Normal'];
     // Récolte Magique (palier Mythe Poufsouffle) : or de ce combat +50 %.
     const recolteMult = recolteGoldBonus ? 1.5 : 1;

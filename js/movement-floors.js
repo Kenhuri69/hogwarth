@@ -108,6 +108,10 @@ function _restoreFloorFromCache(floor) {
   if (typeof _ensureChamberGuardiansPresent === 'function') {
     _ensureChamberGuardiansPresent(floor);
   }
+  // Boss d'acte garantis (Lot B, axe 3c) — étages 6 et 8 pré-victoire.
+  if (typeof _ensureActBossPresent === 'function') {
+    _ensureActBossPresent(floor);
+  }
   return true;
 }
 
@@ -389,6 +393,10 @@ function _changeFloor(delta, opts) {
     // Écho de signature en Boucle (V2) : à l'entrée des Ruines (étage 14), la
     // quête signature accomplie/laissée revient, déchirée. House-aware, one-shot.
     if (typeof maybeSignatureEchoBeat === 'function') maybeSignatureEchoBeat(currentFloor);
+    // Lot B (revue 2026-09) — murmure de la fêlure (5/6/9, pré-victoire) puis
+    // lettre de la surface (entrées d'Acte 4/7/10 et de la Boucle 11). One-shot.
+    if (typeof maybeCrackWhisper === 'function') maybeCrackWhisper(currentFloor);
+    if (typeof maybeSurfaceLetter === 'function') maybeSurfaceLetter(currentFloor);
     AudioSystem.playAmbientMusic(currentFloor);
     if (typeof checkFloorQuests === 'function') checkFloorQuests(currentFloor);
     // Mondes parallèles — si une visite est active côté host, reposter
