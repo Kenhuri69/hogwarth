@@ -2073,4 +2073,123 @@ async function scenarioDeliveryQuestsWired() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioDiscoverObjective, scenarioTalkObjective, scenarioDeliveryQuestsWired, scenarioChainedQuest, scenarioHeadlessHunt, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioFarmingQuests, scenarioDelayedSearch, scenarioCleVoute, scenarioQuestFanfare, scenarioLoopNpcQuests, scenarioLoopNpcQuests2, scenarioLoopNpcQuests3, scenarioSignatureQuestBadge, scenarioDeliveryQuestLetter, scenarioMainQuestDescente, scenarioDumbledoreRelais] };
+// Lot C (revue 2026-09) — verbe `choice` + arc H3 « Le Carnet du Lieutenant »
+// (Lupin → Kingsley, lettres, duel, dilemme) + arc H2 « Prophétie en éclats ».
+async function scenarioLieutenantAndProphecy() {
+  console.log('\n── Scénario Lot C : carnet du Lieutenant, dilemme, prophétie ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Poufsouffle' });
+
+  // T1 : Lupin confie la piste ; 4 recoins fouillés = 4 lettres ; remise chez Kingsley.
+  const t1 = await page.evaluate(() => {
+    const lupinOffers = _npcDialogActions(getNpcById('lupin'), 'offer').some(a => /carnet_lieutenant/.test(a.onClick));
+    acceptQuest('carnet_lieutenant');
+    for (let i = 0; i < 4; i++) checkSearchQuests();
+    const q = activeQuests.find(x => x.id === 'carnet_lieutenant');
+    const logTxt = document.getElementById('msg-log').textContent;
+    return {
+      lupinOffers,
+      ready: q.objectives.every(o => o.completed),
+      letters: (logTxt.match(/clé noire|C\. V\./g) || []).length,
+      toKingsley: /retourne voir Kingsley Shacklebolt/.test(logTxt),
+      lupinCloses: _npcDialogActions(getNpcById('lupin'), 'active').some(a => /turnIn.*carnet_lieutenant/.test(a.onClick)),
+      kingCloses: _npcDialogActions(getNpcById('kingsley'), 'ready').some(a => /turnInQuestById\('carnet_lieutenant'\)/.test(a.onClick)),
+    };
+  });
+  console.log('  T1 lettres:', t1);
+  assert(t1.lupinOffers, 'Lupin doit proposer le Carnet du Lieutenant');
+  assert(t1.ready && t1.letters >= 2 && t1.toKingsley, 'lettres affichées + remise annoncée chez Kingsley');
+  assert(!t1.lupinCloses && t1.kingCloses, 'la remise se fait chez Kingsley, pas chez Lupin');
+
+  // T2 : remise, puis Kingsley envoie arrêter le Lieutenant (posé en duel à l'étage 8).
+  const t2 = await page.evaluate(() => {
+    turnInQuestById('carnet_lieutenant');
+    currentFloor = 8;
+    victoryAchieved = false;
+    generateDungeon(8);
+    const offered = _npcDialogActions(getNpcById('kingsley'), 'offer').some(a => /lieutenant_vantrell/.test(a.onClick));
+    acceptQuest('lieutenant_vantrell');
+    let lt = null;
+    for (const r of enemyMap) for (const m of r) if (m && m.id === 'lieutenant_vantrell') lt = m;
+    return { done1: completedQuests.has('carnet_lieutenant'), offered, placed: !!lt, solo: !!(lt && lt.soloEncounter) };
+  });
+  console.log('  T2 Lieutenant:', t2);
+  assert(t2.done1 && t2.offered && t2.placed && t2.solo, 'quête 2 offerte, Lieutenant posé en duel');
+
+  // T3 : Lieutenant abattu → deux boutons de dilemme à la remise (pas de « Remettre »).
+  const t3 = await page.evaluate(() => {
+    checkKillQuests('lieutenant_vantrell');
+    const labels = _npcDialogActions(getNpcById('kingsley'), 'ready').map(a => a.label + ' ' + a.onClick);
+    return {
+      bruler: labels.some(l => /Brûler les grimoires/.test(l) && /turnInQuestChoice\('lieutenant_vantrell', 'bruler'\)/.test(l)),
+      garder: labels.some(l => /Garder les grimoires/.test(l)),
+      generic: labels.some(l => /turnInQuestById\('lieutenant_vantrell'\)/.test(l)),
+    };
+  });
+  console.log('  T3 dilemme:', t3);
+  assert(t3.bruler && t3.garder && !t3.generic, 'deux options de dilemme, pas de remise générique');
+
+  // T4 : choisir « garder » → grimoire, choix mémorisé, traces (Kingsley, Lupin, Codex), save.
+  const t4 = await page.evaluate(() => {
+    player.inventory = player.inventory.filter(it => it.id !== 'livre_morsmordre');
+    const ok = turnInQuestChoice('lieutenant_vantrell', 'garder');
+    const bad = turnInQuestChoice('lieutenant_vantrell', 'bruler');
+    seenNpcs.add('kingsley'); seenNpcs.add('lupin');
+    openNpcDialog('kingsley');
+    const kPages = _dialogState.pages.join(' ');
+    closeNpcDialog();
+    openNpcDialog('lupin');
+    const lPages = _dialogState.pages.join(' ');
+    closeNpcDialog();
+    const entry = getCodexEntry('lieutenant_vantrell');
+    const ctx = _codexContext();
+    const snap = JSON.parse(JSON.stringify(_serializeState()));
+    questChoices = {};
+    _applyState(snap);
+    return {
+      ok, bad, choice: questChoiceOf('lieutenant_vantrell'),
+      done: completedQuests.has('lieutenant_vantrell'),
+      book: player.inventory.some(it => it.id === 'livre_morsmordre'),
+      kingTrace: /livres de Vantrell/.test(kPages),
+      lupinTrace: /gardé un des grimoires/.test(lPages),
+      codex: codexEntryState(entry, ctx),
+      note: !!codexVariantNote(entry, ctx.chosenHouse, [], ctx.questChoices),
+      saved: questChoiceOf('lieutenant_vantrell') === 'garder',
+    };
+  });
+  console.log('  T4 choix + traces:', t4);
+  assert(t4.ok && !t4.bad && t4.choice === 'garder' && t4.done, 'choix unique enregistré, quête remise');
+  assert(t4.book, 'option « garder » → livre_morsmordre');
+  assert(t4.kingTrace && t4.lupinTrace, 'Kingsley et Lupin se souviennent du choix');
+  assert(t4.codex === 'revealed' && t4.note, 'Codex du Lieutenant révélé, avec la note du choix');
+  assert(t4.saved, 'questChoices survit à la sauvegarde');
+
+  // T5 : Prophétie — stèle garantie à l'étage 3, fragments gravés, Trelawney réagit.
+  const t5 = await page.evaluate(() => {
+    prophecyFragments = 0;
+    currentFloor = 3;
+    generateDungeon(3);
+    const stele = !!runeStele;
+    const got = [maybeProphecyFragment(3), maybeProphecyFragment(6), maybeProphecyFragment(9), maybeProphecyFragment(9)];
+    seenNpcs.add('trelawney');
+    openNpcDialog('trelawney');
+    const pages = _dialogState.pages.join(' ');
+    closeNpcDialog();
+    return { stele, got, trel: /pierre elle-même qui rêve/.test(pages),
+      codex: codexEntryState(getCodexEntry('prophetie_profondeurs'), _codexContext()) };
+  });
+  console.log('  T5 prophétie:', t5);
+  assert(t5.stele, 'stèle garantie à l\'étage 3 tant que la prophétie est incomplète');
+  assert(t5.got.join(',') === '1,2,3,0', 'fragments gravés dans l\'ordre, plafonnés à 3');
+  assert(t5.trel, 'Trelawney récite la prophétie complète');
+  assert(t5.codex === 'revealed', 'Codex de la prophétie révélé à 3 fragments');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Lot C OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioLieutenantAndProphecy, scenarioDiscoverObjective, scenarioTalkObjective, scenarioDeliveryQuestsWired, scenarioChainedQuest, scenarioHeadlessHunt, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioFarmingQuests, scenarioDelayedSearch, scenarioCleVoute, scenarioQuestFanfare, scenarioLoopNpcQuests, scenarioLoopNpcQuests2, scenarioLoopNpcQuests3, scenarioSignatureQuestBadge, scenarioDeliveryQuestLetter, scenarioMainQuestDescente, scenarioDumbledoreRelais] };

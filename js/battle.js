@@ -333,6 +333,12 @@ const BOSS_PROMO_BEATS = {
     line: "La forme spectrale ne marche pas : elle suinte de la fêlure, à peine un visage. « Tu m'entends depuis des étages, n'est-ce pas ? Je n'ai plus de corps. Il me reste ceci — la faille, et ceux qui viennent jusqu'à elle. »",
     fall: "Le spectre se déchire sans un cri, comme un voile dans le vent. Une dernière pensée glisse jusqu'à toi, calme et patiente : « Plus bas. Je t'attendrai plus bas. »",
   },
+  // Lot C (arc H3) — le Lieutenant, chef intermédiaire original.
+  lieutenant_vantrell: {
+    icon: '🗝️',
+    line: "Casimir Vantrell referme son carnet et le range avec soin, comme s'il avait encore le temps : « Tu as lu mes lettres, je suppose. Alors tu sais que je ne me bats pas pour moi. Je ne suis qu'une porte. On n'arrête pas une porte — on la franchit, ou on reste devant. »",
+    fall: "Vantrell tombe à genoux, la main tendue vers la fêlure, sans l'atteindre. « Pas encore… » Son carnet glisse de sa robe, ouvert sur une page blanche qu'il n'aura pas eu le temps d'écrire.",
+  },
   voldemort_revenu: {
     icon: '🐍',
     line: "Ici, la fêlure est si large qu'elle lui prête un visage entier. Lord Voldemort ne te menace pas : il t'examine. « Tous les autres n'étaient que des échos. Moi, je suis ce que la pierre n'a jamais réussi à oublier. Approche. »",
@@ -922,7 +928,7 @@ function pickSimilarEnemy(base) {
   // Boucle Ténébreuse : pool rebasé sur relFloor en post-victoire (§7.2).
   const ef = (typeof effectiveFloor === 'function') ? effectiveFloor(currentFloor) : currentFloor;
   const eligible = MONSTERS.filter(m =>
-    m.minFloor <= ef && (m.maxFloor === null || ef <= m.maxFloor)
+    !m.questOnly && m.minFloor <= ef && (m.maxFloor === null || ef <= m.maxFloor)
   );
   const pool = eligible.length ? eligible : MONSTERS;
   return scaleMonster(weightedPick(pool), currentFloor);

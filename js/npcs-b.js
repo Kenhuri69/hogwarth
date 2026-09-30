@@ -279,6 +279,13 @@ NPCS.push(
     heroGreeting: {
       celeste: "Oh… Toi. Les astres m'ont parlé de toi, mon enfant, bien avant ta venue. Tu as lu la même chose que moi dans le ciel, n'est-ce pas ? « La lumière doit redescendre. »"
     },
+    // Prophétie en éclats (Lot C, arc H2) : suffixe selon le nombre de
+    // fragments gravés (prophecyFragments), lu par _prophecySuffixPages.
+    prophecyLines: {
+      1: "(Ses yeux se voilent un instant.) Une stèle, dis-tu ? Avec des vers ? Je n'écris jamais de vers, mon enfant. Je… (Elle frissonne.) Pourquoi ai-je si froid, tout à coup ?",
+      2: "Deux fragments… Ce ne sont pas des présages de salon de thé. Quelqu'un a gravé mes mots dans la pierre avant même que je les prononce. Ou alors je les ai prononcés bien avant de les oublier.",
+      3: "(Elle récite, d'une voix qui n'est pas la sienne.) « …c'est la pierre elle-même qui rêve, et qui attend. » (Elle cligne des yeux, bouleversée.) Voldemort n'était que l'écume, mon enfant. Ce qui rêve sous l'école est bien plus vieux. Ne le réveille pas."
+    },
     name:      "Sibylle Trelawney",
     title:     "Professeure de Divination",
     sprite:    "prof_f",
@@ -317,10 +324,27 @@ NPCS.push(
     icon:  "🪄",
     portraitImg: "img/npc/kingsley.png",
     placement: { floor: 8, anchor: "any" },
-    questsGiven:    ["chasse_greyback", "garde_seuil", "herbes_lupin", "chasse_kingsley_boucle"],
-    questsTurnedIn: ["chasse_greyback", "garde_seuil", "herbes_lupin", "chasse_kingsley_boucle"],
+    questsGiven:    ["chasse_greyback", "garde_seuil", "herbes_lupin", "chasse_kingsley_boucle", "lieutenant_vantrell"],
+    // carnet_lieutenant : donnée par Lupin, CLOSE ici (livraison inter-PNJ, Lot C).
+    questsTurnedIn: ["chasse_greyback", "garde_seuil", "herbes_lupin", "chasse_kingsley_boucle", "carnet_lieutenant", "lieutenant_vantrell"],
+    // Trace du dilemme (Lot C, verbe `choice`).
+    choiceLines: {
+      lieutenant_vantrell: {
+        bruler: "Les cendres de la cache de Vantrell me reviennent encore. Tu as fait ce qu'un Auror aurait fait, sorcier. L'Ordre s'en souviendra.",
+        garder: "Tu portes encore un des livres de Vantrell, n'est-ce pas ? Je ne te le reprendrai pas. Mais ce genre de savoir finit toujours par réclamer quelque chose en retour."
+      }
+    },
     // Prime de chasse répétable en Boucle (étage 18) — cible aléatoire.
     dialoguesByQuest: {
+      // Lot C (revue 2026-09, arc H3) — le Carnet du Lieutenant.
+      carnet_lieutenant: {
+        questReady:  "(Il parcourt les lettres une à une, sans un mot, puis s'arrête sur les initiales.) C. V. — Casimir Vantrell. Un lieutenant du cercle intérieur, jamais au premier rang, toujours dans la pièce d'à côté. S'il veut faire de lui-même une porte pour son maître, il faut le trouver avant qu'il ne l'ouvre."
+      },
+      lieutenant_vantrell: {
+        questOffer:  "Vantrell se terre sur cet étage, avec sa cache de grimoires. Je ne peux pas quitter ce seuil — l'Ordre y tient trop de monde. Toi, tu peux. Arrête-le. Et quand ce sera fait, il faudra décider de ce que deviennent ses livres.",
+        questActive: "Vantrell ne fuira pas : il a trop préparé ce seuil pour l'abandonner. Cherche-le à l'écart, là où l'on peut écrire en paix.",
+        questReady:  "C'est fini, donc. Reste sa cache : une pile de grimoires qui sentent la cendre froide. Je peux les brûler ici même. Ou tu peux en garder un — je ne te l'interdirai pas. À toi de choisir."
+      },
       chasse_kingsley_boucle: {
         questOffer:  "La Boucle reforme ses bêtes sans fin, sorcier. J'ai repéré {amount}× {target} sur cet étage — disperse-les, l'Ordre tient toujours malgré tout.",
         questActive: "La battue continue ? Ces {target} ne se compteront pas tout seuls.",

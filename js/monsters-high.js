@@ -17,7 +17,7 @@ MONSTERS.push(
     category: "être magique",
     loreFamily: "F4",
     desc:     "Lord Voldemort, pleinement ressuscité, vous contemple avec froideur absolue !",
-    lore:     "Celui-Dont-On-Ne-Doit-Pas-Prononcer-Le-Nom. Il a divisé son âme en sept horcruxes pour conquérir l'immortalité. Revenu grâce aux os de son père, à la chair de Pettigrow et au sang de Harry, il est désormais plus puissant et plus impitoyable que jamais.",
+    lore:     "Celui-Dont-On-Ne-Doit-Pas-Prononcer-Le-Nom. Il a divisé son âme en sept horcruxes pour conquérir l'immortalité. Au cimetière, en 1995, son rituel de retour fut interrompu. Ici, la corruption des profondeurs achève ce que les os de son père, la chair de Pettigrow et le sang de Harry avaient commencé — et il en revient plus froid et plus impitoyable que jamais.",
     habitat:  "Chambre des Secrets — niveau final, sous les racines mêmes du château",
     anecdote: "Vaincu définitivement par Harry grâce au sacrifice de sa mère et à l'amour qui en découle (Les Reliques de la Mort).",
     danger:   11,

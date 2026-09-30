@@ -17,31 +17,48 @@
 
 ## 2.1 Époque & situation
 
-> 💡 (proposition)
+> ✅ (tranché le 2026-09-30 — plan `.claude/plans/epoque-du-jeu-2026-09.md`)
 
-Le jeu se déroule dans une **uchronie tardive assumée** : *après* la chute de
-Voldemort telle que la connaît le canon, à une génération de distance. La
-guerre est gagnée, l'école rebâtie, et une nouvelle promotion d'élèves la
-fréquente — c'est elle qui fournit nos héros. Harry et Hermione, eux, ne sont
-plus tout à fait des élèves : ils reviennent à Poudlard en figures tutélaires,
-au même titre que les professeurs.
+Le jeu se déroule dans une **uchronie de 1996-1997 : « l'Année de la
+Fêlure »**, la 6ᵉ année de Harry. Elle ne s'écarte du canon qu'en **un seul
+point**, dont tout le reste découle :
 
-Ce choix résout proprement la tension que pose le bestiaire : le jeu fait
-coexister **Voldemort « Affaibli » (ét. 9)** puis **« Ressuscité » (ét. 10)**
-avec des élèves jouables inédits. L'explication narrative est que Voldemort
-n'est pas *revenu* par un nouveau complot politique, mais **se ré-assemble
-passivement** à mesure qu'une corruption ancienne remonte des fondations — un
-résidu de mal que la peur tenait scellé, et que la descente du héros réveille.
+1. **24 juin 1995, cimetière de Little Hangleton : le rituel est interrompu.**
+   Harry arrache Cedric au sortilège de mort et le ramène avec le Portoloin
+   *avant* que Voldemort ne reprenne corps. Cedric survit, au prix d'une année
+   de convalescence à Sainte-Mangouste (d'où sa 7ᵉ année en 1996-1997).
+   Voldemort, lui, reste une **ombre sans corps** qui subsiste à peine.
+2. Privés d'un maître incarné, les **Mangemorts s'organisent seuls** :
+   évasion d'Azkaban (janvier 1996), bataille du Département des Mystères où
+   **Sirius tombe** (juin 1996). C'est dans ce vide que manœuvre un lieutenant,
+   Casimir Vantrell.
+3. **Été 1996 : Dumbledore meurt** de la malédiction de la bague des Gaunt, que
+   rien n'a pu contenir. Il n'y a jamais eu de tour d'astronomie : Rogue n'a pas
+   eu à le tuer, il enseigne toujours. Dumbledore guide désormais l'école
+   **depuis son portrait**.
+4. **Septembre 1996** : Slughorn est revenu enseigner, l'école fait sa rentrée
+   sans son directeur. En plein cours d'Histoire de la Magie, la **Clé de
+   Voûte se fend** (03 §3.1). L'ombre de Voldemort, attirée par la fêlure,
+   commence à se **ré-assembler** tout au fond du château.
 
-> ✅ (dans le jeu) La menace centrale est la **corruption qui ranime
-> Voldemort** ; le héros descend à contre-courant pour l'éteindre à la source.
-> Le portrait de Dumbledore — donc un Dumbledore **mort, parlant depuis son
-> cadre** — accueille et guide le héros, ce qui confirme une époque
-> **post-canon**.
+Ce choix colle au jeu tel qu'il est : les héros canon sont des **élèves**
+(Harry, Hermione et Drago en 6ᵉ année, Cho et Cedric en 7ᵉ), les héros originaux
+sont leurs camarades de promotion, et sont vivants Rogue, Lupin, Slughorn,
+McGonagall, Hagrid, Trelawney, Kingsley, Bill, Aragog, ainsi que Bellatrix,
+Dolohov et Greyback. Il explique aussi la menace : Voldemort n'est pas *revenu*
+par un nouveau complot politique, il **se ré-assemble passivement** à mesure
+qu'une corruption ancienne remonte des fondations. C'est un résidu de mal que
+la peur tenait scellé, et que la fêlure appelle vers le haut.
 
-> ❓ **À travailler en l'état** (non tranché par le jeu) : le code ne fixe
-> aucune date ; le seul indice est le portrait de Dumbledore (post-canon).
-> À décider : date explicite (« ~20 ans après la Bataille ») ou flou assumé.
+> ✅ (dans le jeu) Voldemort **Affaibli** (ét. 9, sans corps) puis
+> **Ressuscité** (ét. 10) : la corruption des profondeurs achève le rituel que
+> le cimetière avait laissé en suspens. Le portrait de Dumbledore accueille et
+> guide le héros.
+
+> Écarté : une date « une génération après la Bataille » (proposition
+> initiale de ce chapitre). Elle aurait fait mourir Rogue, Lupin, Bellatrix,
+> Aragog et Cedric, et vieilli les cinq héros canon — il aurait fallu réécrire
+> la quasi-totalité des dialogues.
 
 ## 2.2 Le Poudlard du jeu
 
@@ -189,8 +206,8 @@ messages, quêtes) :
 ## Questions de cadrage (résumé)
 
 > ❓ **À travailler en l'état** :
-> 1. **Époque** (non tranché par le jeu) — date explicite (« ~20 ans après la
->    Bataille ») ou flou assumé (« une génération plus tard ») ?
+> 1. ✅ **Époque** — tranchée : uchronie de 1996-1997, « l'Année de la
+>    Fêlure » (§2.1).
 > 2. **Statut de Voldemort** — corruption résiduelle qui se ré-assemble
 >    (proposition retenue ici) ou une autre explication à valider ?
 > 3. **Profondeurs vs Chambre des Secrets** — assume-t-on que les Profondeurs
@@ -198,8 +215,10 @@ messages, quêtes) :
 >    la Chambre des Secrets ?
 
 ## Récapitulatif express (pour briefer Gemini)
-> Uchronie **post-canon** : Poudlard rebâti, nouvelle promotion d'élèves
-> (nos héros), Dumbledore guide depuis son portrait. La menace = une
+> Uchronie de **1996-1997** (« l'Année de la Fêlure ») : au cimetière, en 1995,
+> le rituel a été interrompu (Cedric a survécu, Voldemort est resté sans
+> corps) ; Dumbledore est mort à l'été 1996 et guide depuis son portrait ; nos
+> héros sont des élèves de 6ᵉ-7ᵉ année. La menace = une
 > **corruption ancienne** remontant de **ruines pré-Poudlard** (14+), qui
 > **ré-assemble** passivement Voldemort. Socle canon reconnaissable
 > (personnages, sorts, créatures, Maisons) + intrigue et héros **originaux**

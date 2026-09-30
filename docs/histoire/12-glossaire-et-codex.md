@@ -620,10 +620,15 @@ sérialisés ou dérivables** (pas de nouvel état lourd) :
 
 ## 12.9 Chronologie / continuité
 
-> 💡 (proposition de repères — à valider en [02](02-univers-ton-et-canon.md))
+> ✅ Époque tranchée en [02 §2.1](02-univers-ton-et-canon.md) : uchronie de
+> 1996-1997, « l'Année de la Fêlure ».
 
 | Repère | Position | Note |
 |--------|----------|------|
+| **24 juin 1995** | Cimetière de Little Hangleton : le rituel est interrompu. Cedric survit ; Voldemort reste sans corps. | ✅ point de divergence · [02 §2.1](02-univers-ton-et-canon.md) |
+| **1995-1996** | Les Mangemorts s'organisent sans maître incarné : évasion d'Azkaban (janvier), Département des Mystères, Sirius tombe (juin). | ✅ canon, porté par les Mangemorts |
+| **Été 1996** | Dumbledore meurt de la malédiction de la bague des Gaunt ; il guide depuis son portrait. | ✅ |
+| **Septembre 1996** | Rentrée de la 6ᵉ année de Harry ; la Clé de Voûte se fend en cours d'Histoire de la Magie. | ✅ ouverture du jeu |
 | **Avant le jeu** | Une corruption ancienne, scellée par la peur sous les fondations, s'éveille ; les escaliers se figent vers le bas. | 💡 prémisse · [01](01-synopsis-et-pitch.md) |
 | **Ouverture** | Le portrait de Dumbledore appelle le héros → quête tutoriel → choix de Maison → entrée dans le donjon. | ✅ |
 | **Acte I — étages 1-3** | L'École qui se fissure (couloirs de Poudlard). | ✅ [03 §3.2](03-trame-principale.md) |
@@ -633,11 +638,10 @@ sérialisés ou dérivables** (pas de nouvel état lourd) :
 | **Acte IV — étages 11+** | **Boucle Ténébreuse** : château corrompu, Ténébreux, Ruines Anciennes (14+), paliers Mythe/Apothéose/★ N. | ✅ [03 §3.6](03-trame-principale.md) |
 | **Hors-temps (parallèle)** | Les **Mondes Parallèles** : visites latérales via la Cheminette (niv. 8). Sans place fixe dans la chronologie — *traverser*, pas *avancer*. | 💡 [11](11-mondes-paralleles.md) |
 
-> ❓ À arbitrer : situer l'aventure **par rapport au canon HP** (avant/pendant/
-> après les sept tomes ?). La présence simultanée de Harry, Dumbledore (portrait),
-> Sirius, Voldemort « ressuscité » suggère une **continuité alternative assumée**
-> plutôt qu'un point précis de la timeline canon. → à fixer en
-> [02](02-univers-ton-et-canon.md).
+> ✅ Tranché (2026-09-30) : la présence simultanée de Harry et Cedric élèves,
+> de Dumbledore en portrait, de Sirius en esprit et d'un Voldemort qui se
+> ré-assemble relève d'une **uchronie à un seul point de divergence** (le
+> cimetière, 1995), située en 1996-1997.
 
 ## 12.10 Index des personnages
 

@@ -130,7 +130,7 @@ function _respawnEnemiesOnEntry(floor) {
   // Boucle Ténébreuse : pool rebasé sur relFloor en post-victoire (§7.2).
   const efFloor = (typeof effectiveFloor === 'function') ? effectiveFloor(floor) : floor;
   const pool = MONSTERS.filter(m =>
-    m.minFloor <= efFloor && (m.maxFloor === null || efFloor <= m.maxFloor)
+    !m.questOnly && m.minFloor <= efFloor && (m.maxFloor === null || efFloor <= m.maxFloor)
   );
   if (!pool.length) return 0;
   const respawned = [];

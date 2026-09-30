@@ -1080,3 +1080,42 @@ function maybeSurfaceLetter(floor) {
   }
   return true;
 }
+
+// ============================================================
+// Lot C (revue 2026-09, arc H2) — La Prophétie en éclats
+// ------------------------------------------------------------
+// Trelawney l'a prononcée en transe avant la fêlure, puis l'a oubliée. Chaque
+// stèle d'énigme résolue aux étages 3 à 10 (pré-victoire) en grave le fragment
+// suivant (`prophecyFragments`, 0..3, sérialisé). Stèle garantie aux étages
+// 3/6/9 tant qu'elle est incomplète (dungeon.js). Complète, elle parle du
+// Dormeur — teaser de l'Acte IV. Codex `prophetie_profondeurs`.
+const PROPHECY_FRAGMENTS = [
+  "Quand la clé des Quatre se fendra en trois, / celui qui ne respire plus comptera les pas.",
+  "Ce n'est pas lui qu'ils ont couché sous la pierre :",
+  "c'est la pierre elle-même qui rêve, et qui attend.",
+];
+const PROPHECY_STELE_FLOORS = [3, 6, 9];
+
+function _prophecyOpen(floor) {
+  if (typeof victoryAchieved !== 'undefined' && victoryAchieved) return false;
+  if (typeof floor !== 'number' || floor < 3 || floor > 10) return false;
+  return (typeof prophecyFragments === 'number') && prophecyFragments < PROPHECY_FRAGMENTS.length;
+}
+
+// Vrai si la stèle doit être garantie à cet étage (lu par generateDungeon).
+function prophecyWantsStele(floor) {
+  return PROPHECY_STELE_FLOORS.indexOf(floor) !== -1 && _prophecyOpen(floor);
+}
+
+// Grave le fragment suivant après une stèle résolue. Retourne le rang gravé
+// (1..3) ou 0 si rien.
+function maybeProphecyFragment(floor) {
+  if (!_prophecyOpen(floor)) return 0;
+  const text = PROPHECY_FRAGMENTS[prophecyFragments];
+  prophecyFragments++;
+  if (typeof addMsg === 'function') {
+    addMsg("🔮 Sous l'énigme, d'autres lignes s'illuminent, d'une écriture fine et penchée qui n'est pas celle des Fondateurs : « "
+      + text + " » (" + prophecyFragments + "/" + PROPHECY_FRAGMENTS.length + ")", 'magic');
+  }
+  return prophecyFragments;
+}

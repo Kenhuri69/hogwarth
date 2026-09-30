@@ -85,6 +85,9 @@ function _codexContext() {
     escapeFoundersCleared: (typeof escapeFoundersCleared !== 'undefined') ? escapeFoundersCleared : new Set(),
     // Robinet `hero` (Lot A, revue 2026-09) : héros du groupe actif.
     heroKeys: _codexHeroKeys(),
+    // Robinets du Lot C (revue 2026-09) : dilemmes de quête, prophétie.
+    questChoices: (typeof questChoices !== 'undefined' && questChoices) ? questChoices : {},
+    prophecyFragments: (typeof prophecyFragments === 'number') ? prophecyFragments : 0,
   };
 }
 
@@ -243,7 +246,7 @@ function showCodexEntry(id) {
   if (state === 'locked') { showCodexList(); return; }
 
   const meta = _CODEX_STATE_META[state] || _CODEX_STATE_META.veiled;
-  const note = codexVariantNote(entry, ctx.chosenHouse, _codexHeroKeys());
+  const note = codexVariantNote(entry, ctx.chosenHouse, _codexHeroKeys(), ctx.questChoices);
 
   // Liens internes cliquables vers les entrées ouvertes (graphe §12.2).
   const links = (entry.links || []).map(lid => {

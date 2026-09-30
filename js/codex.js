@@ -565,6 +565,36 @@ const CODEX_ENTRIES = [
       revealed: "Les pages rendues, le givre de son regard cède d'un degré. Tu comprends alors ce que Manon cherchait vraiment : non pas un livre, mais la permission d'arrêter d'avoir froid. Le grimoire d'Élara ne gardait aucun sort de chaleur — seulement la mémoire d'une chaleur d'avant le deuil. En l'aidant, tu n'as pas réchauffé le monde : tu lui as rendu le droit de se souvenir qu'il a déjà été chaud.",
     },
   },
+  // ── Lot C (revue 2026-09) — arcs H3 (Carnet du Lieutenant) et H2 (Prophétie) ──
+  {
+    id: 'lieutenant_vantrell', category: 'personnages', icon: '🗝️', act: 2,
+    title: 'Casimir Vantrell, le Lieutenant',
+    links: ['echo_salazar'],
+    unlockConditions: [{ type: 'quest', value: 'carnet_lieutenant' }],
+    revealedBy: [{ type: 'quest', value: 'lieutenant_vantrell' }],
+    textVersions: {
+      veiled: "Quatre lettres scellées d'une clé noire, une écriture serrée, deux initiales : C. V. Un lieutenant du cercle intérieur, jamais au premier rang, qui a compris avant tout le monde ce que la fêlure pouvait rendre. Il veut faire de lui-même une porte pour son maître.",
+      revealed: "Casimir Vantrell n'a jamais voulu qu'on se souvienne de lui — seulement de son maître. Il a tout noté : les étages, les gardes, les morts utiles. Il a lâché Greyback dans les Profondeurs pour ralentir ceux qui descendaient, et gardé sous le Seuil une cache de grimoires pour le retour de Voldemort. Arrêté, il n'a rien demandé. Il a seulement regardé la fêlure, comme on regarde une porte qu'on n'a pas eu le temps d'ouvrir.",
+    },
+    variants: { choice: {
+      'lieutenant_vantrell:bruler': "Sa cache a brûlé sous les yeux de Kingsley. Il ne reste de Casimir Vantrell qu'un carnet et quatre lettres.",
+      'lieutenant_vantrell:garder': "Tu as gardé l'un de ses grimoires. Une part de ce qu'il préparait voyage maintenant dans ton sac.",
+    } },
+  },
+  {
+    id: 'prophetie_profondeurs', category: 'histoire', icon: '🔮', act: 2,
+    title: 'La Prophétie des Profondeurs',
+    links: ['le_dormeur', 'dormeur_fondations'],
+    unlockConditions: [{ type: 'prophecy', value: 1 }],
+    revealedBy: [{ type: 'prophecy', value: 3 }],
+    textVersions: {
+      veiled: "Des vers gravés dans les stèles d'énigme, d'une écriture qui n'est pas celle des Fondateurs. Chaque stèle résolue en révèle un fragment. Trelawney, elle, jure ne se souvenir de rien — et pourtant, ce sont ses mots.",
+      revealed: "« Quand la clé des Quatre se fendra en trois, / celui qui ne respire plus comptera les pas. / Ce n'est pas lui qu'ils ont couché sous la pierre : / c'est la pierre elle-même qui rêve, et qui attend. » Trelawney l'a prononcée en transe, bien avant la fêlure, puis l'a oubliée. La prophétie ne parle pas de Voldemort. Elle parle de ce qui dort sous l'école — et de ceux qui descendent jusqu'à lui.",
+    },
+    variants: { hero: {
+      celeste: "Céleste a lu ces vers dans le ciel avant de les lire dans la pierre. Pour elle, la prophétie n'est pas une découverte : c'est une confirmation.",
+    } },
+  },
   // ── Fiches des héros jouables (Lot A, revue 2026-09 — axe 1b) ──
   // Ouvertes quand le héros est dans le groupe actif (robinet `hero`),
   // révélées à la victoire : la version révélée DÉNOUE l'arc léger du héros
@@ -606,8 +636,8 @@ const CODEX_ENTRIES = [
     unlockConditions: [{ type: 'hero', value: 'cho' }],
     revealedBy: [{ type: 'victory' }],
     textVersions: {
-      veiled: "L'Attrapeuse de Serdaigle voit tout, et vite. Cedric n'est jamais revenu d'un tournoi ; Cho descend pour qu'aucun autre élève ne disparaisse pendant que les adultes délibèrent.",
-      revealed: "La peur est le sceau de toute cette histoire, et Cho l'a portée jusqu'au fond. Elle l'a vue se transformer en autre chose : une vigilance, une attention au moindre signe. Le deuil ne l'a pas quittée. Il a simplement cessé de décider à sa place.",
+      veiled: "L'Attrapeuse de Serdaigle voit tout, et vite. Elle a failli perdre Cedric au cimetière, il y a un an ; Cho descend pour qu'aucun autre élève ne disparaisse pendant que les adultes délibèrent.",
+      revealed: "La peur est le sceau de toute cette histoire, et Cho l'a portée jusqu'au fond. Elle l'a vue se transformer en autre chose : une vigilance, une attention au moindre signe. La peur de perdre quelqu'un ne l'a pas quittée. Elle a simplement cessé de décider à sa place.",
     },
   },
   {
@@ -1058,6 +1088,12 @@ function _codexCondMet(cond, ctx) {
       return Array.isArray(ctx.heroKeys) && ctx.heroKeys.indexOf(cond.value) !== -1;
     case 'victory':
       return ctx.victoryAchieved === true;
+    case 'choice': {   // option d'un dilemme de quête, value "qid:cid" (Lot C)
+      const parts = String(cond.value || '').split(':');
+      return !!(ctx.questChoices && ctx.questChoices[parts[0]] === parts[1]);
+    }
+    case 'prophecy':   // fragments de la Prophétie en éclats (Lot C, H2)
+      return typeof ctx.prophecyFragments === 'number' && ctx.prophecyFragments >= cond.value;
     case 'eclatLoop':
       return typeof ctx.accumulatedEclats === 'number' && ctx.accumulatedEclats >= cond.value;
     case 'cycleBroken':
@@ -1128,9 +1164,16 @@ function unlockedCodexFor(ctx) {
 // Note marginale de variante (cosmétique, défensif). Renvoie la note de la
 // Maison choisie si présente, sinon la première note de héros présente parmi
 // `heroKeys`, sinon null. N'altère JAMAIS le corps de l'entrée (§12.5.1).
-function codexVariantNote(entry, house, heroKeys) {
+function codexVariantNote(entry, house, heroKeys, choices) {
   if (!entry || !entry.variants) return null;
   const v = entry.variants;
+  // Lot C : la note d'un dilemme (clé "qid:cid") prime — c'est la plus précise.
+  if (v.choice && choices) {
+    for (const key of Object.keys(v.choice)) {
+      const parts = key.split(':');
+      if (choices[parts[0]] === parts[1] && typeof v.choice[key] === 'string') return v.choice[key];
+    }
+  }
   if (house && v.house && typeof v.house[house] === 'string') return v.house[house];
   if (v.hero && Array.isArray(heroKeys)) {
     for (let i = 0; i < heroKeys.length; i++) {

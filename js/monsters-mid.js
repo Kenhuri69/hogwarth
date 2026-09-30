@@ -496,6 +496,47 @@ MONSTERS.push(
   // ÉTAGES 8-10 : Les Seigneurs des Ténèbres
   // ════════════════════════════════════════════
 
+  // Lot C (revue 2026-09, arc H3 « Le Carnet du Lieutenant ») — chef
+  // intermédiaire ORIGINAL des Mangemorts, qui exploite la fêlure pour ramener
+  // son maître. `questOnly` : jamais tiré au hasard, posé par spawnOnAccept de la
+  // quête `lieutenant_vantrell` (Kingsley, ét. 8). `soloEncounter` : duel sans
+  // escorte (calibré par tools/sim-difficulty.js --boss --boss-alone).
+  {
+    id:       "lieutenant_vantrell",
+    epic:     true,
+    questOnly: true,
+    soloEncounter: true,
+    name:     "Casimir Vantrell, le Lieutenant",
+    icon:     "🗝️",
+    // Illustration provisoire : copie du Mangemort d'élite (masqué), en
+    // attendant un portrait dédié (convention img/monsters/<id>.png).
+    imgSrc:   "img/monsters/lieutenant_vantrell.png",
+    category: "humain",
+    loreFamily: "F4",
+    desc:     "Casimir Vantrell referme son carnet, sans hâte, et lève sa baguette.",
+    lore:     "Lieutenant du cercle intérieur, resté dans l'ombre des grands noms. Quand la Clé de Voûte s'est fendue, il a été le premier à comprendre ce que la fêlure pouvait rendre. Il tient un carnet de tout : les étages, les gardes, les morts utiles.",
+    habitat:  "Le Seuil des Profondeurs (étage 8), là où ses lettres le trahissent",
+    anecdote: "Ses lettres ne sont jamais signées de son nom : seulement d'une clé dessinée à l'encre noire. Il n'a jamais eu besoin qu'on se souvienne de lui — seulement de son maître.",
+    danger:   9,
+    minFloor: 8, maxFloor: null, weight: 1,
+    hp: 72, atk: 18, def: 9, mag: 19, agi: 12, lck: 10,
+    scale: 0.36,
+    abilities: [
+      { name: "Maléfice Consigné",  icon: "🗝️", desc: "Un sort écrit d'avance, exécuté sans hésiter", effect: "damage", power: 17, chance: 0.40 },
+      { name: "Cruciatus Froid",    icon: "⚡", desc: "Torture appliquée avec méthode",             effect: "drain",  power: 14, chance: 0.30 },
+      { name: "Marque Brûlante",    icon: "🔥", desc: "Marque incandescente sur la peau",           effect: "status", statusId: "burn", power: 5, chance: 0.25, turns: 3 },
+      { name: "Contre-Mesure",      icon: "❌", desc: "Il avait prévu ta protection",                effect: "dispel", chance: 0.35 }
+    ],
+    ai: "cautious",
+    resist: ["ténèbres"],
+    weak:   ["lumière"],
+    xp: 140, gold: { min: 60, max: 90 },
+    drops:  [
+      { itemId: "potion_m",    chance: 0.50 },
+      { itemId: "livre_crucio", chance: 0.30 }
+    ]
+  },
+
   {
     id:       "bellatrix",
     epic:     true,
@@ -541,9 +582,9 @@ MONSTERS.push(
     category: "être magique",
     loreFamily: "F4",
     desc:     "Une forme spectrale de Lord Voldemort se dresse devant vous",
-    lore:     "Sans corps ni horcrux, Voldemort subsiste à peine. Mais même réduit à l'état de spectre, il reste d'une dangerosité absolue.",
+    lore:     "Privé de corps depuis la nuit du cimetière, où son rituel fut interrompu, Voldemort subsiste à peine. Mais même réduit à l'état de spectre, il reste d'une dangerosité absolue.",
     habitat:  "Forêt d'Albanie, profondeurs interdites et lieux corrompus par les Ténèbres",
-    anecdote: "Réduit à cet état après l'échec de la malédiction de la mort sur Harry, Voldemort survécut sous forme de parasite pendant dix ans avant de trouver un hôte (La Sorcière de l'Est).",
+    anecdote: "Réduit à cet état après l'échec de la malédiction de la mort sur Harry, Voldemort survécut sous forme de parasite pendant dix ans avant de trouver un hôte (Harry Potter à l'école des sorciers).",
     danger:   10,
     minFloor: 9, maxFloor: null, weight: 2,
     hp: 80, atk: 22, def: 10, mag: 20, agi: 8, lck: 15,

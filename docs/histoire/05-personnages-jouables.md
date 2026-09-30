@@ -194,8 +194,9 @@
   parfois entre les doigts ; robe de Serdaigle, **Baguette de Frêne**.
 - **Personnalité (3 traits) 💡 :** vive, perspicace, marquée par un deuil qu'elle
   porte sans le dire.
-- **Motivation 💡 :** Cedric n'est jamais revenu d'un tournoi ; elle ne laissera pas
-  le château engloutir quelqu'un d'autre.
+- **Motivation 💡 :** elle a failli perdre Cedric au cimetière, en 1995 ; il est
+  revenu de justesse (02 §2.1). Elle ne laissera pas le château engloutir
+  quelqu'un d'autre.
 - **Voix 💡 :** posée, attentive aux détails ; remarque ce que les autres ratent.
 - **Forces ✅ / faiblesses ✅ :** **AGI 15** (la plus haute du roster) → meilleure
   **esquive** et fort **crit de sort** (volet AGI). Revers : stats moyennes ailleurs
@@ -208,13 +209,15 @@
   peur est le **sceau** central de la trame.
 - **Interaction Signature & trame 💡 :** native de **🦅 Le Codex de Rowena** ; mais
   c'est surtout sur la **chute de Voldemort** ([03 §3.5](03-trame-principale.md))
-  qu'elle a une réplique unique liée à Cedric (« Pour ceux qui ne sont pas revenus »).
+  qu'elle a une réplique unique liée à Cedric (« Pour ceux qui ont failli ne pas
+  revenir »).
 - **Tagline ✅ :** *« Attrapeuse de Serdaigle — vive et perspicace. »*
 
 ### Cedric Diggory
 
 - **Maison / rôle :** Poufsouffle / Champion.
-- **Année scolaire 💡 :** 7ᵉ année.
+- **Année scolaire ✅ :** 7ᵉ année, redoublée : le cimetière de 1995 lui a coûté
+  une année à Sainte-Mangouste (02 §2.1).
 - **Apparence 💡 :** carrure droite et franche, sourire facile, l'**Insigne de
   Capitaine** sur la poitrine ; robe de Poufsouffle, **Baguette de Frêne et Licorne**.
 - **Personnalité (3 traits) 💡 :** loyal, juste, naturellement rassembleur.

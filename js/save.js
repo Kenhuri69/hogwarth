@@ -131,6 +131,8 @@ function _serializeState() {
     ravenSignatureDone,
     poufSignatureDone,
     slythPactChoice,
+    questChoices:      { ...questChoices },
+    prophecyFragments,
     ironmanMode,
     totalKills,
     monsterKills:  { ...monsterKills },
@@ -484,6 +486,9 @@ function _applyState(gs) {
   if (typeof ravenSignatureDone !== 'undefined') ravenSignatureDone = !!gs.ravenSignatureDone;
   if (typeof poufSignatureDone  !== 'undefined') poufSignatureDone  = !!gs.poufSignatureDone;
   if (typeof slythPactChoice    !== 'undefined') slythPactChoice    = gs.slythPactChoice || null;
+  // Lot C (revue 2026-09) — dilemmes de quête et fragments de la prophétie.
+  questChoices      = (gs.questChoices && typeof gs.questChoices === 'object') ? { ...gs.questChoices } : {};
+  prophecyFragments = Math.max(0, Math.min(3, gs.prophecyFragments | 0));
   // Label de fin (P3) : restauré tel quel, puis réconcilié depuis les flags
   // (victoire / Cycle / Pacte tous appliqués ci-dessus) — back-fill des saves
   // antérieures au champ (endingType dérivé, jamais une source de gating).

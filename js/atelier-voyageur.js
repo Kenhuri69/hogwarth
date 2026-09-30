@@ -53,7 +53,7 @@
         || visitSession.role !== 'visitor') return;
     if (typeof MONSTERS === 'undefined' || !Array.isArray(MONSTERS)) return;
     const floor = (typeof currentFloor === 'number') ? currentFloor : 1;
-    const pool = MONSTERS.filter(m =>
+    const pool = MONSTERS.filter(m => !m.questOnly &&
       (m.minFloor === undefined || floor >= m.minFloor) &&
       (m.maxFloor === undefined || m.maxFloor === null || floor <= m.maxFloor));
     if (!pool.length) {

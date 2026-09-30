@@ -371,7 +371,13 @@ pour le moins de code. Le lot C ouvre la porte à tous les dilemmes.
 - **Q4** — ✅ **arbre « Éveil du Sorcier »** retenu (Lot 4 de
   `revue-design-progression-2026-07.md`) → les traits légers de l'axe 7 sont
   **abandonnés**.
-- **Q5, Q6** — sans réponse à ce stade.
+- **Q5** — ✅ laissée à mon choix (2026-09-30) : **uchronie de 1996-1997,
+  « l'Année de la Fêlure »** (6ᵉ année de Harry). Un seul point de divergence :
+  au cimetière, en juin 1995, le rituel est interrompu (Cedric survit,
+  Voldemort reste sans corps) ; Dumbledore meurt à l'été 1996 (bague des
+  Gaunt). Rogue reste donc vivant et en poste : H1 est débloqué. Plan
+  `epoque-du-jeu-2026-09.md`, bible 02 §2.1 et 12 §12.9.
+- **Q6** — sans réponse à ce stade.
 
 ## Journal
 
@@ -382,3 +388,5 @@ pour le moins de code. Le lot C ouvre la porte à tous les dilemmes.
 - **2026-09-30** — Lot A livré (PR #751, fusionnée). Lot B implémenté
   (plan `lotB-antagonistes-rythme-2026-09.md`) : 3a, 3b, 3c (Quirrell ét. 6,
   Greyback seul ét. 8, simulés), H8.
+- **2026-09-30** — Lot B livré (PR #752, fusionnée). Lot C implémenté
+  (plan `lotC-choix-carnet-prophetie-2026-09.md`) : verbe `choice`, H3, H2.

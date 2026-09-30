@@ -129,6 +129,34 @@ function turnInSlythSignature(choice) {
 }
 window.turnInSlythSignature = turnInSlythSignature;
 
+// ── Verbe `choice` (Lot C, revue 2026-09 — axe 4) ────────────────
+// Une quête peut porter `choices: [{ id, label, reward, msg }]`. À la remise,
+// le dialogue affiche un bouton par option (npc-dialog.js). L'option retenue
+// REMPLACE la récompense du modèle (différente mais équivalente), est
+// enregistrée dans `questChoices` puis la quête est remise normalement.
+// Jamais de branche ni de gate : le choix ne laisse que des traces (répliques
+// `choiceLines` des PNJ, condition/variantes `choice` du Codex).
+function questChoiceOf(qid) {
+  if (typeof questChoices === 'undefined' || !questChoices) return null;
+  return questChoices[qid] || null;
+}
+window.questChoiceOf = questChoiceOf;
+
+function turnInQuestChoice(qid, cid) {
+  const tpl = getQuestTemplate(qid);
+  const opt = (tpl && Array.isArray(tpl.choices)) ? tpl.choices.find(c => c.id === cid) : null;
+  if (!opt) return false;
+  _refreshObjectives();
+  const q = activeQuests.find(x => x.id === qid);
+  if (!q || !q.objectives.every(o => o.completed)) return false;
+  if (opt.reward) q.reward = { ...opt.reward };
+  // Posé AVANT la remise : completeQuest déclenche les robinets du Codex.
+  questChoices[qid] = cid;
+  if (opt.msg && typeof addMsg === 'function') addMsg(opt.msg, 'magic');
+  return turnInQuestById(qid);
+}
+window.turnInQuestChoice = turnInQuestChoice;
+
 // ── Fil rouge des Éclats (ch.06 §6.9.3) ──────────────────────────
 // `eclatProgress()` : avancement DÉRIVÉ du fil rouge des Éclats de la Clé de
 // Voûte, dans {0,1,2,3}. Lu par les PNJ-pivots (Dumbledore, écho de Salazar)
@@ -246,7 +274,7 @@ function _rollFarmingTarget(quest, floor) {
     const f = floor | 0;
     if (f < cfg.minFloor || f > cfg.maxFloor) return false;
     const pool = (typeof MONSTERS !== 'undefined' ? MONSTERS : []).filter(m =>
-      m.minFloor <= f && (m.maxFloor === null || f <= m.maxFloor) &&
+      !m.questOnly && m.minFloor <= f && (m.maxFloor === null || f <= m.maxFloor) &&
       !FARMING_KILL_BLACKLIST.has(m.id)
     );
     if (!pool.length) return false;
@@ -1162,9 +1190,15 @@ window.checkSearchQuests = function() {
     const step = getActiveStep(q);
     if (!step || step.type !== 'search') return;
     step.progress++;
+    // `progressLines` (Lot C) : une ligne de récit par recoin fouillé
+    // (ex. les lettres du Lieutenant, arc H3).
+    const _tpl = (typeof getQuestTemplate === 'function') ? getQuestTemplate(q.id) : null;
+    const _line = _tpl && Array.isArray(_tpl.progressLines) && _tpl.progressLines[step.progress - 1];
+    if (_line) addMsg('✉️ ' + _line, 'narrative');
     if (step.progress >= step.amount) {
       step.completed = true;
-      addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/quest.png" alt=""> Quête « ${q.title} » prête — retourne voir ${q.giver}.`, 'good');
+      // `turnInName` : destinataire d'une livraison inter-PNJ (Lot C).
+      addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/quest.png" alt=""> Quête « ${q.title} » prête — retourne voir ${(_tpl && _tpl.turnInName) || q.giver}.`, 'good');
     } else {
       addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/quest.png" alt=""> Quête « ${q.title} » : ${step.progress}/${step.amount} recoins fouillés.`, '');
     }

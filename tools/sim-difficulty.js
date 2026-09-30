@@ -889,7 +889,7 @@ function weightedPick(pool) {
 
 function eligiblePool(floor, cfg) {
   const ef = simEffectiveFloor(floor, cfg);
-  const p = MONSTERS.filter(m => m.minFloor <= ef && (m.maxFloor === null || ef <= m.maxFloor));
+  const p = MONSTERS.filter(m => !m.questOnly && m.minFloor <= ef && (m.maxFloor === null || ef <= m.maxFloor));
   return p.length ? p : MONSTERS;
 }
 

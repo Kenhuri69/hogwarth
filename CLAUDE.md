@@ -359,7 +359,7 @@ attendus se sont exécutés correctement et expose 2 helpers d'accès défensif.
 
 ### Manifeste
 
-Le `MANIFEST` dans `loader.js` énumère **374** entrées `{ name, source, kind,
+Le `MANIFEST` dans `loader.js` énumère **380** entrées `{ name, source, kind,
 optional? }` :
 - `kind: 'fn'` → `typeof name === 'function'`
 - `kind: 'obj'` → `typeof name !== 'undefined'` (couvre `let`/`const`/`var`)
@@ -1456,6 +1456,21 @@ window.checkKillQuests(monsterId) → incrémente q.progress, auto-complète (d�
 - `golem_passage`
 - `lumiere_desespoir`
 
+### Dilemmes et récit de quête (Lot C, revue 2026-09)
+
+- **`choices: [{ id, label, reward, msg }]`** (2 options) : à la remise, le
+  dialogue affiche un bouton par option (`turnInQuestChoice(qid, cid)`).
+  L'option **remplace** la récompense du modèle et est mémorisée dans
+  `questChoices` (`{ qid: cid }`, sérialisé ; lecture `questChoiceOf(qid)`).
+  Jamais de branche ni de gate : seulement des **traces** — `choiceLines` sur
+  un PNJ (`{ qid: { cid: "réplique" } }`, page-suffixe muette), condition
+  Codex `choice` (`"qid:cid"`) et `variants.choice`.
+- **`progressLines: [..]`** : une ligne de récit par progression d'une étape
+  `search` (lettres du Lieutenant).
+- **`turnInName`** : destinataire annoncé d'une livraison inter-PNJ (le PNJ
+  qui clôt porte la quête dans son `questsTurnedIn`).
+- Le Pacte des Cachots (Serpentard) reste codé à part (`turnInSlythSignature`).
+
 > Pour ajouter des quêtes : pousser un objet dans `activeQuests` dans `state.js`.
 > Détail des objectifs et récompenses : voir le tableau dans `state.js`.
 
@@ -1663,6 +1678,8 @@ tableau `MONSTERS` est la concaténation socle → low → mid → high).
 | `xp` | number | XP de base |
 | `gold` | number\|{min,max} | Or de base (scalé automatiquement) |
 | `drops` | [{itemId, chance}] | Drops potentiels après victoire |
+| `questOnly` | bool? | Jamais tiré au hasard (filtré de tous les pools) — posé par `spawnOnAccept` (ex. `lieutenant_vantrell`) |
+| `soloEncounter` | bool? | Combat sans escorte (`startBattle` force un groupe de 1) — boss d'acte / duel |
 
 ### Monstres définis (83 au total)
 | Étages | Monstres |

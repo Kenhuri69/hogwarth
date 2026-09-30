@@ -1544,13 +1544,14 @@ function loadNpcs() {
   const pure = loadModule('js/battle.js', ['BOSS_PROMO_BEATS']);
   const { BOSS_PROMO_BEATS } = pure;
   // Lot B (axe 3a) : + 7 boss canon.
-  check('BOSS_PROMO_BEATS = 13 boss', Object.keys(BOSS_PROMO_BEATS).length === 13);
+  // Lot C (arc H3) : + le Lieutenant.
+  check('BOSS_PROMO_BEATS = 14 boss', Object.keys(BOSS_PROMO_BEATS).length === 14);
   const { MONSTERS: _promoMonsters } = loadMonsters();
   for (const id of Object.keys(BOSS_PROMO_BEATS)) {
     check(`promo ${id} : monstre existant`, _promoMonsters.some(m => m.id === id));
   }
   for (const id of ['ombre_quirrell', 'bellatrix', 'fenrir_greyback', 'aragog',
-                    'antonin_dolohov', 'voldemort_affaibli']) {
+                    'antonin_dolohov', 'voldemort_affaibli', 'lieutenant_vantrell']) {
     check(`${id} : ligne de chute non vide`,
       typeof BOSS_PROMO_BEATS[id].fall === 'string' && BOSS_PROMO_BEATS[id].fall.length > 20);
   }
@@ -3448,6 +3449,103 @@ function loadNpcs() {
     L(7, { signatureDone: true, questsDone: 9 }).text !== L(7, { questsDone: 9 }).text);
   check('lotB lettre 10: reflète les quêtes', L(10, { questsDone: 8 }).text !== L(10, { questsDone: 1 }).text);
   check('lotB lettre 11: Hagrid', L(11, {}).from === 'Hagrid');
+})();
+
+// ============================================================
+// 23. Lot C (revue 2026-09) — verbe `choice`, arcs H3 (Lieutenant) et H2
+//     (Prophétie en éclats)
+// ============================================================
+(function testLotC() {
+  const { QUEST_TEMPLATES } = loadModule('js/quests-templates.js', ['QUEST_TEMPLATES']);
+  const tplOf = (id) => QUEST_TEMPLATES.find(t => t.id === id);
+  const withChoices = QUEST_TEMPLATES.filter(t => Array.isArray(t.choices));
+  check('lotC choice: au moins un dilemme', withChoices.length >= 1);
+  for (const t of withChoices) {
+    const ids = t.choices.map(c => c.id);
+    check('lotC choice ' + t.id + ': 2 options', t.choices.length === 2);
+    check('lotC choice ' + t.id + ': ids uniques', new Set(ids).size === ids.length);
+    check('lotC choice ' + t.id + ': libellé + récompense par option',
+      t.choices.every(c => c.label && c.reward && (c.reward.xp || c.reward.gold || c.reward.item)));
+  }
+  // H3 : chaîne Lupin → Kingsley.
+  const c1 = tplOf('carnet_lieutenant'), c2 = tplOf('lieutenant_vantrell');
+  check('lotC H3: 2 quêtes', !!c1 && !!c2);
+  check('lotC H3: 4 lettres = 4 recoins',
+    c1.objectives[0].type === 'search' && c1.progressLines.length === c1.objectives[0].amount);
+  check('lotC H3: remise chez Kingsley annoncée', c1.turnInName === 'Kingsley Shacklebolt');
+  check('lotC H3: chaîne (prereq)', c2.prereq === 'carnet_lieutenant');
+  check('lotC H3: le Lieutenant est posé à l\'acceptation',
+    c2.spawnOnAccept && c2.spawnOnAccept.targetMonsterId === 'lieutenant_vantrell');
+  const garder = c2.choices.find(c => c.id === 'garder');
+  check('lotC H3: garder → grimoire ténébreux', garder && garder.reward.item === 'livre_morsmordre');
+
+  const { MONSTERS } = loadMonsters();
+  const lt = MONSTERS.find(m => m.id === 'lieutenant_vantrell');
+  check('lotC H3: Lieutenant = boss de quête, en duel', lt && lt.questOnly === true && lt.soloEncounter === true);
+  check('lotC H3: seul monstre questOnly', MONSTERS.filter(m => m.questOnly).length === 1);
+
+  // PNJ : livraison inter-PNJ + traces du dilemme valides.
+  const npcs = loadNpcs().NPCS;
+  const lupin = npcs.find(n => n.id === 'lupin'), king = npcs.find(n => n.id === 'kingsley');
+  check('lotC H3: Lupin donne sans clore', lupin.questsGiven.includes('carnet_lieutenant')
+    && !lupin.questsTurnedIn.includes('carnet_lieutenant'));
+  check('lotC H3: Kingsley clôt les deux', king.questsTurnedIn.includes('carnet_lieutenant')
+    && king.questsTurnedIn.includes('lieutenant_vantrell') && king.questsGiven.includes('lieutenant_vantrell'));
+  for (const n of npcs) {
+    for (const qid of Object.keys(n.choiceLines || {})) {
+      const t = tplOf(qid);
+      check('lotC trace ' + n.id + '/' + qid + ': quête à dilemme', t && Array.isArray(t.choices));
+      for (const cid of Object.keys(n.choiceLines[qid])) {
+        check('lotC trace ' + n.id + '/' + qid + ':' + cid + ': option existante',
+          !!(t && t.choices.some(c => c.id === cid)));
+      }
+    }
+  }
+
+  // Codex : conditions `choice` / `prophecy`, note de dilemme prioritaire.
+  const cx = loadModule('js/codex.js', ['CODEX_ENTRIES', 'codexEntryState', 'codexVariantNote']);
+  const base = { questsDone: new Set(), questChoices: {}, prophecyFragments: 0, heroKeys: [] };
+  const lte = cx.CODEX_ENTRIES.find(e => e.id === 'lieutenant_vantrell');
+  check('lotC codex Lieutenant: verrouillé au départ', cx.codexEntryState(lte, base) === 'locked');
+  check('lotC codex Lieutenant: voilé après les lettres',
+    cx.codexEntryState(lte, { ...base, questsDone: new Set(['carnet_lieutenant']) }) === 'veiled');
+  check('lotC codex Lieutenant: révélé après l\'arrestation',
+    cx.codexEntryState(lte, { ...base, questsDone: new Set(['carnet_lieutenant', 'lieutenant_vantrell']) }) === 'revealed');
+  const noteG = cx.codexVariantNote(lte, 'Gryffondor', [], { lieutenant_vantrell: 'garder' });
+  const noteB = cx.codexVariantNote(lte, 'Gryffondor', [], { lieutenant_vantrell: 'bruler' });
+  check('lotC codex: une note par option', noteG && noteB && noteG !== noteB);
+  check('lotC codex: sans choix → pas de note', cx.codexVariantNote(lte, 'Gryffondor', [], {}) === null);
+  for (const e of cx.CODEX_ENTRIES) {
+    for (const key of Object.keys((e.variants && e.variants.choice) || {})) {
+      const [qid, cid] = key.split(':');
+      const t = tplOf(qid);
+      check('lotC codex ' + e.id + ': note ' + key + ' valide', !!(t && t.choices && t.choices.some(c => c.id === cid)));
+    }
+  }
+  const pe = cx.CODEX_ENTRIES.find(e => e.id === 'prophetie_profondeurs');
+  check('lotC codex prophétie: 0 → verrouillé', cx.codexEntryState(pe, base) === 'locked');
+  check('lotC codex prophétie: 1 → voilé', cx.codexEntryState(pe, { ...base, prophecyFragments: 1 }) === 'veiled');
+  check('lotC codex prophétie: 3 → révélé', cx.codexEntryState(pe, { ...base, prophecyFragments: 3 }) === 'revealed');
+  check('lotC codex prophétie: note Céleste', cx.codexVariantNote(pe, null, ['celeste'], {}) !== null);
+
+  // H2 : fragments (garde pré-victoire, étages 3-10, plafond 3).
+  const env = { prophecyFragments: 0, victoryAchieved: false, addMsg: () => {} };
+  const fa = loadModule('js/floor-ambiance.js',
+    ['PROPHECY_FRAGMENTS', 'prophecyWantsStele', 'maybeProphecyFragment'], env);
+  check('lotC H2: 3 fragments', fa.PROPHECY_FRAGMENTS.length === 3);
+  check('lotC H2: stèle garantie à 3, 6, 9', [3, 6, 9].every(f => fa.prophecyWantsStele(f))
+    && !fa.prophecyWantsStele(4) && !fa.prophecyWantsStele(2));
+  check('lotC H2: étage 2 → rien', fa.maybeProphecyFragment(2) === 0);
+  check('lotC H2: fragments dans l\'ordre', fa.maybeProphecyFragment(3) === 1
+    && fa.maybeProphecyFragment(7) === 2 && fa.maybeProphecyFragment(9) === 3);
+  check('lotC H2: complète → plus rien', fa.maybeProphecyFragment(10) === 0);
+  check('lotC H2: complète → plus de stèle forcée', !fa.prophecyWantsStele(6));
+  const envV = { prophecyFragments: 0, victoryAchieved: true, addMsg: () => {} };
+  const fv = loadModule('js/floor-ambiance.js', ['prophecyWantsStele', 'maybeProphecyFragment'], envV);
+  check('lotC H2: post-victoire → rien', fv.maybeProphecyFragment(6) === 0 && !fv.prophecyWantsStele(6));
+  const trel = npcs.find(n => n.id === 'trelawney');
+  check('lotC H2: Trelawney réagit à 1, 2 et 3 fragments',
+    [1, 2, 3].every(k => typeof trel.prophecyLines[k] === 'string'));
 })();
 
 // ============================================================

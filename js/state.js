@@ -975,6 +975,12 @@ let ravenSignatureDone = false;
 let poufSignatureDone  = false;
 // Choix gris du Pacte des Cachots (Serpentard) : 'pact' | 'defiance' | null.
 let slythPactChoice    = null;
+// Verbe `choice` (Lot C, revue 2026-09 — axe 4) : option retenue à la remise
+// des quêtes à dilemme, { qid: choiceId }. Lu par questChoiceOf (traces PNJ,
+// Codex). Réinitialisé par startGame, sérialisé.
+let questChoices       = {};
+// Prophétie en éclats (Lot C, arc H2) : fragments gravés sur les stèles (0..3).
+let prophecyFragments  = 0;
 // Buff de combat one-shot (combat-scoped, NON sérialisé) : pacte de Salazar
 // honoré → lifesteal de sort de 15 % pour le groupe. Armé par le levier
 // Voldemort, réinitialisé à chaque startBattle (comme recolteGoldBonus).
