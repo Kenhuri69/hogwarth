@@ -39,6 +39,7 @@ function _saveFloorToCache(floor) {
     px: playerX, py: playerY, dir: playerDir,
     floorEvent: currentFloorEvent,
     secretWalls: Array.from(secretWalls),
+    roomArchetypes: roomArchetypes.slice(),
     runePuzzle: runePuzzle ? JSON.parse(JSON.stringify(runePuzzle)) : null,
     litRunes: Array.from(litRunes),
     runeStele: runeStele ? JSON.parse(JSON.stringify(runeStele)) : null,
@@ -64,6 +65,8 @@ function _restoreFloorFromCache(floor) {
   npcPlacements = new Map(c.npcPlacements || []);
   currentFloorEvent = c.floorEvent || null;
   secretWalls = new Set(c.secretWalls || []);
+  roomArchetypes = Array.isArray(c.roomArchetypes) ? c.roomArchetypes : [];
+  announcedArchetypes = new Set();
   runePuzzle = c.runePuzzle || null;
   litRunes = new Set(c.litRunes || []);
   runeStele = c.runeStele || null;

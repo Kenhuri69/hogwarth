@@ -360,7 +360,7 @@ attendus se sont exécutés correctement et expose 2 helpers d'accès défensif.
 
 ### Manifeste
 
-Le `MANIFEST` dans `loader.js` énumère **405** entrées `{ name, source, kind,
+Le `MANIFEST` dans `loader.js` énumère **408** entrées `{ name, source, kind,
 optional? }` :
 - `kind: 'fn'` → `typeof name === 'function'`
 - `kind: 'obj'` → `typeof name !== 'undefined'` (couvre `let`/`const`/`var`)
@@ -1608,6 +1608,19 @@ par le type de cellule (`CELL.*`), pas par une couche d'objets séparée.
   événement existant sous un autre nom) — lu via `floorEventKind(id)`. 6
   événements neufs ciblent les étages 5 à 10.
 - **Ambiance de salle** (`room-flavor.js`) : 16 phrases par zone.
+
+### Archétypes de salles (6b, revue 2026-09)
+- Chaque salle en cul-de-sac tire un archétype (`ROOM_ARCHETYPES` /
+  `pickRoomArchetype`, `floor-ambiance.js`) : **trésor** (coffre, 40),
+  **embuscade** (coffre + un gardien garanti, 25, étage 2+), **sanctuaire**
+  (autel, aucun ennemi, 20), **galerie** (centre vide ; la 1ʳᵉ entrée révèle le
+  plan de l'étage sur la minimap, 15). Densité d'ennemis quasi neutre.
+- `roomArchetypes` (`state.js`, liste `{x, y, w, h, type}` hors trésor) : mis
+  en cache d'étage et sérialisé comme `secretWalls`. Une salle dont le centre a
+  été écrasé ensuite, ou un sanctuaire qui a reçu un ennemi, perd son archétype.
+- `maybeRoomArchetypeEntry()` (`movement-interactions.js`), appelé à l'entrée
+  d'une salle : message une fois par visite ; galerie → `revealFloorPlan()`
+  (parcours arrêté aux murs et aux portes). Ignoré en visite et en Poche.
 
 ### Interaction
 - À chaque déplacement, `handleCellEntry(cell)` (dans `movement.js`)

@@ -649,6 +649,12 @@ let currentFloorEvent = null;
 // génération, révélés par searchRoom. Mis en cache + persistés comme
 // `searchedCells`. Voir dungeon-enrichment §3.
 let secretWalls = new Set();
+// Archétypes des salles de l'étage courant (6b, thème C2) : liste
+// { x, y, w, h, type } des salles non triviales (embuscade/sanctuaire/galerie).
+// Posée à la génération, mise en cache + persistée comme `secretWalls`.
+// `announcedArchetypes` : salles déjà annoncées cette visite (transitoire).
+let roomArchetypes = [];
+let announcedArchetypes = new Set();
 // Puzzle runique de l'étage courant, ou null. Forme :
 // { runes:["x,y"…], barrier:"x,y", order:[idx…]|null, hint:str|null,
 //   hintCell:"x,y"|null, solved:bool }. `litRunes` = dalles déjà allumées

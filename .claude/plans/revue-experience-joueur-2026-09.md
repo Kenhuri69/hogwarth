@@ -400,3 +400,6 @@ pour le moins de code. Le lot C ouvre la porte à tous les dilemmes.
   des étages 1, 5, 7, 8). 6b reste au plan C2.
 - 2026-09-30 — **Lot G** (2b Complicité, 2c technique de duo) livré, cf.
   [`lotG-duo-2026-09.md`](./lotG-duo-2026-09.md). Axe 7 abandonné (Q4).
+- 2026-09-30 — Lot G fusionné (PR #755). **6b** (archétypes de salles, C2)
+  livré, cf. [`lot6b-archetypes-salles-2026-09.md`](./lot6b-archetypes-salles-2026-09.md).
+  Tous les axes de la revue sont traités ; restent le playtest humain et Q6.

@@ -724,6 +724,51 @@ function useRefuge() {
 // FLOOR_LANDMARKS (floor-ambiance.js) : action une fois par partie
 // (sentinelle `landmark:<étage>` dans seenScriptedBeat). Effet léger et
 // identique pour toutes les Maisons.
+// ── 6b · Archétypes de salles ────────────────────────────────
+// À la 1ʳᵉ entrée d'une salle à archétype pendant la visite : message, et pour
+// la galerie, révélation du plan (cases atteignables sans franchir de mur ni de
+// porte — les cachettes derrière un mur secret restent cachées).
+function maybeRoomArchetypeEntry() {
+  if (typeof visitSession !== 'undefined' && visitSession) return null;
+  if (typeof inEscapePocket !== 'undefined' && inEscapePocket) return null;
+  if (typeof roomArchetypeAt !== 'function') return null;
+  const room = roomArchetypeAt(roomArchetypes, playerX, playerY);
+  if (!room) return null;
+  const key = `${room.x},${room.y}`;
+  if (announcedArchetypes.has(key)) return null;
+  announcedArchetypes.add(key);
+  const arch = getRoomArchetype(room.type);
+  if (!arch) return null;
+  if (arch.entry) addMsg(arch.entry, 'narrative');
+  if (arch.reveal) {
+    const n = revealFloorPlan();
+    if (n > 0) renderMinimap();
+  }
+  return room.type;
+}
+
+// Marque comme vues toutes les cases atteignables depuis le joueur (parcours
+// en largeur sur les cases non-murs, arrêt aux portes). Retourne le nombre de
+// cases nouvellement révélées.
+function revealFloorPlan() {
+  const seen = new Set([`${playerX},${playerY}`]);
+  const queue = [[playerX, playerY]];
+  let revealed = 0;
+  while (queue.length) {
+    const [x, y] = queue.shift();
+    if (!visited[y][x]) { visited[y][x] = true; revealed++; }
+    if (dungeon[y][x] === CELL.DOOR) continue;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const nx = x + dx, ny = y + dy;
+      if (ny < 0 || ny >= MAP_H || nx < 0 || nx >= MAP_W) continue;
+      if (dungeon[ny][nx] === CELL.WALL || seen.has(`${nx},${ny}`)) continue;
+      seen.add(`${nx},${ny}`);
+      queue.push([nx, ny]);
+    }
+  }
+  return revealed;
+}
+
 function landmarkSpent(floor) {
   return typeof seenScriptedBeat !== 'undefined' && seenScriptedBeat.has('landmark:' + floor);
 }

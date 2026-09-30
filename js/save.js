@@ -56,6 +56,7 @@ function _serializeState() {
     usedRefuges: Array.from(usedRefuges),
     currentFloorEvent,
     secretWalls: Array.from(secretWalls),
+    roomArchetypes,
     runePuzzle,
     litRunes: Array.from(litRunes),
     runeStele,
@@ -530,6 +531,8 @@ function _applyState(gs) {
   usedRefuges = new Set(gs.usedRefuges || []);
   currentFloorEvent = gs.currentFloorEvent || null;
   secretWalls = new Set(gs.secretWalls || []);
+  roomArchetypes = Array.isArray(gs.roomArchetypes) ? gs.roomArchetypes : [];
+  announcedArchetypes = new Set();
   runePuzzle = gs.runePuzzle || null;
   litRunes = new Set(gs.litRunes || []);
   runeStele = gs.runeStele || null;
