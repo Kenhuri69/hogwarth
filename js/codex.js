@@ -530,6 +530,10 @@ const CODEX_ENTRIES = [
       veiled: "Le portrait qui t'a appelé. Sa voix t'a guidé vers le donjon, sa main invisible ouvre les épreuves. Mort, il guide encore — et il en sait plus qu'il n'en dit.",
       revealed: "Maintenant que l'Ombre du haut est tombée, tu comprends ce que le portrait taisait : il savait. Il savait que vaincre Voldemort n'achèverait rien — que forcer la serrure du haut ouvrirait celle du bas. Il ne t'a pas menti ; il t'a laissé descendre une marche à la fois, parce qu'on ne porte pas d'un coup le poids de toute la vérité. Sa voix te guidait moins vers une victoire que vers le courage d'en regarder le revers.",
     },
+    variants: { hero: {
+      harry: "Pour Harry, ce n'est pas un portrait parmi d'autres. C'est la même voix qui, une fois déjà, l'a laissé avancer seul vers ce qu'il devait affronter — et qui, cette fois, l'a regardé ne pas y aller seul.",
+      hermione: "Hermione connaît cette manière de ne dire qu'une partie de la vérité. Elle l'a acceptée autrefois. Elle la supporte moins bien, peinte sur une toile.",
+    } },
   },
   {
     id: 'echo_salazar', category: 'personnages', icon: '🐍', act: 2,
@@ -541,7 +545,14 @@ const CODEX_ENTRIES = [
       veiled: "Dans les cachots, une voix qui n'appartient à aucun vivant. Elle connaît ton nom, tes tentations, et le chemin le plus court vers le pouvoir. Elle se présente comme un ami.",
       revealed: "L'écho est Salazar Serpentard — non pas un fantôme, mais une part de lui qu'il a scellée avec la corruption qu'il aida à enfermer. Voilà le secret des Fondateurs : pour fermer le verrou, chacun a dû y mettre une part de soi-même, sa plus laide. La tentation que tu entends n'est pas un démon — c'est un miroir. Salazar n'a pas vaincu sa voix. Il a juste refusé de lui obéir.",
     },
-    variants: { house: { Serpentard: "Il te parle comme à un héritier. Ce n'est pas un piège : c'est une passation. À toi de décider ce que tu fais de ce que tu reconnais en lui." } },
+    variants: {
+      house: { Serpentard: "Il te parle comme à un héritier. Ce n'est pas un piège : c'est une passation. À toi de décider ce que tu fais de ce que tu reconnais en lui." },
+      hero: {
+        draco: "Drago reconnaît cette voix : c'est celle de tous les dîners de famille. Elle promet la grandeur en échange d'une obéissance. Il la connaît trop bien pour la croire.",
+        maxence: "L'écho parle à Maxence de sa soif comme d'un don. Maxence sait ce que valent les dons qu'on ne choisit pas.",
+        chatillon: "Châtillon écoute l'écho comme on écoute un adversaire : poliment, et en notant chaque promesse qu'il ne tiendra pas.",
+      },
+    },
   },
   {
     id: 'manon', category: 'personnages', icon: '❄️', act: 2,
@@ -552,6 +563,171 @@ const CODEX_ENTRIES = [
     textVersions: {
       veiled: "Une élève rencontrée dans la descente, le regard hanté par un deuil de givre. Elle cherche les pages dispersées du grimoire de sa mère, Élara — comme si les reconstituer pouvait réchauffer quelque chose.",
       revealed: "Les pages rendues, le givre de son regard cède d'un degré. Tu comprends alors ce que Manon cherchait vraiment : non pas un livre, mais la permission d'arrêter d'avoir froid. Le grimoire d'Élara ne gardait aucun sort de chaleur — seulement la mémoire d'une chaleur d'avant le deuil. En l'aidant, tu n'as pas réchauffé le monde : tu lui as rendu le droit de se souvenir qu'il a déjà été chaud.",
+    },
+  },
+  // ── Fiches des héros jouables (Lot A, revue 2026-09 — axe 1b) ──
+  // Ouvertes quand le héros est dans le groupe actif (robinet `hero`),
+  // révélées à la victoire : la version révélée DÉNOUE l'arc léger du héros
+  // (05 §5.1/§5.2), sans chaîne de quêtes. `heroEntry` : une fiche verrouillée
+  // d'un héros absent n'est ni affichée ni comptée (ui-codex.js).
+  {
+    id: 'heros_harry', category: 'personnages', icon: '⚡', act: 1, heroEntry: true,
+    title: 'Harry Potter',
+    unlockConditions: [{ type: 'hero', value: 'harry' }],
+    revealedBy: [{ type: 'victory' }],
+    textVersions: {
+      veiled: "Le Survivant, encore une fois en première ligne. Harry descend parce que personne d'autre ne devrait avoir à le faire — et parce que c'est la seule chose qu'il ait jamais su faire : passer devant.",
+      revealed: "Au fond, Harry a compris ce que la descente cherchait à lui apprendre : passer devant n'est pas la même chose que marcher seul. Le courage qui refuse toute aide ressemble beaucoup à l'orgueil. Il est remonté en sachant qu'il n'était pas descendu seul — et que c'est pour cela qu'il est remonté.",
+    },
+  },
+  {
+    id: 'heros_hermione', category: 'personnages', icon: '📚', act: 1, heroEntry: true,
+    title: 'Hermione Granger',
+    unlockConditions: [{ type: 'hero', value: 'hermione' }],
+    revealedBy: [{ type: 'victory' }],
+    textVersions: {
+      veiled: "Pour Hermione, la corruption est d'abord un problème : il a des causes, donc il a une solution. Elle descend avec ses notes, ses références et une confiance tranquille dans le savoir.",
+      revealed: "Certaines ténèbres ne se déchiffrent pas : elles se traversent. Hermione l'a appris dans les profondeurs, là où aucun livre n'avait de réponse. Elle n'a pas cessé de chercher — mais elle sait désormais qu'on peut avancer avant d'avoir compris, et que c'est parfois la seule façon de comprendre.",
+    },
+  },
+  {
+    id: 'heros_draco', category: 'personnages', icon: '🐍', act: 1, heroEntry: true,
+    title: 'Drago Malefoy',
+    unlockConditions: [{ type: 'hero', value: 'draco' }],
+    revealedBy: [{ type: 'victory' }],
+    textVersions: {
+      veiled: "Un nom lourd à porter dans un château qui s'en souvient. Drago descend pour se prouver qu'il vaut mieux que ce nom — et pour ne pas avoir à regarder trop longtemps les masques qui l'attendent en bas.",
+      revealed: "En bas, les Mangemorts l'ont reconnu, et il a choisi de ne pas leur répondre. Ce n'était pas un don, ni un héritage : un choix, refait à chaque étage. Drago n'est pas remonté lavé de son nom. Il est remonté en sachant qu'un nom ne décide de rien quand on refuse de lui obéir.",
+    },
+  },
+  {
+    id: 'heros_cho', category: 'personnages', icon: '🦅', act: 1, heroEntry: true,
+    title: 'Cho Chang',
+    unlockConditions: [{ type: 'hero', value: 'cho' }],
+    revealedBy: [{ type: 'victory' }],
+    textVersions: {
+      veiled: "L'Attrapeuse de Serdaigle voit tout, et vite. Cedric n'est jamais revenu d'un tournoi ; Cho descend pour qu'aucun autre élève ne disparaisse pendant que les adultes délibèrent.",
+      revealed: "La peur est le sceau de toute cette histoire, et Cho l'a portée jusqu'au fond. Elle l'a vue se transformer en autre chose : une vigilance, une attention au moindre signe. Le deuil ne l'a pas quittée. Il a simplement cessé de décider à sa place.",
+    },
+  },
+  {
+    id: 'heros_cedric', category: 'personnages', icon: '🏆', act: 1, heroEntry: true,
+    title: 'Cedric Diggory',
+    unlockConditions: [{ type: 'hero', value: 'cedric' }],
+    revealedBy: [{ type: 'victory' }],
+    textVersions: {
+      veiled: "Le Champion de Poudlard ne se dérobe pas quand l'école est menacée. Tout le monde le regarde comme un exemple ; Cedric descend en espérant être à la hauteur de ce regard.",
+      revealed: "Être l'exemple pesait plus lourd que n'importe quelle épreuve du tournoi. Dans les profondeurs, Cedric a appris qu'on peut porter ce poids sans s'y perdre : en le partageant. Il n'est pas remonté comme un modèle, mais comme un camarade — et c'est ce que les autres retiendront.",
+    },
+  },
+  {
+    id: 'heros_celeste', category: 'personnages', icon: '🌙', act: 1, heroEntry: true,
+    title: 'Céleste Luneclair',
+    unlockConditions: [{ type: 'hero', value: 'celeste' }],
+    revealedBy: [{ type: 'victory' }],
+    textVersions: {
+      veiled: "Astromage du Cercle des Astres. Céleste a lu dans le ciel que « la lumière devait redescendre », bien avant que la Clé ne se fende. Elle descend parce qu'elle refuse de rester à regarder une prophétie.",
+      revealed: "Les astres avaient raison — mais ils n'ont rien fait. C'est elle qui est descendue. Céleste sait désormais qu'une prophétie n'est qu'une porte entrouverte : elle ne s'accomplit que si quelqu'un accepte de la franchir.",
+    },
+  },
+  {
+    id: 'heros_iris', category: 'personnages', icon: '🌈', act: 1, heroEntry: true,
+    title: 'Iris Prismara',
+    unlockConditions: [{ type: 'hero', value: 'iris' }],
+    revealedBy: [{ type: 'victory' }],
+    textVersions: {
+      veiled: "Enchanteresse du Cercle des Astres, rieuse et désarmante. Iris a vu le château perdre ses couleurs, une par une ; elle descend pour les lui rendre, un Riddikulus à la fois.",
+      revealed: "On a souvent pris son rire pour de l'insouciance. En bas, Iris a prouvé le contraire : rire face aux ténèbres ne les nie pas, cela refuse de leur laisser le dernier mot. Les couleurs sont revenues au château — un peu grâce à elle, qui n'a jamais cessé d'y croire.",
+    },
+  },
+  {
+    id: 'heros_maxence', category: 'personnages', icon: '🩸', act: 1, heroEntry: true,
+    title: 'Maxence Ravenwood',
+    unlockConditions: [{ type: 'hero', value: 'maxence' }],
+    revealedBy: [{ type: 'victory' }],
+    textVersions: {
+      veiled: "Sorcier-vampire du Cercle des Astres, en lutte constante avec sa soif. Maxence descend pour prouver qu'une malédiction de naissance ne fait pas un monstre — même quand les profondeurs lui parlent sa langue.",
+      revealed: "Le sang répond au sang : en bas, tout l'appelait. Maxence n'a pas renié sa soif, il a appris à la tenir en laisse. Il est remonté avec la même malédiction qu'à l'aller — mais c'est lui, désormais, qui choisit à quoi elle répond.",
+    },
+  },
+  {
+    id: 'heros_anastasia', category: 'personnages', icon: '🌕', act: 1, heroEntry: true,
+    title: 'Anastasia Moonveil',
+    unlockConditions: [{ type: 'hero', value: 'anastasia' }],
+    revealedBy: [{ type: 'victory' }],
+    textVersions: {
+      veiled: "Mage de la Lune du Cercle des Astres, Gryffondor de tête plus que de cœur. Anastasia descend par devoir, un plan dans chaque poche et une réserve pour chaque plan.",
+      revealed: "Aucun plan n'a survécu à la première marche des profondeurs. Anastasia a découvert ce que Gryffondor voulait dire : parfois, le courage se décide dans l'instant, sans filet. Elle aime toujours les plans — mais elle ne les attend plus pour agir.",
+    },
+  },
+  {
+    id: 'heros_louis', category: 'personnages', icon: '🐉', act: 1, heroEntry: true,
+    title: 'Louis Dragonflamme',
+    unlockConditions: [{ type: 'hero', value: 'louis' }],
+    revealedBy: [{ type: 'victory' }],
+    textVersions: {
+      veiled: "Dompteur de dragons du Cercle des Astres, ardent et protecteur. Louis dompte le feu depuis l'enfance ; quand le château s'est embrasé par en dessous, il n'a pas hésité une seconde.",
+      revealed: "Louis croyait que dompter voulait dire dominer. Les profondeurs lui ont montré des feux qu'aucune main ne tient. Il est remonté en sachant que le vrai dressage commence par soi : tenir sa propre ardeur, c'est ce qui permet de protéger les autres sans les brûler.",
+    },
+  },
+  {
+    id: 'heros_jeanne', category: 'personnages', icon: '🪄', act: 1, heroEntry: true,
+    title: "Jeanne d'Argenciel",
+    unlockConditions: [{ type: 'hero', value: 'jeanne' }],
+    revealedBy: [{ type: 'victory' }],
+    textVersions: {
+      veiled: "Charmeuse du Cercle des Astres, l'une de ses benjamines. Jeanne descend par curiosité émerveillée autant que par bravoure : pour elle, le château est un grand secret qu'elle veut percer.",
+      revealed: "La descente l'a fait grandir trop vite. Jeanne a vu des choses qu'on ne montre pas à une élève de troisième année. Et pourtant, en remontant, elle s'émerveillait encore d'un escalier qui change de sens. C'est peut-être la plus grande victoire de toutes.",
+    },
+  },
+  {
+    id: 'heros_margaux', category: 'personnages', icon: '⭐', act: 1, heroEntry: true,
+    title: 'Margaux Aiglebrume',
+    unlockConditions: [{ type: 'hero', value: 'margaux' }],
+    revealedBy: [{ type: 'victory' }],
+    textVersions: {
+      veiled: "Benjamine du Cercle des Astres, première année au grimoire scintillant. Pour Margaux, le château est un livre qu'on ne lui a jamais laissé lire jusqu'au bout. Elle compte bien en tourner toutes les pages.",
+      revealed: "Margaux voulait tout comprendre. En bas, elle a rencontré des choses qui ne s'expliquent pas, et des gens qui avaient besoin d'elle maintenant, pas après la lecture. Elle a appris à fermer le livre pour tendre la main. Elle le rouvrira — mais plus jamais avant d'avoir regardé autour d'elle.",
+    },
+  },
+  {
+    id: 'heros_agathe', category: 'personnages', icon: '🌸', act: 1, heroEntry: true,
+    title: 'Agathe Lumiflore',
+    unlockConditions: [{ type: 'hero', value: 'agathe' }],
+    revealedBy: [{ type: 'victory' }],
+    textVersions: {
+      veiled: "Enchanteresse florale de la Garde de l'Aube. Là où la corruption fait flétrir, Agathe fait pousser ; descendre, pour elle, c'est planter de la vie dans la pierre morte.",
+      revealed: "Faire pousser exige aussi d'arracher. Agathe l'a compris en bas, face à ce qui étouffait tout le reste. Sa douceur n'a pas disparu : elle a simplement appris qu'elle pouvait aussi se battre. Le jardin qu'elle laisse derrière elle en est la preuve.",
+    },
+  },
+  {
+    id: 'heros_olivier', category: 'personnages', icon: '🔥', act: 1, heroEntry: true,
+    title: 'Olivier de Clairval',
+    unlockConditions: [{ type: 'hero', value: 'olivier' }],
+    revealedBy: [{ type: 'victory' }],
+    textVersions: {
+      veiled: "Mage de combat de la Garde de l'Aube. Pour Olivier, le duel est un art ; le château corrompu, l'épreuve qu'il attendait pour mesurer sa virtuosité.",
+      revealed: "Olivier est descendu pour se mesurer. Il est remonté avec une raison. La maîtrise sans cause n'était qu'un exercice ; en bas, chaque sortilège parfait protégeait quelqu'un. Il n'a rien perdu de son exigence — il sait enfin au service de quoi la mettre.",
+    },
+  },
+  {
+    id: 'heros_nathalie', category: 'personnages', icon: '🌻', act: 1, heroEntry: true,
+    title: 'Nathalie Finch',
+    unlockConditions: [{ type: 'hero', value: 'nathalie' }],
+    revealedBy: [{ type: 'victory' }],
+    textVersions: {
+      veiled: "Gardienne-herboriste de la Garde de l'Aube, placide et opiniâtre. Nathalie ne descend pas pour vaincre mais pour abriter : tant qu'elle tient le mur, personne ne tombe derrière elle.",
+      revealed: "Tenir le mur ne suffisait pas toujours. Dans les profondeurs, Nathalie a dû frapper la première pour protéger ceux qu'elle abritait. Elle n'a pas changé de nature : protéger reste tout ce qu'elle veut faire. Elle sait simplement que cela passe parfois par l'attaque.",
+    },
+  },
+  {
+    id: 'heros_chatillon', category: 'personnages', icon: '🌑', act: 1, heroEntry: true,
+    title: 'Olivier de Châtillon',
+    unlockConditions: [{ type: 'hero', value: 'chatillon' }],
+    revealedBy: [{ type: 'victory' }],
+    textVersions: {
+      veiled: "Ombremancien de la Garde de l'Aube, Serpentard du bon côté par calcul autant que par cœur. La lumière frontale a ses martyrs ; Châtillon préfère désamorcer dans l'ombre.",
+      revealed: "Châtillon a toujours agi sans être vu. En bas, pour la première fois, il a dû se tenir en pleine lumière, sous le regard des autres. Il y a survécu sans rien perdre de sa ruse. L'ombre reste son alliée — mais il n'a plus besoin de s'y cacher.",
     },
   },
   // Boss promus en personnages (P4, ch.06 §6.6) : vu en combat → veiled ;
@@ -878,6 +1054,8 @@ function _codexCondMet(cond, ctx) {
              && cond.value.every(id => ctx.itemsOwned.has(id));
     case 'house':
       return ctx.chosenHouse === cond.value;
+    case 'hero':   // héros présent dans le groupe actif (Lot A, revue 2026-09)
+      return Array.isArray(ctx.heroKeys) && ctx.heroKeys.indexOf(cond.value) !== -1;
     case 'victory':
       return ctx.victoryAchieved === true;
     case 'eclatLoop':

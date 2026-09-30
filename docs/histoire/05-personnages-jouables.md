@@ -674,6 +674,27 @@ Intro Dumbledore (Clé de Voûte)  →  Choix de Maison (chosenHouse)
 - **Avant Voldemort, `slythPactChoice = defiance`** — *Maxence* : « Je connaissais
   ta voix, Salazar. Je ne lui ai juste pas obéi. »
 
+### 5.4.2bis Réactivité aux héros ✅ (Lot A, revue 2026-09)
+
+> Livré par [`.claude/plans/lotA-reactivite-heros-2026-09.md`](../../.claude/plans/lotA-reactivite-heros-2026-09.md).
+> Tout est cosmétique : aucune branche, aucune quête obligatoire (§5.5.1, arc léger).
+
+- **Les PNJ reconnaissent le héros** (`heroGreeting` sur le PNJ, `npc-dialog.js`) :
+  au premier contact, une page propre au héros est ajoutée **en tête** de
+  l'accueil (muette : aucun OGG). 10 PNJ couvrent les 16 héros, en priorité les
+  liens canon (le portrait de Dumbledore et Lupin pour Harry, Rogue et Slughorn
+  pour Drago, Flitwick pour Cho, Chourave pour Cedric, Trelawney pour Céleste…).
+- **Fiche Codex par héros** (`heros_<key>`, robinet `hero`) : ouverte quand le
+  héros est dans le groupe, **révélée à la victoire** avec le dénouement de son
+  arc. Les fiches des héros absents ne sont ni affichées ni comptées.
+- **Dénouement dans la fin B** (`HERO_VICTORY_PAYOFF`) : une phrase par héros
+  sur le palier, qui referme son arc.
+- **Répliques de paire** (`HERO_PAIR_BARKS`, 10 paires) : `allyDown`,
+  `tierTransition`, `bossAppear` et l'échange du palier de victoire. Paires :
+  Harry/Hermione, Drago/Harry, Cedric/Cho, Drago/Hermione, Iris/Louis,
+  Céleste/Margaux, Maxence/Châtillon, Anastasia/Jeanne, Agathe/Nathalie,
+  Clairval/Châtillon.
+
 ### 5.4.3 Barks de tension en duo (Maison canon ≠ `chosenHouse`) 💡
 
 > Récompense de rejouabilité : le 2ᵉ héros commente la Signature « de l'autre Maison ».

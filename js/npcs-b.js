@@ -274,6 +274,11 @@ NPCS.push(
   },
   {
     id:        "trelawney",
+    // Reconnaissance du héros au 1er contact (Lot A, revue 2026-09) :
+    // page ajoutée EN TÊTE de l'accueil (muette), cf. _heroGreetingLine.
+    heroGreeting: {
+      celeste: "Oh… Toi. Les astres m'ont parlé de toi, mon enfant, bien avant ta venue. Tu as lu la même chose que moi dans le ciel, n'est-ce pas ? « La lumière doit redescendre. »"
+    },
     name:      "Sibylle Trelawney",
     title:     "Professeure de Divination",
     sprite:    "prof_f",
