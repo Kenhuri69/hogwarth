@@ -575,7 +575,8 @@ sérialisés ou dérivables** (pas de nouvel état lourd) :
 | **Bibliothèque interdite** | 💡 Pendant savant de la Forge : recettes/sorts débloqués par les matériaux de Boucle (pages). | ✅ système |
 | **Grimoire d'Élara** | 💡 Carnet de givre et de deuil de la mère de Manon ; pages dispersées dans les Actes II-III (easter egg lumineux). | 💡 [06](06-pnj-et-factions.md), [08](08-quetes-et-sous-intrigues.md) |
 | **Lumière Éternelle (Lux Aeterna)** | 💡 Épreuve de Dumbledore : opposer un souvenir heureux aux ténèbres (boss Lux Aeterna). | ✅ système · [08](08-quetes-et-sous-intrigues.md) |
-| **Garde de l'Aube** | 💡 Confrérie évoquée dans le code, liant possiblement les héros originaux. | ❓ à confirmer · [05](05-personnages-jouables.md) |
+| **Cercle des Astres** | ✅ Cercle des 7 héros originaux qui ont lu les signes de la fêlure (Céleste, Iris, Maxence, Anastasia, Louis, Jeanne, Margaux). | ✅ écran de sélection · [05](05-personnages-jouables.md) |
+| **Garde de l'Aube** | ✅ Cercle des 4 héros originaux qui tenaient les couloirs (Agathe, Olivier de Clairval, Nathalie, Olivier de Châtillon). | ✅ écran de sélection · [05](05-personnages-jouables.md) |
 
 ### B. Termes de **systèmes** (mécaniques)
 

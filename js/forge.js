@@ -5,7 +5,7 @@
 // 11/14/17/20 post-victoire (cf. dungeon.js).
 //
 // Modèle :
-//   - Chaque item équipé acquiert un champ `upgradeLevel` (0-5).
+//   - Chaque item équipé acquiert un champ `upgradeLevel` (0-FORGE_MAX_LEVEL).
 //   - Le bonus principal de l'item (le plus élevé parmi bonusAtk/Def/Mag/Lck)
 //     est augmenté de `+upgradeLevel`. recalculateStats() lit ce champ.
 //   - Coût : gold + Essence des Ténèbres selon FORGE_COSTS.

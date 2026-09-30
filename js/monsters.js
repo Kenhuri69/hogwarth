@@ -57,8 +57,9 @@
 //    .turns  {number}   (effect:"status" uniquement) durée du statut en tours
 //    .chance {number}   Probabilité d'utilisation à chaque tour (0.0 à 1.0)
 //
-//  ai        {string}   Comportement en combat (utilisé pour évolutions futures) :
-//                       "aggressive" | "cautious" | "random"
+//  ai        {string}   Comportement en combat : "aggressive" | "cautious" | "random"
+//                       (lu par le choix de cible, battle.js, et de capacité,
+//                       battle-spells.js)
 //
 //  resist    [string]   Sorts atténués de 50% sur cet ennemi. Éléments :
 //                       "feu" | "glace" | "foudre" | "lumière" | "ténèbres"

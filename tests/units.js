@@ -3199,6 +3199,60 @@ function loadNpcs() {
 })();
 
 // ============================================================
+// §19 — Libellés de lieu alignés sur les tranches (revue 2026-09, Lot 0.2)
+// ------------------------------------------------------------
+// LOCATIONS est indexé par min(étage−1, len−1) par ui.js, movement-floors.js
+// et teleport.js. L'ancienne liste de 11 lieux canon affichait « La Chambre
+// des Secrets » sur toute la Boucle et « Tour de Gryffondor » aux Cachots.
+// ============================================================
+(function () {
+  const { LOCATIONS } = loadModule('js/data-world.js', ['LOCATIONS']);
+  const loc = (f) => LOCATIONS[Math.min(f - 1, LOCATIONS.length - 1)];
+  check('lieux: une entrée par étage 1→21+', LOCATIONS.length === 21);
+  check('lieux: aucun libellé vide', LOCATIONS.every((n) => typeof n === 'string' && n.length > 0));
+  check('lieux: 10 étages pré-victoire distincts', new Set(LOCATIONS.slice(0, 10)).size === 10);
+  check('lieux: ét. 8 = Seuil du Veilleur (lieu-signature §10.5)', loc(8) === 'Le Seuil du Veilleur');
+  check('lieux: ét. 14 et 16 = même palier mégalithique', loc(14) === loc(16));
+  check('lieux: ét. 17 et 20 = Cœur runique', loc(17) === loc(20) && loc(17) !== loc(16));
+  check('lieux: ét. 21 et 40 = Avant-Monde', loc(21) === loc(40) && loc(21) !== loc(20));
+  check('lieux: plus de « Chambre des Secrets » générique',
+    !LOCATIONS.some((n) => /Chambre des Secrets/.test(n)));
+})();
+
+// ============================================================
+// §20 — Tout objet a une source d'obtention (revue 2026-09, Lot 0.1)
+// ------------------------------------------------------------
+// 8 objets (6 grimoires ténébreux, Grimoire Interdit, Reliquaire Lunaire)
+// étaient définis, iconographiés, mais vendus/lâchés nulle part. Un objet est
+// « sourcé » s'il est éligible aux coffres génériques (équipement non
+// légendaire), brassable (POTION_RECIPES), ou référencé par son id dans un
+// autre module (boutique, PNJ, butin, quêtes, drops…).
+// ============================================================
+(function () {
+  const fs   = require('fs');
+  const path = require('path');
+  const src = ['js/data.js', 'js/data-characters.js', 'js/data-spells.js', 'js/data-items.js']
+    .map((f) => fs.readFileSync(path.join(ROOT, f), 'utf8')).join('\n');
+  const sandbox = { console, window: {}, document: { getElementById: () => null }, exports: {} };
+  vm.createContext(sandbox);
+  vm.runInContext(src + '\n;exports.ITEMS = ITEMS; exports.POTION_RECIPES = POTION_RECIPES;',
+    sandbox, { filename: 'data-items-combined.js' });
+  const { ITEMS, POTION_RECIPES } = sandbox.exports;
+  const brewable = new Set(POTION_RECIPES.map((r) => r.resultItemId));
+  const skip = new Set(['data-items.js', 'item-icons.js', 'data-icon-recipes.js']);
+  const jsDir = path.join(ROOT, 'js');
+  const others = fs.readdirSync(jsDir).filter((f) => f.endsWith('.js') && !skip.has(f))
+    .map((f) => fs.readFileSync(path.join(jsDir, f), 'utf8')).join('\n');
+  const orphans = ITEMS.filter((it) => {
+    const chest = it.slot && it.type !== 'consumable' && it.type !== 'spellbook' && it.rarity !== 'legendary';
+    if (chest || brewable.has(it.id)) return false;
+    return !new RegExp('["\']' + it.id + '["\']').test(others);
+  }).map((it) => it.id);
+  check('objets: tous ont une source d\'obtention' +
+        (orphans.length ? ' (orphelins : ' + orphans.join(', ') + ')' : ''), orphans.length === 0);
+})();
+
+// ============================================================
 // Rapport
 // ============================================================
 if (failures.length) {

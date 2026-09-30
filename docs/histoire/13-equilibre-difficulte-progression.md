@@ -289,8 +289,8 @@ résistance du donjon. Les 4 Maisons sont équilibrées entre elles par construc
 
 ### 13.3.2 Choix du / des héros & mode solo vs duo
 
-✅ Le choix du héros (**16 jouables** — 5 figures canon + 11 originaux de la
-Garde de l'Aube, registre `js/data-characters.js`, cf. [05 §5.0](05-personnages-jouables.md))
+✅ Le choix du héros (**16 jouables** — 5 figures canon + 11 originaux du
+Cercle des Astres et de la Garde de l'Aube, registre `js/data-characters.js`, cf. [05 §5.0](05-personnages-jouables.md))
 **n'altère pas la structure** : tout repose sur `party[0]/party[1]`. Son impact
 est **cosmétique et émotionnel** (barks par événement) et de **build** (stats de
 départ : Harry physique-offensif LCK 15, Hermione mage-soutien INT 17).

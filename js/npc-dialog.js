@@ -872,10 +872,26 @@ const _DUMBLEDORE_QID_SUFFIX = {
 // quête courant.
 const _HEAD_OF_HOUSE_VOICE = new Set(['mcgonagall', 'rogue', 'flitwick', 'sprout']);
 
+function _greetingPageMatchesDefault(npcId, pageIdx) {
+  const npc = (typeof getNpcById === 'function') ? getNpcById(npcId) : null;
+  const byHouse = npc && npc.dialoguesByHouse && typeof chosenHouse !== 'undefined'
+    && chosenHouse && npc.dialoguesByHouse[chosenHouse];
+  if (!byHouse || byHouse.greeting === undefined) return true;
+  const def = [].concat((npc.dialogues && npc.dialogues.greeting) || []);
+  const alt = [].concat(byHouse.greeting);
+  return alt[pageIdx] === def[pageIdx];
+}
+
 function _voiceKeyForPage(npcId, state, qid, pageIdx, source, idleIndex) {
   // Chefs de Maison : greeting + 3 états quête + idle/done (Vague A étendue).
   if (_HEAD_OF_HOUSE_VOICE.has(npcId)) {
-    if (source === 'greeting') return `${npcId}_greeting_${pageIdx + 1}`;
+    if (source === 'greeting') {
+      // Les OGG suivent le greeting par défaut : une page réécrite par
+      // `dialoguesByHouse` reste muette (sinon voix ≠ texte). Les pages
+      // identiques au défaut gardent leur voix.
+      return _greetingPageMatchesDefault(npcId, pageIdx)
+        ? `${npcId}_greeting_${pageIdx + 1}` : null;
+    }
     if (source === 'idle') {
       // L'OGG suit la réplique `idleRandom` tirée (idleIndex) pour éviter
       // le décalage voix/texte ; repli sur la page si index absent.

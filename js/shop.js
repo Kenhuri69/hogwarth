@@ -64,6 +64,12 @@ const SHOP_CATALOG = [
   { id: "livre_patronum",      minFloor: 4 },
   { id: "livre_glacius",       minFloor: 3 },
   { id: "livre_fulgari",       minFloor: 5 },
+  // Grimoires ténébreux « Boutique » (G5-equipement-objets.md) — étaient
+  // définis mais vendus nulle part (revue 2026-09, Lot 0.1).
+  { id: "livre_taranta",       minFloor: 3 },
+  { id: "livre_sanguini",      minFloor: 4 },
+  { id: "livre_maledictus",    minFloor: 5 },
+  { id: "livre_vampyrus",      minFloor: 7 },
   // Grimoires de zone (AoE) — débloqués quand les groupes s'étoffent
   { id: "livre_glacius_tempete", minFloor: 6 },
   { id: "livre_diffindo_maxima", minFloor: 6 },
