@@ -562,7 +562,7 @@ function openCharacter(charIdx = 0) {
           </div>
           <div class="paper-doll-bottom">${slotsBottom}</div>
           <div class="gold-banner">
-            <img class="ui-icon ui-icon-md" src="img/icons/gold.png" alt=""> ${player.gold}
+            <img class="ui-icon ui-icon-md" src="img/icons/gold.png" alt=""> ${player.gold}${(typeof hunterMarks === 'number' && (hunterMarks > 0 || traqueUnlocked)) ? ` <span class="hunter-marks" title="Marques de Traque">🏹 ${hunterMarks}</span>` : ''}
           </div>
         </div>
       </div>

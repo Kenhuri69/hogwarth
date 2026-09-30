@@ -699,3 +699,13 @@ Lot 6 (équilibrage global & QA de synthèse) ── ferme le tout
   - [x] Tests : scénario smoke `scenarioForgeLibraryRespec` (6 volets :
     Garde, respec Forge, Résonance, Amplitude/Métamorphose, héritage+respec
     Biblio, artefacts/résolveurs) ; scénarios Forge/Biblio existants verts.
+- **2026-09-30 — Lot 3 exécuté** (plan [`lot3-traques-rituelles-2026-09.md`](./lot3-traques-rituelles-2026-09.md)) :
+  - [x] 3.1 `hunterMarks` (state + save + compteur fiche).
+  - [x] 3.2 Contrats (js/traque.js) : **écarts** — licence délivrée par les
+    donneurs puis contrat automatique à chaque étage (les donneurs ne couvrent
+    que 5 étages) ; cible = catégorie de créature (les escortes sont tirées
+    dans tout le pool) ; ×2/×3 alignés sur les libellés « hostile »/« redouté ».
+  - [x] 3.3 Respec payable en or **ou** 5 Marques (branchement 2.1) ; échange
+    4 Marques → Essence/Page chez le Gardien.
+  - [x] 3.4 `BalanceLog.record('traque')` + `traqueCount`/`traqueMarks`.
+  - [ ] 2.5b Éveil d'artefact — toujours ouvert (PR suivante).

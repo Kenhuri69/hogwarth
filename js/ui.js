@@ -572,13 +572,16 @@ function updateQuestTracker() {
   const el = document.getElementById('quest-tracker');
   if (!el) return;
   const pending = activeQuests.filter(q => !q.completed);
+  // Traques Rituelles (Lot 3) : contrat de l'étage en tête du suivi.
+  const tq = (typeof traqueActiveContract === 'function') ? traqueActiveContract() : null;
+  const tqHtml = tq ? `<div class="traque-tracker" style="background:#0a0705;border:1px solid #2a1a08;border-radius:3px;padding:5px 6px;font-size:9px;color:var(--gold-light);">🏹 Traque : ${traqueLabel(tq)} <span style="color:#8a7050;float:right">${tq.progress}/${tq.amount}</span></div>` : '';
   if (!pending.length) {
-    el.innerHTML = '<div class="quest-tracker-empty">Aucune quête active</div>';
+    el.innerHTML = tqHtml || '<div class="quest-tracker-empty">Aucune quête active</div>';
     return;
   }
   // Quête principale (flag `main`, clone du template) épinglée en tête.
   pending.sort((a, b) => (b.main ? 1 : 0) - (a.main ? 1 : 0));
-  el.innerHTML = pending.map(q => {
+  el.innerHTML = tqHtml + pending.map(q => {
     const step = (typeof getActiveStep === 'function') ? getActiveStep(q) : (q.objectives || []).find(o => !o.completed);
     if (!step) return '';
     let prog = '', pct = 0;

@@ -2489,4 +2489,105 @@ async function scenarioLotEEndgame() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioLotEEndgame, scenarioLotDArcs, scenarioLieutenantAndProphecy, scenarioDiscoverObjective, scenarioTalkObjective, scenarioDeliveryQuestsWired, scenarioChainedQuest, scenarioHeadlessHunt, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioFarmingQuests, scenarioDelayedSearch, scenarioCleVoute, scenarioQuestFanfare, scenarioLoopNpcQuests, scenarioLoopNpcQuests2, scenarioLoopNpcQuests3, scenarioSignatureQuestBadge, scenarioDeliveryQuestLetter, scenarioMainQuestDescente, scenarioDumbledoreRelais] };
+// Lot 3 (revue de progression) — Traques Rituelles : licence, contrat d'étage,
+// Marques ×densité, cap 2/visite, save, échange au Gardien, respec en Marques.
+async function scenarioTraque() {
+  console.log('\n── Scénario Lot 3 : Traques Rituelles ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 — licence chez un chef de Maison → contrat de l'étage, ligne du suivi.
+  const t1 = await page.evaluate(() => {
+    const npc = getNpcById('mcgonagall');
+    const before = _npcDialogActions(npc, 'none').some(a => a.label.includes('Sceau de Traque'));
+    const noContract = traqueContract === null;
+    unlockTraque();
+    updateQuestTracker();
+    const after = _npcDialogActions(npc, 'none').some(a => a.label.includes('Sceau de Traque'));
+    return { before, noContract, unlocked: traqueUnlocked, c: traqueContract,
+      tracker: document.getElementById('quest-tracker').textContent.includes('Traque') };
+  });
+  console.log('  T1 licence :', t1);
+  assert(t1.before && !t1.after, 'le bouton de licence disparaît une fois le Sceau reçu');
+  assert(t1.noContract && t1.unlocked, 'licence reçue');
+  assert(t1.c && t1.c.floor === 1 && t1.c.amount >= 3 && t1.c.amount <= 5 && t1.c.honored === 0, 'contrat tiré sur l\'étage 1');
+  assert(t1.tracker, 'le suivi de quêtes affiche la traque');
+
+  // T2 — progression, ×3 à l'étage redouté, cap 2 par visite.
+  const t2 = await page.evaluate(() => {
+    floorKillCount.set(currentFloor, 24);
+    const mk = (cat, n) => Array.from({ length: n }, () => ({ id: 'x', category: cat }));
+    const other = traqueContract.category === 'bête' ? 'humain' : 'bête';
+    const r0 = traqueOnBattleWon(mk(other, 3));
+    const partial = traqueContract.progress;
+    const r1 = traqueOnBattleWon(mk(traqueContract.category, 9));
+    const second = { ...traqueContract };
+    const r2 = traqueOnBattleWon(mk(traqueContract.category, 9));
+    const r3 = traqueOnBattleWon(mk(traqueContract.category, 9));
+    return { r0, partial, r1, second, r2, r3, marks: hunterMarks, active: traqueActiveContract() };
+  });
+  console.log('  T2 contrats :', t2);
+  assert(t2.r0 === 0 && t2.partial === 0, 'une autre catégorie ne compte pas');
+  assert(t2.r1 === 3 && t2.second.honored === 1 && t2.second.progress === 0, '1er contrat ×3, 2e contrat tiré');
+  assert(t2.r2 === 3 && t2.r3 === 0 && t2.marks === 6, 'cap de 2 contrats par visite');
+  assert(t2.active === null, 'plus de traque affichée une fois le cap atteint');
+
+  // T3 — nouvelle visite : contrat neuf ; save round-trip.
+  const t3 = await page.evaluate(() => {
+    const c = traqueOnFloorEnter();
+    const gs = JSON.parse(JSON.stringify(_serializeState()));
+    hunterMarks = 0; traqueUnlocked = false; traqueContract = null;
+    _applyState(gs);
+    return { honored: c.honored, marks: hunterMarks, unlocked: traqueUnlocked,
+      same: JSON.stringify(traqueContract) === JSON.stringify(c) };
+  });
+  console.log('  T3 visite + save :', t3);
+  assert(t3.honored === 0, 'le compteur de visite repart à zéro');
+  assert(t3.marks === 6 && t3.unlocked && t3.same, 'Marques, licence et contrat survivent à la sauvegarde');
+
+  // T4 — échange au Gardien : 4 Marques → 1 Essence.
+  const t4 = await page.evaluate(() => {
+    const acts = _npcDialogActions(getNpcById('gardien_boucle'), 'none').filter(a => a.label.includes('Marques →'));
+    const n0 = player.inventory.filter(i => i.id === 'essence_tenebres').length;
+    const ok = exchangeHunterMarks('essence_tenebres');
+    const ko = exchangeHunterMarks('essence_tenebres');
+    return { acts: acts.length, ok, ko, marks: hunterMarks,
+      got: player.inventory.filter(i => i.id === 'essence_tenebres').length - n0 };
+  });
+  console.log('  T4 échange :', t4);
+  assert(t4.acts === 2, 'le Gardien propose 2 échanges');
+  assert(t4.ok && t4.got === 1 && t4.marks === 2, 'échange : −4 Marques, +1 Essence');
+  assert(!t4.ko, 'échange refusé sans assez de Marques');
+
+  // T5 — Reforger la voie payé en Marques (or intact).
+  const t5 = await page.evaluate(() => {
+    hunterMarks = 5;
+    const wand = JSON.parse(JSON.stringify(ITEMS.find(i => i.id === 'wand1')));
+    party[0].equipped.wand = wand;
+    player.gold = 50000;
+    for (let i = 0; i < 4; i++) player.inventory.push({ ...ITEMS.find(i => i.id === 'essence_tenebres') });
+    recalculateStats();
+    upgradeItemAtForge(0, 'wand', 'power');
+    const gold0 = player.gold;
+    traqueToggleRespecPay();
+    const lbl = traqueRespecCostLabel(999);
+    const ok = reforgePathAtForge(0, 'wand', 'crit');
+    const ko = reforgePathAtForge(0, 'wand', 'power');
+    traqueToggleRespecPay();
+    closeModal('forge-modal');
+    return { lbl, ok, ko, path: party[0].equipped.wand.forgePath, marks: hunterMarks, goldSame: player.gold === gold0 };
+  });
+  console.log('  T5 respec en Marques :', t5);
+  assert(t5.lbl === '🏹5', 'libellé du coût en Marques');
+  assert(t5.ok && t5.path === 'crit' && t5.marks === 0 && t5.goldSame, 'respec payé 5 Marques, or intact');
+  assert(!t5.ko, 'respec refusé sans Marques');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (Traques Rituelles)`);
+  }
+  console.log('  ✅ Traques Rituelles OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioTraque, scenarioLotEEndgame, scenarioLotDArcs, scenarioLieutenantAndProphecy, scenarioDiscoverObjective, scenarioTalkObjective, scenarioDeliveryQuestsWired, scenarioChainedQuest, scenarioHeadlessHunt, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioFarmingQuests, scenarioDelayedSearch, scenarioCleVoute, scenarioQuestFanfare, scenarioLoopNpcQuests, scenarioLoopNpcQuests2, scenarioLoopNpcQuests3, scenarioSignatureQuestBadge, scenarioDeliveryQuestLetter, scenarioMainQuestDescente, scenarioDumbledoreRelais] };

@@ -655,6 +655,13 @@ let secretWalls = new Set();
 // `announcedArchetypes` : salles déjà annoncées cette visite (transitoire).
 let roomArchetypes = [];
 let announcedArchetypes = new Set();
+// Traques Rituelles (Lot 3, revue de progression) : ressource Marques de
+// Traque 🏹, licence reçue d'un chef de Maison ou du Gardien de la Boucle, et
+// contrat de l'étage courant ({ floor, category, amount, progress, honored }).
+// Tous sérialisés. Cf. js/traque.js.
+let hunterMarks = 0;
+let traqueUnlocked = false;
+let traqueContract = null;
 // Puzzle runique de l'étage courant, ou null. Forme :
 // { runes:["x,y"…], barrier:"x,y", order:[idx…]|null, hint:str|null,
 //   hintCell:"x,y"|null, solved:bool }. `litRunes` = dalles déjà allumées

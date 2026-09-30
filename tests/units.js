@@ -3885,6 +3885,29 @@ function loadNpcs() {
     && fa.roomArchetypeAt(null, 1, 1) === null);
 })();
 
+// §29 — Lot 3 (revue de progression) : Traques Rituelles
+(function testLot3Traque() {
+  const t = loadModule('js/traque.js', ['traqueDensityMult', 'traqueMarksFor', 'traqueDrawContract', 'TRAQUE_CAP_PER_VISIT'], { window: {} });
+  check('Lot3: densité ×1 / ×2 (hostile) / ×3 (redouté)',
+    t.traqueDensityMult(0) === 1 && t.traqueDensityMult(15) === 1 && t.traqueDensityMult(16) === 2
+    && t.traqueDensityMult(23) === 2 && t.traqueDensityMult(24) === 3 && t.traqueDensityMult(99) === 3);
+  check('Lot3: Marques = multiplicateur', t.traqueMarksFor(0) === 1 && t.traqueMarksFor(24) === 3);
+  check('Lot3: cap 2 contrats par visite', t.TRAQUE_CAP_PER_VISIT === 2);
+  const pool = [{ category: 'bête', weight: 10 }, { category: 'fantôme', weight: 2 }, { category: 'bête', weight: 8 }];
+  const c0 = t.traqueDrawContract(pool, () => 0);
+  const c1 = t.traqueDrawContract(pool, () => 0.99);
+  check('Lot3: tirage pondéré + N selon la part', c0.category === 'bête' && c0.amount === 5
+    && c1.category === 'fantôme' && c1.amount === 3);
+  check('Lot3: pool vide → null', t.traqueDrawContract([], () => 0) === null);
+  const { MONSTERS } = loadMonsters();
+  const cats = new Set(MONSTERS.map(m => m.category));
+  const src = require('fs').readFileSync(require('path').join(__dirname, '..', 'js/traque.js'), 'utf8');
+  check('Lot3: chaque catégorie a son pluriel', [...cats].every(c => src.includes(`'${c}':`)));
+  const { NPCS } = loadNpcs();
+  const g = loadModule('js/traque.js', ['TRAQUE_GIVERS'], { window: {} }).TRAQUE_GIVERS;
+  check('Lot3: donneurs = PNJ existants', g.length === 5 && g.every(id => NPCS.some(n => n.id === id)));
+})();
+
 // ============================================================
 // Rapport
 // ============================================================

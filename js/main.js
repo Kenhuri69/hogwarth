@@ -555,6 +555,7 @@ async function startGame(count = 2) {
   visitedFloors = new Set([1]);
   seenScriptedBeat = new Set();   // étages-scènes (P5) — beats neufs à chaque partie
   totalKills     = 0;
+  hunterMarks = 0; traqueUnlocked = false; traqueContract = null;   // Traques Rituelles (Lot 3)
   monsterKills   = {};
   // Codex (Chapitre 12) — journal neuf à chaque partie.
   unlockedCodexEntries = new Set();

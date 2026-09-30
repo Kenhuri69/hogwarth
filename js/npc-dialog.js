@@ -732,6 +732,9 @@ function _npcDialogActions(npc, state) {
       });
     }
   }
+  // Traques Rituelles (Lot 3) : licence (chefs de Maison, Gardien) et
+  // échange de Marques (Gardien).
+  if (typeof traqueGiverActions === 'function') out.push(...traqueGiverActions(npc));
   out.push({ label: 'S\'éloigner', onClick: 'closeNpcDialog()', secondary: true });
   return out;
 }

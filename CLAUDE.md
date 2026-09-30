@@ -17,7 +17,7 @@ Vanilla JS / HTML5 Canvas, zéro dépendance, zéro build step.
 ## Structure des fichiers
 
 Les entrées `js/` ci-dessous suivent **l'ordre de chargement réel** des
-`<script src>` dans `index.html` (98 modules). La cohérence
+`<script src>` dans `index.html` (99 modules). La cohérence
 arborescence ↔ `index.html` est verrouillée par
 `node tools/check_doc_modules.js` (CI : tout module ajouté/retiré dans
 `index.html` sans mise à jour de cette section échoue).
@@ -240,6 +240,10 @@ js/
   quests-riddles.js → Mini-jeux : fusion du grimoire (Manon) + énigmes de
                       Dumbledore (openRiddleModal, _spawnLuxAeternaBoss).
                       Chargé APRÈS quests.js
+  traque.js        →  TRAQUES RITUELLES (Lot 3) : licence (chefs de Maison,
+                      Gardien), contrat d'étage par catégorie de créature,
+                      Marques de Traque 🏹 ×densité, respec payable en Marques,
+                      échange au Gardien. APRÈS quests-riddles.js
   npc-dialog.js    →  Dialogues PNJ : openNpcDialog(), nextDialogPage(),
                       closeNpcDialog(), triggerNpcSpecialAction(),
                       getNpcQuestState(), getNpcMarkerSign()
@@ -360,7 +364,7 @@ attendus se sont exécutés correctement et expose 2 helpers d'accès défensif.
 
 ### Manifeste
 
-Le `MANIFEST` dans `loader.js` énumère **408** entrées `{ name, source, kind,
+Le `MANIFEST` dans `loader.js` énumère **414** entrées `{ name, source, kind,
 optional? }` :
 - `kind: 'fn'` → `typeof name === 'function'`
 - `kind: 'obj'` → `typeof name !== 'undefined'` (couvre `let`/`const`/`var`)
@@ -1532,6 +1536,23 @@ window.checkKillQuests(monsterId) → incrémente q.progress, auto-complète (d�
   aux étages 7-10, `progressHeroLines` (une réplique si le héros de la Garde
   lié est présent), remise auto (`autoTurnIn` désormais honoré par les étapes
   `search`) → **Reliquaire Lunaire**.
+
+### Traques Rituelles (Lot 3, `js/traque.js`)
+
+- **Licence** : bouton « 🏹 Recevoir le Sceau de Traque » chez un chef de
+  Maison (McGonagall, Rogue, Flitwick, Chourave) ou le Gardien de la Boucle
+  (`traqueUnlocked`, sérialisé).
+- **Contrat d'étage** (`traqueContract`, sérialisé) : à chaque entrée d'étage,
+  `traqueDrawContract(pool)` (PUR) tire une **catégorie** de créature pondérée
+  par le pool de l'étage ; N = 3/4/5 selon sa part. Ligne 🏹 en tête du suivi
+  de quêtes. Ignoré en visite et en Poche du Sceau.
+- **Récompense** : `traqueMarksFor(kills)` (PUR) → 1 Marque, ×2 si l'étage est
+  « hostile » (n = 4-5), ×3 s'il est « redouté » (n ≥ 6). 2 contrats au plus
+  par visite. Ni XP ni or ; les Marques (`hunterMarks`) ne viennent que de là.
+- **Débouchés** : Reforger la voie (Forge/Bibliothèque) payable en or **ou**
+  5 Marques (bascule du panneau) ; échange au Gardien (4 Marques → Essence
+  des Ténèbres ou Page de Grimoire). Compteur 🏹 dans la fiche.
+- Télémétrie `BalanceLog.record('traque', { marks, mult })`.
 
 > Pour ajouter des quêtes : pousser un objet dans `activeQuests` dans `state.js`.
 > Détail des objectifs et récompenses : voir le tableau dans `state.js`.

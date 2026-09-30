@@ -16,7 +16,7 @@
 //     individuel suffit pour eux.
 // =======================================================================
 
-const CACHE_VERSION = 'hogwarth-v282';
+const CACHE_VERSION = 'hogwarth-v283';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Précache minimal (~1 Mo) : shell HTML/CSS/JS + premier visuel.
@@ -72,11 +72,11 @@ const PRECACHE_URLS = [
   './js/floor-events.js?v=3',
   './js/room-flavor.js?v=2',
   './js/item-icons.js?v=52',
-  './js/state.js?v=52',
+  './js/state.js?v=53',
   './js/hero-barks.js?v=17',
-  './js/ui.js?v=27',
+  './js/ui.js?v=28',
   './js/modal-a11y.js?v=2',
-  './js/ui-character-sheet.js?v=19',
+  './js/ui-character-sheet.js?v=20',
   './js/ui-settings.js?v=7',
   './js/keybindings.js?v=1',
   './js/ui-bestiary.js?v=9',
@@ -93,12 +93,12 @@ const PRECACHE_URLS = [
   './js/renderer-entities.js?v=8',
   './js/renderer-minimap.js?v=10',
   './js/movement.js?v=47',
-  './js/movement-floors.js?v=26',
+  './js/movement-floors.js?v=27',
   './js/movement-interactions.js?v=29',
   './js/escape-pocket.js?v=7',
   './js/swipe-canvas.js?v=4',
   './js/battle.js?v=50',
-  './js/battle-rewards.js?v=17',
+  './js/battle-rewards.js?v=18',
   './js/battle-death.js?v=5',
   './js/teleport.js?v=4',
   './js/battle-spells.js?v=30',
@@ -110,12 +110,13 @@ const PRECACHE_URLS = [
   './js/quests-templates.js?v=30',
   './js/quests.js?v=30',
   './js/quests-riddles.js?v=3',
-  './js/npc-dialog.js?v=31',
+  './js/traque.js?v=1',
+  './js/npc-dialog.js?v=32',
   './js/karaoke.js?v=1',
   './js/intro.js?v=4',
   './js/shop.js?v=23',
   './js/save-slots.js?v=4',
-  './js/save.js?v=57',
+  './js/save.js?v=58',
   './js/save-visit-snapshot.js?v=2',
   './js/profile.js?v=9',
   './js/save-ui.js?v=9',
@@ -124,14 +125,14 @@ const PRECACHE_URLS = [
   './js/multiplayer.js?v=10',
   './js/multiplayer-social.js?v=2',
   './js/multiplayer-visits.js?v=2',
-  './js/main.js?v=40',
+  './js/main.js?v=41',
   './js/endgame.js?v=13',
   './js/break-cycle.js?v=5',
-  './js/forge.js?v=9',
-  './js/library.js?v=7',
+  './js/forge.js?v=10',
+  './js/library.js?v=8',
   './js/help-tour.js?v=5',
-  './js/balance-log.js?v=2',
-  './js/loader.js?v=73',
+  './js/balance-log.js?v=3',
+  './js/loader.js?v=74',
   './js/pwa.js?v=9',
 
   // Icônes PWA + premier écran
