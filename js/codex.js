@@ -636,8 +636,8 @@ const CODEX_ENTRIES = [
     unlockConditions: [{ type: 'hero', value: 'cho' }],
     revealedBy: [{ type: 'victory' }],
     textVersions: {
-      veiled: "L'Attrapeuse de Serdaigle voit tout, et vite. Cedric n'est jamais revenu d'un tournoi ; Cho descend pour qu'aucun autre élève ne disparaisse pendant que les adultes délibèrent.",
-      revealed: "La peur est le sceau de toute cette histoire, et Cho l'a portée jusqu'au fond. Elle l'a vue se transformer en autre chose : une vigilance, une attention au moindre signe. Le deuil ne l'a pas quittée. Il a simplement cessé de décider à sa place.",
+      veiled: "L'Attrapeuse de Serdaigle voit tout, et vite. Elle a failli perdre Cedric au cimetière, il y a un an ; Cho descend pour qu'aucun autre élève ne disparaisse pendant que les adultes délibèrent.",
+      revealed: "La peur est le sceau de toute cette histoire, et Cho l'a portée jusqu'au fond. Elle l'a vue se transformer en autre chose : une vigilance, une attention au moindre signe. La peur de perdre quelqu'un ne l'a pas quittée. Elle a simplement cessé de décider à sa place.",
     },
   },
   {

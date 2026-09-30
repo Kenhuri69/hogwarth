@@ -42,8 +42,8 @@ Mais par cette fissure, le château commence à se **déplier vers le bas** — 
 passages murés depuis des siècles s'ouvrent en grinçant, et les Profondeurs
 Oubliées remontent à la rencontre de la peur.
 
-Tout au fond, ce que le sceau retenait reprend forme : **Lord Voldemort**, que
-l'on croyait fini, se **ré-assemble** à mesure que la corruption gagne — non par
+Tout au fond, ce que le sceau retenait reprend forme : **Lord Voldemort**, resté
+sans corps depuis la nuit du cimetière, se **ré-assemble** à mesure que la corruption gagne — non par
 un nouveau complot, mais comme un résidu que plus rien ne contient.
 
 Les professeurs se précipitent pour **tenir les étages habités** — évacuer,
