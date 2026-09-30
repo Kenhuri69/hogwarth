@@ -22,6 +22,23 @@ const FLOOR_EVENTS = [
   { id: 'runique', weight: 6, name: 'Étage runique',
     desc: "Une magie ancienne sature les murs : une énigme garde un trésor — et le récompense au double." },
 
+  // ── Lot F (revue 2026-09, axe 6a) — événements des étages 5 à 8 ──
+  // `kind` : l'événement réutilise l'effet d'un événement existant (lu via
+  // floorEventKind) sous un nom et un texte propres. Ciblent les étages les
+  // plus pauvres en contenu (5, 7, 8) ; pré-victoire seulement (maxFloor 10).
+  { id: 'nuee_hiboux', kind: 'calme', weight: 6, minFloor: 5, maxFloor: 6, name: 'Nuée de hiboux',
+    desc: "Les hiboux de la volière effondrée chassent dans les couloirs : les créatures se terrent." },
+  { id: 'comptoir_gobelin', kind: 'marche', weight: 5, minFloor: 5, maxFloor: 7, name: 'Comptoir gobelin',
+    desc: "Un gobelin de Gringotts, égaré loin de ses coffres, a ouvert un comptoir de fortune." },
+  { id: 'crue_lac', kind: 'pieges', weight: 6, minFloor: 7, maxFloor: 8, name: 'Crue du lac',
+    desc: "L'eau noire du lac souterrain a envahi l'étage : des courants cachés guettent sous la surface." },
+  { id: 'chant_felure', kind: 'runique', weight: 5, minFloor: 7, maxFloor: 9, name: 'La fêlure chante',
+    desc: "Une note grave monte des fissures ; une énigme s'est éveillée pour garder un trésor." },
+  { id: 'patrouille_mangemorts', kind: 'hante', weight: 6, minFloor: 7, maxFloor: 10, name: 'Patrouille de Mangemorts',
+    desc: "Des masques d'argent ont été vus sur cet étage : une patrouille ratisse les couloirs." },
+  { id: 'vitrines_brisees', kind: 'tresor', weight: 6, minFloor: 8, maxFloor: 8, name: 'Vitrines brisées',
+    desc: "Les vitrines de trophées ont éclaté : leurs reliques gisent éparpillées dans des coffres." },
+
   // ── Événements gatés par étage (Ruines Anciennes / Boucle, ch.11 P1) ──
   // `minFloor`/`maxFloor` restreignent l'éligibilité ; rollFloorEvent(floor)
   // filtre le pool avant le tirage pondéré.
@@ -59,4 +76,13 @@ function rollFloorEvent(floor) {
 // Définition d'un événement par id (pour le toast). null si id inconnu.
 function getFloorEvent(id) {
   return FLOOR_EVENTS.find(e => e.id === id) || null;
+}
+
+// Lot F (axe 6a) — effet d'un événement : son `kind` s'il en a un, sinon son id.
+// Les comparaisons d'effet (dungeon.js, movement-interactions.js, audio-sfx.js)
+// passent par ce helper. null si aucun événement.
+function floorEventKind(id) {
+  if (!id) return null;
+  const e = getFloorEvent(id);
+  return (e && e.kind) || id;
 }

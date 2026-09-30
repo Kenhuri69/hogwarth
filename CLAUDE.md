@@ -360,7 +360,7 @@ attendus se sont exécutés correctement et expose 2 helpers d'accès défensif.
 
 ### Manifeste
 
-Le `MANIFEST` dans `loader.js` énumère **394** entrées `{ name, source, kind,
+Le `MANIFEST` dans `loader.js` énumère **399** entrées `{ name, source, kind,
 optional? }` :
 - `kind: 'fn'` → `typeof name === 'function'`
 - `kind: 'obj'` → `typeof name !== 'undefined'` (couvre `let`/`const`/`var`)
@@ -1563,6 +1563,7 @@ par le type de cellule (`CELL.*`), pas par une couche d'objets séparée.
 | Escalier descendant | `CELL.STAIRS_D = 3` | SVG inline | `goDeeper()` |
 | Escalier montant    | `CELL.STAIRS_U = 4` | SVG inline | `goUp()` |
 | Fontaine | `CELL.FOUNTAIN = 7` | SVG inline | `useFountain()` |
+| Salle unique | `CELL.LANDMARK = 20` | emoji du lieu | `useLandmark()` |
 
 ### Génération (`dungeon.js`)
 - Chaque room intermédiaire reçoit aléatoirement `CHEST` (~30 %) ou
@@ -1570,6 +1571,21 @@ par le type de cellule (`CELL.*`), pas par une couche d'objets séparée.
 - La dernière room reçoit `STAIRS_D`, la première `STAIRS_U` (étage > 1).
 - Les étages `2, 5, 8, …` reçoivent en plus une `FOUNTAIN` garantie
   (cf. section dédiée).
+
+### Salles uniques et texture (Lot F, revue 2026-09)
+- **Salles uniques** (`FLOOR_LANDMARKS`, `floor-ambiance.js`) aux étages
+  réels 1, 5, 7, 8 : Hall des Sabliers (+15 points de Maison), Volière
+  effondrée (PM restaurés), Lac souterrain (reflet propre au héros de tête,
+  +30 % PV), Salle des Trophées corrompue (plaques tirées de la partie,
+  +100 XP). Posées sur un cul-de-sac ; action une fois par partie
+  (sentinelle `landmark:<étage>` dans `seenScriptedBeat`).
+- **Énigmes** (`riddles.js`, 30) : `minFloor` (énigmes des Ruines en Boucle
+  seulement) et `hero` (posée par un héros présent) — tirage par
+  `pickRiddleFor(floor, heroKeys)` ; les Poches du Sceau excluent `hero`.
+- **Événements d'étage** (16) : un événement peut porter `kind` (effet d'un
+  événement existant sous un autre nom) — lu via `floorEventKind(id)`. 6
+  événements neufs ciblent les étages 5 à 10.
+- **Ambiance de salle** (`room-flavor.js`) : 16 phrases par zone.
 
 ### Interaction
 - À chaque déplacement, `handleCellEntry(cell)` (dans `movement.js`)

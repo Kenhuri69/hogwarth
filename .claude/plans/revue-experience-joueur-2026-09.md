@@ -394,3 +394,7 @@ pour le moins de code. Le lot C ouvre la porte à tous les dilemmes.
   implémenté sur la même branche (plan `lotE-endgame-narratif-2026-09.md`) :
   H9 (Rêves du Dormeur), H10 (Archiviste des boucles), H6 (Chronique de la
   Garde de l'Aube → Reliquaire Lunaire).
+- **2026-09-30** — Lot F implémenté sur la même branche (plan
+  `lotF-texture-2026-09.md`) : 6a (64 phrases d'ambiance, 30 énigmes filtrées
+  par étage/héros, 16 événements d'étage avec `kind`) et 6c (salles uniques
+  des étages 1, 5, 7, 8). 6b reste au plan C2.

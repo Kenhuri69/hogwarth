@@ -16,7 +16,7 @@
 //     individuel suffit pour eux.
 // =======================================================================
 
-const CACHE_VERSION = 'hogwarth-v279';
+const CACHE_VERSION = 'hogwarth-v280';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Précache minimal (~1 Mo) : shell HTML/CSS/JS + premier visuel.
@@ -27,7 +27,7 @@ const PRECACHE_URLS = [
   './manifest.json',
 
   // CSS
-  './css/style.css?v=63',
+  './css/style.css?v=64',
   './css/ux-improvements.css?v=6',
   './css/save-ui.css?v=5',
   './css/ornaments.css?v=2',
@@ -48,7 +48,7 @@ const PRECACHE_URLS = [
   './js/haptics.js?v=3',
   './js/audio.js?v=2',
   './js/audio-music.js?v=12',
-  './js/audio-sfx.js?v=19',
+  './js/audio-sfx.js?v=20',
   './js/icons.js?v=2',
   './js/scene-icons.js?v=9',
   './js/monsters.js?v=25',
@@ -59,18 +59,18 @@ const PRECACHE_URLS = [
   './js/npcs-a.js?v=12',
   './js/npcs-b.js?v=12',
   './js/npcs-helpers.js?v=5',
-  './js/riddles.js?v=3',
+  './js/riddles.js?v=4',
   './js/codex.js?v=25',
-  './js/data.js?v=65',
+  './js/data.js?v=66',
   './js/data-characters.js?v=1',
   './js/data-spells.js?v=1',
   './js/data-items.js?v=7',
   './js/data-world.js?v=2',
   './js/data-icon-recipes.js?v=1',
   './js/floor-themes.js?v=2',
-  './js/floor-ambiance.js?v=24',
-  './js/floor-events.js?v=2',
-  './js/room-flavor.js?v=1',
+  './js/floor-ambiance.js?v=25',
+  './js/floor-events.js?v=3',
+  './js/room-flavor.js?v=2',
   './js/item-icons.js?v=52',
   './js/state.js?v=50',
   './js/hero-barks.js?v=16',
@@ -82,20 +82,20 @@ const PRECACHE_URLS = [
   './js/ui-bestiary.js?v=9',
   './js/ui-codex.js?v=15',
   './js/dungeon-scaling.js?v=10',
-  './js/dungeon.js?v=24',
+  './js/dungeon.js?v=25',
   './js/dungeon-spawning.js?v=4',
   './js/textures.js?v=2',
-  './js/renderer.js?v=19',
+  './js/renderer.js?v=20',
   './js/renderer-effects.js?v=13',
   './js/dungeon-fx.js?v=9',
   './js/cinematics.js?v=3',
-  './js/renderer-sprites.js?v=7',
+  './js/renderer-sprites.js?v=8',
   './js/renderer-entities.js?v=8',
-  './js/renderer-minimap.js?v=9',
-  './js/movement.js?v=45',
+  './js/renderer-minimap.js?v=10',
+  './js/movement.js?v=46',
   './js/movement-floors.js?v=25',
-  './js/movement-interactions.js?v=27',
-  './js/escape-pocket.js?v=6',
+  './js/movement-interactions.js?v=28',
+  './js/escape-pocket.js?v=7',
   './js/swipe-canvas.js?v=4',
   './js/battle.js?v=49',
   './js/battle-rewards.js?v=16',
@@ -131,7 +131,7 @@ const PRECACHE_URLS = [
   './js/library.js?v=7',
   './js/help-tour.js?v=5',
   './js/balance-log.js?v=2',
-  './js/loader.js?v=70',
+  './js/loader.js?v=71',
   './js/pwa.js?v=9',
 
   // Icônes PWA + premier écran

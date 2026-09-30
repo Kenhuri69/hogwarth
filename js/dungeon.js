@@ -168,8 +168,9 @@ function _generateRunePuzzle(rooms) {
   runePuzzle = null;
   litRunes   = new Set();
   // L'événement d'étage « Étage runique » force la génération (Phase 4.2).
-  const forced = (typeof currentFloorEvent !== 'undefined'
-    && (currentFloorEvent === 'runique' || currentFloorEvent === 'sceau_fissure'));
+  const _kind = (typeof currentFloorEvent !== 'undefined' && typeof floorEventKind === 'function')
+    ? floorEventKind(currentFloorEvent) : (typeof currentFloorEvent !== 'undefined' ? currentFloorEvent : null);
+  const forced = (_kind === 'runique' || _kind === 'sceau_fissure');
   if (!forced && Math.random() >= 0.20) return;
   const pocket = _findWallPocket();
   if (!pocket) return;
@@ -215,8 +216,9 @@ function _generateRuneStele(rooms, force) {
   if (typeof RIDDLES === 'undefined' || !RIDDLES.length) return;
   // L'événement « Étage runique » force la stèle si aucune dalle-rune
   // n'a pu être posée (cf. generateDungeon — Phase 4.2/4.3).
-  const forced = (typeof currentFloorEvent !== 'undefined'
-    && (currentFloorEvent === 'runique' || currentFloorEvent === 'sceau_fissure'));
+  const _kind = (typeof currentFloorEvent !== 'undefined' && typeof floorEventKind === 'function')
+    ? floorEventKind(currentFloorEvent) : (typeof currentFloorEvent !== 'undefined' ? currentFloorEvent : null);
+  const forced = (_kind === 'runique' || _kind === 'sceau_fissure');
   if (!forced && !force && Math.random() >= 0.30) return;
   const pocket = _findWallPocket();
   if (!pocket) return;
@@ -233,7 +235,12 @@ function _generateRuneStele(rooms, force) {
   const [sx, sy] = floorCells[0];
   dungeon[sy][sx] = CELL.STELE;
   dungeon[pocket.w2y][pocket.w2x] = CELL.CHEST;
-  const riddle = RIDDLES[Math.floor(Math.random() * RIDDLES.length)];
+  // Lot F (axe 6a) : filtre étage (énigmes des Ruines) et héros présents.
+  const _heroKeys = (typeof activeParty === 'function')
+    ? activeParty().map(c => c && c.heroKey).filter(Boolean) : [];
+  const riddle = (typeof pickRiddleFor === 'function')
+    ? pickRiddleFor((typeof currentFloor === 'number') ? currentFloor : 1, _heroKeys)
+    : RIDDLES[Math.floor(Math.random() * RIDDLES.length)];
   runeStele = {
     cell:       `${sx},${sy}`,
     riddleId:   riddle.id,
@@ -257,6 +264,8 @@ function generateDungeon(floor) {
   // Événement d'étage (Phase 4) : tiré une fois ici ; pilote la densité
   // d'ennemis, le nombre de coffres/pièges et la boutique ci-dessous.
   currentFloorEvent = (typeof rollFloorEvent === 'function') ? rollFloorEvent(floor) : null;
+  // Lot F : effet de l'événement (son `kind`, ou son id) — cf. floorEventKind.
+  const _evKind = (typeof floorEventKind === 'function') ? floorEventKind(currentFloorEvent) : currentFloorEvent;
 
   // ── Génération des salles : 7 salles sans chevauchement ───────
   // Map 16×16 (14×14 utile) → 7 salles, majoritairement 3×3, séparées
@@ -330,10 +339,10 @@ function generateDungeon(floor) {
   dungeon[spine[SPINE_LEN - 1].cy][spine[SPINE_LEN - 1].cx] = CELL.STAIRS_D;
   // Événement « Veine de trésors » : double la probabilité de coffre en
   // épine ; « Marché ambulant » : force la boutique sur la salle d'épine.
-  const chestP = (currentFloorEvent === 'tresor' || currentFloorEvent === 'chambre_scellee') ? 0.60 : 0.30;
+  const chestP = (_evKind === 'tresor' || _evKind === 'chambre_scellee') ? 0.60 : 0.30;
   for (const r of rooms) {
     if (r.kind === 'spine') {
-      if (currentFloorEvent === 'marche') { dungeon[r.cy][r.cx] = CELL.SHOP; continue; }
+      if (_evKind === 'marche') { dungeon[r.cy][r.cx] = CELL.SHOP; continue; }
       const roll = Math.random();
       if (roll < chestP)             dungeon[r.cy][r.cx] = CELL.CHEST;
       else if (roll < chestP + 0.20) dungeon[r.cy][r.cx] = CELL.SHOP;
@@ -373,7 +382,7 @@ function generateDungeon(floor) {
     }
     // « Étage piégé » : +2 pièges au-dessus de la base de 1-2.
     let trapCount = 1 + (Math.random() < 0.5 ? 1 : 0);
-    if (currentFloorEvent === 'pieges') trapCount += 2;
+    if (_evKind === 'pieges') trapCount += 2;
     for (let i = 0; i < trapCount && i < trapCells.length; i++) {
       dungeon[trapCells[i][1]][trapCells[i][0]] = CELL.TRAP;
     }
@@ -425,6 +434,20 @@ function generateDungeon(floor) {
     const candidates = rooms.slice(1, rooms.length - 1);
     const room       = candidates[Math.floor(Math.random() * candidates.length)];
     dungeon[room.cy][room.cx] = CELL.REFUGE;
+  }
+
+  // Lot F (axe 6c) — salle unique signée des étages 1, 5, 7, 8 (étage réel).
+  // Posée au centre d'un cul-de-sac (récompense du détour), à défaut d'une
+  // salle d'épine intermédiaire, jamais sur fontaine / refuge / escalier.
+  if (typeof floorLandmark === 'function' && floorLandmark(floor) && rooms.length >= 3) {
+    const free = (r) => dungeon[r.cy][r.cx] !== CELL.FOUNTAIN && dungeon[r.cy][r.cx] !== CELL.REFUGE
+      && dungeon[r.cy][r.cx] !== CELL.STAIRS_D && dungeon[r.cy][r.cx] !== CELL.STAIRS_U;
+    const inner = rooms.slice(1, rooms.length - 1).filter(free);
+    const pool = inner.filter(r => r.kind === 'branch').length ? inner.filter(r => r.kind === 'branch') : inner;
+    if (pool.length) {
+      const room = pool[Math.floor(Math.random() * pool.length)];
+      dungeon[room.cy][room.cx] = CELL.LANDMARK;
+    }
   }
 
   // Jardin d'herbes (Potions P6.b3) — étages 3, 6, 9, 12, … (décalé des
@@ -602,8 +625,8 @@ function generateDungeon(floor) {
 
   // Densité d'ennemis pilotée par l'événement d'étage : « Étage hanté »
   // sature les salles, « Quiétude » les vide en partie.
-  const enemyChance = (currentFloorEvent === 'hante' || currentFloorEvent === 'givre_ancien') ? 0.85
-                    : currentFloorEvent === 'calme' ? 0.30 : 0.60;
+  const enemyChance = (_evKind === 'hante' || _evKind === 'givre_ancien') ? 0.85
+                    : _evKind === 'calme' ? 0.30 : 0.60;
   for(let r of rooms.slice(1)) {
     if(Math.random()<enemyChance) {
       const ex = r.x+Math.floor(Math.random()*r.w);

@@ -100,6 +100,7 @@ window.UX_safe = new Proxy({}, {
     { name: 'NPCS',               source: 'npcs.js',         kind: 'obj' },
     { name: 'RIDDLES',            source: 'riddles.js',      kind: 'obj' },
     { name: 'getRiddleById',      source: 'riddles.js',      kind: 'fn'  },
+    { name: 'pickRiddleFor',      source: 'riddles.js',      kind: 'fn'  },
     { name: 'CODEX_ENTRIES',      source: 'codex.js',        kind: 'obj' },
     { name: 'getCodexEntry',      source: 'codex.js',        kind: 'fn'  },
     { name: 'codexEntryState',    source: 'codex.js',        kind: 'fn'  },
@@ -141,8 +142,13 @@ window.UX_safe = new Proxy({}, {
     { name: 'dormeurDreamWanted',      source: 'floor-ambiance.js', kind: 'fn' },
     { name: 'maybeDormeurDream',       source: 'floor-ambiance.js', kind: 'fn' },
     { name: 'archivistMemoryLines',    source: 'profile.js',        kind: 'fn' },
+    // Lot F (revue 2026-09, axe 6c) — salles uniques d'étage.
+    { name: 'FLOOR_LANDMARKS',         source: 'floor-ambiance.js', kind: 'obj' },
+    { name: 'floorLandmark',           source: 'floor-ambiance.js', kind: 'fn' },
+    { name: 'useLandmark',             source: 'movement-interactions.js', kind: 'fn' },
     { name: 'FLOOR_EVENTS',       source: 'floor-events.js',  kind: 'obj' },
     { name: 'rollFloorEvent',     source: 'floor-events.js', kind: 'fn'  },
+    { name: 'floorEventKind',     source: 'floor-events.js', kind: 'fn'  },
     { name: 'maybeRoomFlavor',    source: 'room-flavor.js',  kind: 'fn',  optional: true },
     { name: 'RoomFlavor',         source: 'room-flavor.js',  kind: 'obj', optional: true },
 

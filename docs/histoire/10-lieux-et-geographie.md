@@ -670,6 +670,15 @@ Zone D 14+  Ruines Anciennes — antérieures à la fondation : la roche-mère m
 Le mobilier de cellule n'est pas que mécanique : chaque type **dit quelque chose
 du lieu**.
 
+> ✅ **Lot F (revue 2026-09, axe 6c)** — quatre **salles uniques** signent les
+> étages les plus pauvres en contenu : le **Hall des Sabliers** (ét. 1, les
+> quatre sabliers que plus personne ne compte), la **Volière effondrée**
+> (ét. 5, les hiboux qui portent les lettres de la surface), le **Lac
+> souterrain** (ét. 7, les racines du Lac Noir ; un reflet propre au héros) et
+> la **Salle des Trophées corrompue** (ét. 8, des plaques neuves gravées des
+> exploits de la partie). Une action par partie, effet léger et égal pour
+> toutes les Maisons (`FLOOR_LANDMARKS`, `CELL.LANDMARK`).
+
 | Élément | ✅ Fonction | 💡 Sens narratif |
 |---------|------------|------------------|
 | **Fontaine** | Répit total 1×/visite d'étage | **Sanctuaire** : une source d'eau pure que la corruption n'a pas (encore) atteinte ; respiration de la descente. Se « tarit » après usage — la ressource est rare. Son halo de chaleur **rétrécit** à mesure qu'on descend. |

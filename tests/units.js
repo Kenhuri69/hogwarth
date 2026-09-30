@@ -3722,6 +3722,62 @@ function loadNpcs() {
 })();
 
 // ============================================================
+// 26. Lot F (revue 2026-09) — texture : ambiance, énigmes, événements,
+//     salles uniques des étages 1, 5, 7, 8.
+// ============================================================
+(function testLotF() {
+  // 6a — ambiance : 16 phrases par zone, sans doublon.
+  const w = {};
+  loadModule('js/room-flavor.js', [], { window: w });
+  const zones = ['intro', 'dungeon', 'depths', 'abyss'];
+  check('lotF 6a: 16 phrases distinctes par zone', zones.every(z => {
+    const seen = new Set(); for (let i = 0; i < 3000; i++) seen.add(w.RoomFlavor.pickFlavor(z));
+    return seen.size === 16;
+  }));
+
+  // 6a — énigmes : 30, valides, filtrées par étage et par héros.
+  const rd = loadModule('js/riddles.js', ['RIDDLES', 'pickRiddleFor']);
+  check('lotF 6a: 30 énigmes, ids uniques', rd.RIDDLES.length === 30 && new Set(rd.RIDDLES.map(r => r.id)).size === 30);
+  check('lotF 6a: réponses dans les choix', rd.RIDDLES.every(r => Number.isInteger(r.answer) && r.answer >= 0 && r.answer < r.choices.length));
+  const { CHARACTERS } = loadModule('js/data-characters.js', ['CHARACTERS']);
+  check('lotF 6a: énigmes de héros → héros existants', rd.RIDDLES.filter(r => r.hero).every(r => !!CHARACTERS[r.hero]));
+  const drawAll = (floor, heroes) => { const s = new Set(); let i = 0;
+    const rng = () => ((i++ * 0.6180339887) % 1);
+    for (let k = 0; k < 4000; k++) s.add(rd.pickRiddleFor(floor, heroes, rng).id); return s; };
+  const f1 = drawAll(1, ['harry']);
+  check('lotF 6a: Ruines absentes à l\'étage 1', !f1.has('r_dormeur') && !f1.has('r_quatre_unis') && !f1.has('r_voute_corruption'));
+  check('lotF 6a: énigme du héros présent seulement', f1.has('r_hero_harry') && !f1.has('r_hero_hermione'));
+  const f12 = drawAll(12, []);
+  check('lotF 6a: Ruines en Boucle, aucune énigme de héros sans héros', f12.has('r_dormeur') && ![...f12].some(id => /^r_hero_/.test(id)));
+
+  // 6a — événements : 6 de plus, `kind` vers un effet existant, gatés 5-10.
+  const fe = loadModule('js/floor-events.js', ['FLOOR_EVENTS', 'floorEventKind', 'getFloorEvent']);
+  const baseIds = ['hante', 'calme', 'marche', 'tresor', 'pieges', 'runique'];
+  const kinded = fe.FLOOR_EVENTS.filter(e => e.kind);
+  check('lotF 6a: 6 événements à kind existant', kinded.length === 6 && kinded.every(e => baseIds.includes(e.kind)));
+  check('lotF 6a: gatés entre 5 et 10', kinded.every(e => e.minFloor >= 5 && e.maxFloor <= 10));
+  check('lotF 6a: étages 5, 7, 8 couverts', [5, 7, 8].every(f => kinded.some(e => f >= e.minFloor && f <= e.maxFloor)));
+  check('lotF 6a: floorEventKind', fe.floorEventKind('crue_lac') === 'pieges' && fe.floorEventKind('hante') === 'hante'
+    && fe.floorEventKind(null) === null);
+
+  // 6c — salles uniques (purs, floor-ambiance.js).
+  const fa = loadModule('js/floor-ambiance.js', ['FLOOR_LANDMARKS', 'floorLandmark', 'landmarkReflection', 'landmarkTrophyPlaques']);
+  check('lotF 6c: salles aux étages 1, 5, 7, 8 seulement', Object.keys(fa.FLOOR_LANDMARKS).join() === '1,5,7,8'
+    && !fa.floorLandmark(2) && !fa.floorLandmark(11));
+  check('lotF 6c: chaque salle a titre, texte, action, effet', [1, 5, 7, 8].every(f => { const l = fa.floorLandmark(f);
+    return l.title && l.desc && l.action && l.done && ['housePoints', 'sp', 'hp', 'xp'].includes(l.effect); }));
+  check('lotF 6c: reflet propre au héros, repli sinon', fa.landmarkReflection('harry') !== fa.landmarkReflection('zzz')
+    && typeof fa.landmarkReflection(undefined) === 'string');
+  const pl0 = fa.landmarkTrophyPlaques({ kills: 0 });
+  const pl = fa.landmarkTrophyPlaques({ bossCount: 2, kills: 40, quests: 9, choices: 3, house: 'Serdaigle' });
+  check('lotF 6c: plaques dérivées des exploits', pl0.length === 1 && pl.length === 4
+    && pl[0].includes('2 gardiens') && pl[0].includes('Serdaigle') && pl[1].includes('40 créatures'));
+  const { CELL } = loadModule('js/data.js', ['CELL']);
+  check('lotF 6c: CELL.LANDMARK = 20, unique', CELL.LANDMARK === 20
+    && Object.values(CELL).filter(v => v === 20).length === 1);
+})();
+
+// ============================================================
 // Rapport
 // ============================================================
 if (failures.length) {

@@ -412,7 +412,17 @@ function _visitorExploreDescriptors() {
       title: 'Stèle Runique',
       desc:  `Les glyphes attendent la main de ${hostName} — leur énigme t'est étrangère.`,
       btns:  close
-    }
+    },
+    // Lot F (axe 6c) — salle unique : observable, pas utilisable.
+    [CELL.LANDMARK]: (() => {
+      const lm = (typeof floorLandmark === 'function') ? floorLandmark(currentFloor) : null;
+      return {
+        icon:  `<div class="landmark-scene-icon">${lm ? lm.emoji : '✨'}</div>`,
+        title: lm ? lm.title : 'Salle étrange',
+        desc:  `Ce lieu garde la mémoire de ${hostName}, pas la tienne. Tu n'y es que de passage.`,
+        btns:  close
+      };
+    })()
   };
 }
 
@@ -584,6 +594,20 @@ function _exploreDescriptors() {
       btns:  `<button class="explore-btn" onclick="openBrewingModal({ workshop:'ruines' });_hideExploreOverlay()">Brasser aux Ruines</button>
               <button class="explore-btn secondary" onclick="_hideExploreOverlay()">S'éloigner</button>`
     },
+    // Lot F (axe 6c) — salle unique signée des étages 1, 5, 7, 8.
+    [CELL.LANDMARK]: (() => {
+      const lm = (typeof floorLandmark === 'function') ? floorLandmark(currentFloor) : null;
+      const spent = !lm || (typeof landmarkSpent === 'function' && landmarkSpent(currentFloor));
+      return {
+        icon:  `<div class="landmark-scene-icon">${lm ? lm.emoji : '✨'}</div>`,
+        title: lm ? lm.title : 'Salle étrange',
+        desc:  lm ? (spent ? lm.done : lm.desc) : "Une salle vide, dont on devine qu'elle a compté pour quelqu'un.",
+        btns:  spent
+          ? `<button class="explore-btn secondary" onclick="_hideExploreOverlay()">S'éloigner</button>`
+          : `<button class="explore-btn" onclick="useLandmark()">${lm.action}</button>
+             <button class="explore-btn secondary" onclick="_hideExploreOverlay()">S'éloigner</button>`
+      };
+    })(),
     // Enrichissement V2 §3 — Stèle d'énigme : devinette gardant un coffre.
     [CELL.STELE]: {
       icon:  SCENE_ICONS.stele,
@@ -722,6 +746,7 @@ function handleCellEntry(cell) {
       cell === CELL.CAULDRON ||
       cell === CELL.REQUIREMENT ||
       cell === CELL.SEAL_RIFT ||
+      cell === CELL.LANDMARK ||
       (cell === CELL.GARDEN  && !gardenHidden)) {
     _showExploreOverlay(cell);
   } else if (cell === CELL.TRAP) {

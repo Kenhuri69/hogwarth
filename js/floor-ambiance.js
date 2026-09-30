@@ -1196,3 +1196,82 @@ function maybeDormeurDream() {
   if (typeof checkCodexUnlocks === 'function') checkCodexUnlocks('dream');
   return n;
 }
+
+// ============================================================
+// Lot F (revue 2026-09, axe 6c) — Salles uniques des étages « pauvres »
+// ------------------------------------------------------------
+// Une salle signée par étage 1, 5, 7 et 8 (étage réel), posée par
+// generateDungeon sur CELL.LANDMARK. Interaction via l'overlay d'exploration
+// (movement.js) ; action une fois par partie (sentinelle `landmark:<étage>`
+// dans seenScriptedBeat). Effets légers, identiques pour toutes les Maisons.
+// Données + helpers PURS ; l'effet est appliqué par useLandmark().
+const FLOOR_LANDMARKS = {
+  1: {
+    id: 'hall_sabliers', emoji: '⏳', title: 'Le Hall des Sabliers',
+    desc: "Quatre sabliers géants se dressent contre le mur, remplis de rubis, d'émeraudes, de saphirs et de diamants jaunes. Depuis la fêlure, personne ne compte plus les points. Les pierres, elles, tombent encore.",
+    action: 'Poser la main sur le sablier de ta Maison',
+    done: "Les pierres de ton sablier scintillent encore de ton passage. Les trois autres attendent leurs propres élèves.",
+    effect: 'housePoints', amount: 15,
+  },
+  5: {
+    id: 'voliere_effondree', emoji: '🦉', title: 'La Volière effondrée',
+    desc: "La volière a glissé ici quand les escaliers ont basculé : perchoirs brisés, paille et plumes, une fenêtre qui donne sur un ciel qui n'existe pas. Quelques hiboux sont restés. Ce sont eux qui portent les lettres de la surface.",
+    action: 'Tendre le bras à un hibou',
+    done: "Les hiboux somnolent sur leurs perchoirs brisés. L'un d'eux ouvre un œil quand tu passes, puis le referme.",
+    effect: 'sp',
+  },
+  7: {
+    id: 'lac_souterrain', emoji: '🌊', title: 'Le Lac souterrain',
+    desc: "Une eau noire et immobile s'étend sous une voûte trop haute pour ta lumière. C'est le Lac Noir, ou ce qu'il en reste sous l'école : ses racines. Rien ne bouge à la surface. Rien, sauf ton reflet, qui tarde un peu à te suivre.",
+    action: "Contempler ton reflet dans l'eau",
+    done: "L'eau a repris son immobilité. Ton reflet te suit, maintenant, sans retard.",
+    effect: 'hp', amount: 0.30,
+  },
+  8: {
+    id: 'salle_trophees', emoji: '🏆', title: 'La Salle des Trophées corrompue',
+    desc: "Les vitrines de la Salle des Trophées sont descendues avec le reste. La poussière s'est faite cendre, les coupes ont noirci. Mais certaines plaques sont neuves, gravées d'une écriture fine que tu ne connais pas.",
+    action: 'Lire les plaques neuves',
+    done: "Les plaques neuves brillent faiblement dans la cendre. Le château se souviendra.",
+    effect: 'xp', amount: 100,
+  },
+};
+
+// PUR — salle unique de l'étage (réel), ou null.
+function floorLandmark(floor) {
+  return FLOOR_LANDMARKS[floor] || null;
+}
+
+// PUR — reflet du Lac souterrain selon le héros de tête (repli générique).
+const LANDMARK_REFLECTIONS = {
+  harry:     "Dans l'eau, ton reflet porte une cicatrice qui ne saigne pas. Il a l'air plus vieux. Il a l'air d'avoir gagné.",
+  hermione:  "Ton reflet tient un livre ouvert, et pour une fois, il ne le lit pas. Il te regarde, simplement.",
+  draco:     "Ton reflet porte une robe sans blason. Il n'a pas l'air d'avoir peur. Tu ne te souviens pas de la dernière fois.",
+  cedric:    "Ton reflet se tient au bord d'un labyrinthe. Il tend la main vers une coupe, puis la retire, et sourit.",
+  nathalie:  "Ton reflet a les mains pleines de terre, et derrière lui, quelqu'un est à l'abri.",
+  agathe:    "Des fleurs poussent dans l'eau autour de ton reflet. Elles ne fanent pas.",
+  chatillon: "Pour une fois, ton reflet se tient en pleine lumière. Il n'a pas l'air de s'en excuser.",
+  celeste:   "Ton reflet a des étoiles dans les cheveux. Elles forment une constellation que tu ne connais pas encore.",
+};
+function landmarkReflection(heroKey) {
+  return LANDMARK_REFLECTIONS[heroKey]
+    || "Ton reflet tarde un instant, puis te rattrape. Il a l'air fatigué, et décidé. Tu ne savais pas que tu avais ce visage-là.";
+}
+
+// PUR — plaques de la Salle des Trophées, tirées des exploits de la partie.
+// ctx = { bossCount, kills, quests, choices, house }. 2 à 4 plaques.
+function landmarkTrophyPlaques(ctx) {
+  const c = ctx || {};
+  const out = [];
+  const house = c.house || 'sans Maison';
+  if ((c.bossCount | 0) > 0) {
+    out.push("« Pour avoir abattu " + (c.bossCount | 0) + " gardien" + ((c.bossCount | 0) > 1 ? "s" : "") + " des profondeurs, au nom de " + house + ". »");
+  }
+  out.push("« Pour " + (c.kills | 0) + " créature" + ((c.kills | 0) > 1 ? "s" : "") + " repoussée" + ((c.kills | 0) > 1 ? "s" : "") + " dans l'ombre, pendant l'Année de la Fêlure. »");
+  if ((c.quests | 0) > 0) {
+    out.push("« Pour " + (c.quests | 0) + " service" + ((c.quests | 0) > 1 ? "s" : "") + " rendu" + ((c.quests | 0) > 1 ? "s" : "") + " à ceux qui restaient debout. »");
+  }
+  if ((c.choices | 0) > 0) {
+    out.push("« Pour " + ((c.choices | 0) > 1 ? "des choix difficiles, faits sans témoins" : "un choix difficile, fait sans témoin") + ". »");
+  }
+  return out.slice(0, 4);
+}

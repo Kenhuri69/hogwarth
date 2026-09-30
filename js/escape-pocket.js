@@ -433,8 +433,9 @@ function _spawnWardenEchoes(rooms, sourceFloor, brazierCells) {
 // (r_*, ét. 21+), complétées au besoin par le reste du registre, sans doublon.
 function _pickEscapeRiddleIds(n) {
   const RUINES = ['r_voute_corruption', 'r_quatre_unis', 'r_dormeur'];
+  // Les énigmes posées par un héros (Lot F) restent hors des Poches.
   const all = (typeof RIDDLES !== 'undefined' && Array.isArray(RIDDLES))
-    ? RIDDLES.map(r => r.id) : [];
+    ? RIDDLES.filter(r => !r.hero).map(r => r.id) : [];
   const ids = [];
   for (const id of RUINES) if (all.includes(id) && !ids.includes(id)) ids.push(id);
   // Complète avec d'autres devinettes (mélangées) si besoin.

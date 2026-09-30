@@ -402,6 +402,25 @@ function drawAltarSprite(x, baseY, sz) {
   ctx.restore();
 }
 
+// ── Salle unique d'étage (Lot F, axe 6c) ─────────────────────
+// Emoji du lieu (FLOOR_LANDMARKS) sur un halo doré ; halo terni une fois
+// l'action faite. Dessin procédural simple, pas d'asset dédié.
+function drawLandmarkSprite(x, baseY, sz, emoji, spent) {
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,0.45)';
+  ctx.beginPath(); ctx.ellipse(x, baseY, sz * 0.5, sz * 0.12, 0, 0, Math.PI * 2); ctx.fill();
+  const glow = ctx.createRadialGradient(x, baseY - sz * 0.5, 0, x, baseY - sz * 0.5, sz * 0.9);
+  glow.addColorStop(0, spent ? 'rgba(150,140,120,0.25)' : 'rgba(240,200,90,0.45)');
+  glow.addColorStop(1, 'rgba(40,30,10,0)');
+  ctx.fillStyle = glow;
+  ctx.beginPath(); ctx.arc(x, baseY - sz * 0.5, sz * 0.9, 0, Math.PI * 2); ctx.fill();
+  ctx.globalAlpha = spent ? 0.6 : 1;
+  ctx.font = `${Math.floor(sz * 0.95)}px serif`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+  ctx.fillText(emoji || '✨', x, baseY);
+  ctx.restore();
+}
+
 // ── Dalle-rune (sprite de couloir, posée au sol) ──────────────
 // Puzzle runique (dungeon-enrichment-v2). Disque de pierre gravé d'un
 // glyphe ; teinte par index de rune (RUNE_LABELS) ; halo lumineux si
