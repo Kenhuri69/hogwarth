@@ -87,6 +87,8 @@ window.UX_safe = new Proxy({}, {
     { name: 'traqueDrawContract', source: 'traque.js',       kind: 'fn' },
     { name: 'unlockTraque',       source: 'traque.js',       kind: 'fn' },
     { name: 'exchangeHunterMarks', source: 'traque.js',      kind: 'fn' },
+    { name: 'artifactAwakened',   source: 'forge.js',        kind: 'fn' },
+    { name: 'awakenArtifactAtForge', source: 'forge.js',     kind: 'fn' },
     { name: 'hiverClair',         source: 'state.js',        kind: 'obj' },
     { name: 'elementalMastery',   source: 'state.js',        kind: 'obj' },
     { name: '_elementalMasteryBonus', source: 'inventory-core.js', kind: 'fn' },

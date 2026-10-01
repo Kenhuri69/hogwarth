@@ -708,4 +708,6 @@ Lot 6 (équilibrage global & QA de synthèse) ── ferme le tout
   - [x] 3.3 Respec payable en or **ou** 5 Marques (branchement 2.1) ; échange
     4 Marques → Essence/Page chez le Gardien.
   - [x] 3.4 `BalanceLog.record('traque')` + `traqueCount`/`traqueMarks`.
-  - [ ] 2.5b Éveil d'artefact — toujours ouvert (PR suivante).
+  - [x] 2.5b Éveil d'artefact — livré à part ([`lot2-5b-eveil-artefact-2026-09.md`](./lot2-5b-eveil-artefact-2026-09.md)) :
+    3 rangs (+1 charge, puissance +50 %, secondaire **par résolveur** — écart :
+    le design prévoyait une donnée par artefact), coût Marques + Primordiale.

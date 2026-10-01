@@ -326,10 +326,10 @@ function _refreshBattleActionButtons() {
     const char = party[currentBattleChar];
     const item = (typeof _activeArtifactFor === 'function') ? _activeArtifactFor(char) : null;
     const left = (item && typeof _artifactChargesLeft === 'function')
-      ? _artifactChargesLeft(currentBattleChar, item.activeEffect) : 0;
+      ? _artifactChargesLeft(currentBattleChar, (typeof _effArt === 'function') ? _effArt(item) : item.activeEffect) : 0;
     const show = !!(inBattle && item && left > 0);
     artBtn.style.display = show ? '' : 'none';
-    if (show) artBtn.title = `${item.activeEffect.label} (1×/combat)`;
+    if (show) artBtn.title = `${item.activeEffect.label} (${left} charge${left > 1 ? 's' : ''} ce combat)`;
   }
   const postBtn = document.getElementById('btn-posture');
   if (postBtn) {
