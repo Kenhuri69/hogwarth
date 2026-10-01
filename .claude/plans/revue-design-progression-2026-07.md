@@ -711,3 +711,9 @@ Lot 6 (équilibrage global & QA de synthèse) ── ferme le tout
   - [x] 2.5b Éveil d'artefact — livré à part ([`lot2-5b-eveil-artefact-2026-09.md`](./lot2-5b-eveil-artefact-2026-09.md)) :
     3 rangs (+1 charge, puissance +50 %, secondaire **par résolveur** — écart :
     le design prévoyait une donnée par artefact), coût Marques + Primordiale.
+- **2026-10-01 — Lot 4 (a) exécuté** (4.1 + 4.2,
+  `.claude/plans/lot4a-archetypes-sorts-2026-10.md`) : `classArchetype` sur
+  les 16 héros (Cedric = Gardien), `SPELL_LEARN_TABLES` par archétype,
+  `_grantLevelSpells` réécrit (Duelliste/Érudit = tables Harry/Hermione à
+  l'identique). B1 résolu ; B2 à moitié (l'arbre lira aussi l'archétype).
+  Reste 4.3-4.8.

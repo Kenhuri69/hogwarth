@@ -8,7 +8,7 @@
 // ============================================================
 const CHARACTERS = {
   harry: { name:"Harry Potter", icon:"🧙", class:"Élève de Gryffondor",
-    imgSrc:"img/harry.png", role:"Auror",
+    imgSrc:"img/harry.png", role:"Auror", classArchetype:"duelliste",
     hp:35, sp:22, str:9, int:11, agi:12, end:10, lck:15, mag:10,
     atk:5, def:2,
     wand:"Baguette de Houx", armor:"Robe de Gryffondor", acc:"Lunettes Rondes",
@@ -16,7 +16,7 @@ const CHARACTERS = {
     tagline:"Le Survivant — courage et instinct."
   },
   hermione: { name:"Hermione Granger", icon:"🧙‍♀️", class:"Élève de Gryffondor",
-    imgSrc:"img/hermione.png", role:"Mage",
+    imgSrc:"img/hermione.png", role:"Mage", classArchetype:"erudit",
     hp:28, sp:35, str:6, int:17, agi:10, end:7, lck:12, mag:16,
     atk:3, def:2,
     wand:"Baguette de Vigne", armor:"Robe de Gryffondor", acc:"",
@@ -24,7 +24,7 @@ const CHARACTERS = {
     tagline:"Brillante érudite — la magie par le savoir."
   },
   draco: { name:"Drago Malefoy", icon:"🐍", class:"Élève de Serpentard",
-    imgSrc:"img/draco.png", role:"Duelliste",
+    imgSrc:"img/draco.png", role:"Duelliste", classArchetype:"duelliste",
     hp:29, sp:30, str:7, int:13, agi:13, end:8, lck:14, mag:14,
     atk:4, def:2,
     wand:"Baguette d'Aubépine", armor:"Robe de Serpentard", acc:"Insigne de Préfet",
@@ -32,7 +32,7 @@ const CHARACTERS = {
     tagline:"Sang-pur ambitieux — la fierté avant tout."
   },
   cho: { name:"Cho Chang", icon:"🦅", class:"Élève de Serdaigle",
-    imgSrc:"img/cho.png", role:"Attrapeuse",
+    imgSrc:"img/cho.png", role:"Attrapeuse", classArchetype:"duelliste",
     hp:30, sp:30, str:6, int:14, agi:15, end:8, lck:13, mag:14,
     atk:4, def:2,
     wand:"Baguette de Frêne", armor:"Robe de Serdaigle", acc:"Vif d'Or",
@@ -40,7 +40,7 @@ const CHARACTERS = {
     tagline:"Attrapeuse de Serdaigle — vive et perspicace."
   },
   cedric: { name:"Cedric Diggory", icon:"🦡", class:"Élève de Poufsouffle",
-    imgSrc:"img/cedric.png", role:"Champion",
+    imgSrc:"img/cedric.png", role:"Champion", classArchetype:"gardien",
     hp:34, sp:26, str:9, int:12, agi:13, end:11, lck:13, mag:12,
     atk:5, def:2,
     wand:"Baguette de Frêne et Licorne", armor:"Robe de Poufsouffle", acc:"Insigne de Capitaine",
@@ -49,7 +49,7 @@ const CHARACTERS = {
   },
   // ── Personnages originaux ─────────────────────────────────
   celeste: { name:"Céleste Luneclair", icon:"🌙", class:"Élève de Serdaigle",
-    imgSrc:"img/celeste.png", role:"Astromage",
+    imgSrc:"img/celeste.png", role:"Astromage", classArchetype:"erudit",
     hp:30, sp:34, str:6, int:15, agi:11, end:8, lck:14, mag:15,
     atk:3, def:2,
     wand:"Baguette de Bouleau d'Argent", armor:"Robe de Serdaigle", acc:"Pendentif Lunaire",
@@ -57,7 +57,7 @@ const CHARACTERS = {
     tagline:"Astromage de Serdaigle — la lune guide ses sortilèges."
   },
   iris: { name:"Iris Prismara", icon:"✨", class:"Élève de Poufsouffle",
-    imgSrc:"img/iris.png", role:"Enchanteresse",
+    imgSrc:"img/iris.png", role:"Enchanteresse", classArchetype:"enchanteur",
     hp:32, sp:28, str:7, int:13, agi:14, end:9, lck:18, mag:13,
     atk:4, def:2,
     wand:"Baguette de Cristal d'Iris", armor:"Robe de Poufsouffle", acc:"Prisme d'Arc-en-ciel",
@@ -65,7 +65,7 @@ const CHARACTERS = {
     tagline:"Enchanteresse prismatique — la chance et la lumière à ses côtés."
   },
   maxence: { name:"Maxence Ravenwood", icon:"🐍", class:"Élève de Serpentard",
-    imgSrc:"img/maxence.png", role:"Mage de Sang",
+    imgSrc:"img/maxence.png", role:"Mage de Sang", classArchetype:"occultiste",
     hp:26, sp:32, str:5, int:14, agi:11, end:7, lck:11, mag:14,
     atk:4, def:1,
     wand:"Baguette d'If Noueux", armor:"Robe de Serpentard", acc:"Médaillon de Sang",
@@ -73,7 +73,7 @@ const CHARACTERS = {
     tagline:"Sorcier-vampire — son sang répond au sang."
   },
   anastasia: { name:"Anastasia Moonveil", icon:"🌙", class:"Élève de Gryffondor",
-    imgSrc:"img/anastasia.png", role:"Mage de la Lune",
+    imgSrc:"img/anastasia.png", role:"Mage de la Lune", classArchetype:"erudit",
     hp:30, sp:32, str:7, int:16, agi:11, end:8, lck:13, mag:15,
     atk:4, def:2,
     wand:"Baguette de Bois de Lune", armor:"Robe de Gryffondor", acc:"Lunettes de Lune",
@@ -81,7 +81,7 @@ const CHARACTERS = {
     tagline:"Magicienne studieuse — la magie au clair de lune."
   },
   louis: { name:"Louis Dragonflamme", icon:"🐉", class:"Élève de Poufsouffle",
-    imgSrc:"img/louis.png", role:"Dompteur de Dragons",
+    imgSrc:"img/louis.png", role:"Dompteur de Dragons", classArchetype:"gardien",
     hp:33, sp:26, str:8, int:12, agi:11, end:10, lck:13, mag:12,
     atk:5, def:2,
     wand:"Baguette d'Acacia", armor:"Robe de Poufsouffle", acc:"Brassard d'Écailles",
@@ -89,7 +89,7 @@ const CHARACTERS = {
     tagline:"Dompteur de dragons — sa baguette pulse au rythme du feu."
   },
   jeanne: { name:"Jeanne d'Argenciel", icon:"🪄", class:"Élève de Gryffondor",
-    imgSrc:"img/jeanne.png", role:"Charmeuse de Sortilèges",
+    imgSrc:"img/jeanne.png", role:"Charmeuse de Sortilèges", classArchetype:"enchanteur",
     hp:31, sp:30, str:7, int:15, agi:13, end:9, lck:14, mag:14,
     atk:4, def:2,
     wand:"Baguette d'Étoile", armor:"Robe de Gryffondor", acc:"Grimoire de Sortilèges",
@@ -97,7 +97,7 @@ const CHARACTERS = {
     tagline:"Petite Gryffondor espiègle — ses sortilèges chantent comme des étoiles."
   },
   margaux: { name:"Margaux Aiglebrume", icon:"⭐", class:"Élève de Serdaigle",
-    imgSrc:"img/margaux.png", role:"Astromancienne",
+    imgSrc:"img/margaux.png", role:"Astromancienne", classArchetype:"erudit",
     hp:28, sp:33, str:5, int:16, agi:13, end:7, lck:16, mag:14,
     atk:3, def:2,
     wand:"Baguette d'Aulne Étoilé", armor:"Robe de Serdaigle", acc:"Grimoire des Enchantements",
@@ -106,7 +106,7 @@ const CHARACTERS = {
   },
   // ── La Garde de l'Aube ────────────────────────────────────
   agathe: { name:"Agathe Lumiflore", icon:"🌸", class:"Élève de Gryffondor",
-    imgSrc:"img/agathe.png", role:"Enchanteresse florale",
+    imgSrc:"img/agathe.png", role:"Enchanteresse florale", classArchetype:"enchanteur",
     hp:31, sp:32, str:6, int:14, agi:11, end:11, lck:13, mag:14,
     atk:3, def:3,
     wand:"Baguette de Cerisier en Fleur", armor:"Robe de Gryffondor", acc:"Couronne de Fleurs",
@@ -114,7 +114,7 @@ const CHARACTERS = {
     tagline:"Enchanteresse florale — la vie s'épanouit sous ses sortilèges."
   },
   olivier: { name:"Olivier de Clairval", icon:"🔥", class:"Élève de Serdaigle",
-    imgSrc:"img/olivier.png", role:"Mage de combat",
+    imgSrc:"img/olivier.png", role:"Mage de combat", classArchetype:"erudit",
     hp:29, sp:33, str:7, int:15, agi:12, end:8, lck:12, mag:15,
     atk:4, def:2,
     wand:"Baguette de Chêne Ardent", armor:"Robe de Serdaigle", acc:"Plume d'Aigle",
@@ -122,7 +122,7 @@ const CHARACTERS = {
     tagline:"Mage de combat — chaque sortilège frappe comme la foudre."
   },
   nathalie: { name:"Nathalie Finch", icon:"🌻", class:"Élève de Poufsouffle",
-    imgSrc:"img/nathalie.png", role:"Gardienne-Herboriste",
+    imgSrc:"img/nathalie.png", role:"Gardienne-Herboriste", classArchetype:"gardien",
     hp:36, sp:24, str:9, int:12, agi:9, end:13, lck:12, mag:11,
     atk:5, def:4,
     wand:"Baguette de Chêne Noueux", armor:"Robe de Poufsouffle", acc:"Besace d'Herboriste",
@@ -130,7 +130,7 @@ const CHARACTERS = {
     tagline:"Gardienne-herboriste — un rempart patient pour les siens."
   },
   chatillon: { name:"Olivier De Châtillon", icon:"🌑", class:"Élève de Serpentard",
-    imgSrc:"img/chatillon.png", role:"Ombremancien",
+    imgSrc:"img/chatillon.png", role:"Ombremancien", classArchetype:"occultiste",
     hp:27, sp:34, str:5, int:16, agi:13, end:7, lck:12, mag:16,
     atk:3, def:2,
     wand:"Baguette d'Ébène", armor:"Robe de Serpentard", acc:"Camée d'Ombre",
@@ -138,6 +138,40 @@ const CHARACTERS = {
     tagline:"Ombremancien de Serpentard — la ruse frappe avant la lumière."
   }
 };
+
+// ── Archétypes de classe (Lot 4.1, revue-design-progression §6.2) ──────
+// Les 16 `role` cosmétiques sont rangés en 5 archétypes mécaniques. Chaque
+// archétype a sa table de sorts de level-up (4.2) et, plus tard, sa branche
+// de l'arbre « Éveil du Sorcier ».
+const CLASS_ARCHETYPES = {
+  duelliste:  { label: 'Duelliste',  icon: '⚔️' },
+  erudit:     { label: 'Érudit',     icon: '📘' },
+  occultiste: { label: 'Occultiste', icon: '🌑' },
+  gardien:    { label: 'Gardien',    icon: '🛡️' },
+  enchanteur: { label: 'Enchanteur', icon: '✨' }
+};
+
+// Sorts appris par niveau, par archétype. Duelliste = ancienne table de
+// Harry, Érudit = ancienne table d'Hermione, à l'identique. Les niveaux 8
+// (Cheminette) et 9 (Avada) sont communs à tous (_grantLevelSpells).
+const SPELL_LEARN_TABLES = {
+  duelliste:  { 3: ['Accio'], 4: ['Wingardium Leviosa'], 5: ['Reparo'], 6: ['Ferula'], 7: ['Diffindo'] },
+  erudit:     { 2: ['Expelliarmus'], 3: ['Stupefix'], 4: ['Ferula'], 5: ['Diffindo'],
+                7: ['Wingardium Leviosa', 'Reparo', 'Ferula Maxima'] },
+  occultiste: { 2: ['Incendio'], 3: ['Sanguini'], 4: ['Ferula'], 5: ['Maledictus'], 6: ['Diffindo'], 7: ['Reparo'] },
+  gardien:    { 2: ['Ferula'], 3: ['Wingardium Leviosa'], 4: ['Reparo'], 5: ['Stupefix'], 6: ['Diffindo'],
+                7: ['Ferula Maxima'] },
+  enchanteur: { 2: ['Riddikulus'], 3: ['Ferula'], 4: ['Tarantallegra'], 5: ['Reparo'], 6: ['Stupefix'],
+                7: ['Diffindo', 'Ferula Maxima'] }
+};
+
+// Archétype d'un personnage (PUR). Sans heroKey connu (save ancienne),
+// l'emplacement décide comme avant : 0 → Duelliste, 1 → Érudit.
+function heroArchetype(c, slotIdx) {
+  const def = c && c.heroKey && CHARACTERS[c.heroKey];
+  if (def && CLASS_ARCHETYPES[def.classArchetype]) return def.classArchetype;
+  return slotIdx === 1 ? 'erudit' : 'duelliste';
+}
 
 // Les ennemis sont définis dans js/monsters.js (MONSTERS)
 

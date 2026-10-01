@@ -437,6 +437,13 @@ function setDuoPosture(key) {
 }
 let _lastCharIdx = 0;
 
+// Archétype de classe (Lot 4.1) sous la Maison de la fiche.
+function _renderArchetypeLine(c, charIdx) {
+  if (typeof heroArchetype !== 'function') return '';
+  const a = CLASS_ARCHETYPES[heroArchetype(c, charIdx)];
+  return a ? `<div class="char-archetype" style="font-size:10px;color:#a08040;margin-top:1px">${a.icon} ${a.label}</div>` : '';
+}
+
 function openCharacter(charIdx = 0) {
   _lastCharIdx = (charIdx >= 0 && charIdx < (typeof partySize !== 'undefined' ? partySize : 2)) ? charIdx : 0;
   // En mode solo, partySize=1 → on borne charIdx à 0 même si l'appel
@@ -510,6 +517,7 @@ function openCharacter(charIdx = 0) {
         <div class="level-banner">
           <div class="lvl">${c.name.split(' ')[0]} — Niveau ${c.level}</div>
           <div style="font-size:10px;color:#8a7050;margin-top:2px">${c.class}</div>
+          ${_renderArchetypeLine(c, charIdx)}
           <div class="xp-bar"><span style="width:${xpPct}%"></span></div>
           <div style="font-size:9px;color:#6a5030;margin-top:2px">XP ${player.xp}/${player.xpNext}</div>
         </div>

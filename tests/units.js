@@ -3931,6 +3931,38 @@ function loadNpcs() {
   check('2.5b: tous les résolveurs des données sont couverts', [...used].every(r => resolvers.includes(r)));
 })();
 
+// §31 — Lot 4.1/4.2 (revue de progression) : archétypes & tables de sorts
+(function testLot4Archetypes() {
+  const m = loadModule('js/data-characters.js', ['CHARACTERS', 'CLASS_ARCHETYPES', 'SPELL_LEARN_TABLES', 'heroArchetype']);
+  const { SPELLS } = loadModule('js/data-spells.js', ['SPELLS']);
+  const keys = Object.keys(m.CHARACTERS);
+  const archs = Object.keys(m.CLASS_ARCHETYPES);
+  check('Lot4a: 5 archétypes', archs.length === 5);
+  check('Lot4a: mapping exhaustif des 16 héros', keys.length === 16
+    && keys.every(k => archs.includes(m.CHARACTERS[k].classArchetype)));
+  const count = a => keys.filter(k => m.CHARACTERS[k].classArchetype === a).length;
+  check('Lot4a: effectifs 3/5/2/3/3', count('duelliste') === 3 && count('erudit') === 5
+    && count('occultiste') === 2 && count('gardien') === 3 && count('enchanteur') === 3);
+  check('Lot4a: Cedric = Gardien', m.CHARACTERS.cedric.classArchetype === 'gardien');
+  // Zéro régression du duo historique : tables d'avant le Lot 4, à l'identique.
+  const OLD_HARRY = { 3: ['Accio'], 4: ['Wingardium Leviosa'], 5: ['Reparo'], 6: ['Ferula'], 7: ['Diffindo'] };
+  const OLD_HERMIONE = { 2: ['Expelliarmus'], 3: ['Stupefix'], 4: ['Ferula'], 5: ['Diffindo'],
+    7: ['Wingardium Leviosa', 'Reparo', 'Ferula Maxima'] };
+  check('Lot4a: Duelliste = table Harry historique', JSON.stringify(m.SPELL_LEARN_TABLES.duelliste) === JSON.stringify(OLD_HARRY));
+  check('Lot4a: Érudit = table Hermione historique', JSON.stringify(m.SPELL_LEARN_TABLES.erudit) === JSON.stringify(OLD_HERMIONE));
+  check('Lot4a: Harry Duelliste, Hermione Érudit',
+    m.heroArchetype({ heroKey: 'harry' }, 1) === 'duelliste' && m.heroArchetype({ heroKey: 'hermione' }, 0) === 'erudit');
+  check('Lot4a: repli sans heroKey = emplacement', m.heroArchetype({}, 0) === 'duelliste' && m.heroArchetype({}, 1) === 'erudit');
+  const names = new Set(SPELLS.map(s => s.name));
+  const all = archs.flatMap(a => Object.values(m.SPELL_LEARN_TABLES[a]).flat());
+  check('Lot4a: tous les sorts des tables existent', all.every(n => names.has(n)));
+  check('Lot4a: une table par archétype, niveaux 2-7', archs.every(a => m.SPELL_LEARN_TABLES[a]
+    && Object.keys(m.SPELL_LEARN_TABLES[a]).every(l => +l >= 2 && +l <= 7)));
+  check('Lot4a: aucun sort corrompu/maître dans les tables', all.every(n => {
+    const s = SPELLS.find(x => x.name === n); return s.tier === 'basique' || s.tier === 'avancé';
+  }));
+})();
+
 // ============================================================
 // Rapport
 // ============================================================
