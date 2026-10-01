@@ -732,3 +732,10 @@ Lot 6 (équilibrage global & QA de synthèse) ── ferme le tout
   actifs » en lecture seule (B3 résolu), achat de points d'Éveil en Marques
   (3/5/8/12/17…, 8 achats max par héros). Respec global (❓7) toujours ouvert.
   Reste 4.8.
+- **2026-10-01 — Lot 4 (e) exécuté** (4.8, `.claude/plans/lot4e-sim-arbre-eveil-2026-10.md`) :
+  `sim-difficulty.js --awaken` (lit `js/awaken-tree.js` tel quel). Gain à budget
+  plein (20 pts) +8 à +13 pts de win-rate, cible ≤ ~+12 tenue ; aucune valeur
+  modifiée. Écart mesuré entre Maisons (Gryffondor/Serdaigle ≈ +4-5,
+  Serpentard/Poufsouffle ≈ +9) documenté dans G4. Docs G3/G4 à jour.
+  **Lot 4 clos** (reste ❓7 respec global).
+

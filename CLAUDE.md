@@ -1555,7 +1555,7 @@ window.checkKillQuests(monsterId) → incrémente q.progress, auto-complète (d�
   lié est présent), remise auto (`autoTurnIn` désormais honoré par les étapes
   `search`) → **Reliquaire Lunaire**.
 
-### Arbre « Éveil du Sorcier » (Lot 4.3/4.4, `js/awaken-tree.js`)
+### Arbre « Éveil du Sorcier » (Lot 4.3-4.8, `js/awaken-tree.js`)
 
 - **Points d'Éveil** : `awakenPointsEarned(level) = floor(level/2)` (niveau
   partagé `player.level`, donc rétroactif) + `c.awakenBought` (réservé à
@@ -1591,7 +1591,12 @@ window.checkKillQuests(monsterId) → incrémente q.progress, auto-complète (d�
   Marques de Traque (partagées) contre 1 point d'Éveil du héros
   (`c.awakenBought`, sérialisé) ; coût `awakenBuyCost(n) = 3 + n(n+3)/2`
   (3, 5, 8, 12, 17…), au plus `AWAKEN_BUY_MAX = 8` par héros.
-- À venir : passe sim (4.8). Respec global de l'arbre (❓7) non tranché.
+- **Sim** (Lot 4.8) : `tools/sim-difficulty.js --awaken[=ordre]` charge
+  `js/awaken-tree.js` tel quel (dépense gloutonne des points, actifs Duelliste/
+  Érudit modélisés ; `--awaken-house`, `--awaken-bought`, `--awaken-points`).
+  Gain à budget plein (20 pts) ≤ ~+12 pts de win-rate ; écart mesuré entre
+  Maisons détaillé dans `docs/gameplay/G4-maisons.md`.
+- Respec global de l'arbre (❓7) non tranché.
 
 ### Traques Rituelles (Lot 3, `js/traque.js`)
 

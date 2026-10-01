@@ -67,18 +67,24 @@ au niveau suivant :
 
 ### Sorts appris au level-up
 
-✅ (dans le jeu — `battle-rewards.js — _grantLevelSpells`)
+✅ (dans le jeu — `battle-rewards.js — _grantLevelSpells`, Lot 4.2)
 
-| Niveau | Harry apprend | Hermione apprend |
-|--------|---------------|-----------------|
-| 2 | — | Expelliarmus |
-| 3 | Accio | Stupefix |
-| 4 | Wingardium Leviosa | Ferula |
-| 5 | Reparo | Diffindo |
-| 6 | Ferula | — |
-| 7 | Diffindo | Wingardium Leviosa, Reparo, Ferula Maxima |
-| 8 | Cheminette Inter-Mondes | Cheminette Inter-Mondes |
-| 9 | Avada... (déverrouillé) | Avada... (déverrouillé) |
+Chaque héros apprend la table de **son archétype de classe**
+(`SPELL_LEARN_TABLES[heroArchetype(c)]`, `data-characters.js`) : Duelliste
+(Harry, Drago, Cho), Érudit (Hermione, Céleste, Margaux, Anastasia, Olivier),
+Occultiste (Maxence, Châtillon), Gardien (Cedric, Nathalie, Louis), Enchanteur
+(Iris, Jeanne, Agathe).
+
+| Niveau | Duelliste | Érudit | Occultiste | Gardien | Enchanteur |
+|--------|-----------|--------|------------|---------|------------|
+| 2 | — | Expelliarmus | Incendio | Ferula | Riddikulus |
+| 3 | Accio | Stupefix | Sanguini | Wingardium Leviosa | Ferula |
+| 4 | Wingardium Leviosa | Ferula | Ferula | Reparo | Tarantallegra |
+| 5 | Reparo | Diffindo | Maledictus | Stupefix | Reparo |
+| 6 | Ferula | — | Diffindo | Diffindo | Stupefix |
+| 7 | Diffindo | Wingardium Leviosa, Reparo, Ferula Maxima | Reparo | Ferula Maxima | Diffindo, Ferula Maxima |
+| 8 | Cheminette Inter-Mondes (tous) | | | | |
+| 9 | Avada... déverrouillé (tous) | | | | |
 
 Au niveau 9, le flag `locked:true` du sort `Avada...` est muté en `false` dans le
 registre `SPELLS` (`data.js`) pour les deux héros simultanément.
@@ -99,6 +105,37 @@ est appliqué sur la base (`_base*`) et survit aux recalculs.
 | AGI | +1 `_baseAgi` |
 | END | +5 PV max (`hpMax`), +1 `_baseEnd` |
 | LCK | +1 `_baseLck` |
+
+### Arbre « Éveil du Sorcier »
+
+✅ (dans le jeu — `js/awaken-tree.js`, Lot 4.3-4.7)
+
+- **Points d'Éveil** par héros : `floor(niveau / 2)` (rétroactif) + points
+  achetés en **Marques de Traque** (coût 3, 5, 8, 12, 17…, 8 achats max par
+  héros). ~12 points à la victoire, ~20 avec les achats.
+- **Trois zones** : tronc commun (8 nœuds à 1 pt), branche de la Maison
+  (`chosenHouse`, cf. G4) et branche de l'**archétype de classe** (10 nœuds).
+  Une branche compte 4 rangs (coûts 1/1/2/3 pts) ouverts à 0/2/4/8 pts
+  investis dans la branche. Choix **permanents** (respec non tranché).
+- **Action de classe** : le nœud de rang 2 de la branche de classe donne une
+  action de combat 1×/combat (bouton 🌟) — Riposte assurée, Surcharge,
+  Saignée, Interposition, Faveur ; le capital la renforce de +50 %.
+- **Effets** : bonus additifs du pipeline sets (`recalculateStats`) + clés
+  spéciales (`lowHpDmg`, `spellLifesteal`, `spellCostReduc`, `stepRegen`).
+- **Onglet « Passifs actifs »** : vue en lecture seule de tout ce qui agit
+  sur le héros (paliers, Apothéose, sets, souvenirs, Faveur de la Salle, Éveil).
+
+**Mesure sim (Lot 4.8, `tools/sim-difficulty.js --awaken`, 4 000 combats par
+cellule, étages 9-12)** : gain de win-rate à budget plein ≤ ~+12 pts (cible
+du design).
+
+| Budget | Gain de win-rate (étages 9-12) |
+|--------|-------------------------------|
+| niveau / 2 (5-6 pts) | +0 à +5 |
+| 12 pts (victoire) | +1 à +5 |
+| 20 pts (victoire + 8 achats) | +8 à +13 |
+| Boucle 21-35, niveau / 2 + 8 achats | +2 à +7 |
+| arbre entier (forcé, 38 pts) | +13 à +18 (hors d'atteinte) |
 
 ---
 
