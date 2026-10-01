@@ -87,6 +87,12 @@ function loadGameData() {
   const patchedShop = shopSrc + '\n;exports.SHOP_CATALOG = SHOP_CATALOG;';
   vm.runInContext(patchedShop, sandbox, { filename: 'shop.js' });
 
+  // Arbre « Éveil du Sorcier » (Lot 4.8) : données + helpers PURS du runtime,
+  // évalués tels quels (aucune copie à maintenir). L'UI n'est jamais appelée.
+  const awakenSrc = fs.readFileSync(path.join(root, 'js/awaken-tree.js'), 'utf8');
+  vm.runInContext(awakenSrc + '\n;exports.AWAKEN_TREE = AWAKEN_TREE;' +
+    '\n;exports.awakenCanTake = awakenCanTake;\n;exports.awakenBonuses = awakenBonuses;', sandbox, { filename: 'awaken-tree.js' });
+
   return sandbox.exports;
 }
 
@@ -94,7 +100,8 @@ const { MONSTERS, SPELLS, CHARACTERS, LEVEL_UP_XP_MULTIPLIER,
         RESIST_MULTIPLIER, WEAK_MULTIPLIER, ITEMS,
         QUEST_TEMPLATES, SHOP_CATALOG,
         SEARCH_MONSTER_CHANCE, SEARCH_TRAP_CHANCE,
-        REST_ENCOUNTER_CHANCE, REST_INTERRUPT_HEAL_FRACTION } = loadGameData();
+        REST_ENCOUNTER_CHANCE, REST_INTERRUPT_HEAL_FRACTION,
+        AWAKEN_TREE, awakenCanTake, awakenBonuses } = loadGameData();
 
 const spellByName = Object.fromEntries(SPELLS.map(s => [s.name, s]));
 
@@ -465,7 +472,9 @@ function parseArgs(argv) {
                 // Win-rate-neutre ici (sim sans fuite/butin) ; effet éco dans
                 // tools/sim-economy.js. Courbe : asympt·x²/(x²+half²).
                 fortuneAsymptote: 0.31, fortuneHalf: 30,
-                elanStep: 8, elanCap: 5, elanDecay: 'none' };
+                elanStep: 8, elanCap: 5, elanDecay: 'none',
+                // Arbre « Éveil du Sorcier » (Lot 4.8) — inactif par défaut.
+                awaken: null, awakenHouse: null, awakenBought: 0, awakenPoints: null };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--compare')              { out.mode = 'compare'; continue; }
@@ -487,6 +496,7 @@ function parseArgs(argv) {
     if (a === '--endgame')              { out.endgame = true; continue; }
     if (a === '--tenebres-set')         { out.tenebresSet = true; continue; }
     if (a === '--duo-tech')             { out.duoTech = 'all'; continue; }
+    if (a === '--awaken')               { out.awaken = 'house,class,trunk'; continue; }
     if (!a.includes('=')) {
       // Compat : `node sim-difficulty.js 800` → nSims positionnel
       const n = parseInt(a, 10);
@@ -540,6 +550,10 @@ function parseArgs(argv) {
     else if (k === 'boss')         out.boss = String(v || '') || null;
     else if (k === 'boss-alone')   out.bossAlone = v !== '0';
     else if (k === 'duo-tech')     out.duoTech = String(v || 'all');
+    else if (k === 'awaken')        out.awaken = String(v || 'house,class,trunk');
+    else if (k === 'awaken-house')  out.awakenHouse = String(v || '');
+    else if (k === 'awaken-bought') out.awakenBought = parseInt(v, 10) || 0;
+    else if (k === 'awaken-points') out.awakenPoints = parseInt(v, 10);
   }
   return out;
 }
@@ -655,6 +669,13 @@ Options:
   --elan-cap=N            Élan : nombre max de paliers (def 5)
   --elan-decay=MODE       Élan : none = cumul gardé tout le combat (def) |
                           turn = −1 palier par tour offensif sans crit
+  --awaken[=ORDRE]        Arbre « Éveil du Sorcier » : points d'Éveil (niveau/2)
+                          dépensés gloutonnement, branche par branche selon
+                          ORDRE (def house,class,trunk ; branches : house|class|trunk).
+                          Actifs de classe (Riposte assurée / Surcharge) 1×/combat.
+  --awaken-house=NAME     Branche de Maison (def : --house-set, sinon Gryffondor)
+  --awaken-bought=N       Points achetés en Marques en plus (def 0, max runtime 8)
+  --awaken-points=N       Force le nombre de points (ignore niveau et achats)
   --compare               Lance baseline ET proposition (hp×1.5 xp×1.3 stats=3 balanced), tableau comparatif
 
 Exemples:
@@ -962,6 +983,59 @@ function fortuneCurve(x, cfg) {
   return a * (v * v) / (v * v + h * h);
 }
 
+// ── Arbre « Éveil du Sorcier » (Lot 4.8 — js/awaken-tree.js) ──
+// Dépense gloutonne des points d'Éveil, branche par branche (ordre cfg.awaken),
+// rang par rang, via awakenCanTake du runtime (prérequis/coûts identiques).
+const _AWAKEN_HOUSE_NAMES = { gryffondor: 'Gryffondor', serpentard: 'Serpentard',
+  serdaigle: 'Serdaigle', poufsouffle: 'Poufsouffle' };
+function simAwakenAllocate(level, cfg, house, arch) {
+  const c = { awakenNodes: [], awakenBought: cfg.awakenBought || 0 };
+  if (cfg.awakenPoints != null && !Number.isNaN(cfg.awakenPoints)) {
+    c.awakenBought = cfg.awakenPoints - Math.floor(level / 2);
+  }
+  const branches = { house: AWAKEN_TREE.houses[house] || [], class: AWAKEN_TREE.classes[arch] || [], trunk: AWAKEN_TREE.trunk };
+  for (const b of String(cfg.awaken).split(',')) {
+    const nodes = [...(branches[b.trim()] || [])].sort((x, y) => (x.rank || 0) - (y.rank || 0));
+    let progress = true;
+    while (progress) {
+      progress = false;
+      for (const n of nodes) {
+        if (!c.awakenNodes.includes(n.id) && awakenCanTake(c, n.id, level, house, arch) === null) {
+          c.awakenNodes.push(n.id); progress = true;
+        }
+      }
+    }
+  }
+  return c.awakenNodes;
+}
+// Miroir de recalculateStats : stats primaires (avant D1/D2), dérivées, réserves.
+function applyAwakenTree(c, cfg, key, level) {
+  if (!cfg.awaken) return;
+  const house = _AWAKEN_HOUSE_NAMES[String(cfg.awakenHouse || cfg.houseSet || 'gryffondor').toLowerCase()] || 'Gryffondor';
+  const arch = (CHARACTERS[key] && CHARACTERS[key].classArchetype) || null;
+  c.awakenNodes = simAwakenAllocate(level, cfg, house, arch);
+  const b = awakenBonuses(c, house, arch);
+  c.atk += b.bonusAtk || 0; c.def += b.bonusDef || 0;
+  c.mag += b.bonusMag || 0; c.lck += b.bonusLck || 0;
+  c.str = (c.str || 0) + (b.bonusStr || 0); c.int = (c.int || 0) + (b.bonusInt || 0);
+  c.agi = (c.agi || 0) + (b.bonusAgi || 0); c.end = (c.end || 0) + (b.bonusEnd || 0);
+  if (b.bonusHpMax) { c.hpMax += b.bonusHpMax; c.hp = c.hpMax; }
+  if (b.bonusSpMax) { c.spMax += b.bonusSpMax; c.sp = c.spMax; }
+  c._critBonus      = (c._critBonus || 0)      + (b.bonusCritChance || 0);
+  c._dodgeBonus     = (c._dodgeBonus || 0)     + (b.bonusDodgeChance || 0);
+  c._critDmgBonus   = (c._critDmgBonus || 0)   + (b.bonusCritDamage || 0);
+  c._spellCritBonus = (c._spellCritBonus || 0) + (b.bonusSpellCritChance || 0);
+  c._spellCritDmgBon = (c._spellCritDmgBon || 0) + (b.bonusSpellCritDamage || 0);
+  c._awakenCel   = b.bonusCelerite || 0;
+  c._awakenLowHp = b.lowHpDmg || 0;
+  if (b.spellLifesteal) c._serpentLifesteal = (c._serpentLifesteal || 0) + b.spellLifesteal;
+  if (b.spellCostReduc) c._spellCostMult = (c._spellCostMult || 1) * (1 - b.spellCostReduc);
+  c._awakenActive = b.active || null;
+  c._awakenPower  = 1 + (b.activePower || 0);
+  // Non modélisés (sans effet dans ce modèle) : stepRegen (hors combat),
+  // bonusCounterChance (riposte), bonusFortune (butin/fuite).
+}
+
 function createHero(key, level, cfg, floor, partySize) {
   const def = CHARACTERS[key];
   const c = {
@@ -1045,6 +1119,8 @@ function createHero(key, level, cfg, floor, partySize) {
   }
   // Bonus de set (Maison 4/4 + Ténèbres 3/3) — après l'équipement.
   applySetBonuses(c, cfg, key, partySize);
+  // Arbre « Éveil du Sorcier » (Lot 4.8) — après sets, avant END→PV et D1/D2.
+  applyAwakenTree(c, cfg, key, level);
   // END → PV max : +5 PV par point d'END GAGNÉ via équipement/sets (miroir
   // runtime — inventory-core.js recalculateStats, D2bis). L'END de base et
   // l'END allouée sont dans _baseEnd (l'allocation a déjà crédité hpMax de
@@ -1073,7 +1149,7 @@ function createHero(key, level, cfg, floor, partySize) {
   // D5 volet AGI — Célérité : taux continu d'actions supplémentaires par round
   // (gain de tour FLUIDE, accumulé par simulateBattle). Stat dérivée sur l'AGI
   // effective. 0 si levier inactif (cfg.celeriteMax == 0) → historique inchangé.
-  c._celerite           = celeriteFrac(c.agi, cfg);
+  c._celerite           = celeriteFrac(c.agi + (c._awakenCel || 0), cfg);
   // D5 volet LCK — Fortune (parité runtime ; win-rate-neutre ici, cf. helper).
   c._fortuneX           = c.lck + (c._fortuneBonus || 0);
   c.fortune             = fortuneCurve(c._fortuneX, cfg);
@@ -1275,6 +1351,7 @@ function simulateBattle(party, enemyGroup, opts = {}) {
     c.shieldTurns = 0; c.statusEffects = []; c._elanStacks = 0;
     c.guardStacks = 0; c.guardRegenCD = 0;
     c._celGauge = 0;   // D5 AGI — accumulateur de Célérité (combat-scoped)
+    c._awakenUsed = false;   // Lot 4.8 — action de classe 1×/combat
   });
   enemyGroup.forEach(e => { e.currentHp = e.hp; e.disarmed = 0; e._simStun = 0; });
 
@@ -1434,7 +1511,9 @@ function heroAct(char, enemies) {
   const target = enemies[0];
   // Apothéose Poufsouffle — Vigueur : +20 % de dégâts (physique + sort)
   // au-dessus de 60 % PV. Évalué à l'ouverture du tour du héros.
-  const vigor = (char._houseVigor && char.hp > char.hpMax * 0.6) ? 1.23 : 1;
+  const vigor = ((char._houseVigor && char.hp > char.hpMax * 0.6) ? 1.23 : 1)
+    // Arbre d'Éveil 🦁 lowHpDmg : bonus sous 50 % PV (battle.js — _houseVigorMult).
+    * ((char._awakenLowHp && char.hp < char.hpMax * 0.5) ? 1 + char._awakenLowHp : 1);
   // Candidat Élan : multiplicateur des paliers accumulés (lu en début de
   // tour, mis à jour après l'action offensive).
   const elan = char._gryffElan ? (1 + char._elanStep * (char._elanStacks || 0)) : 1;
@@ -1472,6 +1551,25 @@ function heroAct(char, enemies) {
       char.guardRegenCD = 2;
     }
     return;
+  }
+
+  // 1d. Action de classe de l'arbre d'Éveil (Lot 4.8 — triggerAwakenActive),
+  //     1×/combat, au premier tour offensif. Seuls les archétypes du duo de
+  //     la sim (Duelliste, Érudit) sont modélisés.
+  if (char._awakenActive && !char._awakenUsed) {
+    char._awakenUsed = true;
+    const p = char._awakenPower || 1;
+    if (char._awakenActive === 'duelliste') {
+      const effDef = Math.max(0, target.def * (1 - (char._strPen || 0)));
+      target.currentHp -= Math.max(1, Math.floor(mitigatedDamage(char.atk + 3, effDef) * (char.critMultiplier || 1.5) * p));
+      char.guardStacks = Math.min(3, (char.guardStacks || 0) + 1);
+      return;
+    }
+    if (char._awakenActive === 'erudit') {
+      const dmg = Math.max(1, Math.floor((char.mag || 0) * 1.2 * p));
+      for (const e of enemies) e.currentHp -= dmg;
+      return;
+    }
   }
 
   // 2. Best damage spell
@@ -1893,7 +1991,8 @@ function emitReport(rows, cfg) {
     : (cfg.fairBaseline ? 'modèle=fair-baseline (croissance sans rework)' : 'modèle=legacy (historique pré-rework)');
   console.log(`Paramètres : difficulté=${cfg.difficulty || 'Normal'} | ` +
               `HP×${cfg.hpMult} | XP×${cfg.xpMult} | ` +
-              `${cfg.statPoints} pts libres/niveau | build=${cfg.build} | ${modelInfo}${houseInfo}\n`);
+              `${cfg.statPoints} pts libres/niveau | build=${cfg.build} | ${modelInfo}${houseInfo}` +
+              `${cfg.awaken ? ` | Éveil=${cfg.awaken}${cfg.awakenHouse ? '/' + cfg.awakenHouse : ''}${cfg.awakenBought ? ' +' + cfg.awakenBought + ' achetés' : ''}${cfg.awakenPoints != null ? ' (' + cfg.awakenPoints + ' pts forcés)' : ''}` : ''}\n`);
 
   console.log('## 1. Progression joueur attendue\n');
   console.log('| Étage | Niveau Solo | XP cumul Solo | Niveau Duo | XP cumul Duo |');

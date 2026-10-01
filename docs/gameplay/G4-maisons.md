@@ -259,6 +259,29 @@ déclenchée au palier 12 (4ᵉ pièce).
 
 > 🔗 Détail des bonus de set 2/3/4 pièces par Maison → **G5 Équipement & Sets**.
 
+## Branche de Maison de l'arbre « Éveil du Sorcier »
+
+✅ (dans le jeu — `AWAKEN_TREE.houses`, `js/awaken-tree.js`, Lot 4.4)
+
+Chaque héros peut investir ses points d'Éveil (cf. G3) dans la branche de la
+Maison choisie : 10 nœuds sur 4 rangs, 15 points pour la compléter. Chaque
+Maison a une clé spéciale branchée sur son passif d'Apothéose :
+
+| Maison | Axe | Clé spéciale (point d'accroche) |
+|--------|-----|---------------------------------|
+| Gryffondor | crit physique, ATK, FOR | `lowHpDmg` : dégâts sous 50 % PV (`_houseVigorMult`) |
+| Serpentard | MAG, INT, crit de sort | `spellLifesteal` : vol de vie de sort (`_applySerpentLifesteal`) |
+| Serdaigle | MAG, PM, crit de sort | `spellCostReduc` : coût des sorts (`_spellSpCost`) |
+| Poufsouffle | DEF, END, PV | `stepRegen` : PV par pas hors combat (`_step`) |
+
+- **Équité nominale** : chaque branche pèse 30 selon `AWAKEN_WEIGHTS`
+  (vérifié par `units.js` §32).
+- **Équité mesurée** (sim, branche complète de 15 pts, étages 9-12, gain moyen
+  de win-rate) : Gryffondor ≈ +4, Serdaigle ≈ +5, Serpentard ≈ +9,
+  Poufsouffle ≈ +9. ⚠️ Le modèle sous-estime Gryffondor : le Harry de la sim
+  lance surtout des sorts (le crit physique sert peu) et se soigne sous 40 % PV
+  (le bonus sous 50 % PV joue peu). Aucune branche ne dépasse +12.
+
 ---
 
 ## Interactions
