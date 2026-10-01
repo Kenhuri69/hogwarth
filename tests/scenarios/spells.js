@@ -1379,4 +1379,45 @@ async function scenarioSpellsP4() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioSpellIcons, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioSpellVoiceMapping, scenarioTeleportation, scenarioHealOoc, scenarioBombardaSplash, scenarioAoeSpells, scenarioSpellCombos, scenarioSpellsP2, scenarioSpellsP3, scenarioSpellArtifactSynergy, scenarioSpellsP4] };
+// Lot 4.1/4.2 : chaque héros apprend la table de sorts de SON archétype, quel
+// que soit son emplacement. Duo Maxence (Occultiste) + Iris (Enchanteresse),
+// puis duo historique Harry + Hermione (zéro régression).
+async function scenarioClassSpellTables() {
+  console.log('\n── Scénario : Lot 4 — archétypes & tables de sorts ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 2, heroes: ['maxence', 'iris'], house: 'Serpentard' });
+
+  const t1 = await page.evaluate(() => {
+    for (let lv = 2; lv <= 7; lv++) _grantLevelSpells(lv);
+    openCharacter(0);
+    const line = (document.querySelector('#char-detail .char-archetype') || {}).textContent || '';
+    closeModal('character-modal');
+    return { a0: heroArchetype(party[0], 0), a1: heroArchetype(party[1], 1), s0: [...party[0].spells], s1: [...party[1].spells], line };
+  });
+  console.log('  T1 Maxence/Iris →', t1.a0, t1.a1, t1.line);
+  assert(t1.a0 === 'occultiste' && t1.a1 === 'enchanteur', 'Archétypes Occultiste / Enchanteur attendus');
+  assert(['Sanguini', 'Maledictus', 'Ferula', 'Diffindo', 'Reparo', 'Incendio'].every(n => t1.s0.includes(n)),
+    'Maxence doit avoir appris la table Occultiste');
+  assert(!t1.s0.includes('Accio'), 'Maxence (emplacement 0) ne doit plus apprendre Accio (table de Harry)');
+  assert(['Riddikulus', 'Tarantallegra', 'Stupefix', 'Ferula Maxima'].every(n => t1.s1.includes(n)),
+    'Iris doit avoir appris la table Enchanteur');
+  assert(t1.line.includes('Occultiste'), 'La fiche doit afficher l\'archétype');
+  await browser.close();
+
+  const g = await launchGame();
+  await startNewGame(g.page, { partySize: 2, heroes: ['harry', 'hermione'], house: 'Gryffondor' });
+  const t2 = await g.page.evaluate(() => {
+    for (let lv = 2; lv <= 7; lv++) _grantLevelSpells(lv);
+    return { s0: [...party[0].spells], s1: [...party[1].spells] };
+  });
+  const H = ['Expelliarmus', 'Stupefix', 'Episkey', 'Protego', 'Incendio', 'Accio', 'Wingardium Leviosa', 'Reparo', 'Ferula', 'Diffindo'];
+  const M = ['Episkey', 'Protego', 'Incendio', 'Accio', 'Expelliarmus', 'Stupefix', 'Ferula', 'Diffindo', 'Wingardium Leviosa', 'Reparo', 'Ferula Maxima'];
+  console.log('  T2 Harry/Hermione →', t2.s0.length, t2.s1.length);
+  assert(JSON.stringify(t2.s0) === JSON.stringify(H), `Harry : sorts inchangés (vu ${t2.s0})`);
+  assert(JSON.stringify(t2.s1) === JSON.stringify(M), `Hermione : sorts inchangés (vu ${t2.s1})`);
+  await g.browser.close();
+  const all = errors.concat(g.errors).filter(e => !isIgnorableError(e));
+  assert(all.length === 0, 'Erreurs JS : ' + all.join(' | '));
+}
+
+module.exports = { scenarios: [scenarioSpellIcons, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioSpellVoiceMapping, scenarioTeleportation, scenarioHealOoc, scenarioBombardaSplash, scenarioAoeSpells, scenarioSpellCombos, scenarioSpellsP2, scenarioSpellsP3, scenarioSpellArtifactSynergy, scenarioSpellsP4, scenarioClassSpellTables] };

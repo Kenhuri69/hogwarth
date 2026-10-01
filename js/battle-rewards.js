@@ -385,7 +385,7 @@ function _grantLevelStats(c) {
   c._baseStr += 1;  c._baseInt += 1;  c._baseAgi += 1;
 }
 
-// Table de progression des sorts par niveau (hardcodée Harry/Hermione).
+// Sorts de level-up : table de l'archétype de chaque héros (SPELL_LEARN_TABLES).
 // Niveau 9 : déverrouille aussi le flag `locked` de "Avada..." dans SPELLS.
 function _grantLevelSpells(level) {
   const teach = (char, spellName) => {
@@ -395,55 +395,26 @@ function _grantLevelSpells(level) {
     }
   };
 
-  switch (level) {
-    case 2:
-      // Hermione complète sa palette d'attaque de base
-      teach(player2, 'Expelliarmus');
-      break;
-    case 3:
-      // Harry débloque le vol magique, Hermione les étourdissements
-      teach(player,  'Accio');
-      teach(player2, 'Stupefix');
-      break;
-    case 4:
-      // Harry apprend la lévitation offensive
-      teach(player, 'Wingardium Leviosa');
-      // Hermione (rôle soutien) apprend Ferula — bandage + régen
-      teach(player2, 'Ferula');
-      break;
-    case 5:
-      // Hermione maîtrise la lacération, Harry le soin avancé
-      teach(player,  'Reparo');
-      teach(player2, 'Diffindo');
-      break;
-    case 6:
-      // Harry rejoint Hermione sur Ferula (soutien partagé)
-      teach(player, 'Ferula');
-      break;
-    case 7:
-      // Symétrie : chacun apprend le sort de spécialité de l'autre
-      teach(player,  'Diffindo');
-      teach(player2, 'Wingardium Leviosa');
-      teach(player2, 'Reparo');
-      // Hermione (soutien) maîtrise la régénération de groupe
-      teach(player2, 'Ferula Maxima');
-      break;
-    case 8:
-      // Cheminette Inter-Mondes — sort de portail vers un donjon
-      // parallèle. Voir parallel-worlds.md §4. Enseigné aux deux
-      // héros pour ne pas dépendre du choix solo/duo.
-      teach(player,  'Cheminette Inter-Mondes');
-      teach(player2, 'Cheminette Inter-Mondes');
-      break;
-    case 9: {
-      // La Malédiction Impardonnable — déverrouillée pour les deux
-      const avada = SPELLS.find(s => s.name === 'Avada...');
-      if (avada) avada.locked = false;
-      teach(player,  'Avada...');
-      teach(player2, 'Avada...');
-      setTimeout(() => addMsg('⚠️ Malédiction Impardonnable déverrouillée !', 'bad'), 600);
-      break;
-    }
+  // Table de l'archétype de chaque héros (Lot 4.2, data-characters.js).
+  [player, player2].forEach((char, idx) => {
+    if (!char || !char.spells) return;
+    const table = SPELL_LEARN_TABLES[heroArchetype(char, idx)] || {};
+    for (const spellName of table[level] || []) teach(char, spellName);
+  });
+
+  if (level === 8) {
+    // Cheminette Inter-Mondes — sort de portail vers un donjon
+    // parallèle. Voir parallel-worlds.md §4. Enseigné aux deux
+    // héros pour ne pas dépendre du choix solo/duo.
+    teach(player,  'Cheminette Inter-Mondes');
+    teach(player2, 'Cheminette Inter-Mondes');
+  } else if (level === 9) {
+    // La Malédiction Impardonnable — déverrouillée pour les deux
+    const avada = SPELLS.find(s => s.name === 'Avada...');
+    if (avada) avada.locked = false;
+    teach(player,  'Avada...');
+    teach(player2, 'Avada...');
+    setTimeout(() => addMsg('⚠️ Malédiction Impardonnable déverrouillée !', 'bad'), 600);
   }
 }
 

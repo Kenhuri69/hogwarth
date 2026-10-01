@@ -70,7 +70,9 @@ js/
                       (Fortune/Célérité), REQUIREMENT_*, SEARCH_*/REST_*,
                       RESIST/WEAK_MULTIPLIER. Socle du Lot A P3.3 (data.js
                       découpé en 4 sous-fichiers, purs couper-coller).
-  data-characters.js → CHARACTERS — registre des personnages jouables. APRÈS data.js
+  data-characters.js → CHARACTERS — registre des personnages jouables +
+                      archétypes de classe (CLASS_ARCHETYPES, heroArchetype) +
+                      SPELL_LEARN_TABLES (sorts de level-up). APRÈS data.js
   data-spells.js   →  SPELLS + helpers sorts (spellCategory, getSpellById,
                       resolveSpellForm…) + SPELL_META + GRIMOIRE_PAGES/ACT3_PAGES
                       + RIDDLES_LUMIERE + ARTIFACT_FORMS + helpers corruption.
@@ -364,7 +366,7 @@ attendus se sont exécutés correctement et expose 2 helpers d'accès défensif.
 
 ### Manifeste
 
-Le `MANIFEST` dans `loader.js` énumère **416** entrées `{ name, source, kind,
+Le `MANIFEST` dans `loader.js` énumère **419** entrées `{ name, source, kind,
 optional? }` :
 - `kind: 'fn'` → `typeof name === 'function'`
 - `kind: 'obj'` → `typeof name !== 'undefined'` (couvre `let`/`const`/`var`)
@@ -1289,16 +1291,25 @@ apeuré a **50 % de chance** de se figer et perdre son tour.
 Au level-up, on incrémente `c._baseAtk / _baseDef / _baseMag` (pas `c.atk` directement),
 puis on appelle `recalculateStats()` pour reconstruire les stats effectives avec l'équipement.
 
-#### Table de progression des sorts par niveau
-| Niveau | Harry apprend | Hermione apprend |
-|--------|--------------|-----------------|
-| 2 | — | Expelliarmus |
-| 3 | Accio | Stupefix |
-| 4 | Wingardium Leviosa | Ferula |
-| 5 | Reparo | Diffindo |
-| 6 | Ferula | — |
-| 7 | Diffindo | Wingardium Leviosa + Reparo + Ferula Maxima |
-| 9 | Avada... (déverrouillé) | Avada... (déverrouillé) |
+#### Table de progression des sorts par niveau (par archétype, Lot 4.2)
+
+Chaque héros porte un `classArchetype` (`data-characters.js`, 5 archétypes :
+Duelliste ⚔️ harry/draco/cho · Érudit 📘 hermione/celeste/margaux/anastasia/
+olivier · Occultiste 🌑 maxence/chatillon · Gardien 🛡️ cedric/nathalie/louis ·
+Enchanteur ✨ iris/jeanne/agathe). `_grantLevelSpells` enseigne à chaque membre
+la table `SPELL_LEARN_TABLES[heroArchetype(c, idx)]` — repli sans `heroKey` :
+emplacement 0 → Duelliste, 1 → Érudit. La fiche affiche l'archétype.
+
+| Niveau | Duelliste (= Harry) | Érudit (= Hermione) | Occultiste | Gardien | Enchanteur |
+|--------|---------------------|---------------------|------------|---------|------------|
+| 2 | — | Expelliarmus | Incendio | Ferula | Riddikulus |
+| 3 | Accio | Stupefix | Sanguini | Wingardium Leviosa | Ferula |
+| 4 | Wingardium Leviosa | Ferula | Ferula | Reparo | Tarantallegra |
+| 5 | Reparo | Diffindo | Maledictus | Stupefix | Reparo |
+| 6 | Ferula | — | Diffindo | Diffindo | Stupefix |
+| 7 | Diffindo | Wingardium Leviosa + Reparo + Ferula Maxima | Reparo | Ferula Maxima | Diffindo + Ferula Maxima |
+
+Communs à tous : niv. 8 Cheminette Inter-Mondes, niv. 9 Avada... (déverrouillé).
 
 `Avada...` est `locked:true` dans SPELLS jusqu'au niveau 9, où le flag est muté en `false` et le sort ajouté aux deux personnages.
 
