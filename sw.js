@@ -16,7 +16,7 @@
 //     individuel suffit pour eux.
 // =======================================================================
 
-const CACHE_VERSION = 'hogwarth-v287';
+const CACHE_VERSION = 'hogwarth-v288';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Précache minimal (~1 Mo) : shell HTML/CSS/JS + premier visuel.
@@ -38,7 +38,7 @@ const PRECACHE_URLS = [
   './css/cinematics.css?v=1',
   './css/frost.css?v=3',
   './css/codex.css?v=5',
-  './css/awaken-tree.css?v=1',
+  './css/awaken-tree.css?v=2',
   './css/escape-pocket.css?v=2',
 
   // JS — ordre identique à index.html (sans incidence pour le cache,
@@ -131,10 +131,10 @@ const PRECACHE_URLS = [
   './js/break-cycle.js?v=5',
   './js/forge.js?v=11',
   './js/library.js?v=8',
-  './js/awaken-tree.js?v=2',
+  './js/awaken-tree.js?v=3',
   './js/help-tour.js?v=5',
   './js/balance-log.js?v=3',
-  './js/loader.js?v=78',
+  './js/loader.js?v=79',
   './js/pwa.js?v=9',
 
   // Icônes PWA + premier écran

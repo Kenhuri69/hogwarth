@@ -44,6 +44,11 @@
   background: rgba(60, 44, 20, 0.9); color: var(--gold-light);
   border: 1px solid #8a6a30; border-radius: 4px; cursor: pointer;
 }
+.awaken-views { display: flex; gap: 6px; margin: 6px 0; }
+.awaken-buy { display: block; margin: 4px 0 8px; }
+.awaken-buy:disabled { opacity: 0.5; cursor: not-allowed; }
+.awaken-passive-sec ul { margin: 0 0 6px; padding-left: 18px; font-size: 11px; color: #e8d8b0; }
+.awaken-passive-sec li { margin: 2px 0; }
 @media (max-width: 700px) {
   .skill-tree-box { width: 96vw; max-height: 92dvh; }
   .awaken-grid { grid-template-columns: 1fr 1fr; }

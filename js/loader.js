@@ -383,6 +383,8 @@ window.UX_safe = new Proxy({}, {
     { name: 'openSkillTree',        source: 'awaken-tree.js', kind: 'fn'  },
     { name: 'AWAKEN_ACTIVES',       source: 'awaken-tree.js', kind: 'obj' },
     { name: 'triggerAwakenActive',  source: 'awaken-tree.js', kind: 'fn'  },
+    { name: 'awakenBuyPoint',       source: 'awaken-tree.js', kind: 'fn'  },
+    { name: 'awakenPassivesList',   source: 'awaken-tree.js', kind: 'fn'  },
     { name: 'TENEBRES_SET',         source: 'data-items.js', kind: 'obj' },
 
     // ── Aide / tour guidé ──

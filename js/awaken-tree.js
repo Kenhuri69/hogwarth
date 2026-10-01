@@ -349,8 +349,106 @@ function triggerAwakenActive() {
   return true;
 }
 
+// ── Achat de points contre Marques de Traque (Lot 4.7) ───────
+// Coût croissant 3, 5, 8, 12, 17… selon le nombre déjà acheté par le héros.
+const AWAKEN_BUY_MAX = 8;
+function awakenBuyCost(bought) { const n = Math.max(0, bought | 0); return 3 + (n * (n + 3)) / 2; }
+
+function awakenBuyPoint(charIdx) {
+  const c = party[charIdx];
+  if (!c) return false;
+  const n = c.awakenBought | 0;
+  const marks = (typeof hunterMarks === 'number') ? hunterMarks : 0;
+  if (n >= AWAKEN_BUY_MAX) {
+    if (typeof addMsg === 'function') addMsg(`🌟 ${c.name} a déjà acheté ${AWAKEN_BUY_MAX} points d'Éveil.`, 'bad');
+    return false;
+  }
+  const cost = awakenBuyCost(n);
+  if (marks < cost) {
+    if (typeof addMsg === 'function') addMsg(`🏹 ${cost} Marques de Traque requises (tu en as ${marks}).`, 'bad');
+    return false;
+  }
+  hunterMarks -= cost;
+  c.awakenBought = n + 1;
+  if (typeof addMsg === 'function') addMsg(`🌟 ${c.name} gagne 1 point d'Éveil (−${cost} 🏹).`, 'magic');
+  if (typeof updateUI === 'function') updateUI();
+  if (typeof autoSave === 'function') autoSave('awaken-buy');
+  return true;
+}
+
+// ── Passifs actifs (Lot 4.6, lecture seule) ──────────────────
+// Agrège ce qui agit déjà sur le héros, sans rien recalculer.
+const _AWAKEN_APOTHEOSE_TEXT = {
+  Gryffondor: '🦁 Cœur du Lion : +10 % crit (physique et sort), +15 % dégâts crit, Élan',
+  Serpentard: '🐍 Soif du Serpent : 15 % des dégâts de sort rendus en PV',
+  Serdaigle: "🦅 Esprit de l'Aigle : −20 % coût des sorts",
+  Poufsouffle: '🦡 Souffle du Blaireau : PV/PM par pas, +23 % dégâts au-dessus de 60 % PV'
+};
+function _awakenTierBonusText(b) {
+  const S = { _baseAtk: 'ATK', _baseDef: 'DEF', _baseMag: 'MAG', _baseLck: 'LCK',
+    _baseStr: 'FOR', _baseInt: 'INT', _baseAgi: 'AGI', _baseEnd: 'END', _baseHpMax: 'PV max', _baseSpMax: 'PM max' };
+  const parts = [];
+  for (const [k, v] of Object.entries(b || {})) {
+    if (S[k]) parts.push(`+${v} ${S[k]}`);
+    else if (k === 'item') {
+      const it = (typeof ITEMS !== 'undefined') ? ITEMS.find(i => i.id === v) : null;
+      parts.push(`objet : ${it ? it.name : v}`);
+    } else if (k === 'grantsSpell') parts.push(`sort : ${v}`);
+  }
+  return parts.join(', ');
+}
+
+function awakenPassivesList(c) {
+  const out = [];
+  const house = _awakenHouse();
+  const tier = (typeof houseTier === 'number') ? houseTier : 0;
+  // Paliers de Maison
+  const hb = (house && typeof HOUSE_BONUSES !== 'undefined') ? HOUSE_BONUSES[house] : null;
+  if (hb && Array.isArray(hb.tiers)) {
+    const lines = hb.tiers.slice(0, Math.min(tier, hb.tiers.length))
+      .map(t => `${t.label} — ${_awakenTierBonusText(t.bonus) || '—'}`);
+    if (tier > 18) lines.push(`Apothéose ★ ${tier - 18}`);
+    out.push({ icon: '🏰', title: `Paliers de ${house}`, lines });
+  }
+  // Passif d'Apothéose
+  const apo = (typeof houseApotheosePassive === 'function') ? houseApotheosePassive() : null;
+  out.push({ icon: '👑', title: 'Apothéose', lines: apo && _AWAKEN_APOTHEOSE_TEXT[apo] ? [_AWAKEN_APOTHEOSE_TEXT[apo]] : [] });
+  // Sets
+  const sets = [];
+  if ((c._tenebresSetCount | 0) >= 2) sets.push(`Set des Ténèbres ${c._tenebresSetCount}/3`);
+  if (typeof HOUSE_SETS !== 'undefined') {
+    for (const s of Object.values(HOUSE_SETS)) {
+      const n = c['_' + s.setKey + 'Count'] | 0;
+      if (n >= 2) sets.push(`${s.setLabel} ${n}/4`);
+    }
+  }
+  if ((c._voyageurSetCount | 0) >= 2) sets.push(`Set du Voyageur ${c._voyageurSetCount}/5`);
+  out.push({ icon: '🛡️', title: 'Sets équipés', lines: sets });
+  // Souvenirs d'Outremonde (tout le groupe)
+  const souv = (typeof OUTREMONDE_SOUVENIRS !== 'undefined' && typeof outremondeSouvenirs !== 'undefined' && outremondeSouvenirs)
+    ? OUTREMONDE_SOUVENIRS.filter(s => outremondeSouvenirs.has(s.id)).map(s => `${s.icon} ${s.name} — ${s.desc}`) : [];
+  out.push({ icon: '🌒', title: "Souvenirs d'Outremonde", lines: souv });
+  // Faveur de la Salle (bonus de départ, profil)
+  let themes = 0;
+  try {
+    const codex = (typeof getRequirementCodex === 'function') ? getRequirementCodex() : null;
+    if (codex && codex.themesSeen) themes = Math.min(5, Object.keys(codex.themesSeen).filter(k => codex.themesSeen[k]).length);
+  } catch (e) { themes = 0; }
+  out.push({ icon: '🚪', title: 'Faveur de la Salle', lines: themes ? [`${themes} thème(s) découvert(s) : +${Math.min(75, 15 * themes)} G et ${themes} potion(s) au départ`] : [] });
+  // Éveil
+  const aw = Object.assign({}, c._awaken || {});
+  const active = aw.active; delete aw.active;
+  const awLines = [];
+  const txt = _awakenBonusText(aw);
+  if (txt) awLines.push(txt);
+  if (active && AWAKEN_ACTIVES[active]) awLines.push(`${AWAKEN_ACTIVES[active].icon} ${AWAKEN_ACTIVES[active].label} (1×/combat)`);
+  out.push({ icon: '🌟', title: 'Éveil du Sorcier', lines: awLines });
+  return out;
+}
+
 // ── UI : modale #skill-tree-modal ────────────────────────────
 let _awakenCharIdx = 0;
+let _awakenView = 'tree';   // 'tree' | 'passives'
 
 function _awakenBonusText(bonus) {
   const L = {
@@ -414,10 +512,28 @@ function renderSkillTree() {
   const classHtml = classNodes.length && archDef
     ? `<h4 class="awaken-branch-title">Branche ${archDef.icon} ${archDef.label} <span class="awaken-points-note">(${awakenSpentIn(c.awakenNodes, 'class:' + arch)} pts investis)</span></h4>${ranksOf(classNodes)}`
     : '';
+  const views = `<div class="awaken-views">
+    <button class="codex-tab${_awakenView === 'tree' ? ' active' : ''}" data-view="tree" onclick="_awakenView='tree'; renderSkillTree()">🌳 Arbre</button>
+    <button class="codex-tab${_awakenView === 'passives' ? ' active' : ''}" data-view="passives" onclick="_awakenView='passives'; renderSkillTree()">📜 Passifs actifs</button></div>`;
+  if (_awakenView === 'passives') {
+    const esc = (typeof htmlEscape === 'function') ? htmlEscape : (s => s);
+    body.innerHTML = `${tabs ? `<div class="codex-tabs">${tabs}</div>` : ''}${views}
+      <div class="awaken-passives">${awakenPassivesList(c).map(sec => `
+        <div class="awaken-passive-sec"><h4 class="awaken-branch-title">${sec.icon} ${esc(sec.title)}</h4>
+        ${sec.lines.length ? `<ul>${sec.lines.map(l => `<li>${esc(l)}</li>`).join('')}</ul>` : '<div class="awaken-points-note">Aucun pour l\'instant.</div>'}</div>`).join('')}</div>`;
+    return;
+  }
+  const marks = (typeof hunterMarks === 'number') ? hunterMarks : 0;
+  const bought = c.awakenBought | 0;
+  const showBuy = marks > 0 || (typeof traqueUnlocked !== 'undefined' && traqueUnlocked);
+  const buyHtml = !showBuy ? '' : (bought >= AWAKEN_BUY_MAX
+    ? `<div class="awaken-points-note">Achats en Marques : ${bought}/${AWAKEN_BUY_MAX} (maximum atteint)</div>`
+    : `<button class="btn-awaken awaken-buy" onclick="_awakenBuyConfirm(${_awakenCharIdx})"${marks < awakenBuyCost(bought) ? ' disabled' : ''}>🏹 Acheter 1 point — ${awakenBuyCost(bought)} Marques (${marks}) · ${bought}/${AWAKEN_BUY_MAX}</button>`);
   body.innerHTML = `
-    ${tabs ? `<div class="codex-tabs">${tabs}</div>` : ''}
+    ${tabs ? `<div class="codex-tabs">${tabs}</div>` : ''}${views}
     <div class="awaken-points" aria-live="polite">🌟 Points d'Éveil : <b>${avail}</b>
       <span class="awaken-points-note">(1 tous les 2 niveaux — choix permanents)</span></div>
+    ${buyHtml}
     <h4 class="awaken-branch-title">Tronc commun</h4>
     <div class="awaken-grid">${AWAKEN_TREE.trunk.map(n => _awakenNodeHtml(c, n, level, house, arch)).join('')}</div>
     ${house ? `<h4 class="awaken-branch-title">Branche ${house} <span class="awaken-points-note">(${awakenSpentIn(c.awakenNodes, house)} pts investis)</span></h4>${ranks}` : ''}
@@ -431,6 +547,16 @@ function _awakenConfirm(charIdx, id) {
     ? confirmModal({ title: `${f.node.icon} ${f.node.name}`, body: `${_awakenNodeText(f.node)}. Ce choix est permanent.`, confirmLabel: 'Éveiller' })
     : Promise.resolve(true);
   ask.then(ok => { if (ok && awakenTakeNode(charIdx, id)) renderSkillTree(); });
+}
+
+function _awakenBuyConfirm(charIdx) {
+  const c = party[charIdx];
+  if (!c) return;
+  const cost = awakenBuyCost(c.awakenBought | 0);
+  const ask = (typeof confirmModal === 'function')
+    ? confirmModal({ title: "🏹 Point d'Éveil", body: `Échanger ${cost} Marques de Traque contre 1 point d'Éveil pour ${c.name} ?`, confirmLabel: 'Acheter' })
+    : Promise.resolve(true);
+  ask.then(ok => { if (ok && awakenBuyPoint(charIdx)) renderSkillTree(); });
 }
 
 function openSkillTree(charIdx) {
@@ -453,3 +579,5 @@ window.openSkillTree = openSkillTree;
 window.closeSkillTree = closeSkillTree;
 window.renderSkillTree = renderSkillTree;
 window._awakenConfirm = _awakenConfirm;
+window._awakenBuyConfirm = _awakenBuyConfirm;
+window.awakenBuyPoint = awakenBuyPoint;

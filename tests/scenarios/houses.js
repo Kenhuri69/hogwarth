@@ -2215,6 +2215,39 @@ async function scenarioSkillTree() {
   assert(t3.btn && t3.open, 'Bouton Éveil de la fiche → modale ouverte');
   assert(t3.nodes === 28 && t3.taken === 0, `28 nœuds (tronc + Gryffondor + Duelliste) attendus (vu ${t3.nodes})`);
 
+  // T4 — Lot 4.6/4.7 : achat en Marques (bouton, save) et onglet Passifs.
+  const t4 = await page.evaluate(async () => {
+    const r = {};
+    hunterMarks = 0; traqueUnlocked = false; openSkillTree(0);
+    r.noBtnWithoutMarks = !document.querySelector('#skill-tree-body .awaken-buy');
+    hunterMarks = 4; renderSkillTree();
+    const before = awakenPointsAvailable(party[0], player.level);
+    const btn = document.querySelector('#skill-tree-body .awaken-buy');
+    r.btn = !!btn && !btn.disabled;
+    btn.click();
+    await new Promise(res => setTimeout(res, 50));
+    _closeConfirmModal(true);
+    await new Promise(res => setTimeout(res, 50));
+    r.marks = hunterMarks; r.gained = awakenPointsAvailable(party[0], player.level) - before;
+    r.disabledNext = document.querySelector('#skill-tree-body .awaken-buy').disabled;   // 1 Marque < 5
+    const gs = JSON.parse(JSON.stringify(_serializeState()));
+    party[0].awakenBought = 0; _applyState(gs);
+    r.savedBought = party[0].awakenBought;
+    openSkillTree(0);
+    document.querySelector('#skill-tree-body [data-view="passives"]').click();
+    r.sections = document.querySelectorAll('#skill-tree-body .awaken-passive-sec').length;
+    r.eveilLine = /Éveil du Sorcier/.test(document.getElementById('skill-tree-body').textContent);
+    r.noNodes = document.querySelectorAll('#skill-tree-body .awaken-node').length === 0;
+    document.querySelector('#skill-tree-body [data-view="tree"]').click();
+    closeSkillTree();
+    return r;
+  });
+  console.log('  T4 achat/passifs →', t4);
+  assert(t4.noBtnWithoutMarks && t4.btn, 'Bouton d\'achat masqué sans Marques, actif avec');
+  assert(t4.marks === 1 && t4.gained === 1 && t4.disabledNext, 'Achat : −3 Marques, +1 point, suivant (5) bloqué');
+  assert(t4.savedBought === 1, 'awakenBought restauré par la save');
+  assert(t4.sections === 6 && t4.eveilLine && t4.noNodes, 'Onglet Passifs : 6 sections, lecture seule');
+
   await browser.close();
   const real = errors.filter(e => !isIgnorableError(e));
   assert(real.length === 0, 'Erreurs JS : ' + real.join(' | '));

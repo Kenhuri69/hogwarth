@@ -4032,6 +4032,28 @@ function loadNpcs() {
   check('Lot4c: ids uniques sur tout l\'arbre', ids.length && new Set(all).size === all.length);
 })();
 
+// §32c — Lot 4.6/4.7 : achat de points en Marques, passifs actifs
+(function testLot4BuyAndPassives() {
+  const hero = { name: 'Harry', awakenBought: 0, awakenNodes: [], _awaken: { bonusAtk: 1, active: 'duelliste' }, _tenebresSetCount: 2 };
+  const g = { window: {}, party: [hero], hunterMarks: 10, chosenHouse: 'Gryffondor', houseTier: 2,
+    HOUSE_BONUSES: { Gryffondor: { tiers: [{ label: 'Apprenti Bronze', bonus: { _baseLck: 1 } }, { label: 'Apprenti Argent', bonus: { _baseAtk: 1 } }, { label: 'Apprenti Or', bonus: { _baseAtk: 9 } }] } } };
+  const m = loadModule('js/awaken-tree.js', ['awakenBuyCost', 'awakenBuyPoint', 'awakenPassivesList', 'AWAKEN_BUY_MAX', 'awakenPointsAvailable'], g);
+  check('Lot4d: coûts 3/5/8/12/17', [0, 1, 2, 3, 4].map(m.awakenBuyCost).join() === '3,5,8,12,17');
+  // 10 Marques : 3 puis 5 passent, le 3ᵉ achat (8) est refusé (reste 2).
+  check('Lot4d: achat crédite le héros', m.awakenBuyPoint(0) && hero.awakenBought === 1);
+  check('Lot4d: point acheté disponible', m.awakenPointsAvailable(hero, 1) === 1);
+  check('Lot4d: achat refusé faute de Marques', m.awakenBuyPoint(0) && !m.awakenBuyPoint(0) && hero.awakenBought === 2);
+  const m2 = loadModule('js/awaken-tree.js', ['awakenBuyPoint', 'AWAKEN_BUY_MAX'], Object.assign({}, g, { hunterMarks: 9999 }));
+  hero.awakenBought = m2.AWAKEN_BUY_MAX;
+  check('Lot4d: plafond par héros', !m2.awakenBuyPoint(0) && hero.awakenBought === m2.AWAKEN_BUY_MAX);
+  const P = m.awakenPassivesList(hero);
+  const sec = t => P.find(x => x.title.includes(t));
+  check('Lot4d: paliers atteints seulement', sec('Paliers').lines.length === 2 && sec('Paliers').lines[1].includes('+1 ATK'));
+  check('Lot4d: set Ténèbres listé', sec('Sets').lines.some(l => l.includes('Ténèbres 2/3')));
+  check('Lot4d: Éveil résumé + action', sec('Éveil').lines.length === 2 && sec('Éveil').lines[0].includes('+1 ATK'));
+  check('Lot4d: sections vides tolérées', sec('Apothéose').lines.length === 0 && sec('Souvenirs').lines.length === 0);
+})();
+
 // ============================================================
 // Rapport
 // ============================================================

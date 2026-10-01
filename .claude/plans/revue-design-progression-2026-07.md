@@ -727,3 +727,8 @@ Lot 6 (équilibrage global & QA de synthèse) ── ferme le tout
   5 branches de classe de 10 nœuds (poids 30), un actif de combat par classe
   (bouton 🌟, 1×/combat, effets immédiats), capital +50 % à l'actif. Reste
   l'onglet Passifs, 4.7 et 4.8.
+- **2026-10-01 — Lot 4 (d) exécuté** (4.6 fin + 4.7,
+  `.claude/plans/lot4d-passifs-achat-marques-2026-10.md`) : onglet « Passifs
+  actifs » en lecture seule (B3 résolu), achat de points d'Éveil en Marques
+  (3/5/8/12/17…, 8 achats max par héros). Respec global (❓7) toujours ouvert.
+  Reste 4.8.

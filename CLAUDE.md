@@ -316,11 +316,12 @@ js/
                       (cellule CELL.FORGE, endgame Tranche 2)
   library.js       →  BIBLIOTHÈQUE INTERDITE : upgrade des sorts
                       (cellule CELL.LIBRARY, endgame Tranche 2)
-  awaken-tree.js   →  ARBRE « ÉVEIL DU SORCIER » (Lot 4.3/4.4) : points d'Éveil
-                      (1 / 2 niveaux), tronc commun + branche de Maison
-                      (AWAKEN_TREE), awakenBonuses() lu par recalculateStats,
-                      awakenStat() aux points d'accroche, modale
-                      #skill-tree-modal (openSkillTree). APRÈS library.js
+  awaken-tree.js   →  ARBRE « ÉVEIL DU SORCIER » (Lot 4.3-4.7) : points d'Éveil
+                      (1 / 2 niveaux + achat en Marques), tronc commun +
+                      branches de Maison et de classe (AWAKEN_TREE),
+                      awakenBonuses() lu par recalculateStats, awakenStat() aux
+                      points d'accroche, modale #skill-tree-modal (openSkillTree)
+                      avec onglet « Passifs actifs ». APRÈS library.js
   help-tour.js     →  Tour guidé d'aide pour novices (spotlight + bulles sur
                       les vrais éléments de l'UI)
   balance-log.js   →  window.BalanceLog — logger d'équilibrage `BALANCE_DEBUG`
@@ -371,7 +372,7 @@ attendus se sont exécutés correctement et expose 2 helpers d'accès défensif.
 
 ### Manifeste
 
-Le `MANIFEST` dans `loader.js` énumère **427** entrées `{ name, source, kind,
+Le `MANIFEST` dans `loader.js` énumère **429** entrées `{ name, source, kind,
 optional? }` :
 - `kind: 'fn'` → `typeof name === 'function'`
 - `kind: 'obj'` → `typeof name !== 'undefined'` (couvre `let`/`const`/`var`)
@@ -1582,8 +1583,15 @@ window.checkKillQuests(monsterId) → incrémente q.progress, auto-complète (d�
   🛡️ Interposition (+2 Gardes + Protego allié), ✨ Faveur (soin 20 % du groupe
   + purge).
 - **UI** : bouton « 🌟 Éveil » de la fiche → `#skill-tree-modal` (tronc,
-  Maison, classe).
-- À venir : onglet « Passifs actifs », achat en Marques (4.7), passe sim (4.8).
+  Maison, classe), bascule « 🌳 Arbre / 📜 Passifs actifs ».
+- **Passifs actifs** (Lot 4.6, résout B3) : vue en lecture seule
+  (`awakenPassivesList(c)`) — paliers de Maison atteints, Apothéose, sets
+  équipés, souvenirs d'Outremonde, Faveur de la Salle, bonus d'Éveil.
+- **Achat en Marques** (Lot 4.7) : `awakenBuyPoint(charIdx)` échange des
+  Marques de Traque (partagées) contre 1 point d'Éveil du héros
+  (`c.awakenBought`, sérialisé) ; coût `awakenBuyCost(n) = 3 + n(n+3)/2`
+  (3, 5, 8, 12, 17…), au plus `AWAKEN_BUY_MAX = 8` par héros.
+- À venir : passe sim (4.8). Respec global de l'arbre (❓7) non tranché.
 
 ### Traques Rituelles (Lot 3, `js/traque.js`)
 
