@@ -349,6 +349,8 @@ function _hydrateCharacter(target, key) {
   target.xp      = 0;
   target.xpNext  = 50;
   target.unallocatedStatPoints = 0;
+  target.awakenNodes  = [];   // arbre « Éveil du Sorcier » (Lot 4.3)
+  target.awakenBought = 0;
   // 11 slots étendus — voir .claude/plans/equipment-extended.md §2.1
   target.equipped = {
     wand: null, head: null, body: null, hands: null, feet: null, cloak: null,
@@ -703,7 +705,7 @@ const ESC_CLOSEABLE_MODALS = [
   'bestiary-modal', 'codex-modal', 'house-detail-modal', 'house-donation-modal',
   'wizard-codex-modal', 'slot-modal', 'monster-info-overlay',
   'settings-modal', 'forge-modal', 'library-modal', 'brewing-modal',
-  'fusion-modal', 'riddle-modal', 'endgame-compass-modal'
+  'fusion-modal', 'riddle-modal', 'endgame-compass-modal', 'skill-tree-modal'
 ];
 
 // Cellule cible d'un déplacement aux flèches dans une grille focusée.

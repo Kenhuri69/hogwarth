@@ -717,3 +717,18 @@ Lot 6 (équilibrage global & QA de synthèse) ── ferme le tout
   `_grantLevelSpells` réécrit (Duelliste/Érudit = tables Harry/Hermione à
   l'identique). B1 résolu ; B2 à moitié (l'arbre lira aussi l'archétype).
   Reste 4.3-4.8.
+- **2026-10-01 — Lot 4 (b) exécuté** (4.3 + 4.4 + UI minimale de 4.6,
+  `.claude/plans/lot4b-arbre-eveil-socle-2026-10.md`) : `js/awaken-tree.js`,
+  points d'Éveil 1/2 niveaux, tronc commun 8 nœuds, 4 branches de Maison de
+  10 nœuds à budget égal (poids 30), modale `#skill-tree-modal`. ⚠️ Branche
+  de Maison par héros (et non partagée) ; nœuds non branchables en v1 écartés
+  (liste dans le plan). Reste 4.5, onglet Passifs, 4.7, 4.8.
+- **2026-10-01 — Lot 4 (c) exécuté** (4.5, `.claude/plans/lot4c-branches-classe-2026-10.md`) :
+  5 branches de classe de 10 nœuds (poids 30), un actif de combat par classe
+  (bouton 🌟, 1×/combat, effets immédiats), capital +50 % à l'actif. Reste
+  l'onglet Passifs, 4.7 et 4.8.
+- **2026-10-01 — Lot 4 (d) exécuté** (4.6 fin + 4.7,
+  `.claude/plans/lot4d-passifs-achat-marques-2026-10.md`) : onglet « Passifs
+  actifs » en lecture seule (B3 résolu), achat de points d'Éveil en Marques
+  (3/5/8/12/17…, 8 achats max par héros). Respec global (❓7) toujours ouvert.
+  Reste 4.8.

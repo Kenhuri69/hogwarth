@@ -3963,6 +3963,97 @@ function loadNpcs() {
   }));
 })();
 
+// §32 — Lot 4.3/4.4 (revue de progression) : arbre « Éveil du Sorcier »
+(function testLot4AwakenTree() {
+  const m = loadModule('js/awaken-tree.js', ['AWAKEN_TREE', 'AWAKEN_WEIGHTS', 'AWAKEN_RANKS', 'awakenPointsEarned',
+    'awakenNodeCost', 'awakenNodeWeight', 'awakenPointsAvailable', 'awakenCanTake', 'awakenBonuses', 'awakenSpentIn'], { window: {} });
+  check('Lot4b: 1 point tous les 2 niveaux', m.awakenPointsEarned(1) === 0 && m.awakenPointsEarned(2) === 1
+    && m.awakenPointsEarned(25) === 12 && m.awakenPointsEarned(0) === 0);
+  check('Lot4b: tronc = 8 nœuds à 1 pt', m.AWAKEN_TREE.trunk.length === 8
+    && m.AWAKEN_TREE.trunk.every(n => m.awakenNodeCost(n) === 1));
+  const houses = ['Gryffondor', 'Serpentard', 'Serdaigle', 'Poufsouffle'];
+  check('Lot4b: 4 branches de Maison', houses.every(h => m.AWAKEN_TREE.houses[h]));
+  check('Lot4b: 10 nœuds par Maison (3/3/3/1)', houses.every(h => {
+    const ns = m.AWAKEN_TREE.houses[h];
+    const by = r => ns.filter(n => n.rank === r).length;
+    return ns.length === 10 && by(1) === 3 && by(2) === 3 && by(3) === 3 && by(4) === 1;
+  }));
+  // Équité (garde-fou 13 §13.1.2) : même budget de puissance pour les 4 Maisons.
+  const weightOf = h => m.AWAKEN_TREE.houses[h].reduce((s, n) => s + m.awakenNodeWeight(n), 0);
+  check('Lot4b: équité — chaque branche de Maison pèse 30', houses.every(h => Math.abs(weightOf(h) - 30) < 1e-6));
+  const expected = { 1: 2, 2: 2, 3: 4, 4: 6 };
+  check('Lot4b: poids par rang 2/2/4/6', houses.every(h => m.AWAKEN_TREE.houses[h].every(n => Math.abs(m.awakenNodeWeight(n) - expected[n.rank]) < 1e-6)));
+  check('Lot4b: tronc — 2 par nœud', m.AWAKEN_TREE.trunk.every(n => Math.abs(m.awakenNodeWeight(n) - 2) < 1e-6));
+  check('Lot4b: toutes les clés de bonus sont pesées', [...m.AWAKEN_TREE.trunk, ...houses.flatMap(h => m.AWAKEN_TREE.houses[h])]
+    .every(n => Object.keys(n.bonus).every(k => k in m.AWAKEN_WEIGHTS)));
+  const ids = [...m.AWAKEN_TREE.trunk, ...houses.flatMap(h => m.AWAKEN_TREE.houses[h])].map(n => n.id);
+  check('Lot4b: ids uniques', new Set(ids).size === ids.length);
+  // Prérequis et budget.
+  const c = { awakenNodes: [] };
+  check('Lot4b: niveau 1 → aucun point', m.awakenCanTake(c, 't_crit', 1, 'Gryffondor') === 'points insuffisants');
+  check('Lot4b: tronc pris au niveau 2', m.awakenCanTake(c, 't_crit', 2, 'Gryffondor') === null);
+  check('Lot4b: autre Maison refusée', m.awakenCanTake(c, 's_mag', 20, 'Gryffondor') === 'autre Maison');
+  check('Lot4b: rang 2 verrouillé sans 2 pts investis', m.awakenCanTake(c, 'g_hp', 20, 'Gryffondor') !== null);
+  c.awakenNodes = ['g_crit', 'g_atk'];
+  check('Lot4b: rang 2 ouvert après 2 pts', m.awakenCanTake(c, 'g_hp', 20, 'Gryffondor') === null);
+  check('Lot4b: pas de double prise', m.awakenCanTake(c, 'g_crit', 20, 'Gryffondor') === 'déjà pris');
+  check('Lot4b: le tronc ne compte pas pour la branche', m.awakenSpentIn(['t_crit', 't_hp', 'g_crit'], 'Gryffondor') === 1);
+  check('Lot4b: points disponibles', m.awakenPointsAvailable({ awakenNodes: ['g_crit', 'g_lion'] }, 20) === 10 - 4
+    && m.awakenPointsAvailable({ awakenNodes: [], awakenBought: 3 }, 4) === 5);
+  const b = m.awakenBonuses({ awakenNodes: ['t_crit', 'g_crit', 'g_fury', 's_mag'] }, 'Gryffondor');
+  check('Lot4b: bonus sommés, autre Maison ignorée', b.bonusCritChance === 6 && b.lowHpDmg === 0.1 && !b.bonusMag);
+  check('Lot4b: arbre complet > budget à la victoire', 8 + 15 > m.awakenPointsEarned(25));
+})();
+
+// §32b — Lot 4.5 : branches de classe et actifs
+(function testLot4ClassBranches() {
+  const m = loadModule('js/awaken-tree.js', ['AWAKEN_TREE', 'AWAKEN_ACTIVES', 'awakenNodeWeight', 'awakenCanTake', 'awakenBonuses', 'awakenNodeCost'], { window: {} });
+  const { CLASS_ARCHETYPES } = loadModule('js/data-characters.js', ['CLASS_ARCHETYPES']);
+  const archs = Object.keys(CLASS_ARCHETYPES);
+  check('Lot4c: une branche par archétype', archs.every(a => Array.isArray(m.AWAKEN_TREE.classes[a])));
+  check('Lot4c: 10 nœuds par classe (3/3/3/1)', archs.every(a => {
+    const ns = m.AWAKEN_TREE.classes[a]; const by = r => ns.filter(n => n.rank === r).length;
+    return ns.length === 10 && by(1) === 3 && by(2) === 3 && by(3) === 3 && by(4) === 1;
+  }));
+  check('Lot4c: un seul actif par classe, au rang 2, défini', archs.every(a => {
+    const act = m.AWAKEN_TREE.classes[a].filter(n => n.active);
+    return act.length === 1 && act[0].rank === 2 && act[0].active === a && m.AWAKEN_ACTIVES[a];
+  }));
+  const w = a => m.AWAKEN_TREE.classes[a].reduce((s, n) => s + m.awakenNodeWeight(n), 0);
+  check('Lot4c: équité — chaque classe pèse 30', archs.every(a => Math.abs(w(a) - 30) < 1e-6));
+  check('Lot4c: capital renforce l\'actif', archs.every(a => m.AWAKEN_TREE.classes[a].find(n => n.rank === 4).bonus.activePower === 0.5));
+  const c = { awakenNodes: ['d_crit', 'd_atk'] };
+  check('Lot4c: autre classe refusée', m.awakenCanTake(c, 'e_mag', 20, 'Gryffondor', 'duelliste') === 'autre classe');
+  check('Lot4c: actif ouvert après 2 pts de classe', m.awakenCanTake(c, 'd_active', 20, 'Gryffondor', 'duelliste') === null);
+  const b = m.awakenBonuses({ awakenNodes: ['d_crit', 'd_active', 'e_mag'] }, 'Gryffondor', 'duelliste');
+  check('Lot4c: actif noté, autre classe ignorée', b.active === 'duelliste' && b.bonusCritChance === 2 && !b.bonusMag);
+  const ids = ['trunk', ...Object.keys(m.AWAKEN_TREE.houses).map(h => 'h:' + h), ...archs.map(a => 'c:' + a)];
+  const all = [...m.AWAKEN_TREE.trunk, ...Object.values(m.AWAKEN_TREE.houses).flat(), ...Object.values(m.AWAKEN_TREE.classes).flat()].map(n => n.id);
+  check('Lot4c: ids uniques sur tout l\'arbre', ids.length && new Set(all).size === all.length);
+})();
+
+// §32c — Lot 4.6/4.7 : achat de points en Marques, passifs actifs
+(function testLot4BuyAndPassives() {
+  const hero = { name: 'Harry', awakenBought: 0, awakenNodes: [], _awaken: { bonusAtk: 1, active: 'duelliste' }, _tenebresSetCount: 2 };
+  const g = { window: {}, party: [hero], hunterMarks: 10, chosenHouse: 'Gryffondor', houseTier: 2,
+    HOUSE_BONUSES: { Gryffondor: { tiers: [{ label: 'Apprenti Bronze', bonus: { _baseLck: 1 } }, { label: 'Apprenti Argent', bonus: { _baseAtk: 1 } }, { label: 'Apprenti Or', bonus: { _baseAtk: 9 } }] } } };
+  const m = loadModule('js/awaken-tree.js', ['awakenBuyCost', 'awakenBuyPoint', 'awakenPassivesList', 'AWAKEN_BUY_MAX', 'awakenPointsAvailable'], g);
+  check('Lot4d: coûts 3/5/8/12/17', [0, 1, 2, 3, 4].map(m.awakenBuyCost).join() === '3,5,8,12,17');
+  // 10 Marques : 3 puis 5 passent, le 3ᵉ achat (8) est refusé (reste 2).
+  check('Lot4d: achat crédite le héros', m.awakenBuyPoint(0) && hero.awakenBought === 1);
+  check('Lot4d: point acheté disponible', m.awakenPointsAvailable(hero, 1) === 1);
+  check('Lot4d: achat refusé faute de Marques', m.awakenBuyPoint(0) && !m.awakenBuyPoint(0) && hero.awakenBought === 2);
+  const m2 = loadModule('js/awaken-tree.js', ['awakenBuyPoint', 'AWAKEN_BUY_MAX'], Object.assign({}, g, { hunterMarks: 9999 }));
+  hero.awakenBought = m2.AWAKEN_BUY_MAX;
+  check('Lot4d: plafond par héros', !m2.awakenBuyPoint(0) && hero.awakenBought === m2.AWAKEN_BUY_MAX);
+  const P = m.awakenPassivesList(hero);
+  const sec = t => P.find(x => x.title.includes(t));
+  check('Lot4d: paliers atteints seulement', sec('Paliers').lines.length === 2 && sec('Paliers').lines[1].includes('+1 ATK'));
+  check('Lot4d: set Ténèbres listé', sec('Sets').lines.some(l => l.includes('Ténèbres 2/3')));
+  check('Lot4d: Éveil résumé + action', sec('Éveil').lines.length === 2 && sec('Éveil').lines[0].includes('+1 ATK'));
+  check('Lot4d: sections vides tolérées', sec('Apothéose').lines.length === 0 && sec('Souvenirs').lines.length === 0);
+})();
+
 // ============================================================
 // Rapport
 // ============================================================

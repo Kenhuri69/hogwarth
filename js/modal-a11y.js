@@ -28,7 +28,7 @@
     'bestiary-modal', 'codex-modal', 'house-detail-modal', 'house-donation-modal',
     'wizard-codex-modal', 'slot-modal', 'settings-modal', 'forge-modal',
     'library-modal', 'brewing-modal', 'fusion-modal', 'riddle-modal',
-    'endgame-compass-modal'
+    'endgame-compass-modal', 'skill-tree-modal'
   ];
 
   // Conteneurs de fond à neutraliser (`inert`) tant qu'une modale est ouverte.

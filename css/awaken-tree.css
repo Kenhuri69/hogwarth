@@ -1,0 +1,55 @@
+/* ============================================================
+   ARBRE « ÉVEIL DU SORCIER » (Lot 4.3) — modale dédiée #skill-tree-modal.
+   Réutilise les variables de thème de style.css.
+   ============================================================ */
+#skill-tree-modal {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0, 0, 0, 0.88);
+  z-index: 500;
+  align-items: center; justify-content: center;
+  padding: 20px;
+}
+.skill-tree-box {
+  width: 92vw; max-width: 760px; max-height: 88vh;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.skill-tree-body { overflow-y: auto; padding: 4px 2px 8px; }
+.awaken-points { margin: 8px 0; color: var(--gold-light); font-family: 'Cinzel', serif; font-size: 13px; }
+.awaken-points-note { font-size: 10px; color: #8a7050; font-family: inherit; }
+.awaken-branch-title { margin: 12px 0 6px; color: var(--gold-light); font-family: 'Cinzel', serif; font-size: 13px; }
+.awaken-rank { margin-bottom: 8px; }
+.awaken-rank-label { font-size: 10px; color: #8a7050; margin-bottom: 4px; letter-spacing: 1px; }
+.awaken-grid {
+  display: grid; gap: 6px;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+}
+.awaken-node {
+  display: grid; grid-template-columns: auto 1fr auto; grid-template-rows: auto auto;
+  column-gap: 6px; align-items: center; text-align: left;
+  padding: 6px 8px; min-height: 44px;
+  background: rgba(30, 22, 12, 0.85); color: #e8d8b0;
+  border: 1px solid #5a4528; border-radius: 6px; cursor: pointer;
+  font-size: 11px;
+}
+.awaken-node-icon { grid-row: 1 / 3; font-size: 18px; }
+.awaken-node-name { font-weight: bold; }
+.awaken-node-cost { grid-row: 1 / 3; grid-column: 3; font-size: 10px; color: var(--gold-light); }
+.awaken-node-desc { grid-column: 2; font-size: 9px; color: #b8a078; }
+.awaken-open:hover, .awaken-open:focus-visible { border-color: var(--gold-light); background: rgba(60, 44, 20, 0.9); }
+.awaken-taken { border-color: var(--gold-light); background: rgba(70, 52, 16, 0.9); cursor: default; }
+.awaken-locked { opacity: 0.45; cursor: not-allowed; }
+.btn-awaken {
+  margin-top: 4px; padding: 3px 8px; font-size: 11px;
+  background: rgba(60, 44, 20, 0.9); color: var(--gold-light);
+  border: 1px solid #8a6a30; border-radius: 4px; cursor: pointer;
+}
+.awaken-views { display: flex; gap: 6px; margin: 6px 0; }
+.awaken-buy { display: block; margin: 4px 0 8px; }
+.awaken-buy:disabled { opacity: 0.5; cursor: not-allowed; }
+.awaken-passive-sec ul { margin: 0 0 6px; padding-left: 18px; font-size: 11px; color: #e8d8b0; }
+.awaken-passive-sec li { margin: 2px 0; }
+@media (max-width: 700px) {
+  .skill-tree-box { width: 96vw; max-height: 92dvh; }
+  .awaken-grid { grid-template-columns: 1fr 1fr; }
+}

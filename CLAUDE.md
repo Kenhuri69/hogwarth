@@ -17,7 +17,7 @@ Vanilla JS / HTML5 Canvas, zéro dépendance, zéro build step.
 ## Structure des fichiers
 
 Les entrées `js/` ci-dessous suivent **l'ordre de chargement réel** des
-`<script src>` dans `index.html` (99 modules). La cohérence
+`<script src>` dans `index.html` (100 modules). La cohérence
 arborescence ↔ `index.html` est verrouillée par
 `node tools/check_doc_modules.js` (CI : tout module ajouté/retiré dans
 `index.html` sans mise à jour de cette section échoue).
@@ -316,6 +316,12 @@ js/
                       (cellule CELL.FORGE, endgame Tranche 2)
   library.js       →  BIBLIOTHÈQUE INTERDITE : upgrade des sorts
                       (cellule CELL.LIBRARY, endgame Tranche 2)
+  awaken-tree.js   →  ARBRE « ÉVEIL DU SORCIER » (Lot 4.3-4.7) : points d'Éveil
+                      (1 / 2 niveaux + achat en Marques), tronc commun +
+                      branches de Maison et de classe (AWAKEN_TREE),
+                      awakenBonuses() lu par recalculateStats, awakenStat() aux
+                      points d'accroche, modale #skill-tree-modal (openSkillTree)
+                      avec onglet « Passifs actifs ». APRÈS library.js
   help-tour.js     →  Tour guidé d'aide pour novices (spotlight + bulles sur
                       les vrais éléments de l'UI)
   balance-log.js   →  window.BalanceLog — logger d'équilibrage `BALANCE_DEBUG`
@@ -366,7 +372,7 @@ attendus se sont exécutés correctement et expose 2 helpers d'accès défensif.
 
 ### Manifeste
 
-Le `MANIFEST` dans `loader.js` énumère **419** entrées `{ name, source, kind,
+Le `MANIFEST` dans `loader.js` énumère **429** entrées `{ name, source, kind,
 optional? }` :
 - `kind: 'fn'` → `typeof name === 'function'`
 - `kind: 'obj'` → `typeof name !== 'undefined'` (couvre `let`/`const`/`var`)
@@ -1183,7 +1189,7 @@ pendingSpell      // nom du sort en attente de sélection de cible (ennemi ou al
 
 ### Actions de combat (#battle-actions)
 
-5 actions de base + 4 actions **conditionnelles** (boutons masqués hors contexte,
+5 actions de base + 5 actions **conditionnelles** (boutons masqués hors contexte,
 montrés par `_refreshBattleActionButtons` dans `battle-ui.js`) :
 
 | Action | Coût | Effet |
@@ -1196,6 +1202,7 @@ montrés par `_refreshBattleActionButtons` dans `battle-ui.js`) :
 | 🏺 Artefact (P2) | charge | `#btn-artifact` — `triggerActiveArtifact()`. Visible si le perso actif équipe un artefact à `item.activeEffect` avec une charge restante (`artifactCharges[idx]`, 1×/combat, reset `startBattle`). Résolveurs `elemBurst`/`purgeStatus`/`shieldGroup`/`hasteGroup`/`sapDefense`/`succorGroup`. Ciblage 1-ennemi via `pendingAction='artifact'`. **Éveil** (2.5b, Forge) : `item.awakenRank` 1-3 → +1 charge, puissance +50 %, effet secondaire par résolveur (`artifactAwakened`, `ARTIFACT_AWAKEN_SECONDARY`) ; coût Marques de Traque + Essence Primordiale (`ARTIFACT_AWAKEN_COSTS`). |
 | 🔄 Posture (P2) | — | `#btn-posture` — `toggleDuoPosture()`. Visible en **Duo** tant que la bascule gratuite n'a pas servi ce combat (`duoPostureSwitched`). Bascule `duoPosture` phalange↔tenaille. Cf. « Positionnement Duo ». |
 | 🌿 Rune (P4) | — | `#btn-env` — `triggerRuneEnv()`. Visible en **zone runique** (D / override post-victoire) tant que `envRuneCharge > 0` (1×/combat). Étourdit (`stun` 1 tour) l'ennemi le plus proche. Cf. « Environnement en combat ». |
+| 🌟 Classe (Lot 4.5) | 1×/combat | `#btn-awaken` — `triggerAwakenActive()`. Visible si le héros actif possède le nœud actif de sa branche de classe (arbre « Éveil du Sorcier ») et ne l'a pas encore utilisé ce combat. |
 | 🤝 Duo (Lot G) | les 2 tours | `#btn-duo-tech` — `triggerDuoTechnique()`. Visible en **Duo** au tour du héros de tête quand les derniers sorts offensifs des deux héros forment un couple d'éléments connu (1×/combat). Cf. « Technique de duo & complicité ». |
 
 ### Tour de jeu
@@ -1547,6 +1554,44 @@ window.checkKillQuests(monsterId) → incrémente q.progress, auto-complète (d�
   aux étages 7-10, `progressHeroLines` (une réplique si le héros de la Garde
   lié est présent), remise auto (`autoTurnIn` désormais honoré par les étapes
   `search`) → **Reliquaire Lunaire**.
+
+### Arbre « Éveil du Sorcier » (Lot 4.3/4.4, `js/awaken-tree.js`)
+
+- **Points d'Éveil** : `awakenPointsEarned(level) = floor(level/2)` (niveau
+  partagé `player.level`, donc rétroactif) + `c.awakenBought` (réservé à
+  l'achat en Marques, 4.7). Pool **par héros**.
+- **État** : `c.awakenNodes` (ids) sur chaque héros, sérialisé avec le
+  personnage ; vidé par `_hydrateCharacter` ; une save antérieure le reçoit
+  vide (`_applyState`).
+- **Structure** : tronc commun (8 nœuds à 1 pt) + branche de `chosenHouse`
+  (10 nœuds : rangs 1/2/3 à 1/1/2 pts, capital à 3 pts ; un rang s'ouvre à
+  0/2/4/8 pts investis dans la branche). Choix permanents.
+- **Effets** : clés additives du pipeline sets (`bonusAtk`… `bonusFortune`,
+  `bonusCelerite`, `bonusCounterChance`) sommées par `awakenBonuses(c, house)`
+  dans `recalculateStats` (mémorisé en `c._awaken`). Clés spéciales lues par
+  `awakenStat(c, key)` : 🦁 `lowHpDmg` (`_houseVigorMult`), 🐍 `spellLifesteal`
+  (`_applySerpentLifesteal`), 🦅 `spellCostReduc` (`_spellSpCost`), 🦡
+  `stepRegen` (`_step`).
+- **Équité** : `AWAKEN_WEIGHTS` ; chaque branche de Maison pèse 30 (units §32).
+- **Branches de classe** (Lot 4.5) : `AWAKEN_TREE.classes[archétype]`, même
+  gabarit (10 nœuds, poids 30), branche lue via `heroArchetype`. Le nœud de
+  rang 2 `active` donne une **action de combat** 1×/combat (bouton
+  `#btn-awaken`, `triggerAwakenActive`, `awakenActiveUsed` remis à zéro par
+  `startBattle`) ; le capital porte `activePower: 0.5` (+50 %) :
+  ⚔️ Riposte assurée (coup critique garanti + 1 Garde), 📘 Surcharge
+  (MAG × 1,2 sur tous les ennemis), 🌑 Saignée (`bleed` sur tous + soin 10 %),
+  🛡️ Interposition (+2 Gardes + Protego allié), ✨ Faveur (soin 20 % du groupe
+  + purge).
+- **UI** : bouton « 🌟 Éveil » de la fiche → `#skill-tree-modal` (tronc,
+  Maison, classe), bascule « 🌳 Arbre / 📜 Passifs actifs ».
+- **Passifs actifs** (Lot 4.6, résout B3) : vue en lecture seule
+  (`awakenPassivesList(c)`) — paliers de Maison atteints, Apothéose, sets
+  équipés, souvenirs d'Outremonde, Faveur de la Salle, bonus d'Éveil.
+- **Achat en Marques** (Lot 4.7) : `awakenBuyPoint(charIdx)` échange des
+  Marques de Traque (partagées) contre 1 point d'Éveil du héros
+  (`c.awakenBought`, sérialisé) ; coût `awakenBuyCost(n) = 3 + n(n+3)/2`
+  (3, 5, 8, 12, 17…), au plus `AWAKEN_BUY_MAX = 8` par héros.
+- À venir : passe sim (4.8). Respec global de l'arbre (❓7) non tranché.
 
 ### Traques Rituelles (Lot 3, `js/traque.js`)
 

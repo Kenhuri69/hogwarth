@@ -650,6 +650,9 @@ function _spellSpCost(spell, char) {
       (typeof houseTier === 'number') ? houseTier : 0);
     if (boost > 0) cost = Math.ceil(cost * (1 - boost));
   }
+  // Arbre d'Éveil 🦅 (spellCostReduc), composé multiplicativement.
+  const treeReduc = (typeof awakenStat === 'function') ? awakenStat(char, 'spellCostReduc') : 0;
+  if (treeReduc > 0) cost = Math.ceil(cost * (1 - treeReduc));
   cost -= _artifactSpCostReduction(char);
   return Math.max(1, cost);
 }
@@ -660,11 +663,14 @@ function _spellSpCost(spell, char) {
 function _applySerpentLifesteal(char, dmg) {
   // Source 1 : Apothéose Serpentard (Soif du Serpent). Source 2 : Pacte des
   // Cachots honoré au combat final (slythPactBuff, signature Serpentard).
+  // Source 3 : arbre d'Éveil 🐍 (spellLifesteal), additive.
   const apo  = (typeof houseApotheosePassive === 'function') && houseApotheosePassive() === 'Serpentard';
   const pact = (typeof slythPactBuff !== 'undefined') && slythPactBuff;
-  if (!apo && !pact) return 0;
+  const tree = (typeof awakenStat === 'function') ? awakenStat(char, 'spellLifesteal') : 0;
+  if (!apo && !pact && !tree) return 0;
   if (!char || dmg <= 0) return 0;
-  const heal = Math.min(char.hpMax - char.hp, Math.max(1, Math.floor(dmg * 0.15)));
+  const frac = ((apo || pact) ? 0.15 : 0) + tree;
+  const heal = Math.min(char.hpMax - char.hp, Math.max(1, Math.floor(dmg * frac)));
   if (heal > 0) { char.hp += heal; UX_safe.floatDmg('ally', heal, 'heal'); }
   return heal;
 }

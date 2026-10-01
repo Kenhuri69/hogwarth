@@ -788,6 +788,7 @@ function startBattle(baseEnemyData, opts) {
   lionHeartActive          = false;
   badgerOathUsedThisFight  = false;
   duoTechUsed              = false;   // Lot G (2c) — technique de duo réarmée
+  if (typeof awakenActiveUsed !== 'undefined') awakenActiveUsed = [false, false];   // Lot 4.5 — actions de classe
   _shieldReflect           = [0, 0];
   if (typeof window._resetTeleportFightFlag === 'function') window._resetTeleportFightFlag();
 
@@ -1011,6 +1012,7 @@ function battleAction(action) {
   if (action === 'posture')  { toggleDuoPosture();      return; }   // P2 — bascule de posture (gratuite)
   if (action === 'env')      { triggerRuneEnv();        return; }   // P4 — interaction d'environnement (rune)
   if (action === 'duotech')  { triggerDuoTechnique();   return; }   // Lot G — technique de duo (2 tours)
+  if (action === 'awaken')   { if (typeof triggerAwakenActive === 'function') triggerAwakenActive(); return; }   // Lot 4.5 — action de classe
 
   if (action === 'guard') {
     const idx    = currentBattleChar;
@@ -1286,9 +1288,12 @@ function triggerRuneEnv() {
 // dégâts (physiques ET sorts) tant que le combattant est au-dessus de
 // 60 % de ses PV max. Récompense la robustesse du blaireau.
 function _houseVigorMult(char) {
-  if (typeof houseApotheosePassive !== 'function' || houseApotheosePassive() !== 'Poufsouffle') return 1;
-  if (!char || !char.hpMax) return 1;
-  return char.hp > char.hpMax * 0.6 ? 1.23 : 1;
+  // Arbre d'Éveil 🦁 (lowHpDmg) : bonus de dégâts sous 50 % PV, pour tous.
+  const low = (typeof awakenStat === 'function' && char && char.hpMax && char.hp < char.hpMax * 0.5)
+    ? 1 + awakenStat(char, 'lowHpDmg') : 1;
+  if (typeof houseApotheosePassive !== 'function' || houseApotheosePassive() !== 'Poufsouffle') return low;
+  if (!char || !char.hpMax) return low;
+  return (char.hp > char.hpMax * 0.6 ? 1.23 : 1) * low;
 }
 
 // Apothéose Gryffondor (palier 18 — Cœur du Lion) : « Élan » — chaque

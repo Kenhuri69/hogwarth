@@ -33,6 +33,7 @@
 <link rel="stylesheet" href="css/cinematics.css?v=1">
 <link rel="stylesheet" href="css/frost.css?v=3">
 <link rel="stylesheet" href="css/codex.css?v=5">
+<link rel="stylesheet" href="css/awaken-tree.css?v=2">
 <link rel="stylesheet" href="css/escape-pocket.css?v=2">
 <link rel="stylesheet" href="css/pvp-duel.css?v=1">
 <link rel="manifest" href="manifest.json?v=2">
@@ -747,6 +748,7 @@
           <button class="cmd-btn" id="btn-artifact" style="display:none" onclick="battleAction('artifact')" title="Artefact actif" aria-label="Artefact actif">🏺 Artefact</button>
           <button class="cmd-btn" id="btn-posture" style="display:none" onclick="battleAction('posture')" title="Posture du Duo" aria-label="Posture du Duo">🔄 Posture</button>
           <button class="cmd-btn" id="btn-duo-tech" style="display:none" onclick="battleAction('duotech')" title="Technique de duo" aria-label="Technique de duo">🤝 Duo</button>
+          <button class="cmd-btn" id="btn-awaken" style="display:none" onclick="battleAction('awaken')" title="Action de classe" aria-label="Action de classe">🌟 Éveil</button>
           <button class="cmd-btn" id="btn-env" style="display:none" onclick="battleAction('env')" title="Activer la rune (environnement)" aria-label="Activer la rune"><img class="ui-icon ui-icon-md" src="img/icons/rune.png" alt=""> Rune</button>
           <button class="cmd-btn" onclick="battleAction('item')" title="Objet (O)" aria-label="Objet (O)"><img class="ui-icon ui-icon-md" src="img/icons/items/potion_m.png" alt=""> Objet</button>
           <button class="cmd-btn" onclick="battleAction('flee')" title="Fuir (F)" aria-label="Fuir (F)"><img class="ui-icon ui-icon-md" src="img/icons/agi.png" alt=""> Fuir</button>
@@ -1163,6 +1165,16 @@
   </div>
 </div>
 
+<div id="skill-tree-modal" role="dialog" aria-modal="true" aria-labelledby="skill-tree-title">
+  <div class="modal-box skill-tree-box">
+    <div class="bestiary-header">
+      <span class="bestiary-title" id="skill-tree-title">🌟 Éveil du Sorcier</span>
+      <span class="modal-close" onclick="closeSkillTree()" role="button" title="Fermer (Échap)" aria-label="Fermer (Échap)" tabindex="0">✕</span>
+    </div>
+    <div id="skill-tree-body" class="skill-tree-body"></div>
+  </div>
+</div>
+
 <div id="codex-modal" role="dialog" aria-modal="true" aria-labelledby="codex-modal-title"
   <div class="modal-box codex-modal-box">
     <div class="bestiary-header">
@@ -1412,8 +1424,8 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="js/state.js?v=53"></script>
 <script defer src="js/hero-barks.js?v=17"></script>
 <script defer src="js/ui.js?v=28"></script>
-<script defer src="js/modal-a11y.js?v=2"></script>
-<script defer src="js/ui-character-sheet.js?v=21"></script>
+<script defer src="js/modal-a11y.js?v=3"></script>
+<script defer src="js/ui-character-sheet.js?v=22"></script>
 <script defer src="js/ui-settings.js?v=7"></script>
 <script defer src="js/keybindings.js?v=1"></script>
 <script defer src="js/ui-bestiary.js?v=9"></script>
@@ -1429,18 +1441,18 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="js/renderer-sprites.js?v=8"></script>
 <script defer src="js/renderer-entities.js?v=8"></script>
 <script defer src="js/renderer-minimap.js?v=10"></script>
-<script defer src="js/movement.js?v=47"></script>
+<script defer src="js/movement.js?v=48"></script>
 <script defer src="js/movement-floors.js?v=27"></script>
 <script defer src="js/movement-interactions.js?v=29"></script>
 <script defer src="js/escape-pocket.js?v=7"></script>
 <script defer src="js/swipe-canvas.js?v=4"></script>
-<script defer src="js/battle.js?v=51"></script>
+<script defer src="js/battle.js?v=53"></script>
 <script defer src="js/battle-rewards.js?v=19"></script>
 <script defer src="js/battle-death.js?v=5"></script>
 <script defer src="js/teleport.js?v=4"></script>
-<script defer src="js/battle-spells.js?v=30"></script>
-<script defer src="js/battle-ui.js?v=14"></script>
-<script defer src="js/inventory-core.js?v=13"></script>
+<script defer src="js/battle-spells.js?v=31"></script>
+<script defer src="js/battle-ui.js?v=15"></script>
+<script defer src="js/inventory-core.js?v=15"></script>
 <script defer src="js/inventory.js?v=32"></script>
 <script defer src="js/inventory-spells.js?v=14"></script>
 <script defer src="js/potions.js?v=8"></script>
@@ -1454,7 +1466,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="js/intro.js?v=4"></script>
 <script defer src="js/shop.js?v=23"></script>
 <script defer src="js/save-slots.js?v=4"></script>
-<script defer src="js/save.js?v=58"></script>
+<script defer src="js/save.js?v=59"></script>
 <script defer src="js/save-visit-snapshot.js?v=2"></script>
 <script defer src="js/profile.js?v=9"></script>
 <script defer src="js/save-ui.js?v=9"></script>
@@ -1469,14 +1481,15 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="js/visit-hud.js?v=6"></script>
 <script defer src="js/pvp-duel.js?v=1"></script>
 <script defer src="js/atelier-voyageur.js?v=6"></script>
-<script defer src="js/main.js?v=41"></script>
+<script defer src="js/main.js?v=42"></script>
 <script defer src="js/endgame.js?v=13"></script>
 <script defer src="js/break-cycle.js?v=5"></script>
 <script defer src="js/forge.js?v=11"></script>
 <script defer src="js/library.js?v=8"></script>
+<script defer src="js/awaken-tree.js?v=3"></script>
 <script defer src="js/help-tour.js?v=5"></script>
 <script defer src="js/balance-log.js?v=3"></script>
-<script defer src="js/loader.js?v=76"></script>
+<script defer src="js/loader.js?v=79"></script>
 <script defer src="js/pwa.js?v=9"></script>
 
 </body>

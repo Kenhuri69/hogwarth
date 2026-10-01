@@ -283,6 +283,13 @@ function _applyState(gs) {
   if (gs.party && gs.party[1]) Object.assign(player2, gs.party[1]);
   party[0] = player;
   party[1] = player2;
+  // Arbre d'Éveil (Lot 4.3) : repris de la save, vide pour une save antérieure
+  // (Object.assign garderait sinon les nœuds de la partie en mémoire).
+  [player, player2].forEach((c, i) => {
+    const src = gs.party && gs.party[i];
+    c.awakenNodes  = (src && Array.isArray(src.awakenNodes)) ? src.awakenNodes.filter(id => typeof id === 'string') : [];
+    c.awakenBought = (src && src.awakenBought > 0) ? (src.awakenBought | 0) : 0;
+  });
 
   // Migration des slots d'équipement (ancien schéma → 11 slots étendus)
   // Idempotent : ne touche pas un slot déjà rempli au bon endroit.
