@@ -17,7 +17,7 @@ Vanilla JS / HTML5 Canvas, zéro dépendance, zéro build step.
 ## Structure des fichiers
 
 Les entrées `js/` ci-dessous suivent **l'ordre de chargement réel** des
-`<script src>` dans `index.html` (99 modules). La cohérence
+`<script src>` dans `index.html` (100 modules). La cohérence
 arborescence ↔ `index.html` est verrouillée par
 `node tools/check_doc_modules.js` (CI : tout module ajouté/retiré dans
 `index.html` sans mise à jour de cette section échoue).
@@ -316,6 +316,11 @@ js/
                       (cellule CELL.FORGE, endgame Tranche 2)
   library.js       →  BIBLIOTHÈQUE INTERDITE : upgrade des sorts
                       (cellule CELL.LIBRARY, endgame Tranche 2)
+  awaken-tree.js   →  ARBRE « ÉVEIL DU SORCIER » (Lot 4.3/4.4) : points d'Éveil
+                      (1 / 2 niveaux), tronc commun + branche de Maison
+                      (AWAKEN_TREE), awakenBonuses() lu par recalculateStats,
+                      awakenStat() aux points d'accroche, modale
+                      #skill-tree-modal (openSkillTree). APRÈS library.js
   help-tour.js     →  Tour guidé d'aide pour novices (spotlight + bulles sur
                       les vrais éléments de l'UI)
   balance-log.js   →  window.BalanceLog — logger d'équilibrage `BALANCE_DEBUG`
@@ -366,7 +371,7 @@ attendus se sont exécutés correctement et expose 2 helpers d'accès défensif.
 
 ### Manifeste
 
-Le `MANIFEST` dans `loader.js` énumère **419** entrées `{ name, source, kind,
+Le `MANIFEST` dans `loader.js` énumère **425** entrées `{ name, source, kind,
 optional? }` :
 - `kind: 'fn'` → `typeof name === 'function'`
 - `kind: 'obj'` → `typeof name !== 'undefined'` (couvre `let`/`const`/`var`)
@@ -1547,6 +1552,28 @@ window.checkKillQuests(monsterId) → incrémente q.progress, auto-complète (d�
   aux étages 7-10, `progressHeroLines` (une réplique si le héros de la Garde
   lié est présent), remise auto (`autoTurnIn` désormais honoré par les étapes
   `search`) → **Reliquaire Lunaire**.
+
+### Arbre « Éveil du Sorcier » (Lot 4.3/4.4, `js/awaken-tree.js`)
+
+- **Points d'Éveil** : `awakenPointsEarned(level) = floor(level/2)` (niveau
+  partagé `player.level`, donc rétroactif) + `c.awakenBought` (réservé à
+  l'achat en Marques, 4.7). Pool **par héros**.
+- **État** : `c.awakenNodes` (ids) sur chaque héros, sérialisé avec le
+  personnage ; vidé par `_hydrateCharacter` ; une save antérieure le reçoit
+  vide (`_applyState`).
+- **Structure** : tronc commun (8 nœuds à 1 pt) + branche de `chosenHouse`
+  (10 nœuds : rangs 1/2/3 à 1/1/2 pts, capital à 3 pts ; un rang s'ouvre à
+  0/2/4/8 pts investis dans la branche). Choix permanents.
+- **Effets** : clés additives du pipeline sets (`bonusAtk`… `bonusFortune`,
+  `bonusCelerite`, `bonusCounterChance`) sommées par `awakenBonuses(c, house)`
+  dans `recalculateStats` (mémorisé en `c._awaken`). Clés spéciales lues par
+  `awakenStat(c, key)` : 🦁 `lowHpDmg` (`_houseVigorMult`), 🐍 `spellLifesteal`
+  (`_applySerpentLifesteal`), 🦅 `spellCostReduc` (`_spellSpCost`), 🦡
+  `stepRegen` (`_step`).
+- **Équité** : `AWAKEN_WEIGHTS` ; chaque branche de Maison pèse 30 (units §32).
+- **UI** : bouton « 🌟 Éveil » de la fiche → `#skill-tree-modal`.
+- À venir : branches de classe (4.5), onglet « Passifs actifs », achat en
+  Marques (4.7), passe sim (4.8).
 
 ### Traques Rituelles (Lot 3, `js/traque.js`)
 

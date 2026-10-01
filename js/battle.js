@@ -1286,9 +1286,12 @@ function triggerRuneEnv() {
 // dégâts (physiques ET sorts) tant que le combattant est au-dessus de
 // 60 % de ses PV max. Récompense la robustesse du blaireau.
 function _houseVigorMult(char) {
-  if (typeof houseApotheosePassive !== 'function' || houseApotheosePassive() !== 'Poufsouffle') return 1;
-  if (!char || !char.hpMax) return 1;
-  return char.hp > char.hpMax * 0.6 ? 1.23 : 1;
+  // Arbre d'Éveil 🦁 (lowHpDmg) : bonus de dégâts sous 50 % PV, pour tous.
+  const low = (typeof awakenStat === 'function' && char && char.hpMax && char.hp < char.hpMax * 0.5)
+    ? 1 + awakenStat(char, 'lowHpDmg') : 1;
+  if (typeof houseApotheosePassive !== 'function' || houseApotheosePassive() !== 'Poufsouffle') return low;
+  if (!char || !char.hpMax) return low;
+  return (char.hp > char.hpMax * 0.6 ? 1.23 : 1) * low;
 }
 
 // Apothéose Gryffondor (palier 18 — Cœur du Lion) : « Élan » — chaque

@@ -717,3 +717,9 @@ Lot 6 (équilibrage global & QA de synthèse) ── ferme le tout
   `_grantLevelSpells` réécrit (Duelliste/Érudit = tables Harry/Hermione à
   l'identique). B1 résolu ; B2 à moitié (l'arbre lira aussi l'archétype).
   Reste 4.3-4.8.
+- **2026-10-01 — Lot 4 (b) exécuté** (4.3 + 4.4 + UI minimale de 4.6,
+  `.claude/plans/lot4b-arbre-eveil-socle-2026-10.md`) : `js/awaken-tree.js`,
+  points d'Éveil 1/2 niveaux, tronc commun 8 nœuds, 4 branches de Maison de
+  10 nœuds à budget égal (poids 30), modale `#skill-tree-modal`. ⚠️ Branche
+  de Maison par héros (et non partagée) ; nœuds non branchables en v1 écartés
+  (liste dans le plan). Reste 4.5, onglet Passifs, 4.7, 4.8.

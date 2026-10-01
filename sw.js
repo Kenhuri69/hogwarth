@@ -16,7 +16,7 @@
 //     individuel suffit pour eux.
 // =======================================================================
 
-const CACHE_VERSION = 'hogwarth-v285';
+const CACHE_VERSION = 'hogwarth-v286';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Précache minimal (~1 Mo) : shell HTML/CSS/JS + premier visuel.
@@ -38,6 +38,7 @@ const PRECACHE_URLS = [
   './css/cinematics.css?v=1',
   './css/frost.css?v=3',
   './css/codex.css?v=5',
+  './css/awaken-tree.css?v=1',
   './css/escape-pocket.css?v=2',
 
   // JS — ordre identique à index.html (sans incidence pour le cache,
@@ -75,8 +76,8 @@ const PRECACHE_URLS = [
   './js/state.js?v=53',
   './js/hero-barks.js?v=17',
   './js/ui.js?v=28',
-  './js/modal-a11y.js?v=2',
-  './js/ui-character-sheet.js?v=21',
+  './js/modal-a11y.js?v=3',
+  './js/ui-character-sheet.js?v=22',
   './js/ui-settings.js?v=7',
   './js/keybindings.js?v=1',
   './js/ui-bestiary.js?v=9',
@@ -92,18 +93,18 @@ const PRECACHE_URLS = [
   './js/renderer-sprites.js?v=8',
   './js/renderer-entities.js?v=8',
   './js/renderer-minimap.js?v=10',
-  './js/movement.js?v=47',
+  './js/movement.js?v=48',
   './js/movement-floors.js?v=27',
   './js/movement-interactions.js?v=29',
   './js/escape-pocket.js?v=7',
   './js/swipe-canvas.js?v=4',
-  './js/battle.js?v=51',
+  './js/battle.js?v=52',
   './js/battle-rewards.js?v=19',
   './js/battle-death.js?v=5',
   './js/teleport.js?v=4',
-  './js/battle-spells.js?v=30',
+  './js/battle-spells.js?v=31',
   './js/battle-ui.js?v=14',
-  './js/inventory-core.js?v=13',
+  './js/inventory-core.js?v=14',
   './js/inventory.js?v=32',
   './js/inventory-spells.js?v=14',
   './js/potions.js?v=8',
@@ -116,7 +117,7 @@ const PRECACHE_URLS = [
   './js/intro.js?v=4',
   './js/shop.js?v=23',
   './js/save-slots.js?v=4',
-  './js/save.js?v=58',
+  './js/save.js?v=59',
   './js/save-visit-snapshot.js?v=2',
   './js/profile.js?v=9',
   './js/save-ui.js?v=9',
@@ -125,14 +126,15 @@ const PRECACHE_URLS = [
   './js/multiplayer.js?v=10',
   './js/multiplayer-social.js?v=2',
   './js/multiplayer-visits.js?v=2',
-  './js/main.js?v=41',
+  './js/main.js?v=42',
   './js/endgame.js?v=13',
   './js/break-cycle.js?v=5',
   './js/forge.js?v=11',
   './js/library.js?v=8',
+  './js/awaken-tree.js?v=1',
   './js/help-tour.js?v=5',
   './js/balance-log.js?v=3',
-  './js/loader.js?v=76',
+  './js/loader.js?v=77',
   './js/pwa.js?v=9',
 
   // Icônes PWA + premier écran

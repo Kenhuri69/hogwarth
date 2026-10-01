@@ -444,6 +444,13 @@ function _renderArchetypeLine(c, charIdx) {
   return a ? `<div class="char-archetype" style="font-size:10px;color:#a08040;margin-top:1px">${a.icon} ${a.label}</div>` : '';
 }
 
+// Bouton d'accès à l'arbre « Éveil du Sorcier » (Lot 4.3), avec les points libres.
+function _renderAwakenButton(c, charIdx) {
+  if (typeof openSkillTree !== 'function' || typeof awakenPointsAvailable !== 'function') return '';
+  const n = awakenPointsAvailable(c, player.level);
+  return `<button class="btn-awaken" onclick="closeModal('character-modal'); openSkillTree(${charIdx})">🌟 Éveil${n > 0 ? ` <b>(${n})</b>` : ''}</button>`;
+}
+
 function openCharacter(charIdx = 0) {
   _lastCharIdx = (charIdx >= 0 && charIdx < (typeof partySize !== 'undefined' ? partySize : 2)) ? charIdx : 0;
   // En mode solo, partySize=1 → on borne charIdx à 0 même si l'appel
@@ -518,6 +525,7 @@ function openCharacter(charIdx = 0) {
           <div class="lvl">${c.name.split(' ')[0]} — Niveau ${c.level}</div>
           <div style="font-size:10px;color:#8a7050;margin-top:2px">${c.class}</div>
           ${_renderArchetypeLine(c, charIdx)}
+          ${_renderAwakenButton(c, charIdx)}
           <div class="xp-bar"><span style="width:${xpPct}%"></span></div>
           <div style="font-size:9px;color:#6a5030;margin-top:2px">XP ${player.xp}/${player.xpNext}</div>
         </div>

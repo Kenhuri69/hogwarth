@@ -375,6 +375,12 @@ window.UX_safe = new Proxy({}, {
     { name: 'enchantItemAtForge',   source: 'forge.js',      kind: 'fn'  },
     { name: 'openLibrary',          source: 'library.js',    kind: 'fn'  },
     { name: 'upgradeSpellAtLibrary',source: 'library.js',    kind: 'fn'  },
+    { name: 'AWAKEN_TREE',          source: 'awaken-tree.js', kind: 'obj' },
+    { name: 'awakenBonuses',        source: 'awaken-tree.js', kind: 'fn'  },
+    { name: 'awakenStat',           source: 'awaken-tree.js', kind: 'fn'  },
+    { name: 'awakenPointsAvailable',source: 'awaken-tree.js', kind: 'fn'  },
+    { name: 'awakenTakeNode',       source: 'awaken-tree.js', kind: 'fn'  },
+    { name: 'openSkillTree',        source: 'awaken-tree.js', kind: 'fn'  },
     { name: 'TENEBRES_SET',         source: 'data-items.js', kind: 'obj' },
 
     // ── Aide / tour guidé ──

@@ -167,6 +167,14 @@ function _step(dir, faceDir) {
     });
   }
 
+  // Arbre d'Éveil 🦡 (stepRegen) : +N PV par pas hors combat, par héros.
+  if (typeof awakenStat === 'function') {
+    activeParty().forEach(c => {
+      const r = awakenStat(c, 'stepRegen');
+      if (r > 0 && c.hp > 0) c.hp = Math.min(c.hpMax, c.hp + r);
+    });
+  }
+
   // Passif « Hiver Clair » (Manon Acte III) : hors combat, +1 PM par pas
   // d'exploration (plafonné spMax). Confort lumineux, non gated, distinct
   // du Souffle du Blaireau (PM seul, +1). Cf. manon-grimoire-easter-egg.md §7.

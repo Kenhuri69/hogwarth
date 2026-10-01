@@ -3963,6 +3963,48 @@ function loadNpcs() {
   }));
 })();
 
+// §32 — Lot 4.3/4.4 (revue de progression) : arbre « Éveil du Sorcier »
+(function testLot4AwakenTree() {
+  const m = loadModule('js/awaken-tree.js', ['AWAKEN_TREE', 'AWAKEN_WEIGHTS', 'AWAKEN_RANKS', 'awakenPointsEarned',
+    'awakenNodeCost', 'awakenNodeWeight', 'awakenPointsAvailable', 'awakenCanTake', 'awakenBonuses', 'awakenSpentIn'], { window: {} });
+  check('Lot4b: 1 point tous les 2 niveaux', m.awakenPointsEarned(1) === 0 && m.awakenPointsEarned(2) === 1
+    && m.awakenPointsEarned(25) === 12 && m.awakenPointsEarned(0) === 0);
+  check('Lot4b: tronc = 8 nœuds à 1 pt', m.AWAKEN_TREE.trunk.length === 8
+    && m.AWAKEN_TREE.trunk.every(n => m.awakenNodeCost(n) === 1));
+  const houses = ['Gryffondor', 'Serpentard', 'Serdaigle', 'Poufsouffle'];
+  check('Lot4b: 4 branches de Maison', houses.every(h => m.AWAKEN_TREE.houses[h]));
+  check('Lot4b: 10 nœuds par Maison (3/3/3/1)', houses.every(h => {
+    const ns = m.AWAKEN_TREE.houses[h];
+    const by = r => ns.filter(n => n.rank === r).length;
+    return ns.length === 10 && by(1) === 3 && by(2) === 3 && by(3) === 3 && by(4) === 1;
+  }));
+  // Équité (garde-fou 13 §13.1.2) : même budget de puissance pour les 4 Maisons.
+  const weightOf = h => m.AWAKEN_TREE.houses[h].reduce((s, n) => s + m.awakenNodeWeight(n), 0);
+  check('Lot4b: équité — chaque branche de Maison pèse 30', houses.every(h => Math.abs(weightOf(h) - 30) < 1e-6));
+  const expected = { 1: 2, 2: 2, 3: 4, 4: 6 };
+  check('Lot4b: poids par rang 2/2/4/6', houses.every(h => m.AWAKEN_TREE.houses[h].every(n => Math.abs(m.awakenNodeWeight(n) - expected[n.rank]) < 1e-6)));
+  check('Lot4b: tronc — 2 par nœud', m.AWAKEN_TREE.trunk.every(n => Math.abs(m.awakenNodeWeight(n) - 2) < 1e-6));
+  check('Lot4b: toutes les clés de bonus sont pesées', [...m.AWAKEN_TREE.trunk, ...houses.flatMap(h => m.AWAKEN_TREE.houses[h])]
+    .every(n => Object.keys(n.bonus).every(k => k in m.AWAKEN_WEIGHTS)));
+  const ids = [...m.AWAKEN_TREE.trunk, ...houses.flatMap(h => m.AWAKEN_TREE.houses[h])].map(n => n.id);
+  check('Lot4b: ids uniques', new Set(ids).size === ids.length);
+  // Prérequis et budget.
+  const c = { awakenNodes: [] };
+  check('Lot4b: niveau 1 → aucun point', m.awakenCanTake(c, 't_crit', 1, 'Gryffondor') === 'points insuffisants');
+  check('Lot4b: tronc pris au niveau 2', m.awakenCanTake(c, 't_crit', 2, 'Gryffondor') === null);
+  check('Lot4b: autre Maison refusée', m.awakenCanTake(c, 's_mag', 20, 'Gryffondor') === 'autre Maison');
+  check('Lot4b: rang 2 verrouillé sans 2 pts investis', m.awakenCanTake(c, 'g_hp', 20, 'Gryffondor') !== null);
+  c.awakenNodes = ['g_crit', 'g_atk'];
+  check('Lot4b: rang 2 ouvert après 2 pts', m.awakenCanTake(c, 'g_hp', 20, 'Gryffondor') === null);
+  check('Lot4b: pas de double prise', m.awakenCanTake(c, 'g_crit', 20, 'Gryffondor') === 'déjà pris');
+  check('Lot4b: le tronc ne compte pas pour la branche', m.awakenSpentIn(['t_crit', 't_hp', 'g_crit'], 'Gryffondor') === 1);
+  check('Lot4b: points disponibles', m.awakenPointsAvailable({ awakenNodes: ['g_crit', 'g_lion'] }, 20) === 10 - 4
+    && m.awakenPointsAvailable({ awakenNodes: [], awakenBought: 3 }, 4) === 5);
+  const b = m.awakenBonuses({ awakenNodes: ['t_crit', 'g_crit', 'g_fury', 's_mag'] }, 'Gryffondor');
+  check('Lot4b: bonus sommés, autre Maison ignorée', b.bonusCritChance === 6 && b.lowHpDmg === 0.1 && !b.bonusMag);
+  check('Lot4b: arbre complet > budget à la victoire', 8 + 15 > m.awakenPointsEarned(25));
+})();
+
 // ============================================================
 // Rapport
 // ============================================================

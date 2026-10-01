@@ -2137,4 +2137,87 @@ async function scenarioHouseGenBiasV2() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioHouseCrests, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioHeadOfHouseVoice, scenarioHouseSignatureQuests, scenarioHouseSignatureGryffondor, scenarioHouseSignatureSerpentard, scenarioHouseSignatureSerdaigle, scenarioHouseSignaturePoufsouffle, scenarioVictorySpeechVariants, scenarioPremiumReward, scenarioHouseFavorShop, scenarioPremiumShadowVendor, scenarioHousePremiumDrop, scenarioHouseGenBiasV2] };
+// Lot 4.3/4.4 : arbre « Éveil du Sorcier » — points, dépense, effets sur les
+// stats, points d'accroche des 4 Maisons, persistance save, UI.
+async function scenarioSkillTree() {
+  console.log('\n── Scénario : Lot 4 — arbre « Éveil du Sorcier » ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'], house: 'Gryffondor' });
+
+  // T1 — budget et dépense.
+  const t1 = await page.evaluate(() => {
+    const out = { start: awakenPointsAvailable(party[0], player.level), nodes0: party[0].awakenNodes.length };
+    out.refusedLv1 = awakenTakeNode(0, 't_crit') === false;
+    player.level = 10; recalculateStats();              // 5 points chacun
+    const crit0 = party[0].critChance, hp0 = party[0].hpMax;
+    out.took = ['t_crit', 't_hp', 'g_crit', 'g_atk'].every(id => awakenTakeNode(0, id));
+    out.rank3Refused = awakenTakeNode(0, 'g_fury') === false;   // 2 pts investis < 4
+    out.otherHouseRefused = awakenTakeNode(0, 's_mag') === false;
+    out.dCrit = party[0].critChance - crit0;
+    out.dHp = party[0].hpMax - hp0;
+    out.left = awakenPointsAvailable(party[0], player.level);
+    out.hermioneLeft = awakenPointsAvailable(party[1], player.level);
+    return out;
+  });
+  console.log('  T1 dépense →', t1);
+  assert(t1.start === 0 && t1.nodes0 === 0 && t1.refusedLv1, 'Niveau 1 : aucun point');
+  assert(t1.took && t1.rank3Refused && t1.otherHouseRefused, 'Prérequis de rang / Maison');
+  assert(t1.dCrit === 4, `crit +4 attendu (vu ${t1.dCrit})`);
+  assert(t1.dHp === 10, `PV max +10 attendu (vu ${t1.dHp})`);
+  assert(t1.left === 1 && t1.hermioneLeft === 5, 'Pools de points par héros');
+
+  // T2 — points d'accroche des 4 Maisons.
+  const t2 = await page.evaluate(() => {
+    const c = party[0];
+    const r = {};
+    c.awakenNodes = ['g_crit', 'g_atk', 'g_str', 'g_fury']; recalculateStats();
+    c.hp = Math.floor(c.hpMax * 0.3); r.lowHp = _houseVigorMult(c);
+    c.hp = c.hpMax; r.fullHp = _houseVigorMult(c);
+    chosenHouse = 'Serpentard'; c.awakenNodes = ['s_mag', 's_int', 's_leech']; recalculateStats();
+    c.hp = 1; r.leech = _applySerpentLifesteal(c, 100);
+    chosenHouse = 'Serdaigle'; c.awakenNodes = ['r_mag', 'r_sp', 'r_cost', 'r_cost2'];
+    player.level = 20; recalculateStats();
+    r.cost = _spellSpCost(SPELLS.find(s => s.name === 'Incendio'), c);
+    chosenHouse = 'Poufsouffle'; c.awakenNodes = ['p_def', 'p_end', 'p_regen']; recalculateStats();
+    r.regen = awakenStat(c, 'stepRegen');
+    chosenHouse = 'Gryffondor'; c.awakenNodes = ['t_crit']; c.hp = c.hpMax; recalculateStats();
+    return r;
+  });
+  console.log('  T2 accroches →', t2);
+  assert(Math.abs(t2.lowHp - 1.10) < 1e-9 && t2.fullHp === 1, 'Dos au mur : +10 % sous 50 % PV');
+  assert(t2.leech === 5, `Vol de vie 5 % de 100 attendu (vu ${t2.leech})`);
+  assert(t2.cost === 7, `Incendio 8 PM −15 % → 7 attendu (vu ${t2.cost})`);
+  assert(t2.regen === 1, 'Second souffle : +1 PV par pas');
+
+  // T3 — persistance save, puis UI (fiche → modale).
+  const t3 = await page.evaluate(() => {
+    party[0].awakenNodes = ['t_crit', 'g_crit']; recalculateStats();
+    const gs = JSON.parse(JSON.stringify(_serializeState()));
+    party[0].awakenNodes = []; party[1].awakenNodes = ['t_hp'];
+    _applyState(gs);
+    const kept = JSON.stringify(party[0].awakenNodes), herm = party[1].awakenNodes.length;
+    delete gs.party[0].awakenNodes;           // save antérieure au Lot 4
+    _applyState(gs);
+    const legacy = party[0].awakenNodes.length;
+    openCharacter(0);
+    const btn = document.querySelector('#char-detail .btn-awaken');
+    if (btn) btn.click();
+    const modal = document.getElementById('skill-tree-modal');
+    const open = modal && modal.style.display === 'flex';
+    const nodes = document.querySelectorAll('#skill-tree-body .awaken-node').length;
+    const taken = document.querySelectorAll('#skill-tree-body .awaken-taken').length;
+    closeSkillTree();
+    return { kept, herm, legacy, btn: !!btn, open, nodes, taken };
+  });
+  console.log('  T3 save/UI →', t3);
+  assert(t3.kept === '["t_crit","g_crit"]' && t3.herm === 0, 'Nœuds restaurés par la save');
+  assert(t3.legacy === 0, 'Save antérieure : arbre vide');
+  assert(t3.btn && t3.open, 'Bouton Éveil de la fiche → modale ouverte');
+  assert(t3.nodes === 18 && t3.taken === 0, `18 nœuds (tronc + Gryffondor) attendus (vu ${t3.nodes})`);
+
+  await browser.close();
+  const real = errors.filter(e => !isIgnorableError(e));
+  assert(real.length === 0, 'Erreurs JS : ' + real.join(' | '));
+}
+
+module.exports = { scenarios: [scenarioHouseCrests, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioHeadOfHouseVoice, scenarioHouseSignatureQuests, scenarioHouseSignatureGryffondor, scenarioHouseSignatureSerpentard, scenarioHouseSignatureSerdaigle, scenarioHouseSignaturePoufsouffle, scenarioVictorySpeechVariants, scenarioPremiumReward, scenarioHouseFavorShop, scenarioPremiumShadowVendor, scenarioHousePremiumDrop, scenarioHouseGenBiasV2, scenarioSkillTree] };

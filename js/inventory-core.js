@@ -444,6 +444,25 @@ function recalculateStats() {
       c.agi += sb.bonusAgi; c.end += sb.bonusEnd;
     }
 
+    // Arbre « Éveil du Sorcier » (Lot 4.3) : nœuds pris par le héros.
+    // Stats primaires ici (avant D1/D2) ; dérivées plus bas. c._awaken est
+    // relu par les points d'accroche spéciaux (awakenStat).
+    const _aw = (typeof awakenBonuses === 'function')
+      ? awakenBonuses(c, (typeof chosenHouse !== 'undefined') ? chosenHouse : undefined) : {};
+    c._awaken = _aw;
+    c.atk += _aw.bonusAtk || 0; c.def += _aw.bonusDef || 0;
+    c.mag += _aw.bonusMag || 0; c.lck += _aw.bonusLck || 0;
+    c.str += _aw.bonusStr || 0; c.int += _aw.bonusInt || 0;
+    c.agi += _aw.bonusAgi || 0; c.end += _aw.bonusEnd || 0;
+    critBonus         += _aw.bonusCritChance || 0;
+    dodgeBonus        += _aw.bonusDodgeChance || 0;
+    critDmgBonus      += _aw.bonusCritDamage || 0;
+    spellCritBonus    += _aw.bonusSpellCritChance || 0;
+    spellCritDmgBonus += _aw.bonusSpellCritDamage || 0;
+    hpMaxBonus        += _aw.bonusHpMax || 0;
+    spMaxBonus        += _aw.bonusSpMax || 0;
+    counterBonus      += _aw.bonusCounterChance || 0;
+
     // Rework D1/D2 — conversions stat secondaire → primaire. Appliquées
     // APRÈS base + équipement + sets (sur les stats effectives finales) :
     //   D1 INT→MAG 4:1  · D2 END→DEF 6:1.
@@ -478,7 +497,7 @@ function recalculateStats() {
     // est mémorisé pour que partyFortune() ré-applique la courbe avec Félix.
     // Cf. .claude/plans/luck-fortune.md §2.1.
     {
-      let fortuneBonus = _ench ? _ench.bonusFortune : 0;
+      let fortuneBonus = (_ench ? _ench.bonusFortune : 0) + (_aw.bonusFortune || 0);
       if (c.equipped) {
         for (const item of Object.values(c.equipped)) {
           if (item && item.bonusFortune) fortuneBonus += item.bonusFortune;
@@ -495,7 +514,7 @@ function recalculateStats() {
     // Cf. .claude/plans/agi-derived.md §2.2. La jauge (celeriteGauge) est
     // combat-scoped (reset startBattle), pas ici.
     {
-      let celeriteBonus = _ench ? _ench.bonusCelerite : 0;
+      let celeriteBonus = (_ench ? _ench.bonusCelerite : 0) + (_aw.bonusCelerite || 0);
       if (c.equipped) {
         for (const item of Object.values(c.equipped)) {
           if (item && item.bonusCelerite) celeriteBonus += item.bonusCelerite;
