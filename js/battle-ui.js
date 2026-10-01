@@ -347,6 +347,13 @@ function _refreshBattleActionButtons() {
     duoBtn.style.display = av ? '' : 'none';
     if (av) duoBtn.title = `${av.tech.name} — ${av.tech.desc} (les deux tours, 1×/combat)`;
   }
+  // Lot 4.5 — bouton 🌟 action de classe (arbre d'Éveil), 1×/combat par héros.
+  const awBtn = document.getElementById('btn-awaken');
+  if (awBtn) {
+    const av = (inBattle && typeof awakenActiveFor === 'function') ? awakenActiveFor(currentBattleChar) : null;
+    awBtn.style.display = av ? '' : 'none';
+    if (av) { awBtn.textContent = `${av.def.icon} ${av.def.label}`; awBtn.title = `${av.def.label} — ${av.def.desc} (1×/combat)`; }
+  }
   // P4 — bouton 🌿 Rune : visible en zone runique tant que la charge subsiste.
   const envBtn = document.getElementById('btn-env');
   if (envBtn) {

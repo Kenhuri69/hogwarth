@@ -4005,6 +4005,33 @@ function loadNpcs() {
   check('Lot4b: arbre complet > budget à la victoire', 8 + 15 > m.awakenPointsEarned(25));
 })();
 
+// §32b — Lot 4.5 : branches de classe et actifs
+(function testLot4ClassBranches() {
+  const m = loadModule('js/awaken-tree.js', ['AWAKEN_TREE', 'AWAKEN_ACTIVES', 'awakenNodeWeight', 'awakenCanTake', 'awakenBonuses', 'awakenNodeCost'], { window: {} });
+  const { CLASS_ARCHETYPES } = loadModule('js/data-characters.js', ['CLASS_ARCHETYPES']);
+  const archs = Object.keys(CLASS_ARCHETYPES);
+  check('Lot4c: une branche par archétype', archs.every(a => Array.isArray(m.AWAKEN_TREE.classes[a])));
+  check('Lot4c: 10 nœuds par classe (3/3/3/1)', archs.every(a => {
+    const ns = m.AWAKEN_TREE.classes[a]; const by = r => ns.filter(n => n.rank === r).length;
+    return ns.length === 10 && by(1) === 3 && by(2) === 3 && by(3) === 3 && by(4) === 1;
+  }));
+  check('Lot4c: un seul actif par classe, au rang 2, défini', archs.every(a => {
+    const act = m.AWAKEN_TREE.classes[a].filter(n => n.active);
+    return act.length === 1 && act[0].rank === 2 && act[0].active === a && m.AWAKEN_ACTIVES[a];
+  }));
+  const w = a => m.AWAKEN_TREE.classes[a].reduce((s, n) => s + m.awakenNodeWeight(n), 0);
+  check('Lot4c: équité — chaque classe pèse 30', archs.every(a => Math.abs(w(a) - 30) < 1e-6));
+  check('Lot4c: capital renforce l\'actif', archs.every(a => m.AWAKEN_TREE.classes[a].find(n => n.rank === 4).bonus.activePower === 0.5));
+  const c = { awakenNodes: ['d_crit', 'd_atk'] };
+  check('Lot4c: autre classe refusée', m.awakenCanTake(c, 'e_mag', 20, 'Gryffondor', 'duelliste') === 'autre classe');
+  check('Lot4c: actif ouvert après 2 pts de classe', m.awakenCanTake(c, 'd_active', 20, 'Gryffondor', 'duelliste') === null);
+  const b = m.awakenBonuses({ awakenNodes: ['d_crit', 'd_active', 'e_mag'] }, 'Gryffondor', 'duelliste');
+  check('Lot4c: actif noté, autre classe ignorée', b.active === 'duelliste' && b.bonusCritChance === 2 && !b.bonusMag);
+  const ids = ['trunk', ...Object.keys(m.AWAKEN_TREE.houses).map(h => 'h:' + h), ...archs.map(a => 'c:' + a)];
+  const all = [...m.AWAKEN_TREE.trunk, ...Object.values(m.AWAKEN_TREE.houses).flat(), ...Object.values(m.AWAKEN_TREE.classes).flat()].map(n => n.id);
+  check('Lot4c: ids uniques sur tout l\'arbre', ids.length && new Set(all).size === all.length);
+})();
+
 // ============================================================
 // Rapport
 // ============================================================

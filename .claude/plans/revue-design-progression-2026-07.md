@@ -723,3 +723,7 @@ Lot 6 (équilibrage global & QA de synthèse) ── ferme le tout
   10 nœuds à budget égal (poids 30), modale `#skill-tree-modal`. ⚠️ Branche
   de Maison par héros (et non partagée) ; nœuds non branchables en v1 écartés
   (liste dans le plan). Reste 4.5, onglet Passifs, 4.7, 4.8.
+- **2026-10-01 — Lot 4 (c) exécuté** (4.5, `.claude/plans/lot4c-branches-classe-2026-10.md`) :
+  5 branches de classe de 10 nœuds (poids 30), un actif de combat par classe
+  (bouton 🌟, 1×/combat, effets immédiats), capital +50 % à l'actif. Reste
+  l'onglet Passifs, 4.7 et 4.8.

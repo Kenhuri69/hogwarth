@@ -448,7 +448,8 @@ function recalculateStats() {
     // Stats primaires ici (avant D1/D2) ; dérivées plus bas. c._awaken est
     // relu par les points d'accroche spéciaux (awakenStat).
     const _aw = (typeof awakenBonuses === 'function')
-      ? awakenBonuses(c, (typeof chosenHouse !== 'undefined') ? chosenHouse : undefined) : {};
+      ? awakenBonuses(c, (typeof chosenHouse !== 'undefined') ? chosenHouse : undefined,
+          (typeof heroArchetype === 'function') ? heroArchetype(c, party.indexOf(c)) : undefined) : {};
     c._awaken = _aw;
     c.atk += _aw.bonusAtk || 0; c.def += _aw.bonusDef || 0;
     c.mag += _aw.bonusMag || 0; c.lck += _aw.bonusLck || 0;

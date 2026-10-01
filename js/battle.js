@@ -788,6 +788,7 @@ function startBattle(baseEnemyData, opts) {
   lionHeartActive          = false;
   badgerOathUsedThisFight  = false;
   duoTechUsed              = false;   // Lot G (2c) — technique de duo réarmée
+  if (typeof awakenActiveUsed !== 'undefined') awakenActiveUsed = [false, false];   // Lot 4.5 — actions de classe
   _shieldReflect           = [0, 0];
   if (typeof window._resetTeleportFightFlag === 'function') window._resetTeleportFightFlag();
 
@@ -1011,6 +1012,7 @@ function battleAction(action) {
   if (action === 'posture')  { toggleDuoPosture();      return; }   // P2 — bascule de posture (gratuite)
   if (action === 'env')      { triggerRuneEnv();        return; }   // P4 — interaction d'environnement (rune)
   if (action === 'duotech')  { triggerDuoTechnique();   return; }   // Lot G — technique de duo (2 tours)
+  if (action === 'awaken')   { if (typeof triggerAwakenActive === 'function') triggerAwakenActive(); return; }   // Lot 4.5 — action de classe
 
   if (action === 'guard') {
     const idx    = currentBattleChar;

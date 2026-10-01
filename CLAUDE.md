@@ -371,7 +371,7 @@ attendus se sont exécutés correctement et expose 2 helpers d'accès défensif.
 
 ### Manifeste
 
-Le `MANIFEST` dans `loader.js` énumère **425** entrées `{ name, source, kind,
+Le `MANIFEST` dans `loader.js` énumère **427** entrées `{ name, source, kind,
 optional? }` :
 - `kind: 'fn'` → `typeof name === 'function'`
 - `kind: 'obj'` → `typeof name !== 'undefined'` (couvre `let`/`const`/`var`)
@@ -1188,7 +1188,7 @@ pendingSpell      // nom du sort en attente de sélection de cible (ennemi ou al
 
 ### Actions de combat (#battle-actions)
 
-5 actions de base + 4 actions **conditionnelles** (boutons masqués hors contexte,
+5 actions de base + 5 actions **conditionnelles** (boutons masqués hors contexte,
 montrés par `_refreshBattleActionButtons` dans `battle-ui.js`) :
 
 | Action | Coût | Effet |
@@ -1201,6 +1201,7 @@ montrés par `_refreshBattleActionButtons` dans `battle-ui.js`) :
 | 🏺 Artefact (P2) | charge | `#btn-artifact` — `triggerActiveArtifact()`. Visible si le perso actif équipe un artefact à `item.activeEffect` avec une charge restante (`artifactCharges[idx]`, 1×/combat, reset `startBattle`). Résolveurs `elemBurst`/`purgeStatus`/`shieldGroup`/`hasteGroup`/`sapDefense`/`succorGroup`. Ciblage 1-ennemi via `pendingAction='artifact'`. **Éveil** (2.5b, Forge) : `item.awakenRank` 1-3 → +1 charge, puissance +50 %, effet secondaire par résolveur (`artifactAwakened`, `ARTIFACT_AWAKEN_SECONDARY`) ; coût Marques de Traque + Essence Primordiale (`ARTIFACT_AWAKEN_COSTS`). |
 | 🔄 Posture (P2) | — | `#btn-posture` — `toggleDuoPosture()`. Visible en **Duo** tant que la bascule gratuite n'a pas servi ce combat (`duoPostureSwitched`). Bascule `duoPosture` phalange↔tenaille. Cf. « Positionnement Duo ». |
 | 🌿 Rune (P4) | — | `#btn-env` — `triggerRuneEnv()`. Visible en **zone runique** (D / override post-victoire) tant que `envRuneCharge > 0` (1×/combat). Étourdit (`stun` 1 tour) l'ennemi le plus proche. Cf. « Environnement en combat ». |
+| 🌟 Classe (Lot 4.5) | 1×/combat | `#btn-awaken` — `triggerAwakenActive()`. Visible si le héros actif possède le nœud actif de sa branche de classe (arbre « Éveil du Sorcier ») et ne l'a pas encore utilisé ce combat. |
 | 🤝 Duo (Lot G) | les 2 tours | `#btn-duo-tech` — `triggerDuoTechnique()`. Visible en **Duo** au tour du héros de tête quand les derniers sorts offensifs des deux héros forment un couple d'éléments connu (1×/combat). Cf. « Technique de duo & complicité ». |
 
 ### Tour de jeu
@@ -1571,9 +1572,18 @@ window.checkKillQuests(monsterId) → incrémente q.progress, auto-complète (d�
   (`_applySerpentLifesteal`), 🦅 `spellCostReduc` (`_spellSpCost`), 🦡
   `stepRegen` (`_step`).
 - **Équité** : `AWAKEN_WEIGHTS` ; chaque branche de Maison pèse 30 (units §32).
-- **UI** : bouton « 🌟 Éveil » de la fiche → `#skill-tree-modal`.
-- À venir : branches de classe (4.5), onglet « Passifs actifs », achat en
-  Marques (4.7), passe sim (4.8).
+- **Branches de classe** (Lot 4.5) : `AWAKEN_TREE.classes[archétype]`, même
+  gabarit (10 nœuds, poids 30), branche lue via `heroArchetype`. Le nœud de
+  rang 2 `active` donne une **action de combat** 1×/combat (bouton
+  `#btn-awaken`, `triggerAwakenActive`, `awakenActiveUsed` remis à zéro par
+  `startBattle`) ; le capital porte `activePower: 0.5` (+50 %) :
+  ⚔️ Riposte assurée (coup critique garanti + 1 Garde), 📘 Surcharge
+  (MAG × 1,2 sur tous les ennemis), 🌑 Saignée (`bleed` sur tous + soin 10 %),
+  🛡️ Interposition (+2 Gardes + Protego allié), ✨ Faveur (soin 20 % du groupe
+  + purge).
+- **UI** : bouton « 🌟 Éveil » de la fiche → `#skill-tree-modal` (tronc,
+  Maison, classe).
+- À venir : onglet « Passifs actifs », achat en Marques (4.7), passe sim (4.8).
 
 ### Traques Rituelles (Lot 3, `js/traque.js`)
 

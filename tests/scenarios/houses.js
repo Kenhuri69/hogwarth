@@ -2213,11 +2213,81 @@ async function scenarioSkillTree() {
   assert(t3.kept === '["t_crit","g_crit"]' && t3.herm === 0, 'Nœuds restaurés par la save');
   assert(t3.legacy === 0, 'Save antérieure : arbre vide');
   assert(t3.btn && t3.open, 'Bouton Éveil de la fiche → modale ouverte');
-  assert(t3.nodes === 18 && t3.taken === 0, `18 nœuds (tronc + Gryffondor) attendus (vu ${t3.nodes})`);
+  assert(t3.nodes === 28 && t3.taken === 0, `28 nœuds (tronc + Gryffondor + Duelliste) attendus (vu ${t3.nodes})`);
 
   await browser.close();
   const real = errors.filter(e => !isIgnorableError(e));
   assert(real.length === 0, 'Erreurs JS : ' + real.join(' | '));
 }
 
-module.exports = { scenarios: [scenarioHouseCrests, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioHeadOfHouseVoice, scenarioHouseSignatureQuests, scenarioHouseSignatureGryffondor, scenarioHouseSignatureSerpentard, scenarioHouseSignatureSerdaigle, scenarioHouseSignaturePoufsouffle, scenarioVictorySpeechVariants, scenarioPremiumReward, scenarioHouseFavorShop, scenarioPremiumShadowVendor, scenarioHousePremiumDrop, scenarioHouseGenBiasV2, scenarioSkillTree] };
+// Lot 4.5 : branches de classe — les 5 actions de combat, 1×/combat, bouton.
+async function scenarioSkillTreeActives() {
+  console.log('\n── Scénario : Lot 4 — actions de classe de l\'arbre ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'], house: 'Gryffondor' });
+  await page.evaluate(() => { player.level = 20; recalculateStats(); });
+
+  // T1 — prise de l'actif : refus avant 2 pts dans la classe, autre classe refusée.
+  const t1 = await page.evaluate(() => ({
+    early: awakenTakeNode(0, 'd_active'),
+    other: awakenTakeNode(0, 'e_mag'),
+    took: ['d_crit', 'd_atk', 'd_active'].every(id => awakenTakeNode(0, id)),
+    active: party[0]._awaken.active
+  }));
+  console.log('  T1 prise →', t1);
+  assert(!t1.early && !t1.other && t1.took && t1.active === 'duelliste', 'Actif Duelliste pris après 2 pts');
+
+  await startDummyFight(page, { hp: 5000 });
+  const t2 = await page.evaluate(() => {
+    const out = {};
+    const prep = (key, nodes) => {
+      party[0].heroKey = key; party[0].awakenNodes = nodes; recalculateStats();
+      awakenActiveUsed = [false, false]; currentBattleChar = 0; inBattle = true;
+      guardTurns = [0, 0]; shieldTurns = [0, 0];
+      enemyGroup.forEach(e => { e.currentHp = 5000; e.statusEffects = []; });
+      _refreshBattleActionButtons();
+    };
+    const btn = () => document.getElementById('btn-awaken').style.display !== 'none';
+    // Duelliste
+    prep('harry', ['d_crit', 'd_atk', 'd_active']);
+    out.btnShown = btn();
+    triggerAwakenActive();
+    out.duel = { dmg: 5000 - enemyGroup[0].currentHp, guard: guardTurns[0], again: (currentBattleChar = 0, triggerAwakenActive()) };
+    _refreshBattleActionButtons(); out.btnHidden = !btn();
+    // Érudit
+    prep('hermione', ['e_mag', 'e_int', 'e_active']);
+    triggerAwakenActive(); out.eru = 5000 - enemyGroup[0].currentHp;
+    out.eruExpect = Math.floor(party[0].mag * 1.2);
+    // Occultiste
+    prep('maxence', ['o_mag', 'o_int', 'o_active']);
+    party[0].hp = 1; triggerAwakenActive();
+    out.occ = { bleed: (enemyGroup[0].statusEffects || []).some(s => s.id === 'bleed'), healed: party[0].hp > 1 };
+    // Gardien
+    prep('cedric', ['gd_def', 'gd_end', 'gd_active']);
+    triggerAwakenActive(); out.gard = { guard: guardTurns[0], allyShield: shieldTurns[1] };
+    // Enchanteur
+    prep('iris', ['en_fortune', 'en_sp', 'en_active']);
+    party[0].hp = 1; party[1].hp = 1; party[1].statusEffects = [{ id: 'poison', power: 3, turns: 3 }];
+    triggerAwakenActive();
+    out.ench = { h0: party[0].hp > 1, h1: party[1].hp > 1, purged: party[1].statusEffects.length === 0 };
+    // Capital : +50 % sur la Surcharge.
+    prep('hermione', ['e_mag', 'e_int', 'e_active', 'e_spellcrit', 'e_mag2', 'e_scd', 'e_spellcrit2', 'e_master']);
+    triggerAwakenActive(); out.eruCap = 5000 - enemyGroup[0].currentHp; out.eruCapExpect = Math.floor(party[0].mag * 1.2 * 1.5);
+    party[0].heroKey = 'harry'; party[0].hp = party[0].hpMax; party[1].hp = party[1].hpMax;
+    return out;
+  });
+  console.log('  T2 actifs →', JSON.stringify(t2));
+  assert(t2.btnShown && t2.btnHidden, 'Bouton 🌟 visible puis masqué après usage');
+  assert(t2.duel.dmg > 0 && t2.duel.guard === 1 && t2.duel.again === false, 'Riposte assurée : dégâts, 1 Garde, 1×/combat');
+  assert(t2.eru === t2.eruExpect, `Surcharge : ${t2.eruExpect} attendus (vu ${t2.eru})`);
+  assert(t2.occ.bleed && t2.occ.healed, 'Saignée : saignement + soin');
+  assert(t2.gard.guard === 2 && t2.gard.allyShield === 1, 'Interposition : 2 Gardes + Protego allié');
+  assert(t2.ench.h0 && t2.ench.h1 && t2.ench.purged, 'Faveur : soin du groupe + purge');
+  assert(t2.eruCap === t2.eruCapExpect, `Capital : +50 % (${t2.eruCapExpect} attendus, vu ${t2.eruCap})`);
+
+  await browser.close();
+  const real = errors.filter(e => !isIgnorableError(e));
+  assert(real.length === 0, 'Erreurs JS : ' + real.join(' | '));
+}
+
+module.exports = { scenarios: [scenarioHouseCrests, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioHeadOfHouseVoice, scenarioHouseSignatureQuests, scenarioHouseSignatureGryffondor, scenarioHouseSignatureSerpentard, scenarioHouseSignatureSerdaigle, scenarioHouseSignaturePoufsouffle, scenarioVictorySpeechVariants, scenarioPremiumReward, scenarioHouseFavorShop, scenarioPremiumShadowVendor, scenarioHousePremiumDrop, scenarioHouseGenBiasV2, scenarioSkillTree, scenarioSkillTreeActives] };
